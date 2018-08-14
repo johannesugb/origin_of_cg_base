@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <FrameworkRoot>$(SolutionDir)..\framework\</FrameworkRoot>
+	<ExternalRoot>$(SolutionDir)..\external\</ExternalRoot>
+	<ExamplesRoot>$(SolutionDir)..\examples\</ExamplesRoot>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="FrameworkRoot">
+      <Value>$(FrameworkRoot)</Value>
+    </BuildMacro>
+    <BuildMacro Include="ExternalRoot">
+      <Value>$(ExternalRoot)</Value>
+    </BuildMacro>
+    <BuildMacro Include="ExamplesRoot">
+      <Value>$(ExamplesRoot)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>
