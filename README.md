@@ -30,4 +30,6 @@ TBD
 
 # Credits
 
+This framework is being developed on Vienna University of Technology ("TU-Wien"), at the Institute of Visual Computing & Human-Centered Technology, [Research Division of Computer Graphics](https://www.cg.tuwien.ac.at/)
+
 TBD
