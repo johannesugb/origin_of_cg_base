@@ -1,6 +1,6 @@
 # _CG-Base_ Rendering Framework
 
-_CG-Base_ is a modern rendering framework, abstracting the actual rendering APIs without sacrificing on understandability and offering some nifty features to get you into gears rather quickly. 
+_CG-Base_ is a modern C++ rendering framework, abstracting the rendering APIs OpenGL, OpenGL ES, and Vulkan without sacrificing on understandability and offering some nifty features to get you into gears rather quickly. 
 
 _CG-Base_'s core principles are:
 * Accelerate low-level graphics development,
