@@ -303,6 +303,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\framework\include\cg_object.h" />
     <ClInclude Include="..\framework\include\context.h" />
     <ClInclude Include="..\framework\include\context_generic_opengl.h" />
     <ClInclude Include="..\framework\include\context_generic_glfw.h" />
