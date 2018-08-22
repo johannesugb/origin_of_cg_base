@@ -54,6 +54,9 @@ namespace cgb
 		 */
 		void enable_vsync(bool enable);
 
+		/** Gets the current system time */
+		double get_time();
+
 	protected:
 		static void glfw_error_callback(int error, const char* description);
 

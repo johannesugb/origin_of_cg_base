@@ -6,19 +6,19 @@
 
 namespace cgb
 {
-#ifdef USE_OPENGL46_CONTEXT
+#if defined(USE_OPENGL46_CONTEXT)
 	inline opengl46& context()
 	{
 		static opengl46 instance;
 		return instance;
 	}
-#elif USE_OPENGLES32_CONTEXT
+#elif defined(USE_OPENGLES32_CONTEXT)
 	inline opengles32& context()
 	{
 		static opengles32 instance;
 		return instance;
 	}
-#elif USE_VULKAN_CONTEXT
+#elif defined(USE_VULKAN_CONTEXT)
 	inline vulkan& context()
 	{
 		static vulkan instance;

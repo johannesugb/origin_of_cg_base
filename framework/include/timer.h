@@ -4,12 +4,19 @@ namespace cgb
 {
 	/** Base class (actually an "interface") which all concrete timer 
 	 *	implementations have to implement in order to be usable with \ref run.
+	 *	
+	 *	Please note that, in addition to implementing all pure virtual
+	 *	functions, subclasses must implement a timer_frame_type tick();
+	 *	method in order to be usable with the framework. (Please investigate
+	 *	the implementation of \ref composition_with_timer for details
+	 *	on how timers and the tick-method in particular are used.
 	 */
 	class timer
 	{
+	public:
 		/**	\brief The absolute system time.
 		 */
-		virtual float absolute_time() = 0;
+		virtual float absolute_time() const = 0;
 
 		/**	\brief The time at the beginning of the current frame.
 		 *
@@ -19,7 +26,7 @@ namespace cgb
 		 *	I.e., a simulation-only update frame will have a different
 		 *	frame-time than the following update-and-render frame.
 		 */
-		virtual float frame_time() = 0;
+		virtual float frame_time() const = 0;
 
 		/**	\brief The duration of the fixed simulation timestep 
 		 *
@@ -27,7 +34,7 @@ namespace cgb
 		 *	supports fixed timesteps. If it doesn't, it will return the
 		 *	same as \ref delta_time, i.e. a varying delta time.
 		 */
-		virtual float fixed_delta_time() = 0;
+		virtual float fixed_delta_time() const = 0;
 
 		/** \brief The time it took to complete the last frame
 		 *
@@ -35,15 +42,15 @@ namespace cgb
 		 *	inside the \ref cg_base::update method, and use \ref fixed_delta_time
 		 *	inside the \ref cg_base::fixed_update method.
 		 */
-		virtual float delta_time() = 0;
+		virtual float delta_time() const = 0;
 
 		/** \brief The scale at which the time is passing 
 		 */
-		virtual float time_scale() = 0;
+		virtual float time_scale() const = 0;
 
 		/**	\brief The absolute system time in double precision
 		*/
-		virtual double precise_absolute_time() = 0;
+		virtual double precise_absolute_time() const = 0;
 
 		/**	\brief The time at the beginning of the current frame in double precision.
 		*
@@ -53,7 +60,7 @@ namespace cgb
 		*	I.e., a simulation-only update frame will have a different
 		*	frame-time than the following update-and-render frame.
 		*/
-		virtual double precise_frame_time() = 0;
+		virtual double precise_frame_time() const = 0;
 		
 		/**	\brief The duration of the fixed simulation timestep in double precision
 		*
@@ -61,7 +68,7 @@ namespace cgb
 		*	supports fixed timesteps. If it doesn't, it will return the
 		*	same as \ref delta_time, i.e. a varying delta time.
 		*/
-		virtual double precise_fixed_delta_time() = 0;
+		virtual double precise_fixed_delta_time() const = 0;
 		
 		/** \brief The time it took to complete the last frame in double precision
 		*
@@ -69,10 +76,10 @@ namespace cgb
 		*	inside the \ref cg_base::update method, and use \ref fixed_delta_time
 		*	inside the \ref cg_base::fixed_update method.
 		*/
-		virtual double precise_delta_time() = 0;
+		virtual double precise_delta_time() const = 0;
 		
 		/** \brief The scale at which the time is passing in double precision
 		*/
-		virtual double precise_time_scale() = 0;
+		virtual double precise_time_scale() const = 0;
 	};
 }

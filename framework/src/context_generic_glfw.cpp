@@ -95,6 +95,11 @@ namespace cgb
 		glfwSwapInterval(enable ? 1 : 0);
 	}
 
+	double generic_glfw::get_time()
+	{
+		return glfwGetTime();
+	}
+
 	void generic_glfw::glfw_error_callback(int error, const char* description)
 	{
 		LOG_ERROR("GLFW-Error: hex[0x%x] int[%d] description[%s]", error, error, description);

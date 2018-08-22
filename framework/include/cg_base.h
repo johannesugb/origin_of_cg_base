@@ -16,6 +16,7 @@
 #include <variant>
 #include <iomanip>
 #include <optional>
+#include <typeinfo>
 
 #include <stdio.h>
 
@@ -38,8 +39,10 @@
 #include "log.h"
 #include "context.h"
 #include "window.h"
-#include "timer_frame_type.h"
 #include "timer.h"
 #include "timer_frame_type.h"
+#include "fixed_update_timer.h"
+#include "varying_update_only_timer.h"
 #include "cg_object.h"
 #include "composition.h"
+#include "composition_with_timer.h"

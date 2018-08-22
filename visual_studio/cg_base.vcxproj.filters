@@ -46,6 +46,9 @@
     <Filter Include="Header Files\timer">
       <UniqueIdentifier>{952ae1dc-c3a3-4d72-b922-f5ef229d3c08}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\timer">
+      <UniqueIdentifier>{ca208174-2c3f-4d58-a271-0853a7ce7f43}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\framework\include\context.h">
@@ -87,17 +90,20 @@
     <ClInclude Include="..\framework\include\fixed_update_timer.h">
       <Filter>Header Files\timer</Filter>
     </ClInclude>
-    <ClInclude Include="..\framework\include\timer_frame_type.h">
-      <Filter>Header Files\general</Filter>
-    </ClInclude>
     <ClInclude Include="..\framework\include\composition.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
-    <ClInclude Include="..\framework\include\composition_impl.h">
+    <ClInclude Include="..\framework\include\composition_with_timer.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
     <ClInclude Include="..\framework\include\timer.h">
-      <Filter>Header Files\general</Filter>
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\timer_frame_type.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\varying_update_only_timer.h">
+      <Filter>Header Files\timer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -142,6 +148,15 @@
     </ClCompile>
     <ClCompile Include="..\external\src\FileWatcher\FileWatcherWin32.cpp">
       <Filter>Source Files\external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="..\framework\src\fixed_update_timer.cpp">
+      <Filter>Source Files\timer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\framework\src\varying_update_only_timer.cpp">
+      <Filter>Source Files\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\framework\src\composition.cpp">
+      <Filter>Source Files\general</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
