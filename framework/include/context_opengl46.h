@@ -5,7 +5,7 @@
 
 namespace cgb
 {
-	/**	@brief Context for OpenGL 4.6 core profile
+	/**	\brief Context for OpenGL 4.6 core profile
 	 *	
 	 *	This context uses OpenGL 4.6 functionality and a core profile.
 	 *	Some data and functionality is shared from the generic_opengl 

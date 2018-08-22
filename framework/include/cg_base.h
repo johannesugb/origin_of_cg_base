@@ -38,3 +38,8 @@
 #include "log.h"
 #include "context.h"
 #include "window.h"
+#include "timer_frame_type.h"
+#include "timer.h"
+#include "timer_frame_type.h"
+#include "cg_object.h"
+#include "composition.h"

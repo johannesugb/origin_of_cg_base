@@ -26,6 +26,6 @@ namespace cgb
 	}
 #endif
 
-/** Calls the context's @ref check_error method, passing the current file and line to it. */
+/** Calls the context's \ref check_error method, passing the current file and line to it. */
 #define CHECK_ERROR() context().check_error(__FILE__, __LINE__);
 }

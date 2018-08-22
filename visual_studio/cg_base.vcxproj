@@ -311,9 +311,14 @@
     <ClInclude Include="..\framework\include\context_opengles32.h" />
     <ClInclude Include="..\framework\include\context_vulkan.h" />
     <ClInclude Include="..\framework\include\cg_base.h" />
+    <ClInclude Include="..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="..\framework\include\log.h" />
     <ClInclude Include="..\framework\include\precompile.h" />
+    <ClInclude Include="..\framework\include\composition.h" />
+    <ClInclude Include="..\framework\include\composition_impl.h" />
     <ClInclude Include="..\framework\include\targetver.h" />
+    <ClInclude Include="..\framework\include\timer.h" />
+    <ClInclude Include="..\framework\include\timer_frame_type.h" />
     <ClInclude Include="..\framework\include\window.h" />
   </ItemGroup>
   <ItemGroup>

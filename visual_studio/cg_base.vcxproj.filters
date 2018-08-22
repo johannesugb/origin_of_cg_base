@@ -43,6 +43,9 @@
     <Filter Include="Source Files\external\FileWatcher">
       <UniqueIdentifier>{f85c6a5f-a3f5-43e2-9552-3c6dc245fe61}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\timer">
+      <UniqueIdentifier>{952ae1dc-c3a3-4d72-b922-f5ef229d3c08}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\framework\include\context.h">
@@ -79,6 +82,21 @@
       <Filter>Header Files\utils</Filter>
     </ClInclude>
     <ClInclude Include="..\framework\include\cg_object.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\fixed_update_timer.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\timer_frame_type.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\composition.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\composition_impl.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\timer.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
   </ItemGroup>

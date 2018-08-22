@@ -24,7 +24,7 @@ namespace cgb
 	// ---------------- forward declarations ----------------
 	class window;
 
-	/** @brief Provides generic GLFW-specific functionality
+	/** \brief Provides generic GLFW-specific functionality
 	 */
 	class generic_glfw 
 	{
@@ -50,7 +50,7 @@ namespace cgb
 		 *  This might work only once! :O See GLFW docu for further details!
 		 *  http://www.glfw.org/docs/3.1/group__context.html#ga6d4e0cdf151b5e579bd67f13202994ed
 		 *
-		 *  @param enable true to enable, false to disable v-sync
+		 *  \param enable true to enable, false to disable v-sync
 		 */
 		void enable_vsync(bool enable);
 

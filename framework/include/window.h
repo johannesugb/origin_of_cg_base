@@ -20,7 +20,7 @@ namespace cgb
 		window& operator =(window&&) noexcept;
 
 		/** Returns the user-defined name of this window which
-		 *	can be set via @ref set_name */
+		 *	can be set via \ref set_name */
 		const std::string& name() const { return mName; }
 
 		/** Returns the window handle or std::nullopt if
