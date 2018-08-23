@@ -2,75 +2,162 @@
 
 namespace cgb
 {
-	class composition
+	template <typename TTimer>
+	class composition : public composition_interface
 	{
 	public:
-		/** \brief Get the currently active composition
-		 *
-		 *	By design, there can only be one active composition at at time.
-		 *	You can think of composition being something like scenes, of 
-		 *	which typically one can be active at any given point in time.
-		 */
-		static composition* current() { return sCurrentComposition; }
-
-		/** Interface to the current game time */
-		virtual timer& time() = 0;
-
-		/** \brief Get the @ref cg_object at the given index
-		 *
-		 *	Get the @ref cg_object in this composition's objects-container at 
-		 *	the given index. If the index is out of bounds, nullptr will be
-		 *	returned.
-		 */
-		virtual cg_object* object_at_index(size_t) = 0;
-
-		/** \brief Find a @ref cg_object by name
-		 *
-		 *	Find a @ref cg_object assigned to this composition by name.
-		 *	If no object with the given name could be found, nullptr is returned.
-		 */
-		virtual cg_object* object_by_name(const std::string&) = 0;
-
-		/** \brief Find an object by type 
-		 *	\param pType type-identifier of the @ref cg_object to be searched for
-		 *	\param pIndex Get the n-th object of the specified type
-		 */
-		virtual cg_object* object_by_type(const std::type_info& pType, uint32_t pIndex = 0) = 0;
-
-		/** \brief Start a game/rendering-loop for this composition 
-		 *
-		 *	Attention: In subclasses of @ref composition, do not forget to call
-		 *	@ref set_current no later than at the very beginning of this methods's
-		 *	implementation!
-		 */
-		virtual void start() = 0;
-
-		/** Stop a currently running game/rendering-loop for this composition */
-		virtual void stop() = 0;
-
-		/** True if this composition has been started but not yet stopped or finished. */
-		virtual bool is_running() = 0;
-
-	protected:
-		/** \brief Set a new current composition 
-		 *
-		 *	Set a new composition. Remember: There can only be one
-		 *	at any given point in time. This call will fail if a different
-		 *	composition is currently set with @ref is_running() evaluating
-		 *	to true.
-		 */
-		static void set_current(composition* pNewComposition)
+		composition() :
+			mWindows(),
+			mObjects(),
+			mTimer(),
+			mShouldStop(false),
+			mIsRunning(false)
 		{
-			if (nullptr != sCurrentComposition && sCurrentComposition->is_running())
+		}
+
+		composition(std::initializer_list<window*> pWindows, std::initializer_list<std::shared_ptr<cg_object>> pObjects) :
+			mWindows(pWindows),
+			mObjects(pObjects),
+			mTimer(),
+			mShouldStop(false),
+			mIsRunning(false)
+		{
+		}
+
+		cgb::timer_interface& time() override
+		{
+			return static_cast<cgb::timer_interface&>(mTimer);
+		}
+
+		cg_object* object_at_index(size_t pIndex) override
+		{
+			if (pIndex < mObjects.size())
+				return mObjects[pIndex].get();
+			return nullptr;
+		}
+
+		cg_object* object_by_name(const std::string& pName) override
+		{
+			auto found = std::find_if(
+				std::begin(mObjects), 
+				std::end(mObjects), 
+				[&pName](const std::shared_ptr<cg_object>& element)
+				{
+					return element->name() == pName;
+				});
+
+			if (found != mObjects.end())
+				return found->get();
+			return nullptr;
+		}
+
+		cg_object* object_by_type(const std::type_info& pType, uint32_t pIndex) override
+		{
+			uint32_t nth = 0;
+			for (auto& element : mObjects)
 			{
-				throw std::runtime_error("There is already an active composition which is still running.");
+				if (typeid(element.get()) == pType)
+				{
+					if (pIndex == nth++)
+					{
+						return element.get();
+					}
+				}
 			}
-			// It's okay.
-			sCurrentComposition = pNewComposition;
+			return nullptr;
+		}
+
+		void start() override
+		{
+			// Make myself the current composition_interface
+			composition_interface::set_current(this);
+
+			// Used to distinguish between "simulation" and "render"-frames
+			auto frameType = timer_frame_type::none;
+
+			// 1. initialize
+			for (auto& o : mObjects)
+			{
+				o->initialize();
+			}
+
+			int tmp_tmp_tmp = 1;
+
+
+			// game/render/composition_interface-loop:
+			mIsRunning = true;
+			while (!mShouldStop)
+			{
+				frameType = mTimer.tick();
+				
+				// 2. fixed_update
+				if ((frameType & timer_frame_type::fixed) != timer_frame_type::none)
+				{
+					LOG_INFO("fixed frame with fixed delta-time[%f]", time().fixed_delta_time());
+					for (auto& o : mObjects)
+					{
+						o->fixed_update();
+					}
+				}
+
+				if ((frameType & timer_frame_type::varying) != timer_frame_type::none)
+				{
+					LOG_INFO("varying frame with delta-time[%f]", time().delta_time());
+
+					// 3. update
+					for (auto& o : mObjects)
+					{
+						o->update();
+					}
+					
+					// 4. render
+					for (auto& o : mObjects)
+					{
+						o->render();
+					}
+
+					// 5. render_gizmos
+					for (auto& o : mObjects)
+					{
+						o->render_gizmos();
+					}
+
+					// 6. render_gui
+					for (auto& o : mObjects)
+					{
+						o->render_gui();
+					}
+				}
+
+				for (int i = 0; i < 1000000; ++i);
+				if (tmp_tmp_tmp++ > 30) 
+					mShouldStop = true;
+			}
+			mIsRunning = false;
+
+			// 7. finalize
+			for (auto& o : mObjects)
+			{
+				o->finalize();
+			}
+
+		}
+
+		void stop() override
+		{
+			mShouldStop = true;
+		}
+
+		bool is_running() override
+		{
+			return mIsRunning;
 		}
 
 	private:
-		/** The (single) currently active composition */
-		static composition* sCurrentComposition;
+		std::vector<window*> mWindows;
+		std::vector<std::shared_ptr<cg_object>> mObjects;
+		TTimer mTimer;
+		bool mShouldStop;
+		bool mIsRunning;
 	};
 }

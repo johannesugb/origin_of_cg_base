@@ -90,20 +90,20 @@
     <ClInclude Include="..\framework\include\fixed_update_timer.h">
       <Filter>Header Files\timer</Filter>
     </ClInclude>
-    <ClInclude Include="..\framework\include\composition.h">
-      <Filter>Header Files\general</Filter>
-    </ClInclude>
-    <ClInclude Include="..\framework\include\composition_with_timer.h">
-      <Filter>Header Files\general</Filter>
-    </ClInclude>
-    <ClInclude Include="..\framework\include\timer.h">
-      <Filter>Header Files\timer</Filter>
-    </ClInclude>
     <ClInclude Include="..\framework\include\timer_frame_type.h">
       <Filter>Header Files\timer</Filter>
     </ClInclude>
     <ClInclude Include="..\framework\include\varying_update_only_timer.h">
       <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\timer_interface.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\composition_interface.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\framework\include\composition.h">
+      <Filter>Header Files\general</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -155,7 +155,7 @@
     <ClCompile Include="..\framework\src\varying_update_only_timer.cpp">
       <Filter>Source Files\general</Filter>
     </ClCompile>
-    <ClCompile Include="..\framework\src\composition.cpp">
+    <ClCompile Include="..\framework\src\composition_interface.cpp">
       <Filter>Source Files\general</Filter>
     </ClCompile>
   </ItemGroup>

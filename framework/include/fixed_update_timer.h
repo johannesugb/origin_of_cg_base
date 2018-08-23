@@ -4,12 +4,12 @@ namespace cgb
 {
 	/**	\brief Timer enabling a fixed update rate
 	 *
-	 *	This timer has a fixed simulation rate (i.e. constant fixed_delta_time)
+	 *	This timer_interface has a fixed simulation rate (i.e. constant fixed_delta_time)
 	 *  and variable rendering rate (i.e. as many render fps as possible, with
 	 *  variable rendering delta time). It also provides a minimum 
 	 *  render-fps functionality (use @ref set_min_render_hz)
 	 */
-	class fixed_update_timer : public timer
+	class fixed_update_timer : public timer_interface
 	{
 	public:
 		fixed_update_timer();

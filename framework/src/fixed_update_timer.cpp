@@ -4,6 +4,7 @@ namespace cgb
 {
 	fixed_update_timer::fixed_update_timer() :
 		mTimeSinceStart(0.0),
+		mLastTime(0.0),
 		mDeltaTime(0.0),
 		mMinRenderHz(1.0),
 		mMaxRenderDeltaTime(1.0 / 1.0),
@@ -11,7 +12,7 @@ namespace cgb
 		mFixedHz(60.0),
 		mFixedDeltaTime(1.0 / 60.0)
 	{
-		mLastFixedTick = mLastTime = mAbsTime = mStartTime = context().get_time();
+		mLastFixedTick = mAbsTime = mStartTime = context().get_time();
 		mNextFixedTick = mLastFixedTick + mFixedDeltaTime;
 	}
 

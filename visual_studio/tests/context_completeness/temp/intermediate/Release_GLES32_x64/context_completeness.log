@@ -1,0 +1,2 @@
+﻿  context_completeness.cpp
+LINK : fatal error LNK1181: cannot open input file 'cg_base.lib'

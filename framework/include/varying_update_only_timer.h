@@ -2,13 +2,13 @@
 
 namespace cgb
 {
-	/**	\brief Basic timer which only supports time steps with varying delta time
+	/**	\brief Basic timer_interface which only supports time steps with varying delta time
 	 *
-	 *	This kind of timer leads to as many updates/renders as possible.
+	 *	This kind of timer_interface leads to as many updates/renders as possible.
 	 *	Beware that there is no fixed time step and, thus, no @ref fixed_delta_time
 	 *	Time between frames is always varying.
 	 */
-	class varying_update_only_timer : public timer
+	class varying_update_only_timer : public timer_interface
 	{
 	public:
 		varying_update_only_timer();

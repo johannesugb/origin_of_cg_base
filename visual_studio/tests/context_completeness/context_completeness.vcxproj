@@ -40,9 +40,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{AAAC1485-846C-4F30-8824-125E8584D038}</ProjectGuid>
+    <ProjectGuid>{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>helloworld</RootNamespace>
+    <RootNamespace>context_completeness</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -401,7 +401,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="hello_world.cpp" />
+    <ClCompile Include="context_completeness.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\cg_base.vcxproj">

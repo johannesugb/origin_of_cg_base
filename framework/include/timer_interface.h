@@ -2,16 +2,16 @@
 
 namespace cgb
 {
-	/** Base class (actually an "interface") which all concrete timer 
+	/** Base class (actually an "interface") which all concrete timer_interface 
 	 *	implementations have to implement in order to be usable with \ref run.
 	 *	
 	 *	Please note that, in addition to implementing all pure virtual
 	 *	functions, subclasses must implement a timer_frame_type tick();
 	 *	method in order to be usable with the framework. (Please investigate
-	 *	the implementation of \ref composition_with_timer for details
+	 *	the implementation of \ref composition for details
 	 *	on how timers and the tick-method in particular are used.
 	 */
-	class timer
+	class timer_interface
 	{
 	public:
 		/**	\brief The absolute system time.
@@ -30,7 +30,7 @@ namespace cgb
 
 		/**	\brief The duration of the fixed simulation timestep 
 		 *
-		 *	This will return the fixed delta time IF the used timer
+		 *	This will return the fixed delta time IF the used timer_interface
 		 *	supports fixed timesteps. If it doesn't, it will return the
 		 *	same as \ref delta_time, i.e. a varying delta time.
 		 */
@@ -64,7 +64,7 @@ namespace cgb
 		
 		/**	\brief The duration of the fixed simulation timestep in double precision
 		*
-		*	This will return the fixed delta time IF the used timer
+		*	This will return the fixed delta time IF the used timer_interface
 		*	supports fixed timesteps. If it doesn't, it will return the
 		*	same as \ref delta_time, i.e. a varying delta time.
 		*/

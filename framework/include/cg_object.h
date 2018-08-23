@@ -14,7 +14,7 @@ namespace cgb
 	 *	  1. initialize
 	 *	  loop:
 	 *	    2. fixed_update 
-	 *	       possibly continue; // depending on the timer used
+	 *	       possibly continue; // depending on the timer_interface used
 	 *	    3. update
 	 *	    4. render
 	 *	    5. render_gizmos
@@ -65,7 +65,7 @@ namespace cgb
 		/**	\brief Update this cg_object before rendering with varying delta time
 		 *
 		 *	This method is called at varying intervals. Query the
-		 *	timer's delta time to get the time which has passed since
+		 *	timer_interface's delta time to get the time which has passed since
 		 *	the last frame. This method will always be called after
 		 *	\ref fixed_update and before \ref render.
 		 */
