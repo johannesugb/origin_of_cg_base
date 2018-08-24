@@ -9,14 +9,6 @@
       <Configuration>Debug_GL46</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug_GLES32_LinkReleaseLibs|x64">
-      <Configuration>Debug_GLES32_LinkReleaseLibs</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug_GLES32|x64">
-      <Configuration>Debug_GLES32</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug_Vulkan_LinkReleaseLibs|x64">
       <Configuration>Debug_Vulkan_LinkReleaseLibs</Configuration>
       <Platform>x64</Platform>
@@ -29,14 +21,24 @@
       <Configuration>Release_GL46</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release_GLES32|x64">
-      <Configuration>Release_GLES32</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Release_Vulkan|x64">
       <Configuration>Release_Vulkan</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="precompile.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan_LinkReleaseLibs|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="precompile.h" />
+    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -44,6 +46,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>cgb</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>cg_base.windows</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'" Label="Configuration">
@@ -52,19 +55,7 @@
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32_LinkReleaseLibs|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
@@ -89,13 +80,6 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GLES32|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -107,115 +91,80 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="..\cg_base.shared\cg_base.shared.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_opengl46.props" />
-    <Import Project="props\linked_libs_release.props" />
-    <Import Project="props\solution_directories.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32_LinkReleaseLibs|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_opengles32.props" />
-    <Import Project="props\linked_libs_release.props" />
-    <Import Project="props\solution_directories.props" />
+    <Import Project="..\props\rendering_api_opengl46.props" />
+    <Import Project="..\props\linked_libs_release.props" />
+    <Import Project="..\props\solution_directories.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_opengl46.props" />
-    <Import Project="props\linked_libs_debug.props" />
-    <Import Project="props\solution_directories.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_opengles32.props" />
-    <Import Project="props\linked_libs_debug.props" />
-    <Import Project="props\solution_directories.props" />
+    <Import Project="..\props\rendering_api_opengl46.props" />
+    <Import Project="..\props\linked_libs_debug.props" />
+    <Import Project="..\props\solution_directories.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_vulkan.props" />
-    <Import Project="props\linked_libs_debug.props" />
-    <Import Project="props\solution_directories.props" />
+    <Import Project="..\props\rendering_api_vulkan.props" />
+    <Import Project="..\props\linked_libs_debug.props" />
+    <Import Project="..\props\solution_directories.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan_LinkReleaseLibs|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_vulkan.props" />
-    <Import Project="props\linked_libs_release.props" />
-    <Import Project="props\solution_directories.props" />
+    <Import Project="..\props\rendering_api_vulkan.props" />
+    <Import Project="..\props\linked_libs_release.props" />
+    <Import Project="..\props\solution_directories.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_opengl46.props" />
-    <Import Project="props\linked_libs_release.props" />
-    <Import Project="props\solution_directories.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_GLES32|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_opengles32.props" />
-    <Import Project="props\linked_libs_release.props" />
-    <Import Project="props\solution_directories.props" />
+    <Import Project="..\props\rendering_api_opengl46.props" />
+    <Import Project="..\props\linked_libs_release.props" />
+    <Import Project="..\props\solution_directories.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="props\rendering_api_vulkan.props" />
-    <Import Project="props\linked_libs_release.props" />
-    <Import Project="props\solution_directories.props" />
+    <Import Project="..\props\rendering_api_vulkan.props" />
+    <Import Project="..\props\linked_libs_release.props" />
+    <Import Project="..\props\solution_directories.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32_LinkReleaseLibs|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
-    <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
-    <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan_LinkReleaseLibs|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GLES32|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
-    <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'">
     <ClCompile>
@@ -229,30 +178,7 @@
       <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Lib>
-      <AdditionalDependencies>assimp-vc140-mt.lib;glfw3.lib;stb_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
-    <Lib>
-      <AdditionalLibraryDirectories>$(ExternalRoot)lib\$(Platform)\$(LibraryConfigurationType);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32_LinkReleaseLibs|x64'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeaderFile>precompile.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -277,30 +203,7 @@
       <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Lib>
-      <AdditionalDependencies>assimp-vc140-mt.lib;glfw3.lib;stb_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
-    <Lib>
-      <AdditionalLibraryDirectories>$(ExternalRoot)lib\$(Platform)\$(LibraryConfigurationType);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32|x64'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeaderFile>precompile.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -325,6 +228,7 @@
       <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -349,6 +253,7 @@
       <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -375,34 +280,7 @@
       <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Lib>
-      <AdditionalDependencies>assimp-vc140-mt.lib;glfw3.lib;stb_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
-    <Lib>
-      <AdditionalLibraryDirectories>$(ExternalRoot)lib\$(Platform)\$(LibraryConfigurationType);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_GLES32|x64'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeaderFile>precompile.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -431,6 +309,7 @@
       <AdditionalIncludeDirectories>$(ExternalRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>precompile.h</ForcedIncludeFiles>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -445,55 +324,6 @@
       <AdditionalLibraryDirectories>$(ExternalRoot)lib\$(Platform)\$(LibraryConfigurationType);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="..\framework\include\cg_object.h" />
-    <ClInclude Include="..\framework\include\context.h" />
-    <ClInclude Include="..\framework\include\context_generic_opengl.h" />
-    <ClInclude Include="..\framework\include\context_generic_glfw.h" />
-    <ClInclude Include="..\framework\include\context_opengl46.h" />
-    <ClInclude Include="..\framework\include\context_opengles32.h" />
-    <ClInclude Include="..\framework\include\context_vulkan.h" />
-    <ClInclude Include="..\framework\include\cg_base.h" />
-    <ClInclude Include="..\framework\include\fixed_update_timer.h" />
-    <ClInclude Include="..\framework\include\log.h" />
-    <ClInclude Include="..\framework\include\precompile.h" />
-    <ClInclude Include="..\framework\include\composition_interface.h" />
-    <ClInclude Include="..\framework\include\composition.h" />
-    <ClInclude Include="..\framework\include\targetver.h" />
-    <ClInclude Include="..\framework\include\timer_interface.h" />
-    <ClInclude Include="..\framework\include\timer_frame_type.h" />
-    <ClInclude Include="..\framework\include\varying_update_only_timer.h" />
-    <ClInclude Include="..\framework\include\window.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\external\src\FileWatcher\FileWatcher.cpp" />
-    <ClCompile Include="..\external\src\FileWatcher\FileWatcherLinux.cpp" />
-    <ClCompile Include="..\external\src\FileWatcher\FileWatcherOSX.cpp" />
-    <ClCompile Include="..\external\src\FileWatcher\FileWatcherWin32.cpp" />
-    <ClCompile Include="..\external\src\glad.cpp" />
-    <ClCompile Include="..\external\src\imgui.cpp" />
-    <ClCompile Include="..\external\src\imgui_demo.cpp" />
-    <ClCompile Include="..\external\src\imgui_draw.cpp" />
-    <ClCompile Include="..\framework\src\composition_interface.cpp" />
-    <ClCompile Include="..\framework\src\context_generic_glfw.cpp" />
-    <ClCompile Include="..\framework\src\context_generic_opengl.cpp" />
-    <ClCompile Include="..\framework\src\context_opengl46.cpp" />
-    <ClCompile Include="..\framework\src\fixed_update_timer.cpp" />
-    <ClCompile Include="..\framework\src\log.cpp" />
-    <ClCompile Include="..\framework\src\precompile.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32_LinkReleaseLibs|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan_LinkReleaseLibs|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_GLES32|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\framework\src\varying_update_only_timer.cpp" />
-    <ClCompile Include="..\framework\src\window.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

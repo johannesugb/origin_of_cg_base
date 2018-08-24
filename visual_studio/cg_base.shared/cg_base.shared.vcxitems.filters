@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{48eee029-8a2d-44fd-b6e4-0e4c0f732647}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\context">
+      <UniqueIdentifier>{a9d081a8-6119-4fdd-9209-74ac19033a82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\general">
+      <UniqueIdentifier>{bd9435fc-0f77-42ef-85d4-60e217059d10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\environment">
+      <UniqueIdentifier>{c786c832-c07a-4408-b146-74fd5d307c98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{ff19bd4b-9233-4c09-b233-8638c17767a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\timer">
+      <UniqueIdentifier>{575534de-983a-4940-aca0-af6203b0bc3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{a63380d1-f639-4873-a85a-baaa432b5e37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4a177da6-3c81-4096-8ed4-696bedb4821f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\general">
+      <UniqueIdentifier>{c2df5245-de1b-4d8d-a7a9-a41064024b89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\environment">
+      <UniqueIdentifier>{e2e06cfb-0e46-4fc6-90d9-df402aef7d67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\context">
+      <UniqueIdentifier>{daccc582-e7f2-437d-a9dd-0c684442832d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{614c1ac2-4df0-483b-a1d8-b65d20e56b04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\external">
+      <UniqueIdentifier>{ae4a66b3-3e88-4015-9447-e5d097c695b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\external\FileWatcher">
+      <UniqueIdentifier>{d384aeb5-0899-4956-9aea-08c5ee107f81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\timer">
+      <UniqueIdentifier>{f04e0373-5e2d-4a24-8eb4-a9ac9e64d820}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_generic_opengl.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_generic_glfw.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengl46.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengles32.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_vulkan.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\cg_object.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\cg_base.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\composition_interface.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\composition.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\window.h">
+      <Filter>Header Files\environment</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\log.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\fixed_update_timer.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\timer_interface.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\timer_frame_type.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\varying_update_only_timer.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\composition_interface.cpp">
+      <Filter>Source Files\general</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\varying_update_only_timer.cpp">
+      <Filter>Source Files\general</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\window.cpp">
+      <Filter>Source Files\environment</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_generic_glfw.cpp">
+      <Filter>Source Files\context</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_generic_opengl.cpp">
+      <Filter>Source Files\context</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_opengl46.cpp">
+      <Filter>Source Files\context</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\log.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\glad.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\imgui.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\imgui_demo.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\imgui_draw.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcher.cpp">
+      <Filter>Source Files\external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherLinux.cpp">
+      <Filter>Source Files\external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherOSX.cpp">
+      <Filter>Source Files\external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherWin32.cpp">
+      <Filter>Source Files\external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\fixed_update_timer.cpp">
+      <Filter>Source Files\timer</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
