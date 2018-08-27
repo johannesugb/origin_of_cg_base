@@ -23,6 +23,7 @@ namespace cgb
 
 	// ---------------- forward declarations ----------------
 	class window;
+	struct input_buffer;
 
 	/** \brief Provides generic GLFW-specific functionality
 	 */
@@ -57,11 +58,29 @@ namespace cgb
 		/** Gets the current system time */
 		double get_time();
 
+		/** \brief starts receiving mouse and keyboard input from specified window.
+		 *
+		 *	\param[in] pWindow The window to receive input from
+		 *	\param[ref] pInputBuffer The input buffer to be filled with user input
+		 */
+		void start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer);
+
+		/**	\brief stops receiving mouse and keyboard input from specified window.
+		 *
+		 *	\param[in] pWindow The window to stop receiving input from
+		 */
+		void stop_receiving_input_from_window(const window& pWindow);
+
 	protected:
 		static void glfw_error_callback(int error, const char* description);
+		static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+		static void glfw_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos);
+		static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+		static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 		bool mInitialized;
 		GLFWwindow* mFirstWindow;
+		static input_buffer* sTargetInputBuffer;
 	};
 }
 

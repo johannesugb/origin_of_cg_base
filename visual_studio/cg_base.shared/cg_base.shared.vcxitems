@@ -26,6 +26,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengles32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_vulkan.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\fixed_update_timer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\input_buffer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_code.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_state.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\log.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\timer_frame_type.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\timer_interface.h" />

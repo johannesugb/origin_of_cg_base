@@ -2,6 +2,7 @@
 
 // ------ commonly used stuff from the standard library ------
 #include <vector>
+#include <array>
 #include <string>
 #include <exception>
 #include <unordered_map>
@@ -46,3 +47,6 @@
 #include "cg_object.h"
 #include "composition_interface.h"
 #include "composition.h"
+#include "key_code.h"
+#include "key_state.h"
+#include "input_buffer.h"

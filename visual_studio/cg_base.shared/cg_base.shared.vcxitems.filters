@@ -46,6 +46,12 @@
     <Filter Include="Source Files\timer">
       <UniqueIdentifier>{f04e0373-5e2d-4a24-8eb4-a9ac9e64d820}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\input">
+      <UniqueIdentifier>{99101d2e-cbc7-4492-b142-aab1974e5c2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\input">
+      <UniqueIdentifier>{0cb2bd33-4f36-4d5a-8fd7-bd1073c30faf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context.h">
@@ -96,6 +102,13 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\varying_update_only_timer.h">
       <Filter>Header Files\timer</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_code.h">
+      <Filter>Header Files\input</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\input_buffer.h">
+      <Filter>Header Files\input</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_state.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\composition_interface.cpp">
