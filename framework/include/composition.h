@@ -10,7 +10,12 @@ namespace cgb
 			mWindows(),
 			mObjects(),
 			mTimer(),
+			mInputBuffers(),
+			mInputBufferUpdateIndex(0),
+			mInputBufferConsumerIndex(1),
 			mShouldStop(false),
+			mShouldSwapInputBuffers(false),
+			mInputBufferGoodToGo(true),
 			mIsRunning(false)
 		{
 		}
@@ -19,7 +24,12 @@ namespace cgb
 			mWindows(pWindows),
 			mObjects(pObjects),
 			mTimer(),
+			mInputBuffers(),
+			mInputBufferUpdateIndex(0),
+			mInputBufferConsumerIndex(1),
 			mShouldStop(false),
+			mShouldSwapInputBuffers(false),
+			mInputBufferGoodToGo(true),
 			mIsRunning(false)
 		{
 		}
@@ -27,6 +37,11 @@ namespace cgb
 		cgb::timer_interface& time() override
 		{
 			return static_cast<cgb::timer_interface&>(mTimer);
+		}
+
+		cgb::input_buffer& input() override
+		{
+			return mInputBuffers[mInputBufferConsumerIndex];
 		}
 
 		cg_object* object_at_index(size_t pIndex) override
@@ -67,34 +82,37 @@ namespace cgb
 			return nullptr;
 		}
 
-		void start() override
+		static void please_swap_input_buffers(composition* thiz)
 		{
-			// Make myself the current composition_interface
-			composition_interface::set_current(this);
+			thiz->mShouldSwapInputBuffers = true;
+			thiz->mInputBufferGoodToGo = false;
+			glfwPostEmptyEvent();
+		}
 
+		static void wait_for_input_buffers_swapped(composition* thiz)
+		{
+			while (!thiz->mInputBufferGoodToGo)
+				LOG_VERBOSE("input buffer spin lock");
+			assert(thiz->mShouldSwapInputBuffers == false);
+		}
+
+		static void render_thread(composition* thiz)
+		{
 			// Used to distinguish between "simulation" and "render"-frames
 			auto frameType = timer_frame_type::none;
-
-			// 1. initialize
-			for (auto& o : mObjects)
-			{
-				o->initialize();
-			}
-
 			int tmp_tmp_tmp = 1;
 
-
-			// game/render/composition_interface-loop:
-			mIsRunning = true;
-			while (!mShouldStop)
+			while (!thiz->mShouldStop)
 			{
-				frameType = mTimer.tick();
-				
+				frameType = thiz->mTimer.tick();
+
+				wait_for_input_buffers_swapped(thiz);
+
 				// 2. fixed_update
 				if ((frameType & timer_frame_type::fixed) != timer_frame_type::none)
 				{
-					LOG_INFO("fixed frame with fixed delta-time[%f]", time().fixed_delta_time());
-					for (auto& o : mObjects)
+					LOG_INFO("fixed frame with fixed delta-time[%f]", composition_interface::current()->time().fixed_delta_time());
+					for (auto& o : thiz->mObjects)
 					{
 						o->fixed_update();
 					}
@@ -102,38 +120,89 @@ namespace cgb
 
 				if ((frameType & timer_frame_type::varying) != timer_frame_type::none)
 				{
-					LOG_INFO("varying frame with delta-time[%f]", time().delta_time());
+					LOG_INFO("varying frame with delta-time[%f]", composition_interface::current()->time().delta_time());
 
 					// 3. update
-					for (auto& o : mObjects)
+					for (auto& o : thiz->mObjects)
 					{
 						o->update();
 					}
-					
+
+					// Tell the main thread that we'd like to have the new input buffers from A) here:
+					please_swap_input_buffers(thiz);
+
 					// 4. render
-					for (auto& o : mObjects)
+					for (auto& o : thiz->mObjects)
 					{
 						o->render();
 					}
 
 					// 5. render_gizmos
-					for (auto& o : mObjects)
+					for (auto& o : thiz->mObjects)
 					{
 						o->render_gizmos();
 					}
 
 					// 6. render_gui
-					for (auto& o : mObjects)
+					for (auto& o : thiz->mObjects)
 					{
 						o->render_gui();
 					}
 				}
+				else
+				{
+					// Or if not from 'A)', tell the main thread for our input buffer update desire from B) here:
+					please_swap_input_buffers(thiz);
+				}
 
 				for (int i = 0; i < 1000000; ++i);
-				if (tmp_tmp_tmp++ > 30) 
-					mShouldStop = true;
+				if (tmp_tmp_tmp++ > 30)
+					thiz->mShouldStop = true;
 			}
+		}
+
+		void start() override
+		{
+			// Make myself the current composition_interface
+			composition_interface::set_current(this);
+
+			// 1. initialize
+			for (auto& o : mObjects)
+			{
+				o->initialize();
+			}
+
+			// Enable receiving input
+			for (const auto& window : mWindows)
+			{
+				context().start_receiving_input_from_window(*window, mInputBuffers[mInputBufferUpdateIndex]);
+			}
+
+			// game-/render-loop:
+			mIsRunning = true;
+
+			// off it goes
+			std::thread renderThread(render_thread, this);
+			
+			while (!mShouldStop)
+			{
+				if (mShouldSwapInputBuffers)
+				{
+					std::swap(mInputBufferUpdateIndex, mInputBufferUpdateIndex);
+					mInputBuffers[mInputBufferUpdateIndex].reset();
+					context().change_target_input_buffer(mInputBuffers[mInputBufferUpdateIndex]);
+				}
+
+				glfwWaitEvents();
+			}
+
 			mIsRunning = false;
+
+			// Stop the input
+			for (const auto& window : mWindows)
+			{
+				context().stop_receiving_input_from_window(*window);
+			}
 
 			// 7. finalize
 			for (auto& o : mObjects)
@@ -157,7 +226,12 @@ namespace cgb
 		std::vector<window*> mWindows;
 		std::vector<std::shared_ptr<cg_object>> mObjects;
 		TTimer mTimer;
-		bool mShouldStop;
+		std::array<input_buffer, 2> mInputBuffers;
+		int32_t mInputBufferUpdateIndex;
+		int32_t mInputBufferConsumerIndex;
+		std::atomic_bool mShouldStop;
+		std::atomic_bool mShouldSwapInputBuffers;
+		std::atomic_bool mInputBufferGoodToGo;
 		bool mIsRunning;
 	};
 }

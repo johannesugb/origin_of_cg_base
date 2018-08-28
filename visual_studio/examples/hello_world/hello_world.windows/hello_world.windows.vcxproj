@@ -38,6 +38,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\cg_base.windows\cg_base.windows.vcxproj">
+      <Project>{602f842f-50c1-466d-8696-1707937d8ab9}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{AAAC1485-846C-4F30-8824-125E8584D038}</ProjectGuid>
@@ -402,11 +407,6 @@
       <AdditionalDependencies>assimp-vc140-mt.lib;glfw3.lib;stb_image.lib;cg_base.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\cg_base.windows\cg_base.windows.vcxproj">
-      <Project>{602f842f-50c1-466d-8696-1707937d8ab9}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -18,6 +18,8 @@
 #include <iomanip>
 #include <optional>
 #include <typeinfo>
+#include <atomic>
+#include <mutex>
 
 #include <stdio.h>
 
@@ -38,6 +40,8 @@
 
 // -------------------- CG-Base includes --------------------
 #include "log.h"
+#include "key_code.h"
+#include "key_state.h"
 #include "context.h"
 #include "window.h"
 #include "timer_interface.h"
@@ -45,8 +49,6 @@
 #include "fixed_update_timer.h"
 #include "varying_update_only_timer.h"
 #include "cg_object.h"
+#include "input_buffer.h"
 #include "composition_interface.h"
 #include "composition.h"
-#include "key_code.h"
-#include "key_state.h"
-#include "input_buffer.h"

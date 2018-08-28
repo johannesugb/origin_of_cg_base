@@ -27,7 +27,7 @@ namespace cgb
 
 	/** \brief Provides generic GLFW-specific functionality
 	 */
-	class generic_glfw 
+	class generic_glfw
 	{
 	public:
 		/** Initializes GLFW */
@@ -65,11 +65,17 @@ namespace cgb
 		 */
 		void start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer);
 
+		/** Change the target input buffer to be modified by input events */
+		void change_target_input_buffer(input_buffer& pInputBuffer);
+
 		/**	\brief stops receiving mouse and keyboard input from specified window.
 		 *
 		 *	\param[in] pWindow The window to stop receiving input from
 		 */
 		void stop_receiving_input_from_window(const window& pWindow);
+
+		/** Get the cursor position w.r.t. the given window */
+		glm::dvec2 cursor_position(const window& pWindow);
 
 	protected:
 		static void glfw_error_callback(int error, const char* description);

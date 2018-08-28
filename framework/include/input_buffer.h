@@ -16,9 +16,17 @@ namespace cgb
 		glm::dvec2 mCursorPosition;
 
 		/** Mouse button states */
-		std::array<key_state, 5> mMouseKeys;
+		std::array<key_state, 8> mMouseKeys;
 
 		/** Scrolling wheel position data */
 		glm::dvec2 mScrollPosition;
+
+	public:
+		/** Resets all the input values to a state representing no input.
+		 *	If a window is passed, the cursor is set to the cursor position
+		 *	w.r.t. to that window.
+		 *	(This could be useful at the beginning of a frame)
+		 */
+		void reset(std::optional<window> pWindow = std::nullopt);
 	};
 }

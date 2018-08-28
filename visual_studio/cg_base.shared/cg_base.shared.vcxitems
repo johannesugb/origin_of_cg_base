@@ -37,9 +37,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcher.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherLinux.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherOSX.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherWin32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\glad.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\imgui.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\imgui_demo.cpp" />
@@ -49,6 +46,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_generic_opengl.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_opengl46.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\fixed_update_timer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\input_buffer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\log.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\varying_update_only_timer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\window.cpp" />

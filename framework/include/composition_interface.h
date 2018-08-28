@@ -19,6 +19,9 @@ namespace cgb
 		/** Interface to the current game time */
 		virtual timer_interface& time() = 0;
 
+		/** Access to the current frame's input */
+		virtual input_buffer& input() = 0;
+
 		/** \brief Get the @ref cg_object at the given index
 		 *
 		 *	Get the @ref cg_object in this composition_interface's objects-container at 

@@ -11,4 +11,26 @@ namespace cgb
 		down        = 0x02,
 		released    = 0x04
 	};
+
+	inline key_state operator| (key_state a, key_state b)
+	{
+		typedef std::underlying_type<key_state>::type EnumType;
+		return static_cast<key_state>(static_cast<EnumType>(a) | static_cast<EnumType>(b));
+	}
+
+	inline key_state operator& (key_state a, key_state b)
+	{
+		typedef std::underlying_type<key_state>::type EnumType;
+		return static_cast<key_state>(static_cast<EnumType>(a) & static_cast<EnumType>(b));
+	}
+
+	inline key_state& operator |= (key_state& a, key_state b)
+	{
+		return a = a | b;
+	}
+
+	inline key_state& operator &= (key_state& a, key_state b)
+	{
+		return a = a & b;
+	}
 }

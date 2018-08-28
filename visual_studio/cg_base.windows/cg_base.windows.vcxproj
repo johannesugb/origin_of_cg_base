@@ -27,6 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\external\src\FileWatcher\FileWatcherWin32.cpp" />
     <ClCompile Include="precompile.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">Create</PrecompiledHeader>
@@ -135,36 +136,42 @@
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan_LinkReleaseLibs|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'">
     <ClCompile>

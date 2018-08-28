@@ -108,7 +108,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\input_buffer.h">
       <Filter>Header Files\input</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_state.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_state.h">
+      <Filter>Header Files\input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\composition_interface.cpp">
@@ -147,17 +149,11 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcher.cpp">
       <Filter>Source Files\external\FileWatcher</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherLinux.cpp">
-      <Filter>Source Files\external\FileWatcher</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherOSX.cpp">
-      <Filter>Source Files\external\FileWatcher</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\FileWatcher\FileWatcherWin32.cpp">
-      <Filter>Source Files\external\FileWatcher</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\fixed_update_timer.cpp">
       <Filter>Source Files\timer</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\input_buffer.cpp">
+      <Filter>Source Files\input</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
