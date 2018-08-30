@@ -10,7 +10,7 @@ namespace cgb
 	// 4 ... everything
 
 	#if !defined(LOG_LEVEL)
-	#define LOG_LEVEL 3
+	#define LOG_LEVEL 4
 	#endif
 
 	#if LOG_LEVEL > 0

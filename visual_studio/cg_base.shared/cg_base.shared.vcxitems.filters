@@ -78,9 +78,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\cg_base.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\composition_interface.h">
-      <Filter>Header Files\general</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\composition.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
@@ -111,11 +108,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_state.h">
       <Filter>Header Files\input</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\composition_interface.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\composition_interface.cpp">
-      <Filter>Source Files\general</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\varying_update_only_timer.cpp">
       <Filter>Source Files\general</Filter>
     </ClCompile>
@@ -154,6 +151,9 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\input_buffer.cpp">
       <Filter>Source Files\input</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\composition_interface.cpp">
+      <Filter>Source Files\general</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

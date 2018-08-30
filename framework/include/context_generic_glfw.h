@@ -23,7 +23,8 @@ namespace cgb
 
 	// ---------------- forward declarations ----------------
 	class window;
-	struct input_buffer;
+	class input_buffer;
+	enum struct key_code;
 
 	/** \brief Provides generic GLFW-specific functionality
 	 */
@@ -87,6 +88,7 @@ namespace cgb
 		bool mInitialized;
 		GLFWwindow* mFirstWindow;
 		static input_buffer* sTargetInputBuffer;
+		static std::array<key_code, GLFW_KEY_LAST + 1> sGlfwToKeyMapping;
 	};
 }
 
