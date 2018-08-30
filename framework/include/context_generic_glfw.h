@@ -87,6 +87,7 @@ namespace cgb
 
 		bool mInitialized;
 		GLFWwindow* mFirstWindow;
+		static std::mutex sInputMutex;
 		static input_buffer* sTargetInputBuffer;
 		static std::array<key_code, GLFW_KEY_LAST + 1> sGlfwToKeyMapping;
 	};

@@ -5,8 +5,8 @@
 
 namespace cgb
 {
+	std::mutex generic_glfw::sInputMutex;
 	input_buffer* generic_glfw::sTargetInputBuffer(nullptr);
-
 	std::array<key_code, GLFW_KEY_LAST + 1> generic_glfw::sGlfwToKeyMapping{};
 
 	generic_glfw::generic_glfw() :
@@ -153,7 +153,6 @@ namespace cgb
 		sGlfwToKeyMapping[GLFW_KEY_RIGHT_ALT] = key_code::right_alt;
 		sGlfwToKeyMapping[GLFW_KEY_RIGHT_SUPER] = key_code::right_super;
 		sGlfwToKeyMapping[GLFW_KEY_MENU] = key_code::menu;
-
 	}
 
 	generic_glfw::~generic_glfw()
@@ -233,6 +232,12 @@ namespace cgb
 		return glfwGetTime();
 	}
 
+	void generic_glfw::glfw_error_callback(int error, const char* description)
+	{
+		LOG_ERROR("GLFW-Error: hex[0x%x] int[%d] description[%s]", error, error, description);
+		LOG_ERROR("GLFW-Error: hex[0x%x] int[%d] description[%s]", error, error, description);
+	}
+
 	void generic_glfw::start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer)
 	{
 		glfwSetMouseButtonCallback(pWindow.handle()->mWindowHandle, glfw_mouse_button_callback);
@@ -242,33 +247,30 @@ namespace cgb
 		sTargetInputBuffer = &pInputBuffer;
 	}
 
-	void generic_glfw::change_target_input_buffer(input_buffer& pInputBuffer)
-	{
-		sTargetInputBuffer = &pInputBuffer;
-	}
-
 	void generic_glfw::stop_receiving_input_from_window(const window& pWindow)
 	{
 		glfwSetMouseButtonCallback(pWindow.handle()->mWindowHandle, nullptr);
 	}
 
+	void generic_glfw::change_target_input_buffer(input_buffer& pInputBuffer)
+	{
+		std::lock_guard<std::mutex> lock(sInputMutex);
+		sTargetInputBuffer = &pInputBuffer;
+	}
+
 	glm::dvec2 generic_glfw::cursor_position(const window& pWindow)
 	{
+		std::lock_guard<std::mutex> lock(sInputMutex);
 		glm::dvec2 cursorPos;
 		assert(pWindow.handle() != std::nullopt);
 		glfwGetCursorPos(pWindow.handle()->mWindowHandle, &cursorPos[0], &cursorPos[1]);
 		return cursorPos;
 	}
 
-	void generic_glfw::glfw_error_callback(int error, const char* description)
-	{
-		LOG_ERROR("GLFW-Error: hex[0x%x] int[%d] description[%s]", error, error, description);
-		LOG_ERROR("GLFW-Error: hex[0x%x] int[%d] description[%s]", error, error, description);
-	}
-
 	void generic_glfw::glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
 		assert(sTargetInputBuffer);
+		std::lock_guard<std::mutex> lock(sInputMutex);
 		button = glm::clamp(button, 0, 7);
 		switch (action)
 		{
@@ -288,18 +290,22 @@ namespace cgb
 	void generic_glfw::glfw_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
 	{
 		assert(sTargetInputBuffer);
+		std::lock_guard<std::mutex> lock(sInputMutex);
 		sTargetInputBuffer->mCursorPosition = glm::dvec2(xpos, ypos);
 	}
 
 	void generic_glfw::glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	{
 		assert(sTargetInputBuffer);
+		std::lock_guard<std::mutex> lock(sInputMutex);
 		sTargetInputBuffer->mScrollPosition += glm::dvec2(xoffset, yoffset);
 	}
 
 	void generic_glfw::glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		assert(sTargetInputBuffer);
+		std::lock_guard<std::mutex> lock(sInputMutex);
+
 		// TODO: Do something with the window-parameter? Or is it okay?
 
 		key = glm::clamp(key, 0, GLFW_KEY_LAST);
