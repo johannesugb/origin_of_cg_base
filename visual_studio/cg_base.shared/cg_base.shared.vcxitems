@@ -30,6 +30,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_code.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\key_state.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\log.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\shader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\shader_source_info.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\timer_frame_type.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\timer_interface.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\varying_update_only_timer.h" />
@@ -48,6 +50,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\input_buffer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\log.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\shader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\varying_update_only_timer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\window.cpp" />
   </ItemGroup>

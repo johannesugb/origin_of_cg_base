@@ -3,7 +3,7 @@
   <PropertyGroup Label="Globals">
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <HasSharedItems>true</HasSharedItems>
-    <ItemsProjectGuid>{0c7e225f-ce7f-4067-a2f8-e242f7d51048}</ItemsProjectGuid>
+    <ItemsProjectGuid>{c005ece1-d657-437b-8d07-4ee158a17fd7}</ItemsProjectGuid>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -14,6 +14,6 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\examples\hello_world\source\hello_world.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\examples\hello_ui\source\hello_ui.cpp" />
   </ItemGroup>
 </Project>

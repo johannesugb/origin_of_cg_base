@@ -2,10 +2,10 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{bb89db17-f81e-49b1-80ad-5f451c7092f7}</UniqueIdentifier>
+      <UniqueIdentifier>{a48607c0-a63e-45c1-8129-b5ae946bfeb2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\examples\hello_world\source\hello_world.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\..\examples\hello_ui\source\hello_ui.cpp" />
   </ItemGroup>
 </Project>

@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 
-// ------------------ external dependencies ------------------
+// ----------------------- externals -----------------------
 #include <stb_image.h>
 
 #include <glm/glm.hpp>
@@ -37,6 +37,8 @@
 #include <assimp/scene.h>       // Output data structure
 #include <assimp/postprocess.h> // Post processing flags
 #include <assimp/anim.h>
+
+#include <imgui.h>
 
 // -------------------- CG-Base includes --------------------
 #include "log.h"

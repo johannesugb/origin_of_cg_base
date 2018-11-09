@@ -62,7 +62,7 @@ namespace cgb
 		{
 		}
 
-		composition(std::initializer_list<window*> pWindows, std::initializer_list<std::shared_ptr<cg_object>> pObjects) :
+		composition(std::initializer_list<window*> pWindows, std::initializer_list<cg_object*> pObjects) :
 			mWindows(pWindows),
 			mObjects(pObjects),
 			mTimer(),
@@ -89,7 +89,8 @@ namespace cgb
 		cg_object* object_at_index(size_t pIndex) override
 		{
 			if (pIndex < mObjects.size())
-				return mObjects[pIndex].get();
+				return mObjects[pIndex];
+
 			return nullptr;
 		}
 
@@ -98,26 +99,27 @@ namespace cgb
 			auto found = std::find_if(
 				std::begin(mObjects), 
 				std::end(mObjects), 
-				[&pName](const std::shared_ptr<cg_object>& element)
+				[&pName](const cg_object* element)
 				{
 					return element->name() == pName;
 				});
 
 			if (found != mObjects.end())
-				return found->get();
+				return *found;
+
 			return nullptr;
 		}
 
 		cg_object* object_by_type(const std::type_info& pType, uint32_t pIndex) override
 		{
 			uint32_t nth = 0;
-			for (auto& element : mObjects)
+			for (auto* element : mObjects)
 			{
-				if (typeid(element.get()) == pType)
+				if (typeid(element) == pType)
 				{
 					if (pIndex == nth++)
 					{
-						return element.get();
+						return element;
 					}
 				}
 			}
@@ -290,7 +292,7 @@ namespace cgb
 	private:
 		static composition* sComposition;
 		std::vector<window*> mWindows;
-		std::vector<std::shared_ptr<cg_object>> mObjects;
+		std::vector<cg_object*> mObjects;
 		TTimer mTimer;
 		std::array<input_buffer, 2> mInputBuffers;
 		int32_t mInputBufferUpdateIndex;

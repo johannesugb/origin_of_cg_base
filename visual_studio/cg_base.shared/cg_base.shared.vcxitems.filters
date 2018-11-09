@@ -55,6 +55,9 @@
     <Filter Include="Header Files\shader">
       <UniqueIdentifier>{7b614f55-4b4c-43dc-97f1-fc33551a7c0a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\shader">
+      <UniqueIdentifier>{61615be4-9e21-4ed6-87c5-abf4b5473d27}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context.h">
@@ -114,11 +117,14 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\composition_interface.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\shader.h">
+      <Filter>Header Files\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\shader_source_info.h">
+      <Filter>Header Files\shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\varying_update_only_timer.cpp">
-      <Filter>Source Files\general</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\window.cpp">
       <Filter>Source Files\environment</Filter>
     </ClCompile>
@@ -157,6 +163,12 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\composition_interface.cpp">
       <Filter>Source Files\general</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\shader.cpp">
+      <Filter>Source Files\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\varying_update_only_timer.cpp">
+      <Filter>Source Files\timer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

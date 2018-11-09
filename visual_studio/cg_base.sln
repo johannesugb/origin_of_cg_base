@@ -21,12 +21,20 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cg_base.android", "cg_base.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hello_world", "hello_world", "{08A10CAA-9B1B-41DB-9EB5-8547AC3077EA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hello_ui", "hello_ui", "{0257968D-C7A2-410D-874A-3739A9C2055D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_ui.shared", "examples\hello_ui\hello_ui.shared\hello_ui.shared.vcxitems", "{C005ECE1-D657-437B-8D07-4EE158A17FD7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_ui.windows", "examples\hello_ui\hello_ui.windows\hello_ui.windows.vcxproj", "{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		examples\hello_world\hello_world.shared\hello_world.shared.vcxitems*{0c7e225f-ce7f-4067-a2f8-e242f7d51048}*SharedItemsImports = 9
 		cg_base.shared\cg_base.shared.vcxitems*{5b1eef57-25f3-4c11-9619-9fa571cac701}*SharedItemsImports = 4
 		cg_base.shared\cg_base.shared.vcxitems*{602f842f-50c1-466d-8696-1707937d8ab9}*SharedItemsImports = 4
 		examples\hello_world\hello_world.shared\hello_world.shared.vcxitems*{aaac1485-846c-4f30-8824-125e8584d038}*SharedItemsImports = 4
+		examples\hello_ui\hello_ui.shared\hello_ui.shared.vcxitems*{b687fdc8-08b3-4fdf-a81e-f8912058d1c7}*SharedItemsImports = 4
+		examples\hello_ui\hello_ui.shared\hello_ui.shared.vcxitems*{c005ece1-d657-437b-8d07-4ee158a17fd7}*SharedItemsImports = 9
 		cg_base.shared\cg_base.shared.vcxitems*{c2bc29ae-9c29-4dc7-bacb-3bf42f580ec9}*SharedItemsImports = 9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -146,6 +154,36 @@ Global
 		{5B1EEF57-25F3-4C11-9619-9FA571CAC701}.Release_GLES32|x64.ActiveCfg = Release_GLES32|ARM64
 		{5B1EEF57-25F3-4C11-9619-9FA571CAC701}.Release_Vulkan|ARM64.ActiveCfg = Release_GLES32|ARM64
 		{5B1EEF57-25F3-4C11-9619-9FA571CAC701}.Release_Vulkan|x64.ActiveCfg = Debug_GLES32|ARM64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GL46_LinkReleaseLibs|ARM64.ActiveCfg = Debug_GL46_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GL46_LinkReleaseLibs|x64.ActiveCfg = Debug_GL46_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GL46_LinkReleaseLibs|x64.Build.0 = Debug_GL46_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GL46|ARM64.ActiveCfg = Debug_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GL46|x64.ActiveCfg = Debug_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32_LinkReleaseLibs|ARM64.ActiveCfg = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32_LinkReleaseLibs|ARM64.Build.0 = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32_LinkReleaseLibs|x64.ActiveCfg = Debug_GL46_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32_LinkReleaseLibs|x64.Build.0 = Debug_GL46_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32|ARM64.ActiveCfg = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32|ARM64.Build.0 = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32|x64.ActiveCfg = Debug_GL46_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_GLES32|x64.Build.0 = Debug_GL46_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_Vulkan_LinkReleaseLibs|ARM64.ActiveCfg = Debug_Vulkan_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_Vulkan_LinkReleaseLibs|x64.ActiveCfg = Debug_Vulkan_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_Vulkan_LinkReleaseLibs|x64.Build.0 = Debug_Vulkan_LinkReleaseLibs|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_Vulkan|ARM64.ActiveCfg = Debug_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GL46|ARM64.ActiveCfg = Release_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GL46|x64.Build.0 = Release_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GLES32|ARM64.ActiveCfg = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GLES32|ARM64.Build.0 = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GLES32|x64.ActiveCfg = Release_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GLES32|x64.Build.0 = Release_GL46|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_Vulkan|ARM64.ActiveCfg = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_Vulkan|x64.Build.0 = Release_Vulkan|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,6 +193,9 @@ Global
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49} = {9739A4A1-6D55-4F8F-A7F2-9E92E1BF3070}
 		{0C7E225F-CE7F-4067-A2F8-E242F7D51048} = {08A10CAA-9B1B-41DB-9EB5-8547AC3077EA}
 		{08A10CAA-9B1B-41DB-9EB5-8547AC3077EA} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
+		{0257968D-C7A2-410D-874A-3739A9C2055D} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
+		{C005ECE1-D657-437B-8D07-4EE158A17FD7} = {0257968D-C7A2-410D-874A-3739A9C2055D}
+		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7} = {0257968D-C7A2-410D-874A-3739A9C2055D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A8961D43-F08D-46E3-B3BB-29BA8AA39C3E}
