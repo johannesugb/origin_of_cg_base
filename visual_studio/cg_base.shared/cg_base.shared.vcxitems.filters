@@ -52,6 +52,9 @@
     <Filter Include="Source Files\input">
       <UniqueIdentifier>{0cb2bd33-4f36-4d5a-8fd7-bd1073c30faf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\shader">
+      <UniqueIdentifier>{7b614f55-4b4c-43dc-97f1-fc33551a7c0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context.h">

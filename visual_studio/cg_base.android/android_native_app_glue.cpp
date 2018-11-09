@@ -1,4 +1,3 @@
-#ifdef USE_OPENGLES32_CONTEXT
 /*
  * Copyright (C) 2010 The Android Open Source Project
  *

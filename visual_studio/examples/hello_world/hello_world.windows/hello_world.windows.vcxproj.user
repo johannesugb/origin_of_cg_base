@@ -4,15 +4,7 @@
     <LocalDebuggerWorkingDirectory>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32|x64'">
-    <LocalDebuggerWorkingDirectory>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</LocalDebuggerWorkingDirectory>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46_LinkReleaseLibs|x64'">
-    <LocalDebuggerWorkingDirectory>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</LocalDebuggerWorkingDirectory>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GLES32_LinkReleaseLibs|x64'">
     <LocalDebuggerWorkingDirectory>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
@@ -25,10 +17,6 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
-    <LocalDebuggerWorkingDirectory>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</LocalDebuggerWorkingDirectory>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GLES32|x64'">
     <LocalDebuggerWorkingDirectory>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
