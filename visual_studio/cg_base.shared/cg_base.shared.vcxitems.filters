@@ -63,16 +63,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context.h">
       <Filter>Header Files\context</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_generic_opengl.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_generic_glfw.h">
       <Filter>Header Files\context</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengl46.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengles32.h">
       <Filter>Header Files\context</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_vulkan.h">
@@ -129,9 +123,6 @@
       <Filter>Source Files\environment</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_generic_glfw.cpp">
-      <Filter>Source Files\context</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_generic_opengl.cpp">
       <Filter>Source Files\context</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_opengl46.cpp">

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "context_opengl46.h"
-#include "context_opengles32.h"
 #include "context_vulkan.h"
 
 namespace cgb
@@ -10,12 +9,6 @@ namespace cgb
 	inline opengl46& context()
 	{
 		static opengl46 instance;
-		return instance;
-	}
-#elif defined(USE_OPENGLES32_CONTEXT)
-	inline opengles32& context()
-	{
-		static opengles32 instance;
 		return instance;
 	}
 #elif defined(USE_VULKAN_CONTEXT)

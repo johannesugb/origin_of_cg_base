@@ -3,9 +3,7 @@
 
 namespace cgb
 {
-	opengl46::opengl46() : 
-		generic_glfw(), 
-		generic_opengl()
+	opengl46::opengl46() : generic_glfw()
 	{
 	}
 
@@ -22,6 +20,18 @@ namespace cgb
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
 		return generic_glfw::create_window();
+	}
+
+	bool opengl46::check_error(const char* file, int line)
+	{
+		bool hasError = false;
+		GLenum err;
+		while ((err = glGetError()) != GL_NO_ERROR)
+		{
+			LOG_ERROR("glError int[%d] hex[0x%x] in file[%s], line[%d]", err, err, file, line);
+			hasError = true;
+		}
+		return hasError;
 	}
 
 }

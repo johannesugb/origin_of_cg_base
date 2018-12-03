@@ -5,6 +5,12 @@
 
 namespace cgb
 {
+	// texture handle type for OpenGL contexts
+	struct texture_handle
+	{
+		int m_gl_specific_handle;
+	};
+
 	/**	\brief Context for OpenGL 4.6 core profile
 	 *	
 	 *	This context uses OpenGL 4.6 functionality and a core profile.
@@ -13,12 +19,27 @@ namespace cgb
 	 *	performed via GLFW, most of which is implemented in generic_glfw
 	 *  context.
 	 */
-	class opengl46 : public generic_opengl, public generic_glfw
+	class opengl46 : public generic_glfw
 	{
 	public:
 		opengl46();
 
 		window create_window();
+
+		/**	Checks whether there is a GL-Error and logs it to the console
+				 *	@return true if there was an error, false if not
+				 */
+		bool check_error(const char* file, int line);
+
+		texture_handle create_texture()
+		{
+			return texture_handle();
+		}
+
+		void destroy_texture(texture_handle pHandle)
+		{
+
+		}
 	};
 }
 

@@ -12,7 +12,6 @@ namespace cgb
 #if defined(USE_OPENGL46_CONTEXT)
 		friend class generic_glfw;
 		friend class opengl46;
-#elif defined(USE_OPENGLES32_CONTEXT)
 #elif defined(USE_VULKAN_CONTEXT)
 		friend class generic_glfw;
 		friend class vulkan;

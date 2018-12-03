@@ -14,4 +14,4 @@ namespace cgb
 	};
 }
 
-#endif
+#endif // USE_OPENGL46_CONTEXT

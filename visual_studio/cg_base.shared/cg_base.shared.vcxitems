@@ -21,9 +21,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\composition_interface.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_generic_glfw.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_generic_opengl.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengl46.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengles32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_vulkan.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\input_buffer.h" />
@@ -45,7 +43,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\external\src\imgui_draw.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\composition_interface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_generic_glfw.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_generic_opengl.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_opengl46.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\input_buffer.cpp" />
