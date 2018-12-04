@@ -2,7 +2,10 @@
 
 namespace cgb
 {
-	window::window(window_handle handle) : 
+	uint32_t window::mNextWindowId = 0u;
+
+	window::window(window_handle handle) :
+		mWindowId(mNextWindowId++),
 		mName(),
 		mHandle(std::move(handle)),
 		mWidth(0),

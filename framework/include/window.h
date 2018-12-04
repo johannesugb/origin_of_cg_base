@@ -8,7 +8,6 @@ namespace cgb
 #if defined(USE_OPENGL46_CONTEXT)
 		friend class generic_glfw;
 		friend class opengl46;
-#elif defined(USE_OPENGLES32_CONTEXT)
 #elif defined(USE_VULKAN_CONTEXT)
 		friend class generic_glfw;
 		friend class vulkan;
@@ -27,8 +26,12 @@ namespace cgb
 		/** Move-assign a window */
 		window& operator =(window&&) noexcept;
 
+		/** @brief Consecutive ID, identifying a window.
+		 *	First window will get the ID=0, second one ID=1, etc.  */
+		uint32_t id() const { return mWindowId; }
+
 		/** Returns the user-defined name of this window which
-		 *	can be set via \ref set_name */
+		 *	can be set via @ref set_name */
 		const std::string& name() const { return mName; }
 
 		/** Returns the window handle or std::nullopt if
@@ -70,6 +73,12 @@ namespace cgb
 		void change_monitor(std::optional<monitor_handle> pMonitor);
 
 	private:
+		/** Static variable which holds the ID that the next window will get assigned */
+		static uint32_t mNextWindowId;
+
+		/** Unique window id */
+		uint32_t mWindowId; 
+
 		/** A name which used to identify this window => make sure, it is unique! */
 		std::string mName;
 

@@ -10,8 +10,7 @@ namespace cgb
 	std::array<key_code, GLFW_KEY_LAST + 1> generic_glfw::sGlfwToKeyMapping{};
 
 	generic_glfw::generic_glfw() :
-		mInitialized(false),
-		mFirstWindow(nullptr)
+		mInitialized(false)
 	{
 		LOG_VERBOSE("Creating GLFW context...");
 	
@@ -161,7 +160,6 @@ namespace cgb
 		{
 			glfwTerminate();
 			// context has been desroyed by glfwTerminate
-			mFirstWindow = nullptr;
 			mInitialized = false;
 		}
 	}
@@ -171,40 +169,50 @@ namespace cgb
 		return mInitialized;
 	}
 
-	window generic_glfw::create_window()
+	window generic_glfw::create_window(const window_params& pParams)
 	{
-		// For the first window, let GLFW create a new context...
+		// Share a context or let GLFW create a new one
 		GLFWwindow* contextToUse = nullptr; 
-		if (mFirstWindow)
+		if (pParams.mSharedContext)
 		{
-			// ...for all further windows, share the context
-			contextToUse = mFirstWindow; 
-
-			// TODO: what happens to the context and to the other windows, if the first window is closed?
+			contextToUse = pParams.mSharedContext->mWindowHandle;
 		}
 
+		// Determine the resolution or have it set to the default of 1600x900  (because, why not?!)
+		int width = 1600;
+		int height = 900;
+		if (pParams.mInitialWidth && pParams.mInitialHeight)
+		{
+			width = *pParams.mInitialWidth;
+			height = *pParams.mInitialHeight;
+		}
+		else
+		{
+			if (pParams.mMonitor)
+			{
+				const auto* mode = glfwGetVideoMode(pParams.mMonitor->mMonitorHandle);
+				width = mode->width;
+				height = mode->height;
+			}
+		}
+
+		// Before creating the window, set some config-parameters
+		if (pParams.mEnableSrgbFramebuffer) 
+		{
+			glfwWindowHint(GLFW_SRGB_CAPABLE, *pParams.mEnableSrgbFramebuffer ? GLFW_TRUE : GLFW_FALSE); 
+		}
+		glfwWindowHint(GLFW_DOUBLEBUFFER, false == pParams.mEnableDoublebuffering || *pParams.mEnableDoublebuffering ? GLFW_TRUE : GLFW_FALSE);
+		glfwWindowHint(GLFW_SAMPLES, pParams.mNumberOfSamplesForMSAA ? *pParams.mNumberOfSamplesForMSAA : 1);
 		GLFWwindow* handle = glfwCreateWindow(
-			800, // TODO: make width configurable
-			600, // TODO: make height configurable
-			"TODO: make configurable",
-			nullptr, // TODO: make Monitor configurable
+			width,
+			height,
+			pParams.mWindowTitle.empty() ? "cg_base: GLFW Window" : pParams.mWindowTitle.c_str(),
+			static_cast<bool>(pParams.mMonitor) ? pParams.mMonitor->mMonitorHandle : nullptr,
 			contextToUse); // TODO: make configurable
 		
 		if (!handle)
 		{
 			throw std::runtime_error("glfwCreateWindow failed"); 
-		}
-
-		if (!mFirstWindow)
-		{
-			// If context has been newly created in the current call to create_window, 
-			// 1) make the newly created context current and
-			// 2) use the extension loader to get the proc-addresses (which needs an active context)
-			glfwMakeContextCurrent(handle);
-			gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-			mFirstWindow = handle; // don't do this again next time
-			// By (current) design, all windows share the same context.
-			// TODO: Think about supporting different contexts somewhen in the future.
 		}
 
 		return window(window_handle{ handle });

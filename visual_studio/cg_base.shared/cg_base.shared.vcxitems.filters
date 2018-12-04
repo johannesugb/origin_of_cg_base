@@ -72,9 +72,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_vulkan.h">
       <Filter>Header Files\context</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\cg_object.h">
-      <Filter>Header Files\general</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\cg_base.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
@@ -116,6 +113,19 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\shader_source_info.h">
       <Filter>Header Files\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_generic_glfw_types.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_opengl46_types.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\context_vulkan_types.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\sequential_executor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\framework\include\cg_element.h">
+      <Filter>Header Files\general</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -160,6 +170,9 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\varying_update_only_timer.cpp">
       <Filter>Source Files\timer</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\framework\src\context_vulkan.cpp">
+      <Filter>Source Files\context</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

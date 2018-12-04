@@ -2,7 +2,7 @@
 
 namespace cgb
 {
-	/** \brief Shader source information and shader loading options
+	/** @brief Shader source information and shader loading options
 	 *
 	 *	This information is important especially for shader hot reloading.
 	 */

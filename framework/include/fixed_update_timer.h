@@ -2,7 +2,7 @@
 
 namespace cgb
 {
-	/**	\brief Timer enabling a fixed update rate
+	/**	@brief Timer enabling a fixed update rate
 	 *
 	 *	This timer_interface has a fixed simulation rate (i.e. constant fixed_delta_time)
 	 *  and variable rendering rate (i.e. as many render fps as possible, with

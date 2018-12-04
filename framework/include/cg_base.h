@@ -26,13 +26,6 @@
 // ----------------------- externals -----------------------
 #include <stb_image.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/ext.hpp>
-#include <glm/mat4x4.hpp>
-
 #include <assimp/Importer.hpp>  // C++ importer interface
 #include <assimp/scene.h>       // Output data structure
 #include <assimp/postprocess.h> // Post processing flags
@@ -40,17 +33,20 @@
 
 #include <imgui.h>
 
+// Note: GLM is included in the context-headers.
+
 // -------------------- CG-Base includes --------------------
+#include "context.h"
 #include "log.h"
 #include "key_code.h"
 #include "key_state.h"
-#include "context.h"
 #include "window.h"
 #include "timer_interface.h"
 #include "timer_frame_type.h"
 #include "fixed_update_timer.h"
 #include "varying_update_only_timer.h"
-#include "cg_object.h"
+#include "cg_element.h"
 #include "input_buffer.h"
 #include "composition_interface.h"
+#include "sequential_executor.h"
 #include "composition.h"

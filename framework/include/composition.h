@@ -3,22 +3,22 @@
 namespace cgb
 {
 #pragma region global data representing the currently active composition
-	/**	\brief Get the current timer, which represents the current game-/render-time 
-	 *	\remark This is just a shortcut to \ref composition_interface::current()->time();
+	/**	@brief Get the current timer, which represents the current game-/render-time 
+	 *	\remark This is just a shortcut to @ref composition_interface::current()->time();
 	 */
 	inline timer_interface& time() {
 		return composition_interface::current()->time();
 	}
 
-	/** \brief Get the current frame's input data 
-	 *	\remark This is just a shortcut to \ref composition_interface::current()->input();
+	/** @brief Get the current frame's input data 
+	 *	\remark This is just a shortcut to @ref composition_interface::current()->input();
 	 */
 	inline input_buffer& input() {
 		return composition_interface::current()->input();
 	}
 
-	/** \brief Get access to the currently active objects 
-	 *	\remark This is just a shortcut to \ref *composition_interface::current();
+	/** @brief Get access to the currently active objects 
+	 *	\remark This is just a shortcut to @ref *composition_interface::current();
 	 */
 	inline composition_interface& current_composition() {
 		return *composition_interface::current();
@@ -28,12 +28,12 @@ namespace cgb
 	/**	A composition brings together all of the separate components, which there are
 	 *	 - A timer
 	 *	 - One or more windows
-	 *	 - One or more \ref cg_object(-derived objects)
+	 *	 - One or more @ref cg_element(-derived objects)
 	 *	 
-	 *	Upon \ref start, a composition spins up the game-/rendering-loop in which
-	 *	all of the \ref cg_object's methods are called.
+	 *	Upon @ref start, a composition spins up the game-/rendering-loop in which
+	 *	all of the @ref cg_element's methods are called.
 	 *	
-	 *	A composition will internally call \ref set_global_composition_data in order
+	 *	A composition will internally call @ref set_global_composition_data in order
 	 *	to make itself the currently active composition. By design, there can only 
 	 *	be one active composition_interface at at time. You can think of a composition
 	 *	being something like a scene, of which typically one can be active at any 
@@ -42,16 +42,17 @@ namespace cgb
 	 *	\remark You don't HAVE to use this composition-class, if you are developing 
 	 *	an alternative composition class or a different approach and still want to use
 	 *	a similar structure as proposed by this composition-class, please make sure 
-	 *	to call \ref set_global_composition_data 
+	 *	to call @ref set_global_composition_data 
 	 */
-	template <typename TTimer>
+	template <typename TTimer, typename TExecutor>
 	class composition : public composition_interface
 	{
 	public:
 		composition() :
 			mWindows(),
-			mObjects(),
+			mElements(),
 			mTimer(),
+			mExecutor(this),
 			mInputBuffers(),
 			mInputBufferUpdateIndex(0),
 			mInputBufferConsumerIndex(1),
@@ -62,10 +63,11 @@ namespace cgb
 		{
 		}
 
-		composition(std::initializer_list<window*> pWindows, std::initializer_list<cg_object*> pObjects) :
+		composition(std::initializer_list<window*> pWindows, std::initializer_list<cg_element*> pObjects) :
 			mWindows(pWindows),
-			mObjects(pObjects),
+			mElements(pObjects),
 			mTimer(),
+			mExecutor(this),
 			mInputBuffers(),
 			mInputBufferUpdateIndex(0),
 			mInputBufferConsumerIndex(1),
@@ -76,44 +78,56 @@ namespace cgb
 		{
 		}
 
+		/** Provides access to the timer which is used by this composition */
 		timer_interface& time() override
 		{
 			return mTimer;
 		}
 
+		/** Provides to the currently active input buffer, which contains the
+		 *	current user input data */
 		input_buffer& input() override
 		{
 			return mInputBuffers[mInputBufferConsumerIndex];
 		}
 
-		cg_object* object_at_index(size_t pIndex) override
+		/** Returns the @ref cg_element at the given index */
+		cg_element* element_at_index(size_t pIndex) override
 		{
-			if (pIndex < mObjects.size())
-				return mObjects[pIndex];
+			if (pIndex < mElements.size())
+				return mElements[pIndex];
 
 			return nullptr;
 		}
 
-		cg_object* object_by_name(const std::string& pName) override
+		/** Finds a @ref cg_element by its name 
+		 *	\returns The element found or nullptr
+		 */
+		cg_element* element_by_name(const std::string& pName) override
 		{
 			auto found = std::find_if(
-				std::begin(mObjects), 
-				std::end(mObjects), 
-				[&pName](const cg_object* element)
+				std::begin(mElements), 
+				std::end(mElements), 
+				[&pName](const cg_element* element)
 				{
 					return element->name() == pName;
 				});
 
-			if (found != mObjects.end())
+			if (found != mElements.end())
 				return *found;
 
 			return nullptr;
 		}
 
-		cg_object* object_by_type(const std::type_info& pType, uint32_t pIndex) override
+		/** Finds the @ref cg_element(s) with matching type.
+		 *	@param pType	The type to look for
+		 *	@param pIndex	Use this parameter to get the n-th element of the given type
+		 *	\returns An element of the given type or nullptr
+		 */
+		cg_element* element_by_type(const std::type_info& pType, uint32_t pIndex) override
 		{
 			uint32_t nth = 0;
-			for (auto* element : mObjects)
+			for (auto* element : mElements)
 			{
 				if (typeid(element) == pType)
 				{
@@ -171,10 +185,7 @@ namespace cgb
 				if ((frameType & timer_frame_type::fixed) != timer_frame_type::none)
 				{
 					//LOG_INFO("fixed frame with fixed delta-time[%f]", composition_interface::current()->time().fixed_delta_time());
-					for (auto& o : thiz->mObjects)
-					{
-						o->fixed_update();
-					}
+					thiz->mExecutor.execute_fixed_updates(thiz->mElements);
 				}
 
 				if ((frameType & timer_frame_type::varying) != timer_frame_type::none)
@@ -182,31 +193,19 @@ namespace cgb
 					//LOG_INFO("varying frame with delta-time[%f]", composition_interface::current()->time().delta_time());
 
 					// 3. update
-					for (auto& o : thiz->mObjects)
-					{
-						o->update();
-					}
+					thiz->mExecutor.execute_updates(thiz->mElements);
 
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
 					please_swap_input_buffers(thiz);
 
 					// 4. render
-					for (auto& o : thiz->mObjects)
-					{
-						o->render();
-					}
+					thiz->mExecutor.execute_renders(thiz->mElements);
 
 					// 5. render_gizmos
-					for (auto& o : thiz->mObjects)
-					{
-						o->render_gizmos();
-					}
-
+					thiz->mExecutor.execute_render_gizmos(thiz->mElements);
+					
 					// 6. render_gui
-					for (auto& o : thiz->mObjects)
-					{
-						o->render_gui();
-					}
+					thiz->mExecutor.execute_render_guis(thiz->mElements);
 				}
 				else
 				{
@@ -227,7 +226,7 @@ namespace cgb
 			composition_interface::set_current(this);
 
 			// 1. initialize
-			for (auto& o : mObjects)
+			for (auto& o : mElements)
 			{
 				o->initialize();
 			}
@@ -270,7 +269,7 @@ namespace cgb
 			}
 
 			// 7. finalize
-			for (auto& o : mObjects)
+			for (auto& o : mElements)
 			{
 				o->finalize();
 			}
@@ -292,8 +291,9 @@ namespace cgb
 	private:
 		static composition* sComposition;
 		std::vector<window*> mWindows;
-		std::vector<cg_object*> mObjects;
+		std::vector<cg_element*> mElements;
 		TTimer mTimer;
+		TExecutor mExecutor;
 		std::array<input_buffer, 2> mInputBuffers;
 		int32_t mInputBufferUpdateIndex;
 		int32_t mInputBufferConsumerIndex;

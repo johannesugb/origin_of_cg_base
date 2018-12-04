@@ -1,32 +1,15 @@
 #pragma once
 #if defined(USE_VULKAN_CONTEXT) || defined(USE_OPENGL46_CONTEXT)
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "context_generic_glfw_types.h"
 
 namespace cgb
 {
-	/** Context-specific handle to a window.
-	 *  For this context, the window is handled via GLFW.
-	 */
-	struct window_handle
-	{
-		GLFWwindow* mWindowHandle;
-	};
-
-	/** Context-specific handle to a monitor.
-	 *  For this context, the monitor is handled via GLFW.
-	 */
-	struct monitor_handle
-	{
-		GLFWmonitor* mMonitorHandle;
-	};
-
 	// ---------------- forward declarations ----------------
 	class window;
 	class input_buffer;
 	enum struct key_code;
 
-	/** \brief Provides generic GLFW-specific functionality
+	/** @brief Provides generic GLFW-specific functionality
 	 */
 	class generic_glfw
 	{
@@ -41,9 +24,8 @@ namespace cgb
 		operator bool() const;
 		
 		/** Creates a new window 
-		 *  TODO: pass parameters (size, etc.)
 		 */
-		window create_window();
+		window create_window(const window_params&);
 
 		/** Close the given window, cleanup the resources */
 		void close_window(window& wnd);
@@ -52,26 +34,26 @@ namespace cgb
 		 *  This might work only once! :O See GLFW docu for further details!
 		 *  http://www.glfw.org/docs/3.1/group__context.html#ga6d4e0cdf151b5e579bd67f13202994ed
 		 *
-		 *  \param enable true to enable, false to disable v-sync
+		 *  @param enable true to enable, false to disable v-sync
 		 */
 		void enable_vsync(bool enable);
 
 		/** Gets the current system time */
 		double get_time();
 
-		/** \brief starts receiving mouse and keyboard input from specified window.
+		/** @brief starts receiving mouse and keyboard input from specified window.
 		 *
-		 *	\param[in] pWindow The window to receive input from
-		 *	\param[ref] pInputBuffer The input buffer to be filled with user input
+		 *	@param[in] pWindow The window to receive input from
+		 *	@param[ref] pInputBuffer The input buffer to be filled with user input
 		 */
 		void start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer);
 
 		/** Change the target input buffer to be modified by input events */
 		void change_target_input_buffer(input_buffer& pInputBuffer);
 
-		/**	\brief stops receiving mouse and keyboard input from specified window.
+		/**	@brief stops receiving mouse and keyboard input from specified window.
 		 *
-		 *	\param[in] pWindow The window to stop receiving input from
+		 *	@param[in] pWindow The window to stop receiving input from
 		 */
 		void stop_receiving_input_from_window(const window& pWindow);
 
@@ -86,7 +68,6 @@ namespace cgb
 		static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 		bool mInitialized;
-		GLFWwindow* mFirstWindow;
 		static std::mutex sInputMutex;
 		static input_buffer* sTargetInputBuffer;
 		static std::array<key_code, GLFW_KEY_LAST + 1> sGlfwToKeyMapping;

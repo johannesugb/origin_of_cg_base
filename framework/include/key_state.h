@@ -2,7 +2,7 @@
 
 namespace cgb
 {
-	/** \brief Represents the state(s) of a button
+	/** @brief Represents the state(s) of a button
 	 */
 	enum struct key_state
 	{

@@ -3,12 +3,12 @@
 namespace cgb
 {
 	/**	Interface to access the current composition from e.g. inside
-	 *	a \ref cg_object.
+	 *	a @ref cg_element.
 	 */
 	class composition_interface
 	{
 	public:
-		/** \brief Get the currently active composition_interface
+		/** @brief Get the currently active composition_interface
 		 *
 		 *	By design, there can only be one active composition_interface at at time.
 		 *	You can think of composition_interface being something like scenes, of 
@@ -22,28 +22,28 @@ namespace cgb
 		/** Access to the current frame's input */
 		virtual input_buffer& input() = 0;
 
-		/** \brief Get the @ref cg_object at the given index
+		/** @brief Get the @ref cg_element at the given index
 		 *
-		 *	Get the @ref cg_object in this composition_interface's objects-container at 
+		 *	Get the @ref cg_element in this composition_interface's objects-container at 
 		 *	the given index. If the index is out of bounds, nullptr will be
 		 *	returned.
 		 */
-		virtual cg_object* object_at_index(size_t) = 0;
+		virtual cg_element* element_at_index(size_t) = 0;
 
-		/** \brief Find a @ref cg_object by name
+		/** @brief Find a @ref cg_element by name
 		 *
-		 *	Find a @ref cg_object assigned to this composition_interface by name.
+		 *	Find a @ref cg_element assigned to this composition_interface by name.
 		 *	If no object with the given name could be found, nullptr is returned.
 		 */
-		virtual cg_object* object_by_name(const std::string&) = 0;
+		virtual cg_element* element_by_name(const std::string&) = 0;
 
-		/** \brief Find an object by type 
-		 *	\param pType type-identifier of the @ref cg_object to be searched for
-		 *	\param pIndex Get the n-th object of the specified type
+		/** @brief Find an object by type 
+		 *	@param pType type-identifier of the @ref cg_element to be searched for
+		 *	@param pIndex Get the n-th object of the specified type
 		 */
-		virtual cg_object* object_by_type(const std::type_info& pType, uint32_t pIndex = 0) = 0;
+		virtual cg_element* element_by_type(const std::type_info& pType, uint32_t pIndex = 0) = 0;
 
-		/** \brief Start a game/rendering-loop for this composition_interface 
+		/** @brief Start a game/rendering-loop for this composition_interface 
 		 *
 		 *	Attention: In subclasses of @ref composition_interface, do not forget to call
 		 *	@ref set_current no later than at the very beginning of this methods's
@@ -58,7 +58,7 @@ namespace cgb
 		virtual bool is_running() = 0;
 
 	protected:
-		/** \brief Set a new current composition_interface 
+		/** @brief Set a new current composition_interface 
 		 *
 		 *	Set a new composition_interface. Remember: There can only be one
 		 *	at any given point in time. This call will fail if a different

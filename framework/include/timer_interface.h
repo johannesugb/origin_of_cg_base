@@ -3,22 +3,22 @@
 namespace cgb
 {
 	/** Base class (actually an "interface") which all concrete timer_interface 
-	 *	implementations have to implement in order to be usable with \ref run.
+	 *	implementations have to implement in order to be usable with @ref run.
 	 *	
 	 *	Please note that, in addition to implementing all pure virtual
 	 *	functions, subclasses must implement a timer_frame_type tick();
 	 *	method in order to be usable with the framework. (Please investigate
-	 *	the implementation of \ref composition for details
+	 *	the implementation of @ref composition for details
 	 *	on how timers and the tick-method in particular are used.
 	 */
 	class timer_interface
 	{
 	public:
-		/**	\brief The absolute system time.
+		/**	@brief The absolute system time.
 		 */
 		virtual float absolute_time() const = 0;
 
-		/**	\brief The time at the beginning of the current frame.
+		/**	@brief The time at the beginning of the current frame.
 		 *
 		 *	Please note that "frame" in this case also refers to 
 		 *	simulation-only frames, i.e. those frames where only 
@@ -28,31 +28,31 @@ namespace cgb
 		 */
 		virtual float frame_time() const = 0;
 
-		/**	\brief The duration of the fixed simulation timestep 
+		/**	@brief The duration of the fixed simulation timestep 
 		 *
 		 *	This will return the fixed delta time IF the used timer_interface
 		 *	supports fixed timesteps. If it doesn't, it will return the
-		 *	same as \ref delta_time, i.e. a varying delta time.
+		 *	same as @ref delta_time, i.e. a varying delta time.
 		 */
 		virtual float fixed_delta_time() const = 0;
 
-		/** \brief The time it took to complete the last frame
+		/** @brief The time it took to complete the last frame
 		 *
 		 *	This value usually varies. Generally speaking, use delta_time
-		 *	inside the \ref cg_base::update method, and use \ref fixed_delta_time
-		 *	inside the \ref cg_base::fixed_update method.
+		 *	inside the @ref cg_base::update method, and use @ref fixed_delta_time
+		 *	inside the @ref cg_base::fixed_update method.
 		 */
 		virtual float delta_time() const = 0;
 
-		/** \brief The scale at which the time is passing 
+		/** @brief The scale at which the time is passing 
 		 */
 		virtual float time_scale() const = 0;
 
-		/**	\brief The absolute system time in double precision
+		/**	@brief The absolute system time in double precision
 		*/
 		virtual double precise_absolute_time() const = 0;
 
-		/**	\brief The time at the beginning of the current frame in double precision.
+		/**	@brief The time at the beginning of the current frame in double precision.
 		*
 		*	Please note that "frame" in this case also refers to
 		*	simulation-only frames, i.e. those frames where only
@@ -62,23 +62,23 @@ namespace cgb
 		*/
 		virtual double precise_frame_time() const = 0;
 		
-		/**	\brief The duration of the fixed simulation timestep in double precision
+		/**	@brief The duration of the fixed simulation timestep in double precision
 		*
 		*	This will return the fixed delta time IF the used timer_interface
 		*	supports fixed timesteps. If it doesn't, it will return the
-		*	same as \ref delta_time, i.e. a varying delta time.
+		*	same as @ref delta_time, i.e. a varying delta time.
 		*/
 		virtual double precise_fixed_delta_time() const = 0;
 		
-		/** \brief The time it took to complete the last frame in double precision
+		/** @brief The time it took to complete the last frame in double precision
 		*
 		*	This value usually varies. Generally speaking, use delta_time
-		*	inside the \ref cg_base::update method, and use \ref fixed_delta_time
-		*	inside the \ref cg_base::fixed_update method.
+		*	inside the @ref cg_base::update method, and use @ref fixed_delta_time
+		*	inside the @ref cg_base::fixed_update method.
 		*/
 		virtual double precise_delta_time() const = 0;
 		
-		/** \brief The scale at which the time is passing in double precision
+		/** @brief The scale at which the time is passing in double precision
 		*/
 		virtual double precise_time_scale() const = 0;
 	};

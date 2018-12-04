@@ -2,7 +2,7 @@
 
 namespace cgb
 {
-	/** \brief Contains all the input data of a frame
+	/** @brief Contains all the input data of a frame
 	 *
 	 *	This structure will be filled during a frame, so that it contains
 	 *	the input of the current/last/whichever frame.
@@ -29,65 +29,65 @@ namespace cgb
 		 */
 		void prepare_for_next_frame(const input_buffer& pPreviousFrame, std::optional<window> pWindow = std::nullopt);
 
-		/** \brief Keyboard key pressed-down?
+		/** @brief Keyboard key pressed-down?
 		 *
 		 *	True if the given keyboard key has been pressed down in the 
 		 *	current input-frame 
 		 */
 		bool key_pressed(key_code);
 
-		/** \brief Keyboard key released?
+		/** @brief Keyboard key released?
 		 *
 		 *	True if the given keyboard key has been released in the
 		 *	current input-frame
 		 */
 		bool key_released(key_code);
 
-		/** \brief Keyboard key held down?
+		/** @brief Keyboard key held down?
 		 *
 		 *	True if the given keyboard key is (possibly repeatedly) 
 		 *	held down in the current input-frame.
 		 *	
-		 *	\remark If \ref key_pressed is true, key_down will 
-		 *	be true either in any case for the given \ref key_code.
+		 *	\remark If @ref key_pressed is true, key_down will 
+		 *	be true either in any case for the given @ref key_code.
 		 */
 		bool key_down(key_code);
 
-		/** \brief Mouse button pressed-down?
+		/** @brief Mouse button pressed-down?
 		 *
 		 *	True if the mouse button with the given index has been 
 		 *	pressed down in the current input-frame
 		 */
 		bool mouse_button_pressed(uint8_t);
 
-		/** \brief Mouse button released?
+		/** @brief Mouse button released?
 		 *
 		 *	True if the mouse button with the given index has been
 		 *	released in the current input-frame
 		 */
 		bool mouse_button_released(uint8_t);
 
-		/** \brief Mouse button held down?
+		/** @brief Mouse button held down?
 		 *
 		 *	True if the mouse button with the given index is (possibly 
 		 *	repeatedly) held down in the current input-frame
 		 */
 		bool mouse_button_down(uint8_t);
 
-		/** \brief Cursor position in the last active window
+		/** @brief Cursor position in the last active window
 		 *
 		 *	Returns the position of the cursor in the window where it 
 		 *	last active.
 		 */
 		const glm::dvec2& cursor_position();
 
-		/** \brief Cursor position in the given window
+		/** @brief Cursor position in the given window
 		 *
 		 *	Returns the position of the cursor w.r.t. the given window.
 		 */
 		glm::dvec2 cursor_position(const window&);
 
-		/** \brief Mouse wheel's scroll delta
+		/** @brief Mouse wheel's scroll delta
 		 *
 		 *	Returns the accumulated scrolling delta performed with
 		 *	the mouse wheel during the current input frame.
