@@ -33,11 +33,12 @@
 
 #include <imgui.h>
 
-// Note: GLM is included in the context-headers.
+// Note: GLM is getting included in the context-headers.
 
 // -------------------- CG-Base includes --------------------
 #include "context.h"
 #include "log.h"
+#include "utils.h"
 #include "key_code.h"
 #include "key_state.h"
 #include "window.h"

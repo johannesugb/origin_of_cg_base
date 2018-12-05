@@ -5,6 +5,12 @@
 
 namespace cgb
 {
+	/** Set this to your application's name */
+	static std::string sApplicationName = "cg_base application";
+
+	/** Set this to your application's version */
+	static uint32_t sApplicationVersion = 0;
+
 #if defined(USE_OPENGL46_CONTEXT)
 	inline opengl46& context()
 	{

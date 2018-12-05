@@ -6,6 +6,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 // INCLUDES:
+#include <vulkan/vulkan.hpp>
 #include "context_generic_glfw.h"
 #include "context_vulkan_types.h"
 
@@ -31,8 +32,10 @@ namespace cgb
 
 		void destroy_texture(const texture_handle& pHandle)
 		{
-
 		}
+
+	private:
+		vk::Instance mInstance;
 	};
 }
 
