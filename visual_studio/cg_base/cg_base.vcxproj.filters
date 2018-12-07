@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\external\src\FileWatcher\FileWatcherWin32.cpp">
+      <Filter>external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\composition_interface.cpp">
+      <Filter>Source Files\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\window.cpp">
+      <Filter>Source Files\environment</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_generic_glfw.cpp">
+      <Filter>Source Files\context</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_opengl46.cpp">
+      <Filter>Source Files\context</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_vulkan.cpp">
+      <Filter>Source Files\context</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\log.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\utils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\src\glad.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\src\imgui.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\src\imgui_demo.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\src\imgui_draw.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\src\FileWatcher\FileWatcher.cpp">
+      <Filter>Source Files\external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp">
+      <Filter>Source Files\timer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp">
+      <Filter>Source Files\timer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\input_buffer.cpp">
+      <Filter>Source Files\input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\shader.cpp">
+      <Filter>Source Files\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cg_stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\framework\include\context.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_generic_glfw.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_generic_glfw_types.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_opengl46_types.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_vulkan.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_vulkan_types.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\cg_element.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\composition.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\composition_interface.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\window.h">
+      <Filter>Header Files\environment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\log.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\utils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\fixed_update_timer.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\timer_frame_type.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\timer_interface.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\varying_update_only_timer.h">
+      <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\input_buffer.h">
+      <Filter>Header Files\input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\key_code.h">
+      <Filter>Header Files\input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\key_state.h">
+      <Filter>Header Files\input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\shader.h">
+      <Filter>Header Files\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\shader_source_info.h">
+      <Filter>Header Files\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\sequential_executor.h">
+      <Filter>Header Files\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_opengl46.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cg_targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cg_stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\cg_base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="external">
+      <UniqueIdentifier>{06b7bd72-6a77-441e-9462-71003d5da70f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\FileWatcher">
+      <UniqueIdentifier>{d417ac24-c154-4371-babe-37a3ba324d22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{f0debc15-831c-4ce5-8aa8-b45e296d9848}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\context">
+      <UniqueIdentifier>{e5492fdd-6b02-4ca0-b263-543f1210e7b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\general">
+      <UniqueIdentifier>{a4957e45-c75d-4e02-b071-b9ee12a0ecee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\environment">
+      <UniqueIdentifier>{71265412-bcfb-4e91-a7f7-658599c017c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{23144c72-aad3-49a9-96d4-ede68eca6666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\timer">
+      <UniqueIdentifier>{bb4197cf-5a2e-439b-8c69-0f3197ed1abc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\input">
+      <UniqueIdentifier>{13e34ef1-6c80-45ea-a246-44fbddb451b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\shader">
+      <UniqueIdentifier>{bbc1b475-3f01-4d00-bc33-444e7d205aee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{99cf0065-9330-4485-b7e0-b67aa6c775cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\general">
+      <UniqueIdentifier>{b6a318e6-0672-4cfd-9dee-8f4cffb2b9c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\environment">
+      <UniqueIdentifier>{70da7be8-f87f-424f-a2cb-e7e14c29771c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\context">
+      <UniqueIdentifier>{f608b38b-95d7-4852-ab7c-e65244afe8cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{46fe8982-4f9b-4606-9f98-bf60fa1f6524}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\external">
+      <UniqueIdentifier>{01ec6606-9462-4183-b896-331537dd7240}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\external\FileWatcher">
+      <UniqueIdentifier>{e42383c6-18d8-4c20-95ad-9d3f00c29b0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\timer">
+      <UniqueIdentifier>{342395ee-971c-4dfb-9272-209ceb57fa4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\input">
+      <UniqueIdentifier>{6d1f1374-07cc-43fd-909b-d1666ae073dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\shader">
+      <UniqueIdentifier>{0fdd72a4-7319-41db-8135-463523b4cb94}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

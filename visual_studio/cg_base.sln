@@ -3,19 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2047
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cg_base.windows", "cg_base.windows\cg_base.windows.vcxproj", "{602F842F-50C1-466D-8696-1707937D8AB9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cg_base", "cg_base\cg_base.vcxproj", "{602F842F-50C1-466D-8696-1707937D8AB9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{42ECE233-FCB5-4525-BBC9-024CE075FC38}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_world.windows", "examples\hello_world\hello_world.windows\hello_world.windows.vcxproj", "{AAAC1485-846C-4F30-8824-125E8584D038}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_world", "examples\hello_world\hello_world\hello_world.vcxproj", "{AAAC1485-846C-4F30-8824-125E8584D038}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9739A4A1-6D55-4F8F-A7F2-9E92E1BF3070}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "context_completeness", "tests\context_completeness\context_completeness.vcxproj", "{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cg_base.shared", "cg_base.shared\cg_base.shared.vcxitems", "{C2BC29AE-9C29-4DC7-BACB-3BF42F580EC9}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_world.shared", "examples\hello_world\hello_world.shared\hello_world.shared.vcxitems", "{0C7E225F-CE7F-4067-A2F8-E242F7D51048}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hello_world", "hello_world", "{08A10CAA-9B1B-41DB-9EB5-8547AC3077EA}"
 EndProject
@@ -27,12 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_ui.windows", "example
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		examples\hello_world\hello_world.shared\hello_world.shared.vcxitems*{0c7e225f-ce7f-4067-a2f8-e242f7d51048}*SharedItemsImports = 9
-		cg_base.shared\cg_base.shared.vcxitems*{602f842f-50c1-466d-8696-1707937d8ab9}*SharedItemsImports = 4
-		examples\hello_world\hello_world.shared\hello_world.shared.vcxitems*{aaac1485-846c-4f30-8824-125e8584d038}*SharedItemsImports = 4
 		examples\hello_ui\hello_ui.shared\hello_ui.shared.vcxitems*{b687fdc8-08b3-4fdf-a81e-f8912058d1c7}*SharedItemsImports = 4
 		examples\hello_ui\hello_ui.shared\hello_ui.shared.vcxitems*{c005ece1-d657-437b-8d07-4ee158a17fd7}*SharedItemsImports = 9
-		cg_base.shared\cg_base.shared.vcxitems*{c2bc29ae-9c29-4dc7-bacb-3bf42f580ec9}*SharedItemsImports = 9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_GL46|x64 = Debug_GL46|x64
@@ -80,7 +72,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{AAAC1485-846C-4F30-8824-125E8584D038} = {08A10CAA-9B1B-41DB-9EB5-8547AC3077EA}
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49} = {9739A4A1-6D55-4F8F-A7F2-9E92E1BF3070}
-		{0C7E225F-CE7F-4067-A2F8-E242F7D51048} = {08A10CAA-9B1B-41DB-9EB5-8547AC3077EA}
 		{08A10CAA-9B1B-41DB-9EB5-8547AC3077EA} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
 		{0257968D-C7A2-410D-874A-3739A9C2055D} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
 		{C005ECE1-D657-437B-8D07-4EE158A17FD7} = {0257968D-C7A2-410D-874A-3739A9C2055D}

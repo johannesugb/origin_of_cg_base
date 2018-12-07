@@ -1,16 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug_GL46_LinkReleaseLibs|x64">
-      <Configuration>Debug_GL46_LinkReleaseLibs</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug_GL46|x64">
       <Configuration>Debug_GL46</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug_Vulkan_LinkReleaseLibs|x64">
-      <Configuration>Debug_Vulkan_LinkReleaseLibs</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug_Vulkan|x64">
@@ -27,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\cg_base.windows\cg_base.windows.vcxproj">
+    <ProjectReference Include="..\..\..\cg_base\cg_base.vcxproj">
       <Project>{602f842f-50c1-466d-8696-1707937d8ab9}</Project>
     </ProjectReference>
   </ItemGroup>
