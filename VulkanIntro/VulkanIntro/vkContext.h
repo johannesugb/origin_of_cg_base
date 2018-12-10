@@ -2,6 +2,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+class vkMemoryManager;
 
 class vkContext
 {
@@ -20,6 +21,8 @@ public:
 	// TODO outsource to Command Manager
 	VkCommandPool transferCommandPool;
 	VkCommandPool commandPool;
+
+	vkMemoryManager* memoryManager;
 
 	static vkContext& instance()
 	{

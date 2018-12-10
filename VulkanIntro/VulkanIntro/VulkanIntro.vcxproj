@@ -160,10 +160,12 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main2.cpp" />
     <ClCompile Include="vkCgbBuffer.cpp" />
-    <ClCompile Include="vkCommandBuffer.cpp" />
+    <ClCompile Include="vkCgbMemory.cpp" />
+    <ClCompile Include="vkCommandBufferManager.cpp" />
     <ClCompile Include="vkContext.cpp" />
     <ClCompile Include="vkDrawer.cpp" />
     <ClCompile Include="vkImagePresenter.cpp" />
+    <ClCompile Include="vkMemoryManager.cpp" />
     <ClCompile Include="vkPresenter.cpp" />
     <ClCompile Include="vkRenderer.cpp" />
     <ClCompile Include="vkRenderObject.cpp" />
@@ -174,10 +176,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vkCgbBuffer.h" />
-    <ClInclude Include="vkCommandBuffer.h" />
+    <ClInclude Include="vkCgbMemory.h" />
+    <ClInclude Include="vkCommandBufferManager.h" />
     <ClInclude Include="vkContext.h" />
     <ClInclude Include="vkDrawer.h" />
     <ClInclude Include="vkImagePresenter.h" />
+    <ClInclude Include="vkMemoryManager.h" />
     <ClInclude Include="vkPresenter.h" />
     <ClInclude Include="vkRenderer.h" />
     <ClInclude Include="vkRenderObject.h" />

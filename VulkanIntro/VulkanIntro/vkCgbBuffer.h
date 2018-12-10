@@ -1,14 +1,18 @@
 #pragma once
 #include "vkContext.h"
 
+#include "vkCgbMemory.h"
+
+#include "vkCommandBufferManager.h"
+
 class vkCgbBuffer
 {
 public:
-	vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+	vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager);
 
 	// initializes the memory of the buffer with the given data
 	// uses a staging buffer to copy the data
-	vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, void* data);
+	vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager, void* data);
 
 	virtual ~vkCgbBuffer();
 
@@ -19,11 +23,9 @@ public:
 
 private:
 	VkBuffer _buffer;
-	VkDeviceMemory _bufferMemory;
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	vkCgbMemory _bufferMemory;
+	vkCommandBufferManager* _commandBufferManager;
 
-	VkCommandBuffer beginSingleTimeCommands();
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer & buffer, vkCgbMemory & cgbMemory);
 };
 

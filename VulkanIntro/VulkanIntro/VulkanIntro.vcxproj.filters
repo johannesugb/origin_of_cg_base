@@ -27,9 +27,6 @@
     <ClCompile Include="vkDrawer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="vkCommandBuffer.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="vkPresenter.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -51,6 +48,15 @@
     <ClCompile Include="vkCgbBuffer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="vkMemoryManager.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="vkCgbMemory.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="vkCommandBufferManager.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\triangle.vert">
@@ -67,9 +73,6 @@
     <ClInclude Include="vkDrawer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="vkCommandBuffer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="vkPresenter.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -83,6 +86,15 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="vkCgbBuffer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="vkMemoryManager.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="vkCgbMemory.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="vkCommandBufferManager.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

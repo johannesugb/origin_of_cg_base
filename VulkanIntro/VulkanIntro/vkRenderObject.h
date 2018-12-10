@@ -10,6 +10,7 @@
 
 #include "vkContext.h"
 #include "vkCgbBuffer.h"
+#include "vkTexture.h"
 
 struct Vertex {
 	glm::vec3 pos;
@@ -102,8 +103,8 @@ class vkRenderObject
 {
 public:
 	vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, VkSampler &textureSampler,
-		VkImageView &textureImageView);
+		VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, 
+		vkTexture* texture, vkCommandBufferManager* commandBufferManager);
 	virtual ~vkRenderObject();
 
 	std::vector<Vertex> getVertices() { return _vertices; }
@@ -133,10 +134,13 @@ private:
 	PushUniforms _pushUniforms;
 	// TODO PERFORMANCE use multiple descriptor sets / per render pass, e.g. shadow pass does not use textures
 	// or like suggested for AMD Hardware, use one large descriptor set for everything and index into Texture arrays and uniforms
+	// suggestion: use an array of descriptor sets, the drawer then can decide, which descriptor set to use, 
+	// additionally allow global/per drawer descriptor sets
+	// this offers the most flexibility for the user of the framework, while still being easy to use
 	std::vector<VkDescriptorSet> _descriptorSets;
 
-	void createUniformBuffer();
-	void createDescriptorSets(VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, VkSampler &textureSampler,
-		VkImageView &textureImageView);
+	void createUniformBuffer(vkCommandBufferManager* commandBufferManager);
+	void createDescriptorSets(VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, 
+		vkTexture* texture);
 };
 

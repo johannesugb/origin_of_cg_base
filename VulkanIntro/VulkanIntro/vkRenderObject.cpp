@@ -3,14 +3,14 @@
 
 
 vkRenderObject::vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-	VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, VkSampler &textureSampler,
-	VkImageView &textureImageView)
+	VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, 
+	vkTexture* texture, vkCommandBufferManager* commandBufferManager)
 	: _imageCount(imageCount), _vertices(vertices), _indices(indices),
-	_vertexBuffer(sizeof(_vertices[0]) * _vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _vertices.data()),
-	_indexBuffer(sizeof(_indices[0]) * _indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _indices.data())
+	_vertexBuffer(sizeof(_vertices[0]) * _vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandBufferManager, _vertices.data()),
+	_indexBuffer(sizeof(_indices[0]) * _indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandBufferManager, _indices.data())
 {
-	createUniformBuffer();
-	createDescriptorSets(descriptorSetLayout, descriptorPool, textureSampler, textureImageView);
+	createUniformBuffer(commandBufferManager);
+	createDescriptorSets(descriptorSetLayout, descriptorPool, texture);
 }
 
 
@@ -21,18 +21,17 @@ vkRenderObject::~vkRenderObject()
 	}
 }
 
-void vkRenderObject::createUniformBuffer() {
+void vkRenderObject::createUniformBuffer(vkCommandBufferManager* commandBufferManager) {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
 	_uniformBuffers.resize(_imageCount);
 
 	for (size_t i = 0; i < _imageCount; i++) {
-		_uniformBuffers[i] = new vkCgbBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		_uniformBuffers[i] = new vkCgbBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, commandBufferManager);
 	}
 }
 
-void vkRenderObject::createDescriptorSets(VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, VkSampler &textureSampler,
-	VkImageView &textureImageView) {
+void vkRenderObject::createDescriptorSets(VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, vkTexture* texture) {
 	std::vector<VkDescriptorSetLayout> layouts(_imageCount, descriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -53,8 +52,8 @@ void vkRenderObject::createDescriptorSets(VkDescriptorSetLayout &descriptorSetLa
 
 		VkDescriptorImageInfo imageInfo = {};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = textureImageView;
-		imageInfo.sampler = textureSampler;
+		imageInfo.imageView = texture->getTextureImageView();
+		imageInfo.sampler = texture->getTextureSampler();
 
 		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
