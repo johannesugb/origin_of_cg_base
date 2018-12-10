@@ -38,14 +38,14 @@ namespace cgb
 										fmt::print("{}{}{}\n", "ERR:  ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
-	#define LOG_IMPORTANT_ERROR(msg)		do { \
+	#define LOG_ERROR_EM(msg)		do { \
 										cgb::set_console_output_color(cgb::log_type::error, cgb::log_importance::important); \
 										fmt::print("{}{}{}\n", "ERR:  ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
 	#else
 	#define LOG_ERROR(msg)
-	#define LOG_IMPORTANT_ERROR(msg)
+	#define LOG_ERROR_EM(msg)
 	#endif
 
 	#if LOG_LEVEL > 1
@@ -54,14 +54,14 @@ namespace cgb
 										fmt::print("{}{}{}\n", "WARN: ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
-	#define LOG_IMPORTANT_WARNING(msg)		do { \
+	#define LOG_WARNING_EM(msg)	do { \
 										cgb::set_console_output_color(cgb::log_type::warning, cgb::log_importance::important); \
 										fmt::print("{}{}{}\n", "WARN: ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
 	#else 
 	#define LOG_WARNING(msg)
-	#define LOG_IMPORTANT_WARNING(msg)
+	#define LOG_WARNING_EM(msg)
 	#endif
 
 	#if LOG_LEVEL > 2
@@ -70,14 +70,14 @@ namespace cgb
 										fmt::print("{}{}{}\n", "INFO: ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
-	#define LOG_IMPORTANT_INFO(msg)		do { \
+	#define LOG_INFO_EM(msg)	do { \
 										cgb::set_console_output_color(cgb::log_type::info, cgb::log_importance::important); \
 										fmt::print("{}{}{}\n", "INFO: ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
 	#else
 	#define LOG_INFO(msg)
-	#define LOG_IMPORTANT_INFO(msg)
+	#define LOG_INFO_EM(msg)
 	#endif
 
 	#if LOG_LEVEL > 3
@@ -86,14 +86,14 @@ namespace cgb
 										fmt::print("{}{}{}\n", "VRBS: ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
-	#define LOG_IMPORTANT_VERBOSE(msg)		do { \
+	#define LOG_VERBOSE_EM(msg)	do { \
 										cgb::set_console_output_color(cgb::log_type::verbose, cgb::log_importance::important); \
 										fmt::print("{}{}{}\n", "VRBS: ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
 	#else 
 	#define LOG_VERBOSE(msg)
-	#define LOG_IMPORTANT_VERBOSE(msg)
+	#define LOG_VERBOSE_EM(msg)
 	#endif
 
 	#ifdef _DEBUG
@@ -102,14 +102,14 @@ namespace cgb
 										fmt::print("{}{}{}\n", "DBG:  ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
-	#define LOG_IMPORTANT_DEBUG(msg)		do { \
+	#define LOG_DEBUG_EM(msg)	do { \
 										cgb::set_console_output_color(cgb::log_type::debug, cgb::log_importance::important); \
 										fmt::print("{}{}{}\n", "DBG:  ", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
 	#else
 	#define LOG_DEBUG(msg)
-	#define LOG_IMPORTANT_DEBUG(msg)
+	#define LOG_DEBUG_EM(msg)
 	#endif
 
 	#if defined(_DEBUG) && LOG_LEVEL > 3
@@ -118,14 +118,14 @@ namespace cgb
 										fmt::print("{}{}{}\n", "DBG-V:", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
-	#define LOG_IMPORTANT_DEBUG_VERBOSE(msg)	do { \
+	#define LOG_DEBUG_VERBOSE_EM(msg)	do { \
 										cgb::set_console_output_color(cgb::log_type::debug_verbose, cgb::log_importance::important); \
 										fmt::print("{}{}{}\n", "DBG-V:", msg, fmt::format(" | file[{}] line[{}]", __FILE__, __LINE__)); \
 										cgb::reset_console_output_color(); \
 								} while(false)
 	#else
 	#define LOG_DEBUG_VERBOSE(msg)
-	#define LOG_IMPORTANT_DEBUG_VERBOSE(msg)   	
+	#define LOG_DEBUG_VERBOSE_EM(msg)   	
 	#endif
 
 	std::string to_string(const glm::mat4&);

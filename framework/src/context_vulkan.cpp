@@ -40,6 +40,20 @@ namespace cgb
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		// Create it, errors will result in an exception.
 		mInstance = vk::createInstance(instCreateInfo);
+
+		// Setup debug callback and enable all validation layers configured in global settings 
+		setup_vk_debug_callback();
+	}
+
+	vulkan::~vulkan()
+	{
+#if LOG_LEVEL > 0
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			func(mInstance, mDebugCallbackHandle, nullptr);
+		}
+#endif
+		mInstance.destroy();
 	}
 
 	window vulkan::create_window(const window_params& pParams)
@@ -69,7 +83,7 @@ namespace cgb
 			});
 	}
 
-	VkBool32 vulkan::debugCallback(
+	VKAPI_ATTR VkBool32 VKAPI_CALL  vulkan::vk_debug_callback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT pMessageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT pMessageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -86,22 +100,80 @@ namespace cgb
 		if ((pMessageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0) {
 			typeDescription += "Performance, ";
 		}
+		// build the final string to be displayed (could also be an empty one)
 		if (typeDescription.size() > 0) {
 			typeDescription = "(" + typeDescription.substr(0, typeDescription.size() - 2) + ") ";
 		}
 
 		if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-			LOG_ERROR("asdf");
+			assert(pCallbackData);
+			LOG_ERROR(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+				pCallbackData->messageIdNumber,
+				pCallbackData->pMessageIdName,
+				pCallbackData->pMessage));
 		}
 		else if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-
+			assert(pCallbackData);
+			LOG_WARNING(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+				pCallbackData->messageIdNumber,
+				pCallbackData->pMessageIdName,
+				pCallbackData->pMessage));
 		}
 		else if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-
+			assert(pCallbackData);
+			LOG_INFO(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+				pCallbackData->messageIdNumber,
+				pCallbackData->pMessageIdName,
+				pCallbackData->pMessage));
 		}
 		else if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-
+			assert(pCallbackData);
+			LOG_VERBOSE(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+				pCallbackData->messageIdNumber,
+				pCallbackData->pMessageIdName,
+				pCallbackData->pMessage));
 		}
-		return 0; // TODO: retturn what?
+		return VK_FALSE; 
+	}
+
+	void vulkan::setup_vk_debug_callback()
+	{
+		// Configure logging
+#if LOG_LEVEL > 0
+		if (settings::gValidationLayersToBeActivated.size() == 0) {
+			return;
+		}
+
+		auto msgCreateInfo = vk::DebugUtilsMessengerCreateInfoEXT()
+			.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
+#if LOG_LEVEL > 1
+				| vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+#if LOG_LEVEL > 2
+				| vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo
+#if LOG_LEVEL > 3
+				| vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose
+#endif
+#endif
+#endif
+			)
+			.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation)
+			.setPfnUserCallback(vulkan::vk_debug_callback);
+
+		// Hook in
+		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mInstance, "vkCreateDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			auto result = func(
+				mInstance, 
+				&static_cast<VkDebugUtilsMessengerCreateInfoEXT>(msgCreateInfo), 
+				nullptr, 
+				&mDebugCallbackHandle);
+			if (VK_SUCCESS != result) {
+				throw std::runtime_error("Failed to set up debug callback via vkCreateDebugUtilsMessengerEXT");
+			}
+		}
+		else {
+			throw std::runtime_error("Failed to vkGetInstanceProcAddr for vkCreateDebugUtilsMessengerEXT.");
+		}
+#endif
 	}
 }

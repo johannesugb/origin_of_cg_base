@@ -21,6 +21,11 @@ namespace cgb
 	{
 	public:
 		vulkan();
+		vulkan(const vulkan&) = delete;
+		vulkan(vulkan&&) = delete;
+		vulkan& operator=(const vulkan&) = delete;
+		vulkan& operator=(vulkan&&) = delete;
+		virtual ~vulkan();
 
 		window create_window(const window_params&);
 
@@ -41,13 +46,12 @@ namespace cgb
 		static bool is_validation_layer_supported(const char* pName);
 
 		/** Method which handles debug callbacks from the validation layers */
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-			VkDebugUtilsMessageSeverityFlagBitsEXT pMessageSeverity,
-			VkDebugUtilsMessageTypeFlagsEXT pMessageType,
-			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-			void* pUserData);
+		static VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*, void*);
+
+		void setup_vk_debug_callback();
 
 	private:
 		vk::Instance mInstance;
+		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
 	};
 }
