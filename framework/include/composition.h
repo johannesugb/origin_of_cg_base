@@ -163,7 +163,7 @@ namespace cgb
 			{
 				if ((i+1) % 1000 == 0)
 				{
-					LOG_WARNING("More than %d iterations in spin-lock", i+1);
+					LOG_WARNING(fmt::format("More than {} iterations in spin-lock", i+1));
 				}
 			}
 			assert(thiz->mShouldSwapInputBuffers == false);
@@ -196,7 +196,7 @@ namespace cgb
 					thiz->mExecutor.execute_updates(thiz->mElements);
 
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
-					please_swap_input_buffers(thiz);
+					please_swap_input_buffers(thiz); 
 
 					// 4. render
 					thiz->mExecutor.execute_renders(thiz->mElements);

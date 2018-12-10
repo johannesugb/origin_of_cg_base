@@ -21,11 +21,13 @@
   <ItemGroup>
     <ClCompile Include="..\..\external\src\FileWatcher\FileWatcher.cpp" />
     <ClCompile Include="..\..\external\src\FileWatcher\FileWatcherWin32.cpp" />
+    <ClCompile Include="..\..\external\src\format.cc" />
     <ClCompile Include="..\..\external\src\glad.cpp" />
     <ClCompile Include="..\..\external\src\imgui.cpp" />
     <ClCompile Include="..\..\external\src\imgui_demo.cpp" />
     <ClCompile Include="..\..\external\src\imgui_draw.cpp" />
     <ClCompile Include="..\..\framework\src\composition_interface.cpp" />
+    <ClCompile Include="..\..\framework\src\context.cpp" />
     <ClCompile Include="..\..\framework\src\context_generic_glfw.cpp" />
     <ClCompile Include="..\..\framework\src\context_opengl46.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">true</ExcludedFromBuild>

@@ -1,6 +1,7 @@
 // hello_world.cpp : Defines the entry point for the console application.
 //
 #include "cg_base.h"
+using namespace std;
 
 class hello_behavior : public cgb::cg_element
 {
@@ -24,8 +25,8 @@ int main()
 {
 	try
 	{
-		cgb::sApplicationName = "Hello World";
-		cgb::sApplicationVersion = cgb::make_version(1, 0, 0);
+		cgb::settings::gApplicationName = "Hello World";
+		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
 
 		// Create a window which we're going to use to render to
 		auto windowParams = cgb::window_params

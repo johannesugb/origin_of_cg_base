@@ -1,5 +1,4 @@
 #pragma once
-#ifdef USE_OPENGL46_CONTEXT
 
 // INCLUDES:
 #include <glad/glad.h>
@@ -39,5 +38,3 @@ namespace cgb
 		}
 	};
 }
-
-#endif // USE_OPENGL46_CONTEXT

@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 // ----------------------- externals -----------------------
+#include <fmt/format.h>
 #include <stb_image.h>
 
 #include <assimp/Importer.hpp>  // C++ importer interface
@@ -34,6 +35,13 @@
 #include <imgui.h>
 
 // Note: GLM is getting included in the context-headers.
+
+// -------------------- windows include ---------------------
+#ifdef _WIN32
+// Include that after the assimp includes due to some conflict
+// with the global scope operator :: in material.inl
+#include <windows.h>
+#endif
 
 // -------------------- CG-Base includes --------------------
 #include "context.h"

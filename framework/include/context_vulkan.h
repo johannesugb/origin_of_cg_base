@@ -1,4 +1,3 @@
-#ifdef USE_VULKAN_CONTEXT
 #pragma once
 
 // DEFINES:
@@ -35,8 +34,20 @@ namespace cgb
 		}
 
 	private:
+		/** Queries the instance layer properties for validation layers 
+		 *  and returns true if a layer with the given name could be found.
+		 *  Returns false if not found. 
+		 */
+		static bool is_validation_layer_supported(const char* pName);
+
+		/** Method which handles debug callbacks from the validation layers */
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+			VkDebugUtilsMessageSeverityFlagBitsEXT pMessageSeverity,
+			VkDebugUtilsMessageTypeFlagsEXT pMessageType,
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+			void* pUserData);
+
+	private:
 		vk::Instance mInstance;
 	};
 }
-
-#endif // USE_VULKAN_CONTEXT

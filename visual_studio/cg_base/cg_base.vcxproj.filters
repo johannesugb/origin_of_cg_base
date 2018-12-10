@@ -55,6 +55,12 @@
     <ClCompile Include="..\src\cg_stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\context.cpp">
+      <Filter>Source Files\context</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\src\format.cc">
+      <Filter>external\fmt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -196,6 +202,9 @@
     </Filter>
     <Filter Include="Source Files\shader">
       <UniqueIdentifier>{0fdd72a4-7319-41db-8135-463523b4cb94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\fmt">
+      <UniqueIdentifier>{b7ee0645-b8f3-43ad-ac4c-25c4d5ae61f2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

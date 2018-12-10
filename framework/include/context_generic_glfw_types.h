@@ -1,5 +1,4 @@
 #pragma once
-#if defined(USE_VULKAN_CONTEXT) || defined(USE_OPENGL46_CONTEXT)
 
 #include <GLFW/glfw3.h>
 
@@ -69,5 +68,3 @@ namespace cgb
 	};
 
 }
-
-#endif

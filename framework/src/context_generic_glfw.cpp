@@ -1,4 +1,3 @@
-#if defined(USE_VULKAN_CONTEXT) || defined(USE_OPENGL46_CONTEXT)
 #include "context_generic_glfw.h"
 #include "window.h"
 #include "input_buffer.h"
@@ -242,8 +241,7 @@ namespace cgb
 
 	void generic_glfw::glfw_error_callback(int error, const char* description)
 	{
-		LOG_ERROR("GLFW-Error: hex[0x%x] int[%d] description[%s]", error, error, description);
-		LOG_ERROR("GLFW-Error: hex[0x%x] int[%d] description[%s]", error, error, description);
+		LOG_ERROR(fmt::format("GLFW-Error: hex[0x{0:x}] int[{0}] description[{1}]", error, description));
 	}
 
 	void generic_glfw::start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer)
@@ -335,5 +333,3 @@ namespace cgb
 	}
 
 }
-
-#endif // defined(USE_VULKAN_CONTEXT) || defined(USE_OPENGL46_CONTEXT)

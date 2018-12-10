@@ -2,6 +2,84 @@
 
 namespace cgb
 {
+	void set_console_output_color(cgb::log_type level, cgb::log_importance importance)
+	{
+#ifdef _WIN32
+		static auto std_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		switch (level) {
+		case cgb::log_type::error:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xCF);
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0xC);
+				break;
+			}
+			break;
+		case cgb::log_type::warning:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xE0);
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0xE);
+				break;
+			}
+			break;
+		case cgb::log_type::verbose:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0x80);
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x8);
+				break;
+			}
+			break;
+		case cgb::log_type::debug:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xA0);
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0xA);
+				break;
+			}
+			break;
+		case cgb::log_type::debug_verbose:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0x20);
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x2);
+				break;
+			}
+			break;
+		default:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xF0);
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0xF);
+				break;
+			}
+			break;
+		}
+#endif // WIN32
+	}
+
+	void reset_console_output_color()
+	{
+#ifdef _WIN32
+		static auto std_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(std_output_handle, 0xF);
+#endif // WIN32
+	}
+
+
 	std::string to_string(const glm::mat4& pMatrix)
 	{
 		char buf[128];

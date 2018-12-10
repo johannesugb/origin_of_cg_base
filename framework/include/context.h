@@ -1,15 +1,29 @@
 #pragma once
 
+#if defined(USE_OPENGL46_CONTEXT)
 #include "context_opengl46.h"
+#elif defined(USE_VULKAN_CONTEXT)
 #include "context_vulkan.h"
+#endif
 
 namespace cgb
 {
-	/** Set this to your application's name */
-	static std::string sApplicationName = "cg_base application";
+	namespace settings
+	{
+		/** Set this to your application's name */
+		extern std::string gApplicationName;
 
-	/** Set this to your application's version */
-	static uint32_t sApplicationVersion = 0;
+		/** Set this to your application's version */
+		extern uint32_t gApplicationVersion;
+
+		/** Fill this vector with further required instance extensions, if required */
+		extern std::vector<const char*> gRequiredInstanceExtensions;
+
+		/** Modify this vector according to your needs. 
+		 *  It will be initialized with a default validation layer name already.
+		 */
+		extern std::vector<const char*> gValidationLayersToBeActivated;
+	}
 
 #if defined(USE_OPENGL46_CONTEXT)
 	inline opengl46& context()

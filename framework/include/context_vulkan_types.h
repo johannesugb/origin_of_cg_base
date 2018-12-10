@@ -1,5 +1,4 @@
 #pragma once
-#ifdef USE_VULKAN_CONTEXT
 
 namespace cgb
 {
@@ -8,5 +7,3 @@ namespace cgb
 		int m_vulkan_specific_handle;
 	};
 }
-
-#endif // USE_VULKAN_CONTEXT

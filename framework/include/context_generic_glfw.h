@@ -1,5 +1,4 @@
 #pragma once
-#if defined(USE_VULKAN_CONTEXT) || defined(USE_OPENGL46_CONTEXT)
 #include "context_generic_glfw_types.h"
 
 namespace cgb
@@ -73,5 +72,3 @@ namespace cgb
 		static std::array<key_code, GLFW_KEY_LAST + 1> sGlfwToKeyMapping;
 	};
 }
-
-#endif

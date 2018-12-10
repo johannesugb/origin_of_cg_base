@@ -1,4 +1,3 @@
-#ifdef USE_OPENGL46_CONTEXT
 #include "context_opengl46.h"
 
 namespace cgb
@@ -36,12 +35,10 @@ namespace cgb
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR)
 		{
-			LOG_ERROR("glError int[%d] hex[0x%x] in file[%s], line[%d]", err, err, file, line);
+			LOG_ERROR(fmt::format("glError int[{:d}] hex[0x{:x}] in file[{}], line[{}]", err, err, file, line));
 			hasError = true;
 		}
 		return hasError;
 	}
 
 }
-
-#endif // USE_OPENGL46_CONTEXT

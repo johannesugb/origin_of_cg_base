@@ -1,5 +1,4 @@
 #pragma once
-#ifdef USE_OPENGL46_CONTEXT
 
 namespace cgb
 {
@@ -9,5 +8,3 @@ namespace cgb
 		int m_gl_specific_handle;
 	};
 }
-
-#endif // USE_OPENGL46_CONTEXT
