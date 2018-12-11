@@ -27,10 +27,10 @@ int main()
 	{
 		cgb::settings::gApplicationName = "Hello World";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
+		cgb::settings::gRequiredDeviceExtensions.push_back("VK_NV_ray_tracing");
 
 		// Create a window which we're going to use to render to
-		auto windowParams = cgb::window_params
-		{
+		cgb::window_params windowParams = {
 			std::nullopt,
 			std::nullopt,
 			"Hello cg_base World!"
@@ -57,7 +57,7 @@ int main()
 	}
 	catch (std::runtime_error& re)
 	{
-		LOG_ERROR(re.what());
+		LOG_ERROR_EM(re.what());
 	}
 }
 

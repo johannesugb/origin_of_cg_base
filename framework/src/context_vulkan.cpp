@@ -43,6 +43,9 @@ namespace cgb
 
 		// Setup debug callback and enable all validation layers configured in global settings 
 		setup_vk_debug_callback();
+
+		// Select the best suitable physical device which supports all requested extensions
+		pick_physical_device();
 	}
 
 	vulkan::~vulkan()
@@ -175,5 +178,76 @@ namespace cgb
 			throw std::runtime_error("Failed to vkGetInstanceProcAddr for vkCreateDebugUtilsMessengerEXT.");
 		}
 #endif
+	}
+
+	void vulkan::pick_physical_device()
+	{
+		auto devices = mInstance.enumeratePhysicalDevices();
+		if (devices.size() == 0) {
+			throw std::runtime_error("Failed to find GPUs with Vulkan support.");
+		}
+		const vk::PhysicalDevice* currentSelection = nullptr;
+		uint32_t currentScore = 0; // device score
+		
+		// Iterate over all devices
+		for (const auto& device : devices) {
+			// get features and queues
+			auto properties = device.getProperties();
+			auto features = device.getFeatures();
+			auto queueFamilyProps = device.getQueueFamilyProperties();
+			// check for required features
+			bool graphicsBitSet = false;
+			bool computeBitSet = false;
+			for (const auto& qfp : queueFamilyProps) {
+				graphicsBitSet = graphicsBitSet || ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) == vk::QueueFlagBits::eGraphics);
+				computeBitSet = computeBitSet || ((qfp.queueFlags & vk::QueueFlagBits::eCompute) == vk::QueueFlagBits::eCompute);
+			}
+
+			// TODO/INFO: Prioritizing nvidia is a bad solution, of course. 
+			// It is/was useful during development, but should be replaced by some meaningful code:
+			uint32_t score =
+				(graphicsBitSet ? 10 : 0) +
+				(computeBitSet ? 10 : 0) +
+				(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? 10 : 0) +
+				(properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu ? 5 : 0) +
+				(find_case_insensitive(properties.deviceName, "nvidia", 0) != std::string::npos ? 1 : 0);
+
+			// Check if extensions are required
+			if (settings::gRequiredDeviceExtensions.size() > 0) {
+				uint32_t scoreMultiplier = 1;
+				// Search for each extension requested!
+				for (const auto& required : settings::gRequiredDeviceExtensions) {
+					uint32_t extensionMultiplier = 0;
+					auto deviceExtensions = device.enumerateDeviceExtensionProperties();
+					// See if we can find the current requested extension in the array of all device extensions
+					auto result = std::find_if(std::begin(deviceExtensions), std::end(deviceExtensions),
+											   [required](const auto& devext) { 
+												   return strcmp(required, devext.extensionName) == 0;
+											   });
+					if (result != std::end(deviceExtensions)) {
+						// found the device extension
+						extensionMultiplier = 1;
+					}
+					scoreMultiplier *= extensionMultiplier;
+				}
+				score *= scoreMultiplier;
+			}
+
+			if (score > currentScore) {
+				currentSelection = &device;
+				currentScore = score;
+			}	
+		}
+
+		// Handle failure:
+		if (nullptr == currentSelection) {
+			if (settings::gRequiredDeviceExtensions.size() > 0) {
+				throw std::runtime_error("Could not find a suitable physical device, most likely because no device supported all required device extensions.");
+			}
+			throw std::runtime_error("Could not find a suitable physical device.");
+		}
+
+		// Handle success:
+		mPhysicalDevice = *currentSelection;
 	}
 }

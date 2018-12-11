@@ -48,10 +48,15 @@ namespace cgb
 		/** Method which handles debug callbacks from the validation layers */
 		static VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*, void*);
 
+		/** Set up the debug callbacks, i.e. hook into vk to have @ref vk_debug_callback called */
 		void setup_vk_debug_callback();
+
+		/** Pick the physical device which looks to be the most promising one */
+		void pick_physical_device();
 
 	private:
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
+		vk::PhysicalDevice mPhysicalDevice;
 	};
 }

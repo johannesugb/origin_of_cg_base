@@ -23,6 +23,9 @@ namespace cgb
 		 *  It will be initialized with a default validation layer name already.
 		 */
 		extern std::vector<const char*> gValidationLayersToBeActivated;
+
+		/** Fill this vector with required device extensions, if required */
+		extern std::vector<const char*> gRequiredDeviceExtensions;
 	}
 
 #if defined(USE_OPENGL46_CONTEXT)
