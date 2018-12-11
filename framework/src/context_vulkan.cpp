@@ -2,6 +2,18 @@
 
 namespace cgb
 {
+	auto vulkan::assemble_validation_layers()
+	{
+		std::vector<const char*> supportedValidationLayers;
+		std::copy_if(
+			std::begin(settings::gValidationLayersToBeActivated), std::end(settings::gValidationLayersToBeActivated),
+			std::back_inserter(supportedValidationLayers),
+			[](auto name) {
+				return is_validation_layer_supported(name);
+			});
+		return supportedValidationLayers;
+	}
+
 	vulkan::vulkan() : generic_glfw()
 	{
 		// Information about the application for the instance creation call
@@ -19,13 +31,7 @@ namespace cgb
 			std::begin(settings::gRequiredInstanceExtensions), std::end(settings::gRequiredInstanceExtensions));
 
 		// Check for each validation layer if it exists and activate all which do.
-		std::vector<const char*> supportedValidationLayers;
-		std::copy_if(
-			std::begin(settings::gValidationLayersToBeActivated), std::end(settings::gValidationLayersToBeActivated),
-			std::back_inserter(supportedValidationLayers),
-			[](auto name) {
-				return is_validation_layer_supported(name);
-			});
+		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		// Enable extension to receive callbacks for the validation layers
 		if (supportedValidationLayers.size() > 0) {
 			requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -46,10 +52,16 @@ namespace cgb
 
 		// Select the best suitable physical device which supports all requested extensions
 		pick_physical_device();
+
+		create_logical_device();
+
+		get_graphics_queue();
 	}
 
 	vulkan::~vulkan()
 	{
+		mLogicalDevice.destroy();
+
 #if LOG_LEVEL > 0
 		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr) {
@@ -81,7 +93,7 @@ namespace cgb
 		auto availableLayers = vk::enumerateInstanceLayerProperties();
 		return availableLayers.end() !=  std::find_if(
 			std::begin(availableLayers), std::end(availableLayers), 
-			[toFind = std::string(pName)](const auto& e) {
+			[toFind = std::string(pName)](const vk::LayerProperties& e) {
 				return e.layerName == toFind;
 			});
 	}
@@ -141,6 +153,7 @@ namespace cgb
 
 	void vulkan::setup_vk_debug_callback()
 	{
+		assert(mInstance);
 		// Configure logging
 #if LOG_LEVEL > 0
 		if (settings::gValidationLayersToBeActivated.size() == 0) {
@@ -180,8 +193,30 @@ namespace cgb
 #endif
 	}
 
+	bool vulkan::supports_all_required_extensions(const vk::PhysicalDevice& device)
+	{
+		bool allExtensionsSupported = true;
+		if (settings::gRequiredDeviceExtensions.size() > 0) {
+			// Search for each extension requested!
+			for (const auto& required : settings::gRequiredDeviceExtensions) {
+				auto deviceExtensions = device.enumerateDeviceExtensionProperties();
+				// See if we can find the current requested extension in the array of all device extensions
+				auto result = std::find_if(std::begin(deviceExtensions), std::end(deviceExtensions),
+										   [required](const vk::ExtensionProperties& devext) {
+											   return strcmp(required, devext.extensionName) == 0;
+										   });
+				if (result == std::end(deviceExtensions)) {
+					// could not find the device extension
+					allExtensionsSupported = false;
+				}
+			}
+		}
+		return allExtensionsSupported;
+	}
+
 	void vulkan::pick_physical_device()
 	{
+		assert(mInstance);
 		auto devices = mInstance.enumeratePhysicalDevices();
 		if (devices.size() == 0) {
 			throw std::runtime_error("Failed to find GPUs with Vulkan support.");
@@ -213,24 +248,8 @@ namespace cgb
 				(find_case_insensitive(properties.deviceName, "nvidia", 0) != std::string::npos ? 1 : 0);
 
 			// Check if extensions are required
-			if (settings::gRequiredDeviceExtensions.size() > 0) {
-				uint32_t scoreMultiplier = 1;
-				// Search for each extension requested!
-				for (const auto& required : settings::gRequiredDeviceExtensions) {
-					uint32_t extensionMultiplier = 0;
-					auto deviceExtensions = device.enumerateDeviceExtensionProperties();
-					// See if we can find the current requested extension in the array of all device extensions
-					auto result = std::find_if(std::begin(deviceExtensions), std::end(deviceExtensions),
-											   [required](const auto& devext) { 
-												   return strcmp(required, devext.extensionName) == 0;
-											   });
-					if (result != std::end(deviceExtensions)) {
-						// found the device extension
-						extensionMultiplier = 1;
-					}
-					scoreMultiplier *= extensionMultiplier;
-				}
-				score *= scoreMultiplier;
+			if (!supports_all_required_extensions(device)) {
+				score = 0;
 			}
 
 			if (score > currentScore) {
@@ -249,5 +268,70 @@ namespace cgb
 
 		// Handle success:
 		mPhysicalDevice = *currentSelection;
+	}
+
+	auto vulkan::find_queue_families_with_flags(vk::QueueFlagBits requiredFlags)
+	{
+		assert(mPhysicalDevice);
+		// All queue families:
+		auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
+		std::vector<std::tuple<uint32_t, decltype(queueFamilies)::value_type>> indexedQueueFamilies;
+		std::transform(std::begin(queueFamilies), std::end(queueFamilies),
+					   std::back_inserter(indexedQueueFamilies),
+					   [index = uint32_t(0)](const decltype(queueFamilies)::value_type& input) mutable {
+						   auto tpl = std::make_tuple(index, input);
+						   index += 1;
+						   return tpl;
+					   });
+		// Subset to which the criteria applies:
+		decltype(indexedQueueFamilies) selection;
+		// Select the subset
+		std::copy_if(std::begin(indexedQueueFamilies), std::end(indexedQueueFamilies),
+					 std::back_inserter(selection),
+					 [requiredFlags](const std::tuple<uint32_t, decltype(queueFamilies)::value_type>& tpl) {
+						 return (std::get<1>(tpl).queueFlags & requiredFlags) == requiredFlags;
+					 });
+		return selection;
+	}
+
+	void vulkan::create_logical_device()
+	{
+		assert(mPhysicalDevice);
+		auto selectedFamilies = find_queue_families_with_flags(vk::QueueFlagBits::eGraphics);
+		if (selectedFamilies.size() == 0) {
+			throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
+		}
+
+		// Get the same validation layers as for the instance!
+		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
+
+		float queuePriority = 1.0f;
+		auto queueCreateInfo = vk::DeviceQueueCreateInfo()
+			.setQueueFamilyIndex(std::get<0>(selectedFamilies[0])) // TODO: For now, just the first one is selected, what to do with the others?
+			.setQueueCount(1) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
+			.setPQueuePriorities(&queuePriority);
+		auto deviceFeatures = vk::PhysicalDeviceFeatures();
+		auto deviceCreateInfo = vk::DeviceCreateInfo()
+			.setQueueCreateInfoCount(1u)
+			.setPQueueCreateInfos(&queueCreateInfo)
+			.setPEnabledFeatures(&deviceFeatures)
+			// Whether the device supports these extensions has already been checked during device selection in @ref pick_physical_device
+			// TODO: Are these the correct extensions to set here?
+			.setEnabledExtensionCount(static_cast<uint32_t>(settings::gRequiredDeviceExtensions.size()))
+			.setPpEnabledExtensionNames(settings::gRequiredDeviceExtensions.data())
+			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
+			.setPpEnabledLayerNames(supportedValidationLayers.data());
+		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
+	}
+
+	void vulkan::get_graphics_queue()
+	{
+		assert(mLogicalDevice);
+		auto selectedFamilies = find_queue_families_with_flags(vk::QueueFlagBits::eGraphics);
+		if (selectedFamilies.size() == 0) {
+			throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
+		}
+
+		auto queue = mLogicalDevice.getQueue(std::get<0>(selectedFamilies[0]), 0); // TODO: Why always select the first one?
 	}
 }
