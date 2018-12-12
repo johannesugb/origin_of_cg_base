@@ -8,8 +8,9 @@ namespace cgb
 	input_buffer* generic_glfw::sTargetInputBuffer(nullptr);
 	std::array<key_code, GLFW_KEY_LAST + 1> generic_glfw::sGlfwToKeyMapping{};
 
-	generic_glfw::generic_glfw() :
-		mInitialized(false)
+	generic_glfw::generic_glfw()
+		: mInitialized(false)
+
 	{
 		LOG_VERBOSE("Creating GLFW context...");
 	
@@ -214,8 +215,9 @@ namespace cgb
 			throw std::runtime_error("glfwCreateWindow failed"); 
 		}
 
-		mWindows.emplace_back(window_handle{ handle });
-		return &mWindows[mWindows.size() - 1];
+		mWindows.push_back(std::make_unique<window>(window_handle{ handle }));
+		// TODO: schau mol:
+		return mWindows[mWindows.size() - 1].get();
 	}
 
 	void generic_glfw::close_window(window& wnd)

@@ -195,12 +195,27 @@ namespace cgb
 #endif
 	}
 
-	void vulkan::create_surface()
+	vk::SurfaceKHR* vulkan::create_surface_for_window(window* pWindow)
 	{
-		//auto surfCreateInfo = vk::Win32SurfaceCreateInfoKHR()
-		//	.setHwnd(glfwGetWindowUserPointer)
-		//	.setHinstance(GetModuleHandle());
-		// TODO: Fix das oben und proceed.. https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface
+		assert(pWindow);
+		assert(pWindow->handle());
+		VkSurfaceKHR surface;
+		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mWindowHandle, nullptr, &surface)) {
+			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->name()));
+		}
+		mSurfaces.push_back(std::make_unique<std::tuple<window*, vk::SurfaceKHR>>(std::make_tuple(pWindow, vk::SurfaceKHR{ surface })));
+		// TODO: zruckgeben
+		return nullptr;
+	}
+
+	vk::SurfaceKHR* vulkan::get_surface_for_window(window* pWindow)
+	{
+		return nullptr;
+	}
+
+	window* vulkan::get_window_for_surface(const vk::SurfaceKHR pSurface)
+	{
+		return nullptr;
 	}
 
 	bool vulkan::supports_all_required_extensions(const vk::PhysicalDevice& device)

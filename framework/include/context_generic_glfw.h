@@ -66,7 +66,7 @@ namespace cgb
 		static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 		static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-		std::vector<window> mWindows;
+		std::vector<std::unique_ptr<window>> mWindows;
 		bool mInitialized;
 		static std::mutex sInputMutex;
 		static input_buffer* sTargetInputBuffer;

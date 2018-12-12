@@ -7,8 +7,9 @@
 
 // INCLUDES:
 #include <vulkan/vulkan.hpp>
-#include "context_generic_glfw.h"
+#include "context_generic_glfw_types.h"
 #include "context_vulkan_types.h"
+#include "context_generic_glfw.h"
 
 namespace cgb
 {
@@ -63,8 +64,18 @@ namespace cgb
 		/** Set up the debug callbacks, i.e. hook into vk to have @ref vk_debug_callback called */
 		void setup_vk_debug_callback();
 
-		// TODO: implement and comment
-		void create_surface();
+		/** Creates a surface for the given window */
+		vk::SurfaceKHR* create_surface_for_window(window* pWindow);
+
+		/** Gets the surface assigned to the given window.
+		 *	@return Pointer to the surface or nullptr if not found
+		 */
+		vk::SurfaceKHR* get_surface_for_window(window* pWindow);
+		
+		/** Gets the window assigned to the given surface.
+		 *	@return Pointer to the window or nullptr if not found
+		 */
+		window* get_window_for_surface(const vk::SurfaceKHR pSurface);
 
 		/** Checks whether the given physical device supports all the required extensions,
 		 *	namely those stored in @ref settings::gRequiredDeviceExtensions. 
@@ -92,7 +103,7 @@ namespace cgb
 	private:
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
-		vk::SurfaceKHR mSurface;
+		std::vector<std::unique_ptr<std::tuple<window*, vk::SurfaceKHR>>> mSurfaces;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
 		vk::Queue mGraphicsQueue;
