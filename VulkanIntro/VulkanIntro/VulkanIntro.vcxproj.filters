@@ -57,6 +57,9 @@
     <ClCompile Include="vkCommandBufferManager.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="vkCgbCommandBuffer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\triangle.vert">
@@ -95,6 +98,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="vkCommandBufferManager.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="vkCgbCommandBuffer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

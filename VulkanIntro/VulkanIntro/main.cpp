@@ -30,6 +30,7 @@
 #include "vkRenderObject.h"
 #include "vkTexture.h"
 #include "vkCommandBufferManager.h"
+#include "vkDrawer.h"
 
 
 const int WIDTH = 800;
@@ -110,7 +111,6 @@ private:
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 
 	VkCommandPool commandPool;
-	std::vector<VkCommandBuffer> commandBuffers; // deleted with command pool
 
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
@@ -174,7 +174,9 @@ private:
 
 	vkRenderObject* renderObject;
 	vkTexture* texture;
+	vkCommandBufferManager* drawCommandBufferManager;
 	vkCommandBufferManager* transferCommandBufferManager;
+	vkDrawer* drawer;
 
 public:
 	void run() {
@@ -205,7 +207,8 @@ private:
 		vkContext::instance().commandPool = commandPool;
 		vkContext::instance().transferCommandPool = transferCommandPool;
 		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool);
-
+		drawCommandBufferManager = new vkCommandBufferManager((uint32_t)swapChainImages.size(), commandPool);
+		drawer = new vkDrawer(drawCommandBufferManager, graphicsPipeline, pipelineLayout);
 		createColorResources();
 		createDepthResources();
 		createFramebuffers();
@@ -216,8 +219,6 @@ private:
 
 		renderObject = new vkRenderObject((uint32_t)swapChainImages.size(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
 		//loadModel();
-
-		createCommandBuffers();
 		createSyncObjects();
 	}
 
@@ -286,7 +287,7 @@ private:
 			vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
 		}
 
-		vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+		delete drawCommandBufferManager;
 
 		vkDestroyPipeline(device, graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
@@ -317,7 +318,7 @@ private:
 		createColorResources();
 		createDepthResources();
 		createFramebuffers();
-		createCommandBuffers();
+		drawCommandBufferManager = new vkCommandBufferManager((uint32_t)swapChainImages.size(), commandPool);
 	}
 
 	void createInstance() {
@@ -1016,7 +1017,7 @@ private:
 		VkCommandPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-		poolInfo.flags = 0; // Optional
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 
 		if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create command pool!");
@@ -1033,70 +1034,27 @@ private:
 		}
 	}
 
-	void createCommandBuffers() {
-		commandBuffers.resize(swapChainFramebuffers.size());
+	void recordPrimaryCommandBuffer(VkCommandBuffer &commandBuffer, std::vector<VkCommandBuffer> secondaryCommandBuffers) {
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = renderPass;
+		renderPassInfo.framebuffer = vkContext::instance().frameBuffer;
 
-		VkCommandBufferAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = commandPool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = swapChainExtent;
 
-		if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
+		std::array<VkClearValue, 2> clearValues = {};
+		clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+		clearValues[1].depthStencil = { 1.0f, 0 };
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
 
-		for (size_t i = 0; i < commandBuffers.size(); i++) {
-			VkCommandBufferBeginInfo beginInfo = {};
-			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-			beginInfo.pInheritanceInfo = nullptr; // Optional
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-			if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-				throw std::runtime_error("failed to begin recording command buffer!");
-			}
+		// submit secondary command buffers
+		vkCmdExecuteCommands(commandBuffer, secondaryCommandBuffers.size(), secondaryCommandBuffers.data());
 
-			VkRenderPassBeginInfo renderPassInfo = {};
-			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = renderPass;
-			renderPassInfo.framebuffer = swapChainFramebuffers[i];
-
-			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = swapChainExtent;
-
-			std::array<VkClearValue, 2> clearValues = {};
-			clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-			clearValues[1].depthStencil = { 1.0f, 0 };
-			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-			renderPassInfo.pClearValues = clearValues.data();
-
-			vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-			VkBuffer vertexBuffers[] = { renderObject->getVertexBuffer() , renderObject->getVertexBuffer() };
-			VkDeviceSize offsets[] = { 0, 0 };
-			vkCmdBindVertexBuffers(commandBuffers[i], 1, 2, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commandBuffers[i], renderObject->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &(renderObject->getDescriptorSets()[i]), 0, nullptr);
-
-			renderObject->updateUniformBuffer(i, 0, swapChainExtent);
-
-			vkCmdPushConstants(
-				commandBuffers[i],
-				pipelineLayout,
-				VK_SHADER_STAGE_VERTEX_BIT,
-				0,
-				sizeof(PushUniforms),
-				&(renderObject->getPushUniforms()));
-
-			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(renderObject->getIndices().size()), 1, 0, 0, 0);
-			vkCmdEndRenderPass(commandBuffers[i]);
-
-			if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-				throw std::runtime_error("failed to record command buffer!");
-			}
-		}
+		vkCmdEndRenderPass(commandBuffer);
 	}
 
 	void createSyncObjects() {
@@ -1140,6 +1098,23 @@ private:
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 		renderObject->updateUniformBuffer(imageIndex, time, swapChainExtent);
+		vkContext::instance().renderPass = renderPass;
+		vkContext::instance().currentFrame = imageIndex;
+		vkContext::instance().frameBuffer = swapChainFramebuffers[imageIndex];
+
+		std::vector<vkRenderObject*> renderObjects;
+		renderObjects.push_back(renderObject);
+		drawer->draw(renderObjects);
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		beginInfo.pInheritanceInfo = nullptr; // Optional
+
+		VkCommandBuffer primCmdBuffer = drawCommandBufferManager->getCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, beginInfo);
+		std::vector<VkCommandBuffer> secondaryCommandBuffers= drawCommandBufferManager->getRecordedCommandBuffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		recordPrimaryCommandBuffer(primCmdBuffer, secondaryCommandBuffers);
+		std::vector<VkCommandBuffer> primaryCommandBuffers = drawCommandBufferManager->getRecordedCommandBuffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1149,8 +1124,8 @@ private:
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+		submitInfo.commandBufferCount = primaryCommandBuffers.size();
+		submitInfo.pCommandBuffers = primaryCommandBuffers.data();
 		VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
@@ -1184,6 +1159,9 @@ private:
 		}
 
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+		// maybe trim command pool each minute or so
+		// vkTrimCommandPool
 	}
 
 	// TODO delete

@@ -160,6 +160,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main2.cpp" />
     <ClCompile Include="vkCgbBuffer.cpp" />
+    <ClCompile Include="vkCgbCommandBuffer.cpp" />
     <ClCompile Include="vkCgbMemory.cpp" />
     <ClCompile Include="vkCommandBufferManager.cpp" />
     <ClCompile Include="vkContext.cpp" />
@@ -176,6 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vkCgbBuffer.h" />
+    <ClInclude Include="vkCgbCommandBuffer.h" />
     <ClInclude Include="vkCgbMemory.h" />
     <ClInclude Include="vkCommandBufferManager.h" />
     <ClInclude Include="vkContext.h" />

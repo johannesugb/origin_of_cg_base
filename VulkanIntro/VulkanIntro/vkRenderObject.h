@@ -116,6 +116,7 @@ public:
 	//void setIndexBuffer(VkBuffer indexBuffer) { _indexBuffer = indexBuffer; }
 
 	std::vector<VkDescriptorSet> getDescriptorSets() { return _descriptorSets; }
+	VkDescriptorSet& getDescriptorSet() { return _descriptorSets[vkContext::instance().currentFrame]; }
 	PushUniforms getPushUniforms() { return _pushUniforms; }
 
 	void updateUniformBuffer(uint32_t currentImage, float time, VkExtent2D swapChainExtent);

@@ -24,6 +24,12 @@ public:
 
 	vkMemoryManager* memoryManager;
 
+	VkRenderPass renderPass;
+
+	// updated per frame/pass
+	VkFramebuffer frameBuffer;
+	int currentFrame;
+
 	static vkContext& instance()
 	{
 		static vkContext _instance;
