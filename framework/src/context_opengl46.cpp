@@ -6,7 +6,7 @@ namespace cgb
 	{
 	}
 
-	window opengl46::create_window(const window_params& pParams)
+	window* opengl46::create_window(const window_params& pParams)
 	{
 		// ======= GLFW: Creating a window and context
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -16,12 +16,12 @@ namespace cgb
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
 		auto wnd = generic_glfw::create_window(pParams);
-		if (0u == wnd.id() && wnd.handle()) // Only do this for the first window:
+		if (0u == wnd->id() && wnd->handle()) // Only do this for the first window:
 		{
 			// If context has been newly created in the current call to create_window, 
 			// 1) make the newly created context current and
 			// 2) use the extension loader to get the proc-addresses (which needs an active context)
-			glfwMakeContextCurrent(wnd.handle()->mWindowHandle);
+			glfwMakeContextCurrent(wnd->handle()->mWindowHandle);
 			gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 			// By (current) design, all windows share the same context.
 			// TODO: Think about supporting different contexts somewhen in the future.

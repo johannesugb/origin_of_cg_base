@@ -24,7 +24,7 @@ namespace cgb
 		
 		/** Creates a new window 
 		 */
-		window create_window(const window_params&);
+		window* create_window(const window_params&);
 
 		/** Close the given window, cleanup the resources */
 		void close_window(window& wnd);
@@ -66,6 +66,7 @@ namespace cgb
 		static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 		static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
+		std::vector<window> mWindows;
 		bool mInitialized;
 		static std::mutex sInputMutex;
 		static input_buffer* sTargetInputBuffer;

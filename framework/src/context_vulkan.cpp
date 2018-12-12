@@ -9,46 +9,24 @@ namespace cgb
 			std::begin(settings::gValidationLayersToBeActivated), std::end(settings::gValidationLayersToBeActivated),
 			std::back_inserter(supportedValidationLayers),
 			[](auto name) {
-				return is_validation_layer_supported(name);
+				auto supported = is_validation_layer_supported(name);
+				if (!supported) {
+					LOG_WARNING(fmt::format("Validation layer '{}' is not supported by this Vulkan instance and will not be activated."));
+				}
+				return supported;
 			});
 		return supportedValidationLayers;
 	}
 
 	vulkan::vulkan() : generic_glfw()
 	{
-		// Information about the application for the instance creation call
-		auto appInfo = vk::ApplicationInfo(settings::gApplicationName.c_str(), settings::gApplicationVersion,
-			"cg_base", VK_MAKE_VERSION(0, 1, 0), // TODO: Real version of cg_base
-			VK_API_VERSION_1_1);
-
-		// GLFW requires several extensions to interface with the window system. Query them.
-		uint32_t glfwExtensionCount = 0;
-		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-		std::vector<const char*> requiredExtensions;
-		requiredExtensions.assign(glfwExtensions, static_cast<const char**>(glfwExtensions + glfwExtensionCount));
-		requiredExtensions.insert(
-			std::end(requiredExtensions), 
-			std::begin(settings::gRequiredInstanceExtensions), std::end(settings::gRequiredInstanceExtensions));
-
-		// Check for each validation layer if it exists and activate all which do.
-		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
-		// Enable extension to receive callbacks for the validation layers
-		if (supportedValidationLayers.size() > 0) {
-			requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		}
-
-		// Gather all previously prepared info for instance creation and put in one struct:
-		auto instCreateInfo = vk::InstanceCreateInfo()
-			.setPApplicationInfo(&appInfo)
-			.setEnabledExtensionCount(static_cast<uint32_t>(requiredExtensions.size()))
-			.setPpEnabledExtensionNames(requiredExtensions.data())
-			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
-			.setPpEnabledLayerNames(supportedValidationLayers.data());
-		// Create it, errors will result in an exception.
-		mInstance = vk::createInstance(instCreateInfo);
+		// So it begins
+		create_instance();
 
 		// Setup debug callback and enable all validation layers configured in global settings 
 		setup_vk_debug_callback();
+
+		// The window surface needs to be created right after the instance creation, because it can actually influence the physical device selection.
 
 		// Select the best suitable physical device which supports all requested extensions
 		pick_physical_device();
@@ -71,21 +49,45 @@ namespace cgb
 		mInstance.destroy();
 	}
 
-	window vulkan::create_window(const window_params& pParams)
+	window* vulkan::create_window(const window_params& pParams)
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		auto wnd = generic_glfw::create_window(pParams);
-
-		uint32_t extensionCount = 0;
-		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-
-		std::cout << extensionCount << " extensions supported" << std::endl;
-
-		glm::mat4 matrix;
-		glm::vec4 vec;
-		auto test = matrix * vec;
-
 		return wnd;
+	}
+
+	void vulkan::create_instance()
+	{
+		// Information about the application for the instance creation call
+		auto appInfo = vk::ApplicationInfo(settings::gApplicationName.c_str(), settings::gApplicationVersion,
+										   "cg_base", VK_MAKE_VERSION(0, 1, 0), // TODO: Real version of cg_base
+										   VK_API_VERSION_1_1);
+
+		// GLFW requires several extensions to interface with the window system. Query them.
+		uint32_t glfwExtensionCount = 0;
+		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+		std::vector<const char*> requiredExtensions;
+		requiredExtensions.assign(glfwExtensions, static_cast<const char**>(glfwExtensions + glfwExtensionCount));
+		requiredExtensions.insert(
+			std::end(requiredExtensions),
+			std::begin(settings::gRequiredInstanceExtensions), std::end(settings::gRequiredInstanceExtensions));
+
+		// Check for each validation layer if it exists and activate all which do.
+		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
+		// Enable extension to receive callbacks for the validation layers
+		if (supportedValidationLayers.size() > 0) {
+			requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		}
+
+		// Gather all previously prepared info for instance creation and put in one struct:
+		auto instCreateInfo = vk::InstanceCreateInfo()
+			.setPApplicationInfo(&appInfo)
+			.setEnabledExtensionCount(static_cast<uint32_t>(requiredExtensions.size()))
+			.setPpEnabledExtensionNames(requiredExtensions.data())
+			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
+			.setPpEnabledLayerNames(supportedValidationLayers.data());
+		// Create it, errors will result in an exception.
+		mInstance = vk::createInstance(instCreateInfo);
 	}
 
 	bool vulkan::is_validation_layer_supported(const char* pName)
@@ -191,6 +193,14 @@ namespace cgb
 			throw std::runtime_error("Failed to vkGetInstanceProcAddr for vkCreateDebugUtilsMessengerEXT.");
 		}
 #endif
+	}
+
+	void vulkan::create_surface()
+	{
+		//auto surfCreateInfo = vk::Win32SurfaceCreateInfoKHR()
+		//	.setHwnd(glfwGetWindowUserPointer)
+		//	.setHinstance(GetModuleHandle());
+		// TODO: Fix das oben und proceed.. https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface
 	}
 
 	bool vulkan::supports_all_required_extensions(const vk::PhysicalDevice& device)

@@ -168,7 +168,7 @@ namespace cgb
 		return mInitialized;
 	}
 
-	window generic_glfw::create_window(const window_params& pParams)
+	window* generic_glfw::create_window(const window_params& pParams)
 	{
 		// Share a context or let GLFW create a new one
 		GLFWwindow* contextToUse = nullptr; 
@@ -214,7 +214,8 @@ namespace cgb
 			throw std::runtime_error("glfwCreateWindow failed"); 
 		}
 
-		return window(window_handle{ handle });
+		mWindows.emplace_back(window_handle{ handle });
+		return &mWindows[mWindows.size() - 1];
 	}
 
 	void generic_glfw::close_window(window& wnd)

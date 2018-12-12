@@ -47,7 +47,7 @@ int main()
 		//  - a window
 		//  - a behavior
 		auto hello = cgb::composition<cgb::fixed_update_timer, cgb::sequential_executor>({
-				&mainWnd 
+				mainWnd 
 			}, {
 				&helloBehavior
 			});
