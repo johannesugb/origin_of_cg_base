@@ -215,9 +215,9 @@ namespace cgb
 			throw std::runtime_error("glfwCreateWindow failed"); 
 		}
 
-		mWindows.push_back(std::make_unique<window>(window_handle{ handle }));
-		// TODO: schau mol:
-		return mWindows[mWindows.size() - 1].get();
+		// Insert at the back and return the newly created window
+		auto& back = mWindows.emplace_back(std::make_unique<window>(window_handle{ handle }));
+		return back.get();
 	}
 
 	void generic_glfw::close_window(window& wnd)

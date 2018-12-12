@@ -3,11 +3,15 @@
 
 namespace cgb
 {
-	// ---------------- forward declarations ----------------
+	// ============================= forward declarations ===========================
 	class window;
 	class input_buffer;
 	enum struct key_code;
 
+	// =============================== type aliases =================================
+	using window_ptr = std::unique_ptr<window>;
+
+	// =========================== GLFW (PARTIAL) CONTEXT ===========================
 	/** @brief Provides generic GLFW-specific functionality
 	 */
 	class generic_glfw
@@ -66,7 +70,7 @@ namespace cgb
 		static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 		static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-		std::vector<std::unique_ptr<window>> mWindows;
+		std::vector<window_ptr> mWindows;
 		bool mInitialized;
 		static std::mutex sInputMutex;
 		static input_buffer* sTargetInputBuffer;

@@ -38,14 +38,24 @@ namespace cgb
 
 	vulkan::~vulkan()
 	{
+		// Destroy logical device
 		mLogicalDevice.destroy();
 
+		// Destroy all surfaces (unfortunately, this is not supported through the C++ API, as it seems)
+		for (auto& ptr_to_tpl : mSurfaces) {
+			vkDestroySurfaceKHR(mInstance, static_cast<VkSurfaceKHR>(std::get<1>(*ptr_to_tpl)), nullptr);
+		}
+		mSurfaces.clear();
+
+		// Unhook debug callback
 #if LOG_LEVEL > 0
 		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr) {
-			func(mInstance, mDebugCallbackHandle, nullptr);
+			func(mInstance, mDebugCallbackHandle, nullptr); 
 		}
 #endif
+
+		// Destroy everything
 		mInstance.destroy();
 	}
 
@@ -203,18 +213,37 @@ namespace cgb
 		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mWindowHandle, nullptr, &surface)) {
 			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->name()));
 		}
-		mSurfaces.push_back(std::make_unique<std::tuple<window*, vk::SurfaceKHR>>(std::make_tuple(pWindow, vk::SurfaceKHR{ surface })));
-		// TODO: zruckgeben
+		// Insert at the back and return the newly created surface
+		auto ptr_to_tpl = std::make_unique<window_surface_tuple>(std::make_tuple(pWindow, vk::SurfaceKHR{ surface }));
+		auto& back = mSurfaces.emplace_back(std::move(ptr_to_tpl));
+		//return &std::get<1>(*back);
 		return nullptr;
 	}
 
 	vk::SurfaceKHR* vulkan::get_surface_for_window(window* pWindow)
 	{
+		assert(pWindow);
+		auto pos = std::find_if(
+			std::begin(mSurfaces), std::end(mSurfaces),
+			[pWindow](const window_surface_tuple_ptr& ptr_to_tpl) {
+				return pWindow == std::get<0>(*ptr_to_tpl);
+			});
+		if (pos != mSurfaces.end()) {
+			return &std::get<1>(**pos); // Dereference iterator to unique_ptr of tuple
+		}
 		return nullptr;
 	}
 
-	window* vulkan::get_window_for_surface(const vk::SurfaceKHR pSurface)
+	window* vulkan::get_window_for_surface(const vk::SurfaceKHR& pSurface)
 	{
+		auto pos = std::find_if(
+			std::begin(mSurfaces), std::end(mSurfaces),
+			[&pSurface](const window_surface_tuple_ptr& ptr_to_tpl) {
+				return pSurface == std::get<1>(*ptr_to_tpl);
+			});
+		if (pos != mSurfaces.end()) {
+			return std::get<0>(**pos); // Dereference iterator to unique_ptr of tuple
+		}
 		return nullptr;
 	}
 

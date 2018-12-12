@@ -13,6 +13,11 @@
 
 namespace cgb
 {
+	// =============================== type aliases =================================
+	using window_surface_tuple = std::tuple<window*, vk::SurfaceKHR>;
+	using window_surface_tuple_ptr = std::unique_ptr<window_surface_tuple>;
+
+	// ============================== VULKAN CONTEXT ================================
 	/**	@brief Context for Vulkan
 	 *
 	 *	This context abstracts calls to the Vulkan API, for environment-related
@@ -75,7 +80,7 @@ namespace cgb
 		/** Gets the window assigned to the given surface.
 		 *	@return Pointer to the window or nullptr if not found
 		 */
-		window* get_window_for_surface(const vk::SurfaceKHR pSurface);
+		window* get_window_for_surface(const vk::SurfaceKHR& pSurface);
 
 		/** Checks whether the given physical device supports all the required extensions,
 		 *	namely those stored in @ref settings::gRequiredDeviceExtensions. 
@@ -103,7 +108,7 @@ namespace cgb
 	private:
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
-		std::vector<std::unique_ptr<std::tuple<window*, vk::SurfaceKHR>>> mSurfaces;
+		std::vector<window_surface_tuple_ptr> mSurfaces;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
 		vk::Queue mGraphicsQueue;
