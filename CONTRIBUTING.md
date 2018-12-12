@@ -20,13 +20,14 @@ Especially for Vulkan, try to use the C-interface as little as possible and fall
 
 ```
 namespace namespace_name_lower_case_separated_by_underscores
-{
-    /** \brief Comment every type in a meaningful manner
+{ // Braces for namespaces, types, methods start in the next line
+
+    /** @brief Comment every type in a meaningful manner
      *	
      *	The comments should be a help to the users of cg_base
      */
     class type_name_lower_case_separated_by_underscores
-    { // Braces for types start in the next line
+    { 
     public:
         /** Comment at least all public members of a class */
         void method_name_lower_case_separated_by_underscores() const
