@@ -9,6 +9,8 @@ class vkCgbImage
 {
 public:
 	vkCgbImage(vkCommandBufferManager* commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels);
+	vkCgbImage(vkCommandBufferManager* commandBufferManager, int texWidth, int texHeight, int texChannels);
+
 	virtual ~vkCgbImage();
 
 	VkImageView getImageView() { return _imageView; };
