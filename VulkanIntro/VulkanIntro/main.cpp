@@ -125,7 +125,6 @@ private:
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-	// render target needed for MSAA
 	VkImage colorImage;
 	VkDeviceMemory colorImageMemory;
 	VkImageView colorImageView;
@@ -174,9 +173,13 @@ private:
 
 	vkRenderObject* renderObject;
 	vkTexture* texture;
+	vkCgbImage* textureImage;
 	vkCommandBufferManager* drawCommandBufferManager;
 	vkCommandBufferManager* transferCommandBufferManager;
 	vkDrawer* drawer;
+
+	// render target needed for MSAA
+	//vkCgbImage* colorImage;
 
 public:
 	void run() {
@@ -240,6 +243,7 @@ private:
 
 		delete renderObject;
 		delete texture;
+		delete textureImage;
 		delete transferCommandBufferManager;
 
 
@@ -1093,11 +1097,14 @@ private:
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
 
+		// update states, e.g. for animation
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 		renderObject->updateUniformBuffer(imageIndex, time, swapChainExtent);
+
+		// start drawing, record draw commands, etc.
 		vkContext::instance().renderPass = renderPass;
 		vkContext::instance().currentFrame = imageIndex;
 		vkContext::instance().frameBuffer = swapChainFramebuffers[imageIndex];
@@ -1162,33 +1169,6 @@ private:
 
 		// maybe trim command pool each minute or so
 		// vkTrimCommandPool
-	}
-
-	// TODO delete
-	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = size;
-		bufferInfo.usage = usage;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-		if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create buffer!");
-		}
-
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate buffer memory!");
-		}
-
-		vkBindBufferMemory(device, buffer, bufferMemory, 0);
 	}
 
 	// TODO delete
@@ -1260,8 +1240,8 @@ private:
 		if (!pixels) {
 			throw std::runtime_error("failed to load texture image!");
 		}
-
-		texture = new vkTexture(transferCommandBufferManager, pixels, texWidth, texHeight, texChannels);
+		textureImage = new vkCgbImage(transferCommandBufferManager, pixels, texWidth, texHeight, texChannels);
+		texture = new vkTexture(textureImage);
 
 		stbi_image_free(pixels);
 	}

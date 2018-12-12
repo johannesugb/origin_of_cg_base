@@ -11,8 +11,8 @@ public:
 	vkCommandBufferManager(uint32_t imageCount, VkCommandPool &commandPool);
 	virtual ~vkCommandBufferManager();
 
+	// TODO better command buffer management, do not always begin command buffer, only if it has not begun yet, etc.
 	VkCommandBuffer getCommandBuffer(VkCommandBufferLevel bufferLevel, VkCommandBufferBeginInfo &beginInfo);
-
 	std::vector<VkCommandBuffer> getRecordedCommandBuffers(VkCommandBufferLevel bufferLevel);
 
 	VkCommandBuffer beginSingleTimeCommands();
