@@ -125,10 +125,6 @@ private:
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 
-	VkImage colorImage;
-	VkDeviceMemory colorImageMemory;
-	VkImageView colorImageView;
-
 	// synchronization
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -179,7 +175,7 @@ private:
 	vkDrawer* drawer;
 
 	// render target needed for MSAA
-	//vkCgbImage* colorImage;
+	vkCgbImage* colorImage;
 
 public:
 	void run() {
@@ -279,9 +275,7 @@ private:
 	}
 
 	void cleanupSwapChain() {
-		vkDestroyImageView(device, colorImageView, nullptr);
-		vkDestroyImage(device, colorImage, nullptr);
-		vkFreeMemory(device, colorImageMemory, nullptr);
+		delete colorImage;
 
 		vkDestroyImageView(device, depthImageView, nullptr);
 		vkDestroyImage(device, depthImage, nullptr);
@@ -995,7 +989,7 @@ private:
 
 		for (size_t i = 0; i < swapChainImageViews.size(); i++) {
 			std::array<VkImageView, 3> attachments = {
-				colorImageView,
+				colorImage->getImageView(),
 				depthImageView,
 				swapChainImageViews[i]
 			};
@@ -1476,6 +1470,7 @@ private:
 	void createColorResources() {
 		VkFormat colorFormat = swapChainImageFormat;
 
+		colorImage = new vkCgbImage(transferCommandBufferManager, )
 		createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory);
 		colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
