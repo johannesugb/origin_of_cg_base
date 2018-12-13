@@ -70,12 +70,12 @@ namespace cgb
 		void setup_vk_debug_callback();
 
 		/** Creates a surface for the given window */
-		vk::SurfaceKHR* create_surface_for_window(window* pWindow);
+		vk::SurfaceKHR create_surface_for_window(window* pWindow);
 
 		/** Gets the surface assigned to the given window.
 		 *	@return Pointer to the surface or nullptr if not found
 		 */
-		vk::SurfaceKHR* get_surface_for_window(window* pWindow);
+		std::optional<vk::SurfaceKHR> get_surface_for_window(window* pWindow);
 		
 		/** Gets the window assigned to the given surface.
 		 *	@return Pointer to the window or nullptr if not found
@@ -91,16 +91,18 @@ namespace cgb
 		/** Pick the physical device which looks to be the most promising one */
 		void pick_physical_device();
 
-		/**	Finds all queue families which support the given @ref vk::QueueFlagBits.
-		 *	All which support it are returned as a vector of tuples of indices and data.
-		 *	The index is important for further vk-calls and is stored in the first element
-		 *	of the tuple, i.e. use @ref std::get<0>() to get the index, @ref std::get<1>() 
-		 *	for the data
+		/**	Finds all queue families which support certain criteria which are defined by the parameters.
+		 *	@param pRequiredFlags	If set, a queue family must support the set flags
+		 *	@param pSurface			If set, the queue family must support the given surface
+		 *	@return		All which support them are returned as a vector of tuples of indices and data.
+		 *				The index is important for further vk-calls and is stored in the first element
+		 *				of the tuple, i.e. use @ref std::get<0>() to get the index, @ref std::get<1>() 
+		 *				for the data
 		 */
-		auto find_queue_families_with_flags(vk::QueueFlagBits requiredFlags);
+		auto find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::SurfaceKHR> pSurface);
 
 		// TODO: double-check and comment
-		void create_logical_device();
+		void create_logical_device(vk::SurfaceKHR pSurface);
 
 		// TODO: double-check and comment
 		void get_graphics_queue();
@@ -112,5 +114,6 @@ namespace cgb
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
 		vk::Queue mGraphicsQueue;
+		vk::Queue mPresentQueue;
 	};
 }

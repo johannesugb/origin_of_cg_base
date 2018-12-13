@@ -31,9 +31,8 @@ namespace cgb
 		// Select the best suitable physical device which supports all requested extensions
 		pick_physical_device();
 
-		create_logical_device();
-
-		get_graphics_queue();
+		// NOTE: Vulkan-init is not finished yet!
+		//       Initialization will continue when the first window (and it's surface) is created.
 	}
 
 	vulkan::~vulkan()
@@ -63,6 +62,16 @@ namespace cgb
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		auto wnd = generic_glfw::create_window(pParams);
+		auto surface = create_surface_for_window(wnd);
+		if (0u == wnd->id() && wnd->handle()) // Only do this for the first window:
+		{
+			// Continue Vulkan-initialization:
+			create_logical_device(surface);
+
+			get_graphics_queue();
+
+			// Vulkan-initialization completed.
+		}
 		return wnd;
 	}
 
@@ -205,7 +214,7 @@ namespace cgb
 #endif
 	}
 
-	vk::SurfaceKHR* vulkan::create_surface_for_window(window* pWindow)
+	vk::SurfaceKHR vulkan::create_surface_for_window(window* pWindow)
 	{
 		assert(pWindow);
 		assert(pWindow->handle());
@@ -216,11 +225,10 @@ namespace cgb
 		// Insert at the back and return the newly created surface
 		auto ptr_to_tpl = std::make_unique<window_surface_tuple>(std::make_tuple(pWindow, vk::SurfaceKHR{ surface }));
 		auto& back = mSurfaces.emplace_back(std::move(ptr_to_tpl));
-		//return &std::get<1>(*back);
-		return nullptr;
+		return std::get<1>(*back);
 	}
 
-	vk::SurfaceKHR* vulkan::get_surface_for_window(window* pWindow)
+	std::optional<vk::SurfaceKHR> vulkan::get_surface_for_window(window* pWindow)
 	{
 		assert(pWindow);
 		auto pos = std::find_if(
@@ -229,9 +237,9 @@ namespace cgb
 				return pWindow == std::get<0>(*ptr_to_tpl);
 			});
 		if (pos != mSurfaces.end()) {
-			return &std::get<1>(**pos); // Dereference iterator to unique_ptr of tuple
+			return std::get<1>(**pos); // Dereference iterator to unique_ptr of tuple
 		}
-		return nullptr;
+		return std::nullopt;
 	}
 
 	window* vulkan::get_window_for_surface(const vk::SurfaceKHR& pSurface)
@@ -324,7 +332,7 @@ namespace cgb
 		mPhysicalDevice = *currentSelection;
 	}
 
-	auto vulkan::find_queue_families_with_flags(vk::QueueFlagBits requiredFlags)
+	auto vulkan::find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::SurfaceKHR> pSurface)
 	{
 		assert(mPhysicalDevice);
 		// All queue families:
@@ -342,32 +350,63 @@ namespace cgb
 		// Select the subset
 		std::copy_if(std::begin(indexedQueueFamilies), std::end(indexedQueueFamilies),
 					 std::back_inserter(selection),
-					 [requiredFlags](const std::tuple<uint32_t, decltype(queueFamilies)::value_type>& tpl) {
-						 return (std::get<1>(tpl).queueFlags & requiredFlags) == requiredFlags;
+					 [pRequiredFlags, pSurface, this](const std::tuple<uint32_t, decltype(queueFamilies)::value_type>& tpl) {
+						 bool requirements_met = true;
+						 if (pRequiredFlags) {
+							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & *pRequiredFlags) == *pRequiredFlags);
+						 }
+						 if (pSurface) {
+							 requirements_met = requirements_met && (mPhysicalDevice.getSurfaceSupportKHR(std::get<0>(tpl), *pSurface));
+						 }
+						 return requirements_met;
 					 });
 		return selection;
 	}
 
-	void vulkan::create_logical_device()
+	void vulkan::create_logical_device(vk::SurfaceKHR pSurface)
 	{
 		assert(mPhysicalDevice);
-		auto selectedFamilies = find_queue_families_with_flags(vk::QueueFlagBits::eGraphics);
-		if (selectedFamilies.size() == 0) {
-			throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
+		// Determine which queue families we have, i.e. what the different queue families support and what they don't
+		auto familiesWithGraphicsSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt);
+		auto familiesWithPresentSupport = find_queue_families_for_criteria(std::nullopt, pSurface);
+		auto familiesWithGrahicsAndPresentSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, pSurface);
+		
+		const float queuePriority = 1.0f; // TODO: Is this supposed to be priority=1 always? 
+		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+
+		if (familiesWithGrahicsAndPresentSupport.size() == 0) {
+			if (familiesWithPresentSupport.size() == 0 && familiesWithGraphicsSupport.size() == 0) {
+				throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
+			}
+			LOG_WARNING_EM("Funny: No queue families which support both, graphics and presentation, but found suitable (but different) families for both.");
+
+			// Have to add two different queues, because couldn't find one which can handle both
+			// 1. add the graphics queue:
+			queueCreateInfos.emplace_back()
+				.setQueueFamilyIndex(std::get<0>(familiesWithGraphicsSupport[0])) // TODO: For now, just the first one is selected, what to do with the others?
+				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
+				.setPQueuePriorities(&queuePriority);
+			// 2. add the present queue:
+			queueCreateInfos.emplace_back()
+				.setQueueFamilyIndex(std::get<0>(familiesWithPresentSupport[0])) // TODO: For now, just the first one is selected, what to do with the others?
+				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
+				.setPQueuePriorities(&queuePriority);
+		}
+		else {
+			// Found a queue which can handle both, graphics and present => add only one instead of two
+			queueCreateInfos.emplace_back()
+				.setQueueFamilyIndex(std::get<0>(familiesWithGrahicsAndPresentSupport[0])) // TODO: For now, just the first one is selected, what to do with the others?
+				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
+				.setPQueuePriorities(&queuePriority);
 		}
 
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 
-		float queuePriority = 1.0f;
-		auto queueCreateInfo = vk::DeviceQueueCreateInfo()
-			.setQueueFamilyIndex(std::get<0>(selectedFamilies[0])) // TODO: For now, just the first one is selected, what to do with the others?
-			.setQueueCount(1) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
-			.setPQueuePriorities(&queuePriority);
 		auto deviceFeatures = vk::PhysicalDeviceFeatures();
 		auto deviceCreateInfo = vk::DeviceCreateInfo()
-			.setQueueCreateInfoCount(1u)
-			.setPQueueCreateInfos(&queueCreateInfo)
+			.setQueueCreateInfoCount(static_cast<uint32_t>(queueCreateInfos.size()))
+			.setPQueueCreateInfos(queueCreateInfos.data())
 			.setPEnabledFeatures(&deviceFeatures)
 			// Whether the device supports these extensions has already been checked during device selection in @ref pick_physical_device
 			// TODO: Are these the correct extensions to set here?
@@ -380,12 +419,12 @@ namespace cgb
 
 	void vulkan::get_graphics_queue()
 	{
-		assert(mLogicalDevice);
-		auto selectedFamilies = find_queue_families_with_flags(vk::QueueFlagBits::eGraphics);
-		if (selectedFamilies.size() == 0) {
-			throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
-		}
+		//assert(mLogicalDevice);
+		//auto selectedFamilies = find_queue_families_with_flags(vk::QueueFlagBits::eGraphics);
+		//if (selectedFamilies.size() == 0) {
+		//	throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
+		//}
 
-		auto queue = mLogicalDevice.getQueue(std::get<0>(selectedFamilies[0]), 0); // TODO: Why always select the first one?
+		//auto queue = mLogicalDevice.getQueue(std::get<0>(selectedFamilies[0]), 0); // TODO: Why always select the first one?
 	}
 }

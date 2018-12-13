@@ -10,15 +10,6 @@
     <ClCompile Include="..\..\framework\src\window.cpp">
       <Filter>Source Files\environment</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\context_generic_glfw.cpp">
-      <Filter>Source Files\context</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\framework\src\context_opengl46.cpp">
-      <Filter>Source Files\context</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\framework\src\context_vulkan.cpp">
-      <Filter>Source Files\context</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\log.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
@@ -61,24 +52,18 @@
     <ClCompile Include="..\..\external\src\format.cc">
       <Filter>external\fmt</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_opengl46.cpp">
+      <Filter>Source Files\context\opengl46</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_vulkan.cpp">
+      <Filter>Source Files\context\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_generic_glfw.cpp">
+      <Filter>Source Files\context\glfw</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_generic_glfw.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_generic_glfw_types.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_opengl46_types.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_vulkan.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_vulkan_types.h">
       <Filter>Header Files\context</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\cg_element.h">
@@ -129,9 +114,6 @@
     <ClInclude Include="..\..\framework\include\sequential_executor.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_opengl46.h">
-      <Filter>Header Files\context</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\cg_targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -140,6 +122,24 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\cg_base.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_opengl46.h">
+      <Filter>Header Files\context\opengl46</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_opengl46_types.h">
+      <Filter>Header Files\context\opengl46</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_generic_glfw.h">
+      <Filter>Header Files\context\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_generic_glfw_types.h">
+      <Filter>Header Files\context\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_vulkan.h">
+      <Filter>Header Files\context\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_vulkan_types.h">
+      <Filter>Header Files\context\vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +205,24 @@
     </Filter>
     <Filter Include="external\fmt">
       <UniqueIdentifier>{b7ee0645-b8f3-43ad-ac4c-25c4d5ae61f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\context\glfw">
+      <UniqueIdentifier>{7a48d805-d55d-43b4-871b-c3ca8f382c38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\context\vulkan">
+      <UniqueIdentifier>{c905e534-5618-4d8e-8cd8-5f1bb618ad0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\context\opengl46">
+      <UniqueIdentifier>{2f6ad3fb-9dc3-4e3d-9f48-2f14baf6ad74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\context\glfw">
+      <UniqueIdentifier>{5fe888a9-cde3-421a-8902-658ac9aaaea4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\context\opengl46">
+      <UniqueIdentifier>{0e7362c3-8fde-4d45-bf90-3078d0e4d8f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\context\vulkan">
+      <UniqueIdentifier>{ea0fdf81-c732-4701-a2d4-ab296818eaba}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
