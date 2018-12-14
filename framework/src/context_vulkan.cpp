@@ -3,7 +3,7 @@
 namespace cgb
 {
 	std::vector<const char*> vulkan::sRequiredDeviceExtensions = {
-		"VK_KHR_swapchain"
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
 	auto vulkan::assemble_validation_layers()
@@ -415,7 +415,7 @@ namespace cgb
 
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
-
+		
 		auto deviceFeatures = vk::PhysicalDeviceFeatures();
 		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
 		auto deviceCreateInfo = vk::DeviceCreateInfo()
