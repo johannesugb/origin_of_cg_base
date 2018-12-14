@@ -82,6 +82,11 @@ namespace cgb
 		 */
 		window* get_window_for_surface(const vk::SurfaceKHR& pSurface);
 
+		/** Returns a vector containing all elements from @ref sRequiredDeviceExtensions
+		 *  and settings::gRequiredDeviceExtensions
+		 */
+		static std::vector<const char*> get_all_required_device_extensions();
+		
 		/** Checks whether the given physical device supports all the required extensions,
 		 *	namely those stored in @ref settings::gRequiredDeviceExtensions. 
 		 *	Returns true if it does, false otherwise.
@@ -90,6 +95,7 @@ namespace cgb
 
 		/** Pick the physical device which looks to be the most promising one */
 		void pick_physical_device();
+
 
 		/**	Finds all queue families which support certain criteria which are defined by the parameters.
 		 *	@param pRequiredFlags	If set, a queue family must support the set flags
@@ -108,6 +114,7 @@ namespace cgb
 		void get_graphics_queue();
 
 	private:
+		static std::vector<const char*> sRequiredDeviceExtensions;
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
 		std::vector<window_surface_tuple_ptr> mSurfaces;

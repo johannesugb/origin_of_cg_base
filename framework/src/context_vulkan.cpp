@@ -2,6 +2,10 @@
 
 namespace cgb
 {
+	std::vector<const char*> vulkan::sRequiredDeviceExtensions = {
+		"VK_KHR_swapchain"
+	};
+
 	auto vulkan::assemble_validation_layers()
 	{
 		std::vector<const char*> supportedValidationLayers;
@@ -255,12 +259,21 @@ namespace cgb
 		return nullptr;
 	}
 
+	std::vector<const char*> vulkan::get_all_required_device_extensions()
+	{
+		std::vector<const char*> combined;
+		combined.assign(std::begin(settings::gRequiredDeviceExtensions), std::end(settings::gRequiredDeviceExtensions));
+		combined.insert(std::end(combined), std::begin(sRequiredDeviceExtensions), std::end(sRequiredDeviceExtensions));
+		return combined;
+	}
+
 	bool vulkan::supports_all_required_extensions(const vk::PhysicalDevice& device)
 	{
 		bool allExtensionsSupported = true;
-		if (settings::gRequiredDeviceExtensions.size() > 0) {
+		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
+		if (allRequiredDeviceExtensions.size() > 0) {
 			// Search for each extension requested!
-			for (const auto& required : settings::gRequiredDeviceExtensions) {
+			for (const auto& required : allRequiredDeviceExtensions) {
 				auto deviceExtensions = device.enumerateDeviceExtensionProperties();
 				// See if we can find the current requested extension in the array of all device extensions
 				auto result = std::find_if(std::begin(deviceExtensions), std::end(deviceExtensions),
@@ -383,19 +396,19 @@ namespace cgb
 			// Have to add two different queues, because couldn't find one which can handle both
 			// 1. add the graphics queue:
 			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(familiesWithGraphicsSupport[0])) // TODO: For now, just the first one is selected, what to do with the others?
+				.setQueueFamilyIndex(std::get<0>(familiesWithGraphicsSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
 				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
 				.setPQueuePriorities(&queuePriority);
 			// 2. add the present queue:
 			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(familiesWithPresentSupport[0])) // TODO: For now, just the first one is selected, what to do with the others?
+				.setQueueFamilyIndex(std::get<0>(familiesWithPresentSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
 				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
 				.setPQueuePriorities(&queuePriority);
 		}
 		else {
 			// Found a queue which can handle both, graphics and present => add only one instead of two
 			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(familiesWithGrahicsAndPresentSupport[0])) // TODO: For now, just the first one is selected, what to do with the others?
+				.setQueueFamilyIndex(std::get<0>(familiesWithGrahicsAndPresentSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
 				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
 				.setPQueuePriorities(&queuePriority);
 		}
@@ -404,14 +417,15 @@ namespace cgb
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 
 		auto deviceFeatures = vk::PhysicalDeviceFeatures();
+		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
 		auto deviceCreateInfo = vk::DeviceCreateInfo()
 			.setQueueCreateInfoCount(static_cast<uint32_t>(queueCreateInfos.size()))
 			.setPQueueCreateInfos(queueCreateInfos.data())
 			.setPEnabledFeatures(&deviceFeatures)
 			// Whether the device supports these extensions has already been checked during device selection in @ref pick_physical_device
 			// TODO: Are these the correct extensions to set here?
-			.setEnabledExtensionCount(static_cast<uint32_t>(settings::gRequiredDeviceExtensions.size()))
-			.setPpEnabledExtensionNames(settings::gRequiredDeviceExtensions.data())
+			.setEnabledExtensionCount(static_cast<uint32_t>(allRequiredDeviceExtensions.size()))
+			.setPpEnabledExtensionNames(allRequiredDeviceExtensions.data())
 			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
