@@ -28,18 +28,10 @@ namespace cgb
 		
 		/** Creates a new window 
 		 */
-		window* create_window(const window_params&);
+		window* create_window(const window_params&, const swap_chain_params&);
 
 		/** Close the given window, cleanup the resources */
 		void close_window(window& wnd);
-
-		/** Enable or disable v-sync
-		 *  This might work only once! :O See GLFW docu for further details!
-		 *  http://www.glfw.org/docs/3.1/group__context.html#ga6d4e0cdf151b5e579bd67f13202994ed
-		 *
-		 *  @param enable true to enable, false to disable v-sync
-		 */
-		void enable_vsync(bool enable);
 
 		/** Gets the current system time */
 		double get_time();
@@ -61,7 +53,10 @@ namespace cgb
 		void stop_receiving_input_from_window(const window& pWindow);
 
 		/** Get the cursor position w.r.t. the given window */
-		glm::dvec2 cursor_position(const window& pWindow);
+		static glm::dvec2 cursor_position(const window& pWindow);
+
+		/** Determine the window's extent */
+		static glm::uvec2 window_extent(const window& pWindow);
 
 	protected:
 		static void glfw_error_callback(int error, const char* description);

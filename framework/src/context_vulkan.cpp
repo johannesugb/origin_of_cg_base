@@ -45,10 +45,10 @@ namespace cgb
 		mLogicalDevice.destroy();
 
 		// Destroy all surfaces (unfortunately, this is not supported through the C++ API, as it seems)
-		for (auto& ptr_to_tpl : mSurfaces) {
+		for (auto& ptr_to_tpl : mSurfSwap) {
 			vkDestroySurfaceKHR(mInstance, static_cast<VkSurfaceKHR>(std::get<1>(*ptr_to_tpl)), nullptr);
 		}
-		mSurfaces.clear();
+		mSurfSwap.clear();
 
 		// Unhook debug callback
 #if LOG_LEVEL > 0
@@ -62,15 +62,19 @@ namespace cgb
 		mInstance.destroy();
 	}
 
-	window* vulkan::create_window(const window_params& pParams)
+	window* vulkan::create_window(const window_params& pWndParams, const swap_chain_params& pSwapParams)
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		auto wnd = generic_glfw::create_window(pParams);
+		auto wnd = generic_glfw::create_window(pWndParams, pSwapParams);
 		auto surface = create_surface_for_window(wnd);
 		if (0u == wnd->id() && wnd->handle()) // Only do this for the first window:
 		{
 			// Continue Vulkan-initialization:
 			create_logical_device(surface);
+
+			auto tuple = get_surf_swap_tuple_for_surface(surface);
+			assert(tuple);
+			create_swap_chain(*tuple, pSwapParams); // TODO: Not only for the first window!!
 
 			get_graphics_queue();
 
@@ -223,38 +227,51 @@ namespace cgb
 		assert(pWindow);
 		assert(pWindow->handle());
 		VkSurfaceKHR surface;
-		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mWindowHandle, nullptr, &surface)) {
+		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mHandle, nullptr, &surface)) {
 			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->name()));
 		}
 		// Insert at the back and return the newly created surface
-		auto ptr_to_tpl = std::make_unique<window_surface_tuple>(std::make_tuple(pWindow, vk::SurfaceKHR{ surface }));
-		auto& back = mSurfaces.emplace_back(std::move(ptr_to_tpl));
+		auto ptr_to_tpl = std::make_unique<wnd_surf_swap_tuple>(std::make_tuple(pWindow, vk::SurfaceKHR{ surface }, vk::SwapchainKHR{}));
+		auto& back = mSurfSwap.emplace_back(std::move(ptr_to_tpl));
 		return std::get<1>(*back);
 	}
 
-	std::optional<vk::SurfaceKHR> vulkan::get_surface_for_window(window* pWindow)
+	wnd_surf_swap_tuple* vulkan::get_surf_swap_tuple_for_window(window* pWindow)
 	{
 		assert(pWindow);
 		auto pos = std::find_if(
-			std::begin(mSurfaces), std::end(mSurfaces),
-			[pWindow](const window_surface_tuple_ptr& ptr_to_tpl) {
+			std::begin(mSurfSwap), std::end(mSurfSwap),
+			[pWindow](const wnd_surf_swap_tuple_ptr& ptr_to_tpl) {
 				return pWindow == std::get<0>(*ptr_to_tpl);
 			});
-		if (pos != mSurfaces.end()) {
-			return std::get<1>(**pos); // Dereference iterator to unique_ptr of tuple
+		if (pos != mSurfSwap.end()) {
+			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
 		}
-		return std::nullopt;
+		return nullptr;
 	}
 
-	window* vulkan::get_window_for_surface(const vk::SurfaceKHR& pSurface)
+	wnd_surf_swap_tuple* vulkan::get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface)
 	{
 		auto pos = std::find_if(
-			std::begin(mSurfaces), std::end(mSurfaces),
-			[&pSurface](const window_surface_tuple_ptr& ptr_to_tpl) {
+			std::begin(mSurfSwap), std::end(mSurfSwap),
+			[&pSurface](const wnd_surf_swap_tuple_ptr& ptr_to_tpl) {
 				return pSurface == std::get<1>(*ptr_to_tpl);
 			});
-		if (pos != mSurfaces.end()) {
-			return std::get<0>(**pos); // Dereference iterator to unique_ptr of tuple
+		if (pos != mSurfSwap.end()) {
+			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
+		}
+		return nullptr;
+	}
+
+	wnd_surf_swap_tuple* vulkan::get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain)
+	{
+		auto pos = std::find_if(
+			std::begin(mSurfSwap), std::end(mSurfSwap),
+			[&pSwapChain](const wnd_surf_swap_tuple_ptr& ptr_to_tpl) {
+				return pSwapChain == std::get<2>(*ptr_to_tpl);
+			});
+		if (pos != mSurfSwap.end()) {
+			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
 		}
 		return nullptr;
 	}
@@ -429,6 +446,67 @@ namespace cgb
 			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
+
+	}
+
+	void vulkan::create_swap_chain(wnd_surf_swap_tuple& data, const swap_chain_params& pParams)
+	{
+		auto srfCaps = mPhysicalDevice.getSurfaceCapabilitiesKHR(std::get<vk::SurfaceKHR>(data));
+		auto srfFrmts = mPhysicalDevice.getSurfaceFormatsKHR(std::get<vk::SurfaceKHR>(data));
+		auto presModes = mPhysicalDevice.getSurfacePresentModesKHR(std::get<vk::SurfaceKHR>(data));
+
+		// Vulkan tells us to match the resolution of the window by setting the width and height in the 
+		// currentExtent member. However, some window managers do allow us to differ here and this is 
+		// indicated by setting the width and height in currentExtent to a special value: the maximum 
+		// value of uint32_t. In that case we'll pick the resolution that best matches the window within 
+		// the minImageExtent and maxImageExtent bounds. (see https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain)
+		auto extent = srfCaps.currentExtent.width == std::numeric_limits<uint32_t>::max()
+			? glm::clamp(generic_glfw::window_extent(*std::get<window*>(data)),
+						 glm::uvec2(srfCaps.minImageExtent.width, srfCaps.minImageExtent.height),
+						 glm::uvec2(srfCaps.maxImageExtent.width, srfCaps.maxImageExtent.height))
+			: glm::uvec2(srfCaps.currentExtent.width, srfCaps.currentExtent.height);
+
+		// Select a presentation mode:
+		decltype(presModes)::iterator itP = presModes.end();
+		if (pParams.mPresentationMode) {
+			switch (*pParams.mPresentationMode) {
+			case cgb::presentation_mode::immediate:
+				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eImmediate);
+				break;
+			case cgb::presentation_mode::double_buffering:
+				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifoRelaxed);
+				break;
+			case cgb::presentation_mode::vsync:
+				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifo);
+				break;
+			case cgb::presentation_mode::triple_buffering:
+				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eMailbox);
+				break;
+			default:
+				assert(false); // should not get here
+				break;
+			}
+		}
+		if (itP == presModes.end()) {
+			LOG_WARNING_EM("No presentation mode specified or desired presentation mode not available => will select any presentation mode");
+			itP = presModes.begin();
+		}
+
+		// select a format:
+		auto surfaceFormat = vk::SurfaceFormatKHR{
+			vk::Format::eB8G8R8A8Unorm,
+			vk::ColorSpaceKHR::eSrgbNonlinear
+		};
+		if (!(srfFrmts.size() == 1 && srfFrmts[0].format == vk::Format::eUndefined)) {
+			// TODO: Select a suitable format!
+		}
+
+		auto createInfo = vk::SwapchainCreateInfoKHR()
+			.setSurface(std::get<vk::SurfaceKHR>(data))
+			.setImageExtent(vk::Extent2D(extent.x, extent.y))
+			.setPresentMode(*itP)
+			.setImageFormat(surfaceFormat.format)
+			.setImageColorSpace(surfaceFormat.colorSpace);
 	}
 
 	void vulkan::get_graphics_queue()

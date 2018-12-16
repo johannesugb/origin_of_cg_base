@@ -20,7 +20,7 @@ namespace cgb
 	public:
 		opengl46();
 
-		window* create_window(const window_params&);
+		window* create_window(const window_params&, const swap_chain_params&);
 
 		/**	Checks whether there is a GL-Error and logs it to the console
 				 *	@return true if there was an error, false if not

@@ -14,8 +14,8 @@
 namespace cgb
 {
 	// =============================== type aliases =================================
-	using window_surface_tuple = std::tuple<window*, vk::SurfaceKHR>;
-	using window_surface_tuple_ptr = std::unique_ptr<window_surface_tuple>;
+	using wnd_surf_swap_tuple = std::tuple<window*, vk::SurfaceKHR, vk::SwapchainKHR>;
+	using wnd_surf_swap_tuple_ptr = std::unique_ptr<wnd_surf_swap_tuple>;
 
 	// ============================== VULKAN CONTEXT ================================
 	/**	@brief Context for Vulkan
@@ -34,7 +34,7 @@ namespace cgb
 		vulkan& operator=(vulkan&&) = delete;
 		virtual ~vulkan();
 
-		window* create_window(const window_params&);
+		window* create_window(const window_params&, const swap_chain_params&);
 
 		texture_handle create_texture()
 		{
@@ -72,15 +72,20 @@ namespace cgb
 		/** Creates a surface for the given window */
 		vk::SurfaceKHR create_surface_for_window(window* pWindow);
 
-		/** Gets the surface assigned to the given window.
-		 *	@return Pointer to the surface or nullptr if not found
+		/** 
+		 *	@return Pointer to the tuple or nullptr if not found
 		 */
-		std::optional<vk::SurfaceKHR> get_surface_for_window(window* pWindow);
+		wnd_surf_swap_tuple* get_surf_swap_tuple_for_window(window* pWindow);
 		
-		/** Gets the window assigned to the given surface.
-		 *	@return Pointer to the window or nullptr if not found
+		/**
+		 *	@return Pointer to the tuple or nullptr if not found
 		 */
-		window* get_window_for_surface(const vk::SurfaceKHR& pSurface);
+		wnd_surf_swap_tuple* get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface);
+
+		/**
+		 *	@return Pointer to the tuple or nullptr if not found
+		 */
+		wnd_surf_swap_tuple* get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain);
 
 		/** Returns a vector containing all elements from @ref sRequiredDeviceExtensions
 		 *  and settings::gRequiredDeviceExtensions
@@ -107,8 +112,14 @@ namespace cgb
 		 */
 		auto find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::SurfaceKHR> pSurface);
 
-		// TODO: double-check and comment
+		/**
+		 *
+		 */
 		void create_logical_device(vk::SurfaceKHR pSurface);
+
+		/** Creates the swap chain for the given surface with the given parameters
+		 */
+		void create_swap_chain(wnd_surf_swap_tuple& data, const swap_chain_params& pParams);
 
 		// TODO: double-check and comment
 		void get_graphics_queue();
@@ -117,7 +128,7 @@ namespace cgb
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
-		std::vector<window_surface_tuple_ptr> mSurfaces;
+		std::vector<wnd_surf_swap_tuple_ptr> mSurfSwap;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
 		vk::Queue mGraphicsQueue;

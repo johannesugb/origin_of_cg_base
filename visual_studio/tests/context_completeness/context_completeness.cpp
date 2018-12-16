@@ -13,10 +13,9 @@ int main()
 	auto windowHandle = window_handle{};
 	auto wnd = window(windowHandle);
 	auto monitorHandle = monitor_handle{};
-	context().create_window(window_params{});
+	context().create_window(window_params{}, swap_chain_params{});
 	context().close_window(wnd);
 	context().get_time();
-	context().enable_vsync(false);
 	//context().check_error("", 0);
 	auto textureHandle = context().create_texture();
 	context().destroy_texture(textureHandle);

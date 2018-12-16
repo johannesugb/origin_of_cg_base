@@ -169,15 +169,8 @@ namespace cgb
 		return mInitialized;
 	}
 
-	window* generic_glfw::create_window(const window_params& pParams)
+	window* generic_glfw::create_window(const window_params& pParams, const swap_chain_params& unused)
 	{
-		// Share a context or let GLFW create a new one
-		GLFWwindow* contextToUse = nullptr; 
-		if (pParams.mSharedContext)
-		{
-			contextToUse = pParams.mSharedContext->mWindowHandle;
-		}
-
 		// Determine the resolution or have it set to the default of 1600x900  (because, why not?!)
 		int width = 1600;
 		int height = 900;
@@ -190,32 +183,32 @@ namespace cgb
 		{
 			if (pParams.mMonitor)
 			{
-				const auto* mode = glfwGetVideoMode(pParams.mMonitor->mMonitorHandle);
+				const auto* mode = glfwGetVideoMode(pParams.mMonitor->mHandle);
 				width = mode->width;
 				height = mode->height;
 			}
 		}
 
-		// Before creating the window, set some config-parameters
-		if (pParams.mEnableSrgbFramebuffer) 
-		{
-			glfwWindowHint(GLFW_SRGB_CAPABLE, *pParams.mEnableSrgbFramebuffer ? GLFW_TRUE : GLFW_FALSE); 
-		}
-		glfwWindowHint(GLFW_DOUBLEBUFFER, false == pParams.mEnableDoublebuffering || *pParams.mEnableDoublebuffering ? GLFW_TRUE : GLFW_FALSE);
-		glfwWindowHint(GLFW_SAMPLES, pParams.mNumberOfSamplesForMSAA ? *pParams.mNumberOfSamplesForMSAA : 1);
+		// See if there are already other windows:
+		auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
+							   [](const window_ptr& wnd) {
+								   return wnd->handle();
+							   });
+
+		// Create the window
 		GLFWwindow* handle = glfwCreateWindow(
 			width,
 			height,
 			pParams.mWindowTitle.empty() ? "cg_base: GLFW Window" : pParams.mWindowTitle.c_str(),
-			static_cast<bool>(pParams.mMonitor) ? pParams.mMonitor->mMonitorHandle : nullptr,
-			contextToUse); // TODO: make configurable
+			static_cast<bool>(pParams.mMonitor) ? pParams.mMonitor->mHandle : nullptr,
+			it == mWindows.end() ? nullptr : (*it)->handle()->mHandle ); // Context is always shared, separate contexts are not supported (for now)
 		
 		if (!handle)
 		{
 			throw std::runtime_error("glfwCreateWindow failed"); 
 		}
 
-		// Insert at the back and return the newly created window
+		// Insert in the back and return the newly created window
 		auto& back = mWindows.emplace_back(std::make_unique<window>(window_handle{ handle }));
 		return back.get();
 	}
@@ -228,13 +221,8 @@ namespace cgb
 			return;
 		}
 
-		glfwDestroyWindow(wnd.handle()->mWindowHandle);
+		glfwDestroyWindow(wnd.handle()->mHandle);
 		wnd.mHandle = std::nullopt;
-	}
-
-	void generic_glfw::enable_vsync(bool enable)
-	{
-		glfwSwapInterval(enable ? 1 : 0);
 	}
 
 	double generic_glfw::get_time()
@@ -249,16 +237,16 @@ namespace cgb
 
 	void generic_glfw::start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer)
 	{
-		glfwSetMouseButtonCallback(pWindow.handle()->mWindowHandle, glfw_mouse_button_callback);
-		glfwSetCursorPosCallback(pWindow.handle()->mWindowHandle, glfw_cursor_pos_callback);
-		glfwSetScrollCallback(pWindow.handle()->mWindowHandle, glfw_scroll_callback);
-		glfwSetKeyCallback(pWindow.handle()->mWindowHandle, glfw_key_callback);
+		glfwSetMouseButtonCallback(pWindow.handle()->mHandle, glfw_mouse_button_callback);
+		glfwSetCursorPosCallback(pWindow.handle()->mHandle, glfw_cursor_pos_callback);
+		glfwSetScrollCallback(pWindow.handle()->mHandle, glfw_scroll_callback);
+		glfwSetKeyCallback(pWindow.handle()->mHandle, glfw_key_callback);
 		sTargetInputBuffer = &pInputBuffer;
 	}
 
 	void generic_glfw::stop_receiving_input_from_window(const window& pWindow)
 	{
-		glfwSetMouseButtonCallback(pWindow.handle()->mWindowHandle, nullptr);
+		glfwSetMouseButtonCallback(pWindow.handle()->mHandle, nullptr);
 	}
 
 	void generic_glfw::change_target_input_buffer(input_buffer& pInputBuffer)
@@ -269,11 +257,19 @@ namespace cgb
 
 	glm::dvec2 generic_glfw::cursor_position(const window& pWindow)
 	{
-		std::lock_guard<std::mutex> lock(sInputMutex);
+		//std::lock_guard<std::mutex> lock(sInputMutex);
 		glm::dvec2 cursorPos;
 		assert(pWindow.handle() != std::nullopt);
-		glfwGetCursorPos(pWindow.handle()->mWindowHandle, &cursorPos[0], &cursorPos[1]);
+		glfwGetCursorPos(pWindow.handle()->mHandle, &cursorPos[0], &cursorPos[1]);
 		return cursorPos;
+	}
+
+	glm::uvec2 generic_glfw::window_extent(const window& pWindow)
+	{
+		assert(pWindow.handle());
+		int width, height;
+		glfwGetWindowSize(pWindow.handle()->mHandle, &width, &height);
+		return glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 	}
 
 	void generic_glfw::glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)

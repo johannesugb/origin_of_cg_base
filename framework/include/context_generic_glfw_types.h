@@ -18,7 +18,7 @@ namespace cgb
 	 */
 	struct window_handle
 	{
-		GLFWwindow* mWindowHandle;
+		GLFWwindow* mHandle;
 	};
 
 	/** Context-specific handle to a monitor.
@@ -26,7 +26,7 @@ namespace cgb
 	 */
 	struct monitor_handle
 	{
-		GLFWmonitor* mMonitorHandle;
+		GLFWmonitor* mHandle;
 	};
 
 	/** Parameters for creating a GLFW window
@@ -46,25 +46,52 @@ namespace cgb
 		 *	If this is set, the window will run in fullscreen mode. 
 		 */
 		std::optional<monitor_handle> mMonitor;
-		
-		/** Set this to another window to use a shared context */
-		std::optional<window_handle> mSharedContext;
-		
-		/** Set to true to enable/request a sRGB compatible framebuffer 
-		 *	By default (i.e. if not set), it will not be enabled.
-		 */
-		std::optional<bool> mEnableSrgbFramebuffer;
-		
-		/** Set to true to enable double-buffering.
-		 *	By default (i.e. if not set), it will be enabled. 
-		 */
-		std::optional<bool> mEnableDoublebuffering;
-
-		/** Set the number of samples for an MSAA-enabled framebuffer.
-		 *	By default (i.e. if not set), the number of samples is set to 1, 
-		 *	which means that MSAA is disabled.
-		 */
-		std::optional<int> mNumberOfSamplesForMSAA;
 	};
 
+	/** Parameters about a framebuffer to be used.
+	 */
+	struct framebuffer_params
+	{
+		/** Set to true to enable/request a sRGB compatible framebuffer
+		 *	By default (i.e. if not set), it will not be enabled.
+		 */
+		std::optional<bool> mSrgbFormat;
+
+		/** Set the number of samples for an MSAA-enabled framebuffer.
+		 *	By default (i.e. if not set), the number of samples is set to 1,
+		 *	which means that MSAA is disabled.
+		 */
+		std::optional<int> mNumberOfMsaaSamples;
+
+	};
+
+	/** Different options on how to present the images in the back buffer on 
+	 *	the surface. 
+	 */
+	enum struct presentation_mode
+	{
+		/** Submit images immediately to the screen */
+		immediate,
+		/** Use two buffers: front-buffer and back-buffer */
+		double_buffering,
+		/** Double buffering and wait for "vertical blank" */
+		vsync,
+		/** Triple buffering mode, also called "mailbox" mode */
+		triple_buffering
+	};
+
+	/** Parameters for the swap chain
+	 */
+	struct swap_chain_params
+	{
+		/** Parameters about the back buffer(s)
+		 */
+		framebuffer_params mFramebufferParams;
+
+		/** How to present the images in the back buffer on the surface.
+		 *	The default mode is context-specific. Immediate mode will not
+		 *	be chosen as the default but instead a more advanced one.
+		 */
+		std::optional<presentation_mode> mPresentationMode;
+	};
 }

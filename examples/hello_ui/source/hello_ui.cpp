@@ -34,7 +34,7 @@ int main()
 		std::nullopt,
 		"Hello cg_base UI!"
 	};
-	auto mainWnd = cgb::context().create_window(windowParams);
+	auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
 
 	// Create a "behavior" which contains functionality of our program
 	auto helloBehavior = hello_behavior();
