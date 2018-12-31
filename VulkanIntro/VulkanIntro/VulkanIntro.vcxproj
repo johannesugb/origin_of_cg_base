@@ -105,13 +105,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.1.85.0\Include;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(ProjectDir)..\..\Libraries\glm-0.9.9.2\glm;$(ProjectDir)..\..\Libraries\stb_image\;$(ProjectDir)..\..\Libraries\tiny_obj_loader\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.1.92.1\Include;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(ProjectDir)..\..\Libraries\glm-0.9.9.2\glm;$(ProjectDir)..\..\Libraries\stb_image\;$(ProjectDir)..\..\Libraries\tiny_obj_loader\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.1.85.0\Lib;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.1.92.1\Lib;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -144,7 +144,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.1.85.0\Include;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(ProjectDir)..\..\Libraries\glm-0.9.9.2\glm;$(ProjectDir)..\..\Libraries\stb_image\;$(ProjectDir)..\..\Libraries\tiny_obj_loader\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.1.92.1\Include;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(ProjectDir)..\..\Libraries\glm-0.9.9.2\glm;$(ProjectDir)..\..\Libraries\stb_image\;$(ProjectDir)..\..\Libraries\tiny_obj_loader\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -152,7 +152,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.1.85.0\Lib;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.1.92.1\Lib;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
