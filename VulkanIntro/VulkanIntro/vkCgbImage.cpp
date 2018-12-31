@@ -9,10 +9,18 @@
 #include "vkMemoryManager.h"
 
 
-vkCgbImage::vkCgbImage(vkCommandBufferManager* commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels) : _commandBufferManager(commandBufferManager)
+vkCgbImage::vkCgbImage(vkCommandBufferManager* commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels) : 
+	_commandBufferManager(commandBufferManager), _texWidth(texWidth), _texHeight(texHeight), _texChannels(texChannels)
 {
 	createTextureImage(pixels, texWidth, texHeight, texChannels);
 	createTextureImageView();
+}
+
+vkCgbImage::vkCgbImage(vkCommandBufferManager* commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+	VkMemoryPropertyFlags properties, VkImageAspectFlags aspects) : _commandBufferManager(commandBufferManager), _texWidth(width), _texHeight(height), _mipLevels(mipLevels)
+{
+	createImage(_texWidth, _texHeight, _mipLevels, numSamples, format, tiling, usage, properties, _image, _imageMemory);
+	_imageView = createImageView(format, aspects, mipLevels);
 }
 
 
@@ -36,7 +44,7 @@ void vkCgbImage::createTextureImage(void* pixels, int texWidth, int texHeight, i
 
 	createImage(texWidth, texHeight, _mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _image, _imageMemory);
 
-	transitionImageLayout(_image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, _mipLevels);
+	transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, _mipLevels);
 	copyBufferToImage(stagingBuffer, _image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
 	generateMipmaps(_image, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, _mipLevels);
@@ -71,7 +79,7 @@ void vkCgbImage::createImage(uint32_t width, uint32_t height, uint32_t mipLevels
 	vkBindImageMemory(vkContext::instance().device, image, imageMemory.memory, imageMemory.offset);
 }
 
-void vkCgbImage::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
+void vkCgbImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
 	VkCommandBuffer commandBuffer = _commandBufferManager->beginSingleTimeCommands();
 
 	VkImageMemoryBarrier barrier = {};
@@ -81,7 +89,7 @@ void vkCgbImage::transitionImageLayout(VkImage image, VkFormat format, VkImageLa
 
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image;
+	barrier.image = _image;
 
 	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -267,13 +275,13 @@ void vkCgbImage::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t te
 }
 
 void vkCgbImage::createTextureImageView() {
-	_imageView = createImageView(_image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, _mipLevels);
+	_imageView = createImageView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, _mipLevels);
 }
 
-VkImageView vkCgbImage::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
+VkImageView vkCgbImage::createImageView(VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image = image;
+	viewInfo.image = _image;
 	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspectFlags;
