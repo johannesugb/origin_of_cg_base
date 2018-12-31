@@ -20,4 +20,35 @@ namespace cgb
 		// Find sub string in given string
 		return data.find(toFind, startingPos);
 	}
+
+	/**	Load a binary file into memory.
+	 *	Adapted from: http://www.cplusplus.com/reference/istream/istream/read/
+	 */
+	static std::vector<char> load_binary_file(std::string path)
+	{
+		std::vector<char> buffer;
+		std::ifstream is(path.c_str(), std::ifstream::binary);
+		if (!is) {
+			throw std::runtime_error(fmt::format("Couldn't load file '{}'", path));
+		}
+
+		// get length of file:
+		is.seekg(0, is.end);
+		size_t length = is.tellg();
+		is.seekg(0, is.beg);
+
+		buffer.resize(length);
+
+		// read data as a block:
+		is.read(buffer.data(), length);
+
+		if (!is) {
+			is.close();
+			LOG_ERROR(fmt::format("cgb::load_binary_file could only read {} bytes instead of {}", is.gcount(), length));
+			throw std::runtime_error(fmt::format("Couldn't read file '{}' into buffer.", path));
+		}
+
+		is.close();
+		return buffer;
+	}
 }

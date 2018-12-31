@@ -61,6 +61,12 @@
     <ClCompile Include="..\..\framework\src\context_generic_glfw.cpp">
       <Filter>Source Files\context\glfw</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_vulkan_types.cpp">
+      <Filter>Source Files\context\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\context_opengl46_types.cpp">
+      <Filter>Source Files\context\opengl46</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -143,6 +149,9 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\formats.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_types.h">
+      <Filter>Header Files\context</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

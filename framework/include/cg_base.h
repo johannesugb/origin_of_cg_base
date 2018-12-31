@@ -44,6 +44,7 @@
 #endif
 
 // -------------------- CG-Base includes --------------------
+#include "context_types.h"
 #include "context.h"
 #include "log.h"
 #include "utils.h"

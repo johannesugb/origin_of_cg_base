@@ -1,4 +1,4 @@
-#include "cg_stdafx.h"
+#include "context_vulkan.h"
 
 namespace cgb
 {
@@ -41,14 +41,23 @@ namespace cgb
 
 	vulkan::~vulkan()
 	{
-		// Destroy logical device
-		mLogicalDevice.destroy();
-
-		// Destroy all surfaces (unfortunately, this is not supported through the C++ API, as it seems)
-		for (auto& ptr_to_tpl : mSurfSwap) {
-			vkDestroySurfaceKHR(mInstance, static_cast<VkSurfaceKHR>(std::get<1>(*ptr_to_tpl)), nullptr);
+		// Destroy all:
+		//  - swap chains,
+		//  - surfaces,
+		//  - and windows
+		for (auto& ptrToSwapChainData : mSurfSwap) {
+			// Unlike images, the image views were explicitly created by us, so we need to add a similar loop to destroy them again at the end of the program [3]
+			for (auto& imageView : ptrToSwapChainData->mSwapChainImageViews) {
+				mLogicalDevice.destroyImageView(imageView);
+			}
+			mLogicalDevice.destroySwapchainKHR(ptrToSwapChainData->mSwapChain);
+			mInstance.destroySurfaceKHR(ptrToSwapChainData->mSurface);
+			generic_glfw::close_window(*ptrToSwapChainData->mWindow);
 		}
 		mSurfSwap.clear();
+
+		// Destroy logical device
+		mLogicalDevice.destroy();
 
 		// Unhook debug callback
 #if LOG_LEVEL > 0
@@ -65,22 +74,20 @@ namespace cgb
 	window* vulkan::create_window(const window_params& pWndParams, const swap_chain_params& pSwapParams)
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		// Create a tuple of window, surface, and swap chain
 		auto wnd = generic_glfw::create_window(pWndParams, pSwapParams);
 		auto surface = create_surface_for_window(wnd);
-		if (0u == wnd->id() && wnd->handle()) // Only do this for the first window:
-		{
-			// Continue Vulkan-initialization:
-			create_logical_device(surface);
-
-			auto tuple = get_surf_swap_tuple_for_surface(surface);
-			assert(tuple);
-			create_swap_chain(*tuple, pSwapParams); // TODO: Not only for the first window!!
-
-			get_graphics_queue();
-
-			// Vulkan-initialization completed.
+		// Vulkan init completion?
+		if (0u == wnd->id() && wnd->handle()) { // We need a surface to create the logical device => do it after the first window has been created
+			// This finishes Vulkan initialization:
+			mLogicalDevice = create_logical_device(surface);
 		}
-		return wnd;
+		// Continue tuple creation
+		auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
+
+		// Insert at the back
+		auto& back = mSurfSwap.emplace_back(std::make_unique<swap_chain_data>(std::move(swapChain)));
+		return back->mWindow;
 	}
 
 	void vulkan::create_instance()
@@ -222,7 +229,7 @@ namespace cgb
 #endif
 	}
 
-	vk::SurfaceKHR vulkan::create_surface_for_window(window* pWindow)
+	vk::SurfaceKHR vulkan::create_surface_for_window(const window* pWindow)
 	{
 		assert(pWindow);
 		assert(pWindow->handle());
@@ -230,19 +237,16 @@ namespace cgb
 		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mHandle, nullptr, &surface)) {
 			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->name()));
 		}
-		// Insert at the back and return the newly created surface
-		auto ptr_to_tpl = std::make_unique<wnd_surf_swap_tuple>(std::make_tuple(pWindow, vk::SurfaceKHR{ surface }, vk::SwapchainKHR{}));
-		auto& back = mSurfSwap.emplace_back(std::move(ptr_to_tpl));
-		return std::get<1>(*back);
+		return surface;
 	}
 
-	wnd_surf_swap_tuple* vulkan::get_surf_swap_tuple_for_window(window* pWindow)
+	swap_chain_data* vulkan::get_surf_swap_tuple_for_window(const window* pWindow)
 	{
 		assert(pWindow);
 		auto pos = std::find_if(
 			std::begin(mSurfSwap), std::end(mSurfSwap),
-			[pWindow](const wnd_surf_swap_tuple_ptr& ptr_to_tpl) {
-				return pWindow == std::get<0>(*ptr_to_tpl);
+			[pWindow](const swap_chain_data_ptr& ptr_to_tpl) {
+				return pWindow == ptr_to_tpl->mWindow;
 			});
 		if (pos != mSurfSwap.end()) {
 			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
@@ -250,12 +254,12 @@ namespace cgb
 		return nullptr;
 	}
 
-	wnd_surf_swap_tuple* vulkan::get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface)
+	swap_chain_data* vulkan::get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface)
 	{
 		auto pos = std::find_if(
 			std::begin(mSurfSwap), std::end(mSurfSwap),
-			[&pSurface](const wnd_surf_swap_tuple_ptr& ptr_to_tpl) {
-				return pSurface == std::get<1>(*ptr_to_tpl);
+			[&pSurface](const swap_chain_data_ptr& ptr_to_tpl) {
+				return pSurface == ptr_to_tpl->mSurface;
 			});
 		if (pos != mSurfSwap.end()) {
 			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
@@ -263,12 +267,12 @@ namespace cgb
 		return nullptr;
 	}
 
-	wnd_surf_swap_tuple* vulkan::get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain)
+	swap_chain_data* vulkan::get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain)
 	{
 		auto pos = std::find_if(
 			std::begin(mSurfSwap), std::end(mSurfSwap),
-			[&pSwapChain](const wnd_surf_swap_tuple_ptr& ptr_to_tpl) {
-				return pSwapChain == std::get<2>(*ptr_to_tpl);
+			[&pSwapChain](const swap_chain_data_ptr& ptr_to_tpl) {
+				return pSwapChain == ptr_to_tpl->mSwapChain;
 			});
 		if (pos != mSurfSwap.end()) {
 			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
@@ -321,7 +325,7 @@ namespace cgb
 			// get features and queues
 			auto properties = device.getProperties();
 			auto features = device.getFeatures();
-			auto queueFamilyProps = device.getQueueFamilyProperties();
+			auto queueFamilyProps = device.getQueueFamilyProperties(); 
 			// check for required features
 			bool graphicsBitSet = false;
 			bool computeBitSet = false;
@@ -393,7 +397,7 @@ namespace cgb
 		return selection;
 	}
 
-	void vulkan::create_logical_device(vk::SurfaceKHR pSurface)
+	vk::Device vulkan::create_logical_device(vk::SurfaceKHR pSurface)
 	{
 		assert(mPhysicalDevice);
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
@@ -414,19 +418,19 @@ namespace cgb
 			// 1. add the graphics queue:
 			queueCreateInfos.emplace_back()
 				.setQueueFamilyIndex(std::get<0>(familiesWithGraphicsSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
-				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
+				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. [1]
 				.setPQueuePriorities(&queuePriority);
 			// 2. add the present queue:
 			queueCreateInfos.emplace_back()
 				.setQueueFamilyIndex(std::get<0>(familiesWithPresentSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
-				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
+				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. [1]
 				.setPQueuePriorities(&queuePriority);
 		}
 		else {
 			// Found a queue which can handle both, graphics and present => add only one instead of two
 			queueCreateInfos.emplace_back()
 				.setQueueFamilyIndex(std::get<0>(familiesWithGrahicsAndPresentSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
-				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. (see https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues)
+				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. [1]
 				.setPQueuePriorities(&queuePriority);
 		}
 
@@ -445,78 +449,344 @@ namespace cgb
 			.setPpEnabledExtensionNames(allRequiredDeviceExtensions.data())
 			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
-		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
-
+		return mPhysicalDevice.createDevice(deviceCreateInfo);
 	}
 
-	void vulkan::create_swap_chain(wnd_surf_swap_tuple& data, const swap_chain_params& pParams)
+	swap_chain_data vulkan::create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface, const swap_chain_params& pParams)
 	{
-		auto srfCaps = mPhysicalDevice.getSurfaceCapabilitiesKHR(std::get<vk::SurfaceKHR>(data));
-		auto srfFrmts = mPhysicalDevice.getSurfaceFormatsKHR(std::get<vk::SurfaceKHR>(data));
-		auto presModes = mPhysicalDevice.getSurfacePresentModesKHR(std::get<vk::SurfaceKHR>(data));
+		auto srfCaps = mPhysicalDevice.getSurfaceCapabilitiesKHR(pSurface);
+		auto srfFrmts = mPhysicalDevice.getSurfaceFormatsKHR(pSurface);
+		auto presModes = mPhysicalDevice.getSurfacePresentModesKHR(pSurface);
 
 		// Vulkan tells us to match the resolution of the window by setting the width and height in the 
 		// currentExtent member. However, some window managers do allow us to differ here and this is 
 		// indicated by setting the width and height in currentExtent to a special value: the maximum 
 		// value of uint32_t. In that case we'll pick the resolution that best matches the window within 
-		// the minImageExtent and maxImageExtent bounds. (see https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain)
+		// the minImageExtent and maxImageExtent bounds. [2]
 		auto extent = srfCaps.currentExtent.width == std::numeric_limits<uint32_t>::max()
-			? glm::clamp(generic_glfw::window_extent(*std::get<window*>(data)),
+			? glm::clamp(generic_glfw::window_extent(*pWindow),
 						 glm::uvec2(srfCaps.minImageExtent.width, srfCaps.minImageExtent.height),
 						 glm::uvec2(srfCaps.maxImageExtent.width, srfCaps.maxImageExtent.height))
 			: glm::uvec2(srfCaps.currentExtent.width, srfCaps.currentExtent.height);
 
 		// Select a presentation mode:
-		decltype(presModes)::iterator itP = presModes.end();
+		decltype(presModes)::iterator selPresModeItr = presModes.end();
 		if (pParams.mPresentationMode) {
 			switch (*pParams.mPresentationMode) {
 			case cgb::presentation_mode::immediate:
-				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eImmediate);
+				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eImmediate);
 				break;
 			case cgb::presentation_mode::double_buffering:
-				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifoRelaxed);
+				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifoRelaxed);
 				break;
 			case cgb::presentation_mode::vsync:
-				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifo);
+				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifo);
 				break;
 			case cgb::presentation_mode::triple_buffering:
-				itP = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eMailbox);
+				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eMailbox);
 				break;
 			default:
-				assert(false); // should not get here
-				break;
+				throw std::runtime_error("should not get here");
 			}
 		}
-		if (itP == presModes.end()) {
+		if (selPresModeItr == presModes.end()) {
 			LOG_WARNING_EM("No presentation mode specified or desired presentation mode not available => will select any presentation mode");
-			itP = presModes.begin();
+			selPresModeItr = presModes.begin();
 		}
 
 		// select a format:
-		auto surfaceFormat = vk::SurfaceFormatKHR{
+		auto selSurfaceFormat = vk::SurfaceFormatKHR{
 			vk::Format::eB8G8R8A8Unorm,
 			vk::ColorSpaceKHR::eSrgbNonlinear
 		};
 		if (!(srfFrmts.size() == 1 && srfFrmts[0].format == vk::Format::eUndefined)) {
-			// TODO: Select a suitable format!
+			for (const auto& e : srfFrmts) {
+				if (true == pParams.mFramebufferParams.mSrgbFormat) {
+					if (is_srgb_format(cgb::image_format(e))) {
+						selSurfaceFormat = e;
+						break;
+					}
+				}
+				else {
+					if (!is_srgb_format(cgb::image_format(e))) {
+						selSurfaceFormat = e;
+						break;
+					}
+				}
+			}
 		}
 
+		// Select the number of images. 
+		// TODO: Should this depend on the selected presentation mode?
+		auto imageCount = srfCaps.minImageCount + 1u;
+		if (srfCaps.maxImageCount > 0) { // A value of 0 for maxImageCount means that there is no limit
+			imageCount = glm::min(imageCount, srfCaps.maxImageCount);
+		}
+
+		// With all settings gathered, create the swap chain!
 		auto createInfo = vk::SwapchainCreateInfoKHR()
-			.setSurface(std::get<vk::SurfaceKHR>(data))
+			.setSurface(pSurface)
+			.setMinImageCount(imageCount)
+			.setImageFormat(selSurfaceFormat.format)
+			.setImageColorSpace(selSurfaceFormat.colorSpace)
 			.setImageExtent(vk::Extent2D(extent.x, extent.y))
-			.setPresentMode(*itP)
-			.setImageFormat(surfaceFormat.format)
-			.setImageColorSpace(surfaceFormat.colorSpace);
+			.setImageArrayLayers(1) // The imageArrayLayers specifies the amount of layers each image consists of. This is always 1 unless you are developing a stereoscopic 3D application. [2]
+			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+			.setPreTransform(srfCaps.currentTransform) // To specify that you do not want any transformation, simply specify the current transformation. [2]
+			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // => no blending with other windows
+			.setPresentMode(*selPresModeItr)
+			.setClipped(VK_TRUE) // we don't care about the color of pixels that are obscured, for example because another window is in front of them.  [2]
+			.setOldSwapchain({}); // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
+
+		// See if we can find a queue family which satisfies both criteria: graphics AND presentation (on the given surface)
+		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, pSurface);
+		std::vector<uint32_t> queueFamilyIndices;
+		if (allInclFamilies.size() != 0) {
+			// Found a queue family which supports both!
+			// If the graphics queue family and presentation queue family are the same, which will be the case on most hardware, then we should stick to exclusive mode. [2]
+			createInfo
+				.setImageSharingMode(vk::SharingMode::eExclusive)
+				.setQueueFamilyIndexCount(0) // Optional [2]
+				.setPQueueFamilyIndices(nullptr); // Optional [2]
+		}
+		else {
+			auto graphicsFamily = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt);
+			auto presentFamily = find_queue_families_for_criteria(std::nullopt, pSurface);
+			assert(graphicsFamily.size() > 0);
+			assert(presentFamily.size() > 0);
+			queueFamilyIndices.push_back(std::get<0>(graphicsFamily[0]));
+			queueFamilyIndices.push_back(std::get<0>(presentFamily[0]));
+			// Have to use separate queue families!
+			// If the queue families differ, then we'll be using the concurrent mode [2]
+			createInfo
+				.setImageSharingMode(vk::SharingMode::eConcurrent)
+				.setQueueFamilyIndexCount(static_cast<uint32_t>(queueFamilyIndices.size()))
+				.setPQueueFamilyIndices(queueFamilyIndices.data());
+		}
+
+		// Finally, create the swap chain prepare a struct which stores all relevant data (for further use)
+		auto swapChainData = swap_chain_data
+		{
+			const_cast<window*>(pWindow),
+			pSurface,
+			mLogicalDevice.createSwapchainKHR(createInfo),
+			selSurfaceFormat,
+			vk::Extent2D(extent.x, extent.y),
+			{}, // std::vector<vk::Image> mSwapChainImages
+			{}  // std::vector<vk::ImageView> mSwapChainImageViews
+		};
+		auto swapChainImages = mLogicalDevice.getSwapchainImagesKHR(swapChainData.mSwapChain);
+		// Store the images,
+		std::copy(std::begin(swapChainImages), std::end(swapChainImages),
+				  std::back_inserter(swapChainData.mSwapChainImages));
+		// and create one image view per image
+		std::transform(std::begin(swapChainData.mSwapChainImages), std::end(swapChainData.mSwapChainImages),
+					   std::back_inserter(swapChainData.mSwapChainImageViews),
+					   [&swapChainData, this](const auto& image) {
+						   auto viewCreateInfo = vk::ImageViewCreateInfo()
+							   .setImage(image)
+							   .setViewType(vk::ImageViewType::e2D)
+							   .setFormat(swapChainData.mSwapChainImageFormat.mFormat)
+							   .setComponents(vk::ComponentMapping() // The components field allows you to swizzle the color channels around. In our case we'll stick to the default mapping. [3]
+											  .setR(vk::ComponentSwizzle::eIdentity)
+											  .setG(vk::ComponentSwizzle::eIdentity)
+											  .setB(vk::ComponentSwizzle::eIdentity)
+											  .setA(vk::ComponentSwizzle::eIdentity))
+							   .setSubresourceRange(vk::ImageSubresourceRange() // The subresourceRange field describes what the image's purpose is and which part of the image should be accessed. Our images will be used as color targets without any mipmapping levels or multiple layers. [3]
+													.setAspectMask(vk::ImageAspectFlagBits::eColor)
+													.setBaseMipLevel(0u)
+													.setLevelCount(1u)
+													.setBaseArrayLayer(0u)
+													.setLayerCount(1u));
+						   // Note:: If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers. You could then create multiple image views for each image representing the views for the left and right eyes by accessing different layers. [3]
+						   auto imageView = mLogicalDevice.createImageView(viewCreateInfo);
+						   return imageView;
+					   });
+
+		return swapChainData;
 	}
 
-	void vulkan::get_graphics_queue()
+	vk::RenderPass vulkan::create_render_pass(image_format pImageFormat)
 	{
-		//assert(mLogicalDevice);
-		//auto selectedFamilies = find_queue_families_with_flags(vk::QueueFlagBits::eGraphics);
-		//if (selectedFamilies.size() == 0) {
-		//	throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
-		//}
+		auto colorAttachment = vk::AttachmentDescription()
+			.setFormat(pImageFormat.mFormat)
+			.setSamples(vk::SampleCountFlagBits::e1)
+			.setLoadOp(vk::AttachmentLoadOp::eClear) // what to do with the data in the attachment before rendering and after rendering [5]
+			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+			.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+			.setInitialLayout(vk::ImageLayout::eUndefined) // we don't care what previous layout the image was in. The caveat of this special value is that the contents of the image are not guaranteed to be preserved, but that doesn't matter since we're going to clear it anyway. [5]
+			.setFinalLayout(vk::ImageLayout::ePresentSrcKHR); //  Images to be presented in the swap chain [5]
 
-		//auto queue = mLogicalDevice.getQueue(std::get<0>(selectedFamilies[0]), 0); // TODO: Why always select the first one?
+		// Attachment references for subpasses
+		auto colorAttachmentRef = vk::AttachmentReference()
+			.setLayout(vk::ImageLayout::eColorAttachmentOptimal); // We intend to use the attachment to function as a color buffer => this layout will give us the best performance [5]
+
+		auto subpassDesc = vk::SubpassDescription()
+			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+			.setColorAttachmentCount(1u)
+			.setPColorAttachments(&colorAttachmentRef);
+		// The following other types of attachments can be referenced by a subpass [5]:
+		// - pInputAttachments: Attachments that are read from a shader
+		// - pResolveAttachments: Attachments used for multisampling color attachments
+		// - pDepthStencilAttachment : Attachments for depth and stencil data
+		// - pPreserveAttachments : Attachments that are not used by this subpass, but for which the data must be preserved
+
+		// Create the render pass
+		auto renderPassInfo = vk::RenderPassCreateInfo()
+			.setAttachmentCount(1u)
+			.setPAttachments(&colorAttachment)
+			.setSubpassCount(1u)
+			.setPSubpasses(&subpassDesc);
+		return mLogicalDevice.createRenderPass(renderPassInfo); // TODO: use this
 	}
+
+	pipeline vulkan::create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow)
+	{
+		return create_graphics_pipeline_for_swap_chain(pShaderInfos, get_surf_swap_tuple_for_window(pWindow));
+	}
+
+	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data* pSwapChainData)
+	{
+		// GATHER ALL THE SHADER INFORMATION
+		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+		std::transform(std::begin(pShaderInfos), std::end(pShaderInfos),
+					   std::back_inserter(shaderStages),
+					   [](const auto& tpl) {
+						   return vk::PipelineShaderStageCreateInfo()
+							   .setStage(convert(std::get<shader_type>(tpl)))
+							   .setModule(std::get<shader_handle*>(tpl)->mShaderModule)
+							   .setPName("main"); // TODO: support different entry points?!
+					   });
+		
+		// DESCRIBE THE VERTEX INPUT
+		auto vertexInputinfo = vk::PipelineVertexInputStateCreateInfo()
+			.setVertexBindingDescriptionCount(0u)
+			.setPVertexBindingDescriptions(nullptr)
+			.setVertexAttributeDescriptionCount(0u)
+			.setPVertexAttributeDescriptions(nullptr);
+
+		// HOW TO INTERPRET THE VERTEX INPUT
+		auto inputAssembly = vk::PipelineInputAssemblyStateCreateInfo()
+			.setTopology(vk::PrimitiveTopology::eTriangleList)
+			.setPrimitiveRestartEnable(VK_FALSE);
+
+		// VIEWPORT AND SCISSORS
+		auto viewport = vk::Viewport()
+			.setX(0.0f)
+			.setY(0.0f)
+			// Remember that the size of the swap chain and its images may differ from the WIDTH and HEIGHT of the window.The swap chain images will be used as framebuffers later on, so we should stick to their size. [4]
+			.setWidth(static_cast<float>(pSwapChainData->mSwapChainExtent.width))
+			.setHeight(static_cast<float>(pSwapChainData->mSwapChainExtent.height))
+			// These values must be within the [0.0f, 1.0f] range, but minDepth may be higher than maxDepth. If you aren't doing anything special, then you should stick to the standard values of 0.0f and 1.0f. [4]
+			.setMinDepth(0.0f)
+			.setMaxDepth(1.0f);
+
+		auto scissor = vk::Rect2D()
+			.setOffset(vk::Offset2D(0, 0))
+			.setExtent(pSwapChainData->mSwapChainExtent);
+
+		auto viewportInfo = vk::PipelineViewportStateCreateInfo()
+			.setViewportCount(1u)
+			.setPViewports(&viewport)
+			.setScissorCount(1u)
+			.setPScissors(&scissor);
+
+		// RASTERIZATION STATE
+		auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
+			.setDepthClampEnable(VK_FALSE) // If depthClampEnable is set to VK_TRUE, then fragments that are beyond the near and far planes are clamped to them as opposed to discarding them. [4]
+			.setRasterizerDiscardEnable(VK_FALSE) // If rasterizerDiscardEnable is set to VK_TRUE, then geometry never passes through the rasterizer stage. [4]
+			.setPolygonMode(vk::PolygonMode::eFill) // fill the polygon || draw wireframe || draw points
+			//.setLineWidth(1.0f)
+			.setCullMode(vk::CullModeFlagBits::eBack)
+			.setFrontFace(vk::FrontFace::eClockwise)
+			.setDepthBiasEnable(VK_FALSE) // The rasterizer can alter the depth values by adding a constant value or biasing them based on a fragment's slope. This is sometimes used for shadow mapping [4]
+			.setDepthBiasConstantFactor(0.0f) // Optional
+			.setDepthBiasClamp(0.0f) // Optional
+			.setDepthBiasSlopeFactor(0.0f); // Optional
+
+		// MULTISAMPLING
+		auto multisampling = vk::PipelineMultisampleStateCreateInfo()
+			.setSampleShadingEnable(VK_FALSE) // disable
+			.setRasterizationSamples(vk::SampleCountFlagBits::e1)
+			.setMinSampleShading(1.0f) // Optional
+			.setPSampleMask(nullptr) // Optional
+			.setAlphaToCoverageEnable(VK_FALSE) // Optional
+			.setAlphaToOneEnable(VK_FALSE); // Optional
+
+		// DEPTH AND STENCIL TESTING
+		auto depthStencil = vk::PipelineDepthStencilStateCreateInfo();
+
+		// COLOR BLENDING
+		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState()
+			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
+			.setBlendEnable(VK_FALSE) // If blendEnable is set to VK_FALSE, then the new color from the fragment shader is passed through unmodified. [4]
+			.setSrcColorBlendFactor(vk::BlendFactor::eOne) // Optional
+			.setDstColorBlendFactor(vk::BlendFactor::eZero) // Optional
+			.setColorBlendOp(vk::BlendOp::eAdd) // Optional
+			.setSrcAlphaBlendFactor(vk::BlendFactor::eOne) // Optional
+			.setDstAlphaBlendFactor(vk::BlendFactor::eZero) // Optional
+			.setAlphaBlendOp(vk::BlendOp::eAdd); // Optional
+		auto colorBlendingInfo = vk::PipelineColorBlendStateCreateInfo()
+			.setLogicOpEnable(VK_FALSE) // If you want to use the second method of blending (bitwise combination), then you should set logicOpEnable to VK_TRUE. The bitwise operation can then be specified in the logicOp field. [4]
+			.setLogicOp(vk::LogicOp::eCopy) // Optional
+			.setAttachmentCount(0u)
+			.setPAttachments(&colorBlendAttachment)
+			.setBlendConstants({ {0.0f, 0.0f, 0.0f, 0.0f} }); // Optional
+
+		// DYNAMIC STATE
+		// A limited amount of the state that we've specified in the previous structs can actually be changed without recreating the pipeline. 
+		// Examples are the size of the viewport, line width and blend constants. If you want to do that, then you'll have to fill in a vk::PipelineDynamicStateCreateInfo structure. [4]
+		auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eLineWidth };
+		auto dynamicStateInfo = vk::PipelineDynamicStateCreateInfo()
+			.setDynamicStateCount(static_cast<uint32_t>(dynamicStates.size()))
+			.setPDynamicStates(std::begin(dynamicStates));
+
+		// PIPELINE LAYOUT
+		// These uniform values (Anm.: passed to shaders) need to be specified during pipeline creation by creating a VkPipelineLayout object. [4]
+		auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
+			.setSetLayoutCount(0u)
+			.setPSetLayouts(nullptr)
+			.setPushConstantRangeCount(0u)
+			.setPPushConstantRanges(nullptr);
+		auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo); 
+
+
+		// CREATE RENDER PASS (for sure, this is the wrong place to do so => refactor!)
+		auto renderPass = create_render_pass(pSwapChainData->mSwapChainImageFormat);
+
+
+		// PIPELINE CREATION
+		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()
+			.setStageCount(static_cast<uint32_t>(shaderStages.size()))
+			.setPStages(shaderStages.data())
+			.setPVertexInputState(&vertexInputinfo)
+			.setPInputAssemblyState(&inputAssembly)
+			.setPViewportState(&viewportInfo)
+			.setPRasterizationState(&rasterizer)
+			.setPMultisampleState(&multisampling)
+			.setPDepthStencilState(nullptr) // Optional
+			.setPColorBlendState(&colorBlendingInfo)
+			.setPDynamicState(nullptr) // Optional
+			.setLayout(pipelineLayout)
+			.setRenderPass(renderPass)
+			.setSubpass(0u)
+			.setBasePipelineHandle(nullptr) // Optional
+			.setBasePipelineIndex(-1); // Optional
+
+		// Create the pipeline, return it and also store the render pass and the pipeline layout in the struct!
+		return pipeline(
+			renderPass,
+			pipelineLayout, 
+			mLogicalDevice.createGraphicsPipeline(
+				nullptr, // references an optional VkPipelineCache object. A pipeline cache can be used to store and reuse data relevant to pipeline creation across multiple calls to vkCreateGraphicsPipelines and even across program executions [5]
+				pipelineInfo));
+	}
+
+	// REFERENCES:
+	// [1] Vulkan Tutorial, Logical device and queues, https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues
+	// [2] Vulkan Tutorial, Swap chain, https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain
+	// [3] Vulkan Tutorial, Image views, https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Image_views
+	// [4] Vulkan Tutorial, Fixed functions, https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
+	// [5] Vulkan Tutorial, Render passes, https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes
 }

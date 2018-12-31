@@ -7,15 +7,13 @@
 
 // INCLUDES:
 #include <vulkan/vulkan.hpp>
-#include "context_generic_glfw_types.h"
 #include "context_vulkan_types.h"
 #include "context_generic_glfw.h"
 
 namespace cgb
 {
 	// =============================== type aliases =================================
-	using wnd_surf_swap_tuple = std::tuple<window*, vk::SurfaceKHR, vk::SwapchainKHR>;
-	using wnd_surf_swap_tuple_ptr = std::unique_ptr<wnd_surf_swap_tuple>;
+	using swap_chain_data_ptr = std::unique_ptr<swap_chain_data>;
 
 	// ============================== VULKAN CONTEXT ================================
 	/**	@brief Context for Vulkan
@@ -26,6 +24,11 @@ namespace cgb
 	 */
 	class vulkan : public generic_glfw
 	{
+		friend struct texture_handle;
+		friend struct image_format;
+		friend struct swap_chain_data;
+		friend struct shader_handle;
+		friend struct pipeline;
 	public:
 		vulkan();
 		vulkan(const vulkan&) = delete;
@@ -45,7 +48,7 @@ namespace cgb
 		{
 		}
 
-	private:
+	public: // TODO: private
 		/** Queries the instance layer properties for validation layers 
 		 *  and returns true if a layer with the given name could be found.
 		 *  Returns false if not found. 
@@ -70,22 +73,22 @@ namespace cgb
 		void setup_vk_debug_callback();
 
 		/** Creates a surface for the given window */
-		vk::SurfaceKHR create_surface_for_window(window* pWindow);
+		vk::SurfaceKHR create_surface_for_window(const window* pWindow);
 
 		/** 
 		 *	@return Pointer to the tuple or nullptr if not found
 		 */
-		wnd_surf_swap_tuple* get_surf_swap_tuple_for_window(window* pWindow);
+		swap_chain_data* get_surf_swap_tuple_for_window(const window* pWindow);
 		
 		/**
 		 *	@return Pointer to the tuple or nullptr if not found
 		 */
-		wnd_surf_swap_tuple* get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface);
+		swap_chain_data* get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface);
 
 		/**
 		 *	@return Pointer to the tuple or nullptr if not found
 		 */
-		wnd_surf_swap_tuple* get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain);
+		swap_chain_data* get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain);
 
 		/** Returns a vector containing all elements from @ref sRequiredDeviceExtensions
 		 *  and settings::gRequiredDeviceExtensions
@@ -115,20 +118,27 @@ namespace cgb
 		/**
 		 *
 		 */
-		void create_logical_device(vk::SurfaceKHR pSurface);
+		vk::Device create_logical_device(vk::SurfaceKHR pSurface);
 
-		/** Creates the swap chain for the given surface with the given parameters
+		/** Creates the swap chain for the given window and surface with the given parameters
+		 *	@param pWindow		[in] The window to create the swap chain for
+		 *	@param pSurface		[in] the surface to create the swap chain for
+		 *	@param pParams		[in] swap chain creation parameters
+		 *	@return				A newly created swap chain
 		 */
-		void create_swap_chain(wnd_surf_swap_tuple& data, const swap_chain_params& pParams);
+		swap_chain_data create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface, const swap_chain_params& pParams);
 
-		// TODO: double-check and comment
-		void get_graphics_queue();
+		vk::RenderPass create_render_pass(image_format pImageFormat);
+
+		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow);
+		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data* pSwapChainData);
+
 
 	private:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
-		std::vector<wnd_surf_swap_tuple_ptr> mSurfSwap;
+		std::vector<swap_chain_data_ptr> mSurfSwap;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
 		vk::Queue mGraphicsQueue;

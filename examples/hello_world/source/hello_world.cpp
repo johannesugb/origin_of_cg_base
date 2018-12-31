@@ -21,21 +21,39 @@ class hello_behavior : public cgb::cg_element
 
 };
 
+
 int main()
 {
-	try
-	{
+	try {
+		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
+		.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear); })
+			.SET_OPENGL46_FUNCTION([]() { glFlush();  return cgb::image_format{ GL_RGB };  });
+
 		cgb::settings::gApplicationName = "Hello World";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
 		cgb::settings::gRequiredDeviceExtensions.push_back("VK_NV_ray_tracing");
 
+
 		// Create a window which we're going to use to render to
-		cgb::window_params windowParams = {
+		auto windowParams = cgb::window_params{
 			std::nullopt,
 			std::nullopt,
 			"Hello cg_base World!"
 		};
 		auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
+
+		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
+		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
+		// PROBLEME:
+		// - Out of host memory
+		// - shader_handle* sollte kein Pointer sein!
+		// - FUCK!
+		std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
+		shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
+		shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
+		auto pipeline = cgb::context().create_graphics_pipeline_for_window(
+			shaderInfos,
+			mainWnd);
 
 		// Create a "behavior" which contains functionality of our program
 		auto helloBehavior = hello_behavior();
