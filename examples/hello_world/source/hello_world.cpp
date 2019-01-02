@@ -42,18 +42,30 @@ int main()
 		};
 		auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
 
+#ifdef USE_VULKAN_CONTEXT
+		auto swapChainData = cgb::context().get_surf_swap_tuple_for_window(mainWnd);
+		assert(swapChainData);
+
 		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
 		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
 		// PROBLEME:
-		// - Out of host memory
 		// - shader_handle* sollte kein Pointer sein!
-		// - FUCK!
 		std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
-		auto pipeline = cgb::context().create_graphics_pipeline_for_window(
-			shaderInfos,
-			mainWnd);
+		auto pipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mainWnd);
+		auto framebfrs = cgb::context().create_framebuffers(pipeline.mRenderPass, mainWnd);
+		auto cmdpool = cgb::context().create_command_pool();
+		auto cmdbfrs = cgb::context().create_command_buffers(static_cast<uint32_t>(framebfrs.size()), cmdpool);
+		for (auto i = 0; i < cmdbfrs.size(); ++i) { // TODO: WTF, this must be abstracted somehow!
+			auto& cmdbfr = cmdbfrs[i];
+			cmdbfr.begin_recording();
+			cmdbfr.begin_render_pass(pipeline.mRenderPass, framebfrs[i].mFramebuffer, { 0, 0 }, swapChainData->mSwapChainExtent);
+			cgb::context().draw_triangle(pipeline, cmdbfr);
+			cmdbfr.end_render_pass();
+			cmdbfr.end_recording();
+		}
+#endif
 
 		// Create a "behavior" which contains functionality of our program
 		auto helloBehavior = hello_behavior();

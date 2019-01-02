@@ -71,6 +71,12 @@ namespace cgb
 		mInstance.destroy();
 	}
 
+	void vulkan::draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer)
+	{
+		pCommandBuffer.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+		pCommandBuffer.mCommandBuffer.draw(3u, 1u, 0u, 0u);
+	}
+
 	window* vulkan::create_window(const window_params& pWndParams, const swap_chain_params& pSwapParams)
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -643,10 +649,12 @@ namespace cgb
 
 	pipeline vulkan::create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow)
 	{
-		return create_graphics_pipeline_for_swap_chain(pShaderInfos, get_surf_swap_tuple_for_window(pWindow));
+		auto data = get_surf_swap_tuple_for_window(pWindow);
+		assert(data);
+		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data);
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data* pSwapChainData)
+	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData)
 	{
 		// GATHER ALL THE SHADER INFORMATION
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
@@ -676,15 +684,15 @@ namespace cgb
 			.setX(0.0f)
 			.setY(0.0f)
 			// Remember that the size of the swap chain and its images may differ from the WIDTH and HEIGHT of the window.The swap chain images will be used as framebuffers later on, so we should stick to their size. [4]
-			.setWidth(static_cast<float>(pSwapChainData->mSwapChainExtent.width))
-			.setHeight(static_cast<float>(pSwapChainData->mSwapChainExtent.height))
+			.setWidth(static_cast<float>(pSwapChainData.mSwapChainExtent.width))
+			.setHeight(static_cast<float>(pSwapChainData.mSwapChainExtent.height))
 			// These values must be within the [0.0f, 1.0f] range, but minDepth may be higher than maxDepth. If you aren't doing anything special, then you should stick to the standard values of 0.0f and 1.0f. [4]
 			.setMinDepth(0.0f)
 			.setMaxDepth(1.0f);
 
 		auto scissor = vk::Rect2D()
 			.setOffset(vk::Offset2D(0, 0))
-			.setExtent(pSwapChainData->mSwapChainExtent);
+			.setExtent(pSwapChainData.mSwapChainExtent);
 
 		auto viewportInfo = vk::PipelineViewportStateCreateInfo()
 			.setViewportCount(1u)
@@ -753,7 +761,7 @@ namespace cgb
 
 
 		// CREATE RENDER PASS (for sure, this is the wrong place to do so => refactor!)
-		auto renderPass = create_render_pass(pSwapChainData->mSwapChainImageFormat);
+		auto renderPass = create_render_pass(pSwapChainData.mSwapChainImageFormat);
 
 
 		// PIPELINE CREATION
@@ -783,10 +791,64 @@ namespace cgb
 				pipelineInfo));
 	}
 
+	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow)
+	{
+		auto data = get_surf_swap_tuple_for_window(pWindow);
+		assert(data);
+		return create_framebuffers(renderPass, *data);
+	}
+
+	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData)
+	{
+		std::vector<framebuffer> framebuffers;
+		for (auto& imageView : pSwapChainData.mSwapChainImageViews) {
+			auto framebufferInfo = vk::FramebufferCreateInfo()
+				.setRenderPass(renderPass)
+				.setAttachmentCount(1u)
+				.setPAttachments(&imageView)
+				.setWidth(pSwapChainData.mSwapChainExtent.width)
+				.setHeight(pSwapChainData.mSwapChainExtent.height)
+				.setLayers(1u); // number of layers in image arrays [6]
+
+			framebuffers.push_back(framebuffer{ mLogicalDevice.createFramebuffer( framebufferInfo ) });
+		}
+		return framebuffers;
+	}
+
+	command_pool vulkan::create_command_pool()
+	{
+		auto familiesWithGraphicsSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt);
+		auto commandPoolInfo = vk::CommandPoolCreateInfo()
+			.setQueueFamilyIndex(std::get<uint32_t>(familiesWithGraphicsSupport[0]))
+			.setFlags(vk::CommandPoolCreateFlags()); // Optional
+		// Possible values for the flags [7]
+		//  - VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
+		//  - VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
+
+		return command_pool{ mLogicalDevice.createCommandPool(commandPoolInfo) };
+	}
+
+	std::vector<command_buffer> vulkan::create_command_buffers(uint32_t pCount, const command_pool& pCommandPool)
+	{
+		auto bufferAllocInfo = vk::CommandBufferAllocateInfo()
+			.setCommandPool(pCommandPool.mCommandPool)
+			.setLevel(vk::CommandBufferLevel::ePrimary) // TODO: make configurable?!
+			.setCommandBufferCount(pCount);
+
+		std::vector<command_buffer> buffers;
+		auto tmp = mLogicalDevice.allocateCommandBuffers(bufferAllocInfo);
+		std::transform(std::begin(tmp), std::end(tmp),
+					   std::back_inserter(buffers),
+					   [](const auto& vkCb) { return command_buffer{ vkCb }; });
+		return buffers;
+	}
+
 	// REFERENCES:
 	// [1] Vulkan Tutorial, Logical device and queues, https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues
 	// [2] Vulkan Tutorial, Swap chain, https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain
 	// [3] Vulkan Tutorial, Image views, https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Image_views
 	// [4] Vulkan Tutorial, Fixed functions, https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
 	// [5] Vulkan Tutorial, Render passes, https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes
+	// [6] Vulkan Tutorial, Framebuffers, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Framebuffers
+	// [7] Vulkan Tutorial, Command Buffers, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers
 }

@@ -157,4 +157,41 @@ namespace cgb
 		vk::PipelineLayout mPipelineLayout;
 		vk::Pipeline mPipeline;
 	};
+
+
+	struct framebuffer
+	{
+		framebuffer() noexcept;
+		framebuffer(const vk::Framebuffer&) noexcept;
+		framebuffer(const framebuffer&) = delete;
+		framebuffer(framebuffer&&) noexcept;
+		framebuffer& operator=(const framebuffer&) = delete;
+		framebuffer& operator=(framebuffer&&) noexcept;
+		~framebuffer();
+
+		vk::Framebuffer mFramebuffer;
+	};
+
+	struct command_pool
+	{
+		command_pool() noexcept;
+		command_pool(const vk::CommandPool&) noexcept;
+		command_pool(const command_pool&) = delete;
+		command_pool(command_pool&&) noexcept;
+		command_pool& operator=(const command_pool&) = delete;
+		command_pool& operator=(command_pool&&) noexcept;
+		~command_pool();
+
+		vk::CommandPool mCommandPool;
+	};
+
+	struct command_buffer
+	{
+		void begin_recording();
+		void end_recording();
+		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);
+		void end_render_pass();
+
+		vk::CommandBuffer mCommandBuffer;
+	};
 }

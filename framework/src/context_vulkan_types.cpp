@@ -471,4 +471,103 @@ namespace cgb
 			mPipeline = nullptr;
 		}
 	}
+
+
+	framebuffer::framebuffer() noexcept
+		: mFramebuffer()
+	{ }
+
+	framebuffer::framebuffer(const vk::Framebuffer& pFramebuffer) noexcept
+		: mFramebuffer(pFramebuffer)
+	{ }
+
+	framebuffer::framebuffer(framebuffer&& other) noexcept
+		: mFramebuffer(std::move(other.mFramebuffer))
+	{
+		other.mFramebuffer = nullptr;
+	}
+
+	framebuffer& framebuffer::operator=(framebuffer&& other) noexcept
+	{
+		mFramebuffer = std::move(other.mFramebuffer);
+		other.mFramebuffer = nullptr;
+		return *this;
+	}
+
+	framebuffer::~framebuffer()
+	{
+		if (mFramebuffer) {
+			context().mLogicalDevice.destroyFramebuffer(mFramebuffer);
+			mFramebuffer = nullptr;
+		}
+	}
+
+	command_pool::command_pool() noexcept
+		: mCommandPool()
+	{ }
+
+	command_pool::command_pool(const vk::CommandPool& pCommandPool) noexcept
+		: mCommandPool(pCommandPool)
+	{ }
+
+	command_pool::command_pool(command_pool&& other) noexcept
+		: mCommandPool(other.mCommandPool)
+	{
+		other.mCommandPool = nullptr;
+	}
+
+	command_pool& command_pool::operator=(command_pool&& other) noexcept
+	{
+		mCommandPool = other.mCommandPool;
+		other.mCommandPool = nullptr;
+		return *this;
+	}
+
+	command_pool::~command_pool()
+	{
+		if (mCommandPool) {
+			context().mLogicalDevice.destroyCommandPool(mCommandPool);
+			mCommandPool = nullptr;
+		}
+	}
+
+
+	void command_buffer::begin_recording()
+	{
+		auto beginInfo = vk::CommandBufferBeginInfo()
+			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse) // TODO: Make configurable
+			.setPInheritanceInfo(nullptr); // Optional
+
+		mCommandBuffer.begin(beginInfo);
+	}
+
+	void command_buffer::end_recording()
+	{
+		mCommandBuffer.end();
+	}
+
+	void command_buffer::begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent)
+	{
+		std::vector<vk::ClearValue> clearValues;
+		clearValues.emplace_back(vk::ClearColorValue{ std::array<float,4>{ {0.5f, 0.0f, 0.5f, 1.0f} } });
+
+		auto renderPassBeginInfo = vk::RenderPassBeginInfo()
+			.setRenderPass(pRenderPass)
+			.setFramebuffer(pFramebuffer)
+			.setRenderArea(vk::Rect2D()
+						   .setOffset(pOffset)
+						   .setExtent(pExtent))
+			.setClearValueCount(1u)
+			.setPClearValues(clearValues.data());
+
+		mCommandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+		// 2nd parameter: how the drawing commands within the render pass will be provided. It can have one of two values [7]:
+		//  - VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be embedded in the primary command buffer itself and no secondary command buffers will be executed.
+		//  - VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : The render pass commands will be executed from secondary command buffers.
+	}
+
+	void command_buffer::end_render_pass()
+	{
+		mCommandBuffer.endRenderPass();
+	}
 }

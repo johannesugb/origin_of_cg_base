@@ -29,6 +29,9 @@ namespace cgb
 		friend struct swap_chain_data;
 		friend struct shader_handle;
 		friend struct pipeline;
+		friend struct framebuffer;
+		friend struct command_pool;
+		friend struct command_buffer;
 	public:
 		vulkan();
 		vulkan(const vulkan&) = delete;
@@ -47,6 +50,8 @@ namespace cgb
 		void destroy_texture(const texture_handle& pHandle)
 		{
 		}
+
+		void draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer);
 
 	public: // TODO: private
 		/** Queries the instance layer properties for validation layers 
@@ -134,9 +139,15 @@ namespace cgb
 		/** TODO: TBD */
 		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow);
 		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data* pSwapChainData);
+		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData);
 
+		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow);
+		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData);
 
+		command_pool create_command_pool();
+
+		std::vector<command_buffer> create_command_buffers(uint32_t pCount, const command_pool& pCommandPool);
+		
 	private:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		vk::Instance mInstance;
