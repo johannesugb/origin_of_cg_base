@@ -26,8 +26,8 @@ int main()
 {
 	try {
 		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
-		.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear); })
-			.SET_OPENGL46_FUNCTION([]() { glFlush();  return cgb::image_format{ GL_RGB };  });
+			.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear); })
+			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
 
 		cgb::settings::gApplicationName = "Hello World";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);

@@ -697,7 +697,7 @@ namespace cgb
 			.setDepthClampEnable(VK_FALSE) // If depthClampEnable is set to VK_TRUE, then fragments that are beyond the near and far planes are clamped to them as opposed to discarding them. [4]
 			.setRasterizerDiscardEnable(VK_FALSE) // If rasterizerDiscardEnable is set to VK_TRUE, then geometry never passes through the rasterizer stage. [4]
 			.setPolygonMode(vk::PolygonMode::eFill) // fill the polygon || draw wireframe || draw points
-			//.setLineWidth(1.0f)
+			.setLineWidth(1.0f) // Even if we're not using wireframe mode, we still have to set it, otherwise we'll get a Vulkan error
 			.setCullMode(vk::CullModeFlagBits::eBack)
 			.setFrontFace(vk::FrontFace::eClockwise)
 			.setDepthBiasEnable(VK_FALSE) // The rasterizer can alter the depth values by adding a constant value or biasing them based on a fragment's slope. This is sometimes used for shadow mapping [4]
@@ -730,7 +730,7 @@ namespace cgb
 		auto colorBlendingInfo = vk::PipelineColorBlendStateCreateInfo()
 			.setLogicOpEnable(VK_FALSE) // If you want to use the second method of blending (bitwise combination), then you should set logicOpEnable to VK_TRUE. The bitwise operation can then be specified in the logicOp field. [4]
 			.setLogicOp(vk::LogicOp::eCopy) // Optional
-			.setAttachmentCount(0u)
+			.setAttachmentCount(1u)
 			.setPAttachments(&colorBlendAttachment)
 			.setBlendConstants({ {0.0f, 0.0f, 0.0f, 0.0f} }); // Optional
 
