@@ -128,9 +128,12 @@ namespace cgb
 		 */
 		swap_chain_data create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface, const swap_chain_params& pParams);
 
+		/** TODO: TBD */
 		vk::RenderPass create_render_pass(image_format pImageFormat);
 
+		/** TODO: TBD */
 		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow);
+		/** TODO: TBD */
 		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data* pSwapChainData);
 
 

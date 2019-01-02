@@ -101,26 +101,48 @@ namespace cgb
 		vk::ShaderModule mShaderModule;
 	};
 
+	/** Represents one specific type of shader */
 	enum struct shader_type
 	{
+		/** Vertex Shader */
 		vertex,
+		/** Tessellation Control Shader */
 		tessellation_control,
+		/** Tessellation Evaluation Shader */
 		tessellation_evaluation,
+		/** Geometry Shader */
 		geometry,
+		/** Fragment Shader */
 		fragment,
+		/** Compute Shader */
 		compute,
+		/** Ray Generation Shader (Nvidia RTX) */
 		ray_generation,
+		/** Ray Tracing Any Hit Shader  (Nvidia RTX) */
 		any_hit,
+		/** Ray Tracing Closest Hit Shader (Nvidia RTX) */
 		closest_hit,
+		/** Ray Tracing Miss Shader (Nvidia RTX) */
 		miss,
+		/** Ray Tracing Intersection Shader (Nvidia RTX) */
 		intersection,
+		/** Ray Tracing Callable Shader (Nvidia RTX) */
 		callable,
+		/** Task Shader (Nvidia Turing)  */
 		task,
+		/** Mesh Shader (Nvidia Turing)  */
 		mesh
 	};
 
+	/** Converts a cgb::shader_type to the vulkan-specific vk::ShaderStageFlagBits type */
 	extern vk::ShaderStageFlagBits convert(shader_type p);
 
+	/** Represents data for a vulkan graphics pipeline 
+	 *	The data held by such a struct is a triple of:
+	 *    - render pass
+	 *    - pipeline layout
+	 *    - pipeline handle
+	 */
 	struct pipeline
 	{
 		pipeline() noexcept;
