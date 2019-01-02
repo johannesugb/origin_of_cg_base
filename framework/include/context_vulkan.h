@@ -40,6 +40,12 @@ namespace cgb
 		vulkan& operator=(vulkan&&) = delete;
 		virtual ~vulkan();
 
+		vk::Instance& vulkan_instance() { return mInstance; }
+		vk::PhysicalDevice& physical_device() { return mPhysicalDevice; }
+		vk::Device& logical_device() { return mLogicalDevice; }
+		vk::Queue& graphics_queue() { return mGraphicsQueue; }
+		vk::Queue& presentation_queue() { return mPresentQueue; }
+
 		window* create_window(const window_params&, const swap_chain_params&);
 
 		texture_handle create_texture()
@@ -123,7 +129,7 @@ namespace cgb
 		/**
 		 *
 		 */
-		vk::Device create_logical_device(vk::SurfaceKHR pSurface);
+		void create_and_assign_logical_device(vk::SurfaceKHR pSurface);
 
 		/** Creates the swap chain for the given window and surface with the given parameters
 		 *	@param pWindow		[in] The window to create the swap chain for

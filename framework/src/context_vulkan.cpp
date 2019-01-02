@@ -86,7 +86,7 @@ namespace cgb
 		// Vulkan init completion?
 		if (0u == wnd->id() && wnd->handle()) { // We need a surface to create the logical device => do it after the first window has been created
 			// This finishes Vulkan initialization:
-			mLogicalDevice = create_logical_device(surface);
+			create_and_assign_logical_device(surface);
 		}
 		// Continue tuple creation
 		auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
@@ -403,7 +403,7 @@ namespace cgb
 		return selection;
 	}
 
-	vk::Device vulkan::create_logical_device(vk::SurfaceKHR pSurface)
+	void vulkan::create_and_assign_logical_device(vk::SurfaceKHR pSurface)
 	{
 		assert(mPhysicalDevice);
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
@@ -455,7 +455,15 @@ namespace cgb
 			.setPpEnabledExtensionNames(allRequiredDeviceExtensions.data())
 			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
-		return mPhysicalDevice.createDevice(deviceCreateInfo);
+		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
+
+		if (familiesWithGrahicsAndPresentSupport.size() == 0) {
+			mGraphicsQueue = mLogicalDevice.getQueue(std::get<0>(familiesWithGraphicsSupport[0]), 0u);
+			mPresentQueue = mLogicalDevice.getQueue(std::get<0>(familiesWithPresentSupport[0]), 0u);
+		}
+		else {
+			mGraphicsQueue = mPresentQueue = mLogicalDevice.getQueue(std::get<0>(familiesWithGrahicsAndPresentSupport[0]), 0u);
+		}
 	}
 
 	swap_chain_data vulkan::create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface, const swap_chain_params& pParams)
@@ -638,12 +646,23 @@ namespace cgb
 		// - pDepthStencilAttachment : Attachments for depth and stencil data
 		// - pPreserveAttachments : Attachments that are not used by this subpass, but for which the data must be preserved
 
+		auto subpassDependency = vk::SubpassDependency()
+			.setSrcSubpass(VK_SUBPASS_EXTERNAL) // The special value VK_SUBPASS_EXTERNAL refers to the implicit subpass before or after the render pass depending on whether it is specified in srcSubpass or dstSubpass. [8]
+			.setDstSubpass(0) // TODO: What to do when there are more subpasses?
+			// The dstSubpass must always be higher than srcSubpass to prevent cycles in the dependency graph. [8]
+			.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			.setSrcAccessMask(vk::AccessFlags())
+			.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite);
+
 		// Create the render pass
 		auto renderPassInfo = vk::RenderPassCreateInfo()
 			.setAttachmentCount(1u)
 			.setPAttachments(&colorAttachment)
 			.setSubpassCount(1u)
-			.setPSubpasses(&subpassDesc);
+			.setPSubpasses(&subpassDesc)
+			.setDependencyCount(1u)
+			.setPDependencies(&subpassDependency);
 		return mLogicalDevice.createRenderPass(renderPassInfo); // TODO: use this
 	}
 
@@ -851,4 +870,5 @@ namespace cgb
 	// [5] Vulkan Tutorial, Render passes, https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes
 	// [6] Vulkan Tutorial, Framebuffers, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Framebuffers
 	// [7] Vulkan Tutorial, Command Buffers, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers
+	// [8] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 }
