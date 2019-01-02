@@ -31,6 +31,7 @@
 #include "vkTexture.h"
 #include "vkCommandBufferManager.h"
 #include "vkDrawer.h"
+#include "vkImagePresenter.h"
 
 
 const int WIDTH = 800;
@@ -38,8 +39,6 @@ const int HEIGHT = 600;
 
 const std::string MODEL_PATH = "models/chalet.obj/chalet.obj";
 const std::string TEXTURE_PATH = "textures/chalet.jpg";
-
-const int MAX_FRAMES_IN_FLIGHT = 2;
 
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_LUNARG_standard_validation"
@@ -73,36 +72,26 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 	}
 }
 
-struct QueueFamilyIndices {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value();
-	}
-};
-
-struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-};
-
 class HelloTriangleApplication {
 private:
+
+	VkSwapchainKHR swapChain;
+	std::vector<VkImage> swapChainImages; // created and destroyed with the swap chain
+	std::vector<VkImageView> swapChainImageViews;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+
 	GLFWwindow * window;
+	VkSurfaceKHR surface;
 
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT callback;
-	VkSurfaceKHR surface;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE; // will be distroyed automatically on destruction of vkInstance "instance"
 	VkDevice device;
 	VkQueue graphicsQueue; // automatically created and destroyed with logical device, "device"
 	VkQueue presentQueue; // automatically created and destroyed with logical device, "device"
-	VkSwapchainKHR swapChain;
 
-	std::vector<VkImage> swapChainImages; // created and destroyed with the swap chain
-	std::vector<VkImageView> swapChainImageViews;
+	
 
 	VkRenderPass renderPass;
 	VkDescriptorSetLayout descriptorSetLayout;
@@ -111,10 +100,6 @@ private:
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 
 	VkCommandPool commandPool;
-
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
-
 	VkCommandPool transferCommandPool;
 
 	VkDescriptorPool descriptorPool;
@@ -122,11 +107,13 @@ private:
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 
+
 	// synchronization
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
 	size_t currentFrame = 0;
+	size_t currentFrame2 = 0;
 
 	bool framebufferResized = false;
 
@@ -200,11 +187,8 @@ private:
 
 		vkContext::instance().physicalDevice = physicalDevice;
 		vkContext::instance().device = device;
-		vkContext::instance().graphicsQueue = graphicsQueue;
-		vkContext::instance().commandPool = commandPool;
-		vkContext::instance().transferCommandPool = transferCommandPool;
-		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool);
-		drawCommandBufferManager = new vkCommandBufferManager((uint32_t)swapChainImages.size(), commandPool);
+		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool, graphicsQueue);
+		drawCommandBufferManager = new vkCommandBufferManager((uint32_t)swapChainImages.size(), commandPool, graphicsQueue);
 		drawer = new vkDrawer(drawCommandBufferManager, graphicsPipeline, pipelineLayout);
 		createColorResources();
 		createDepthResources();
@@ -239,6 +223,7 @@ private:
 		delete texture;
 		delete textureImage;
 		delete transferCommandBufferManager;
+		delete drawCommandBufferManager;
 
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -281,8 +266,6 @@ private:
 			vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
 		}
 
-		delete drawCommandBufferManager;
-
 		vkDestroyPipeline(device, graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 		vkDestroyRenderPass(device, renderPass, nullptr);
@@ -312,7 +295,6 @@ private:
 		createColorResources();
 		createDepthResources();
 		createFramebuffers();
-		drawCommandBufferManager = new vkCommandBufferManager((uint32_t)swapChainImages.size(), commandPool);
 	}
 
 	void createInstance() {
@@ -342,7 +324,7 @@ private:
 			std::cout << "\t" << extension.extensionName << std::endl;
 		}
 
-		// TODO check if required extensions are preesent
+		// TODO check if required extensions are present
 		createInfo.enabledExtensionCount = requiredExtensions.size();
 		createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
@@ -670,9 +652,10 @@ private:
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 		if (indices.graphicsFamily != indices.presentFamily) {
+			uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
 			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			createInfo.queueFamilyIndexCount = 2;
 			createInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -1096,7 +1079,7 @@ private:
 
 		// start drawing, record draw commands, etc.
 		vkContext::instance().renderPass = renderPass;
-		vkContext::instance().currentFrame = imageIndex;
+		vkContext::instance().currentFrame = currentFrame;
 		vkContext::instance().frameBuffer = swapChainFramebuffers[imageIndex];
 
 		std::vector<vkRenderObject*> renderObjects;

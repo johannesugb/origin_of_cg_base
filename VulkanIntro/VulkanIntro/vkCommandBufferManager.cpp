@@ -1,10 +1,11 @@
 #include "vkCommandBufferManager.h"
 
-vkCommandBufferManager::vkCommandBufferManager(VkCommandPool &commandPool) : _imageCount(0), _commandPool(commandPool)
+vkCommandBufferManager::vkCommandBufferManager(VkCommandPool &commandPool, VkQueue &transferQueue) : _imageCount(0), _commandPool(commandPool), mTransferQueue(transferQueue)
 {
 }
 
-vkCommandBufferManager::vkCommandBufferManager(uint32_t imageCount, VkCommandPool &commandPool) : _imageCount(imageCount), _commandPool(commandPool)
+vkCommandBufferManager::vkCommandBufferManager(uint32_t imageCount, VkCommandPool &commandPool, VkQueue &transferQueue) : _imageCount(imageCount), _commandPool(commandPool),
+mTransferQueue(transferQueue)
 {
 	createCommandBuffers();
 }
@@ -106,8 +107,8 @@ void vkCommandBufferManager::endSingleTimeCommands(VkCommandBuffer commandBuffer
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(vkContext::instance().graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(vkContext::instance().graphicsQueue);
+	vkQueueSubmit(mTransferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(mTransferQueue);
 
-	vkFreeCommandBuffers(vkContext::instance().device, vkContext::instance().transferCommandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(vkContext::instance().device, _commandPool, 1, &commandBuffer);
 }

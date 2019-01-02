@@ -2,7 +2,21 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <optional>
+
 class vkMemoryManager;
+
+
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
+struct QueueFamilyIndices {
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+
+	bool isComplete() {
+		return graphicsFamily.has_value() && presentFamily.has_value();
+	}
+};
 
 class vkContext
 {
@@ -14,13 +28,6 @@ public:
 	VkDebugUtilsMessengerEXT callback;
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;
-
-	VkQueue graphicsQueue; // automatically created and destroyed with logical device, "device"
-	VkQueue presentQueue; // automatically created and destroyed with logical device, "device"
-
-	// TODO outsource to Command Manager
-	VkCommandPool transferCommandPool;
-	VkCommandPool commandPool;
 
 	vkMemoryManager* memoryManager;
 
