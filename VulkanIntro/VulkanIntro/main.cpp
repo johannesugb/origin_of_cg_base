@@ -32,6 +32,7 @@
 #include "vkCommandBufferManager.h"
 #include "vkDrawer.h"
 #include "vkImagePresenter.h"
+#include "vulkan_render_queue.h"
 
 // TODO delete
 const int swapChainImagesSize = 3;
@@ -99,7 +100,7 @@ private:
 
 	VkDescriptorPool descriptorPool;
 
-	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT; 
 
 	bool framebufferResized = false;
 
@@ -148,6 +149,14 @@ private:
 	vkCgbImage* colorImage;
 	std::unique_ptr<vkCgbImage> depthImage;
 	std::unique_ptr<vkImagePresenter> imagePresenter;
+	std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
+
+
+	// synchronization
+	std::vector<VkSemaphore> mImageAvailableSemaphores;
+	std::vector<VkSemaphore> mRenderFinishedSemaphores;
+	std::vector<VkFence> mInFlightFences;
+	size_t mCurrentFrame; // current frame for synchronization purposes, only used inside this class
 
 public:
 	void run() {
@@ -172,7 +181,10 @@ private:
 		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool, graphicsQueue);
 		drawCommandBufferManager = std::make_shared<vkCommandBufferManager>((uint32_t)swapChainImagesSize, commandPool, graphicsQueue);
 
-		imagePresenter = std::make_unique<vkImagePresenter>(graphicsQueue, presentQueue, drawCommandBufferManager, surface, findQueueFamilies(physicalDevice));
+		imagePresenter = std::make_unique<vkImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
+		mVulkanRenderQueue = std::make_shared<vulkan_render_queue>(graphicsQueue, drawCommandBufferManager);
+		mCurrentFrame = 0;
+		createSyncObjects();
 		createRenderPass();
 		createDescriptorSetLayout();
 		createGraphicsPipeline();
@@ -191,7 +203,7 @@ private:
 	}
 
 	void mainLoop() {
-		imagePresenter->fetch_next_swapchain_image();
+		//imagePresenter->fetch_next_swapchain_image(mInFlightFences[mCurrentFrame], mImageAvailableSemaphores[mCurrentFrame]);
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
 			drawFrame();
@@ -211,6 +223,7 @@ private:
 		delete texture;
 		delete textureImage;
 		delete transferCommandBufferManager;
+		mVulkanRenderQueue.reset();
 		drawCommandBufferManager.reset();
 
 		vkDestroyCommandPool(device, transferCommandPool, nullptr);
@@ -252,6 +265,12 @@ private:
 		vkDestroyRenderPass(device, renderPass, nullptr);
 
 		imagePresenter.reset();
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			vkDestroySemaphore(vkContext::instance().device, mRenderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(vkContext::instance().device, mImageAvailableSemaphores[i], nullptr);
+			vkDestroyFence(vkContext::instance().device, mInFlightFences[i], nullptr);
+		}
 	}
 
 	void recreateSwapChain() {
@@ -265,7 +284,8 @@ private:
 
 		cleanupSwapChain();
 
-		imagePresenter = std::make_unique<vkImagePresenter>(graphicsQueue, presentQueue, drawCommandBufferManager, surface, findQueueFamilies(physicalDevice));
+		imagePresenter = std::make_unique<vkImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
+		createSyncObjects();
 		createRenderPass();
 		createGraphicsPipeline();
 		createColorResources();
@@ -872,6 +892,8 @@ private:
 	}
 
 	void drawFrame() {
+
+		imagePresenter->fetch_next_swapchain_image(mInFlightFences[mCurrentFrame], mImageAvailableSemaphores[mCurrentFrame]);
 		// update states, e.g. for animation
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -888,8 +910,11 @@ private:
 		drawer->draw(renderObjects);
 
 		std::vector<VkCommandBuffer> secondaryCommandBuffers = drawCommandBufferManager->getRecordedCommandBuffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-		imagePresenter->present_image(secondaryCommandBuffers);
-		imagePresenter->fetch_next_swapchain_image();
+
+
+		mVulkanRenderQueue->submit(secondaryCommandBuffers, mInFlightFences[mCurrentFrame], { mImageAvailableSemaphores[mCurrentFrame] }, { mRenderFinishedSemaphores[mCurrentFrame] }, imagePresenter->get_swap_chain_extent());
+		imagePresenter->present_image(secondaryCommandBuffers, { mRenderFinishedSemaphores[mCurrentFrame] });
+		mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void createDescriptorSetLayout() {
@@ -1053,6 +1078,30 @@ private:
 
 		colorImage = new vkCgbImage(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 		colorImage->transitionImageLayout(colorFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+	}
+
+
+
+	void createSyncObjects() {
+		mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		mInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+		VkSemaphoreCreateInfo semaphoreInfo = {};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		VkFenceCreateInfo fenceInfo = {};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			if (vkCreateSemaphore(vkContext::instance().device, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(vkContext::instance().device, &semaphoreInfo, nullptr, &mRenderFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateFence(vkContext::instance().device, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS) {
+
+				throw std::runtime_error("failed to create synchronization objects for a frame!");
+			}
+		}
 	}
 };
 

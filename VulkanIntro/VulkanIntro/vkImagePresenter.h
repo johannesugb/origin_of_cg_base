@@ -15,12 +15,11 @@ struct SwapChainSupportDetails {
 class vkImagePresenter
 {
 public:
-	vkImagePresenter(VkQueue &graphicsQueue, VkQueue &presentQueue, std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager, 
-		VkSurfaceKHR surface, QueueFamilyIndices queueFamilyIndices);
+	vkImagePresenter(VkQueue &presentQueue, VkSurfaceKHR surface, QueueFamilyIndices queueFamilyIndices);
 	virtual ~vkImagePresenter();
 
-	void fetch_next_swapchain_image();
-	void present_image(std::vector<VkCommandBuffer> secondaryCommandBuffers);
+	void fetch_next_swapchain_image(VkFence inFlightFence, VkSemaphore signalSemaphore);
+	void present_image(std::vector<VkCommandBuffer> secondaryCommandBuffers, std::vector<VkSemaphore> waitSemaphores);
 
 	bool is_swap_chain_recreated() { return mSwapChainRecreated; }
 	void recreate_swapchain();
@@ -40,18 +39,10 @@ private:
 	uint32_t mImageIndex;
 	uint32_t mOldImageIndex;
 
-	VkQueue mGraphicsQueue;
 	VkQueue mPresentQueue;
-	std::shared_ptr<vkCommandBufferManager> mDrawCommandBufferManager;
 	std::shared_ptr<GLFWwindow> mWindow;
 	VkSurfaceKHR mSurface;
 	QueueFamilyIndices mQueueFamilyIndices;
-
-	// synchronization
-	std::vector<VkSemaphore> mImageAvailableSemaphores;
-	std::vector<VkSemaphore> mRenderFinishedSemaphores;
-	std::vector<VkFence> mInFlightFences;
-	size_t mCurrentFrame; // current frame for synchronization purposes, only used inside this class
 
 
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -62,8 +53,6 @@ private:
 	void cleanup();
 	void createSwapChain();
 	void createImageViews();
-	void createSyncObjects();
-	void recordPrimaryCommandBuffer(VkCommandBuffer & commandBuffer, std::vector<VkCommandBuffer> secondaryCommandBuffers);
 
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 };
