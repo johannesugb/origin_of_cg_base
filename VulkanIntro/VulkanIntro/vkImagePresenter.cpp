@@ -62,7 +62,7 @@ void vkImagePresenter::fetch_next_swapchain_image(VkFence inFlightFence, VkSemap
 
 }
 
-void vkImagePresenter::present_image(std::vector<VkCommandBuffer> secondaryCommandBuffers, std::vector<VkSemaphore> waitSemaphores) {
+void vkImagePresenter::present_image(std::vector<VkSemaphore> waitSemaphores) {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -86,9 +86,6 @@ void vkImagePresenter::present_image(std::vector<VkCommandBuffer> secondaryComma
 	}
 
 	mOldImageIndex = mImageIndex;
-
-	// maybe trim command pool each minute or so
-	// vkTrimCommandPool
 }
 
 // swap chain create functions

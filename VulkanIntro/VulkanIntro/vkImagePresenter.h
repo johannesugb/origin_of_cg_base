@@ -4,8 +4,6 @@
 #include <vector>
 #include <memory>
 
-#include "vkCommandBufferManager.h"
-
 struct SwapChainSupportDetails {
 	VkSurfaceCapabilitiesKHR capabilities;
 	std::vector<VkSurfaceFormatKHR> formats;
@@ -19,7 +17,7 @@ public:
 	virtual ~vkImagePresenter();
 
 	void fetch_next_swapchain_image(VkFence inFlightFence, VkSemaphore signalSemaphore);
-	void present_image(std::vector<VkCommandBuffer> secondaryCommandBuffers, std::vector<VkSemaphore> waitSemaphores);
+	void present_image(std::vector<VkSemaphore> waitSemaphores);
 
 	bool is_swap_chain_recreated() { return mSwapChainRecreated; }
 	void recreate_swapchain();
