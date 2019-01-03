@@ -51,7 +51,7 @@ void vkImagePresenter::recreate_swapchain() {
 	createImageViews();
 }
 
-void vkImagePresenter::get_next_swapchain_image() {
+void vkImagePresenter::fetch_next_swapchain_image() {
 	vkWaitForFences(vkContext::instance().device, 1, &mInFlightFences[mCurrentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 	uint32_t imageIndex;
