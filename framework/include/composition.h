@@ -229,14 +229,14 @@ namespace cgb
 			// Make myself the current composition_interface
 			composition_interface::set_current(this);
 
-			// 0. Signal context
-			cgb::context().begin_composition();
-
 			// 1. initialize
 			for (auto& o : mElements)
 			{
 				o->initialize();
 			}
+
+			// Signal context after initialization
+			cgb::context().begin_composition();
 
 			// Enable receiving input
 			for (const auto& window : mWindows)
@@ -275,14 +275,14 @@ namespace cgb
 				context().stop_receiving_input_from_window(*window);
 			}
 
+			// Signal context before finalization
+			cgb::context().end_composition();
+
 			// 7. finalize
 			for (auto& o : mElements)
 			{
 				o->finalize();
 			}
-
-			// 8. signal context
-			cgb::context().end_composition();
 		}
 
 		/** Stop a currently running game/rendering-loop for this composition_interface */

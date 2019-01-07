@@ -38,7 +38,7 @@ class hello_behavior : public cgb::cg_element
 public:
 	hello_behavior(cgb::window* pMainWnd) 
 		: mMainWnd(pMainWnd)
-		, mVertices({{ {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+		, mVertices({{ {0.0f, -0.5f}, {1.0f, 1.0f, 1.0f} },
 					{  {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
 					{  {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }})
 	{ 
@@ -54,11 +54,30 @@ public:
 			.setFlags(vk::BufferCreateFlags()); // The flags parameter is used to configure sparse buffer memory, which is not relevant right now. We'll leave it at the default value of 0. [2]
 
 		mVertexBuffer = cgb::context().logical_device().createBuffer(bufferInfo);
+
+		// The buffer has been created, but it doesn't actually have any memory assigned to it yet. 
+		// The first step of allocating memory for the buffer is to query its memory requirements [2]
+		auto memRequirements = cgb::context().logical_device().getBufferMemoryRequirements(mVertexBuffer);
+		
+		// Allocate the memory!
+		auto allocInfo = vk::MemoryAllocateInfo()
+			.setAllocationSize(memRequirements.size)
+			.setMemoryTypeIndex(cgb::context().find_memory_type_index(
+				memRequirements.memoryTypeBits,
+				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+		mVertexBufferMemory = cgb::context().logical_device().allocateMemory(allocInfo);
+
+		// If memory allocation was successful, then we can now associate this memory with the buffer
+		cgb::context().logical_device().bindBufferMemory(mVertexBuffer, mVertexBufferMemory, 0);
 	}
 
 	void delete_vertex_buffer()
 	{
 		cgb::context().logical_device().destroyBuffer(mVertexBuffer);
+		mVertexBuffer = nullptr;
+		// Memory that is bound to a buffer object may be freed once the buffer is no longer used, so let's free it after the buffer has been destroyed [2]:
+		cgb::context().logical_device().freeMemory(mVertexBufferMemory);
+		mVertexBufferMemory = nullptr;
 	}
 
 	void initialize() override
@@ -67,6 +86,12 @@ public:
 		assert(mSwapChainData);
 
 		create_vertex_buffer();
+		// Filling the vertex buffer!
+		//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
+		auto bufferSize = sizeof(mVertices[0]) * mVertices.size();
+		void* data = cgb::context().logical_device().mapMemory(mVertexBufferMemory, 0, bufferSize);
+		memcpy(data, mVertices.data(), bufferSize);
+		cgb::context().logical_device().unmapMemory(mVertexBufferMemory);
 
 		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
 		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
@@ -83,7 +108,8 @@ public:
 			auto& cmdbfr = mCmdBfrs[i];
 			cmdbfr.begin_recording();
 			cmdbfr.begin_render_pass(mPipeline.mRenderPass, mFrameBuffers[i].mFramebuffer, { 0, 0 }, mSwapChainData->mSwapChainExtent);
-			cgb::context().draw_triangle(mPipeline, cmdbfr);
+			//cgb::context().draw_triangle(mPipeline, cmdbfr);
+			cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer, static_cast<uint32_t>(mVertices.size()));
 			cmdbfr.end_render_pass();
 			cmdbfr.end_recording();
 		}
@@ -145,6 +171,7 @@ private:
 	const std::vector<Vertex> mVertices;
 #ifdef USE_VULKAN_CONTEXT
 	vk::Buffer mVertexBuffer;
+	vk::DeviceMemory mVertexBufferMemory;
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::pipeline mPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;

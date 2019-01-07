@@ -61,6 +61,8 @@ namespace cgb
 
 		void draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer);
 
+		void draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, vk::ArrayProxy<const vk::Buffer> pBuffers, uint32_t pVertexCount);
+
 		/** Completes all pending work on the device, blocks the current thread until then. */
 		void finish_pending_work();
 
@@ -191,6 +193,12 @@ namespace cgb
 		vk::Semaphore& render_finished_semaphore_current_frame() { return mRenderFinishedSemaphores[sync_index_curr_frame()]; }
 
 		vk::Fence& fence_current_frame() { return mInFlightFences[sync_index_curr_frame()]; }
+
+		/** Find (index of) memory with parameters
+		 *	@param pMemoryTypeBits		Bit field of the memory types that are suitable for the buffer. [9]
+		 *	@param pMemoryProperties	Special features of the memory, like being able to map it so we can write to it from the CPU. [9]
+		 */
+		uint32_t find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties);
 
 	private:
 		static std::vector<const char*> sRequiredDeviceExtensions;

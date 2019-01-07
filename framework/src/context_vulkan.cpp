@@ -110,6 +110,13 @@ namespace cgb
 		pCommandBuffer.mCommandBuffer.draw(3u, 1u, 0u, 0u);
 	}
 
+	void vulkan::draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, vk::ArrayProxy<const vk::Buffer> pBuffers, uint32_t pVertexCount)
+	{
+		pCommandBuffer.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+		pCommandBuffer.mCommandBuffer.bindVertexBuffers(0u, std::move(pBuffers), { 0 });
+		pCommandBuffer.mCommandBuffer.draw(pVertexCount, 1u, 0u, 0u);
+	}
+
 	window* vulkan::create_window(const window_params& pWndParams, const swap_chain_params& pSwapParams)
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -934,6 +941,22 @@ namespace cgb
 		return buffers;
 	}
 
+	uint32_t vulkan::find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties)
+	{
+		// The VkPhysicalDeviceMemoryProperties structure has two arrays memoryTypes and memoryHeaps. 
+		// Memory heaps are distinct memory resources like dedicated VRAM and swap space in RAM for 
+		// when VRAM runs out. The different types of memory exist within these heaps. Right now we'll 
+		// only concern ourselves with the type of memory and not the heap it comes from, but you can 
+		// imagine that this can affect performance.
+		auto memProperties = mPhysicalDevice.getMemoryProperties();
+		for (auto i = 0u; i < memProperties.memoryTypeCount; ++i) {
+			if ((pMemoryTypeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & pMemoryProperties) == pMemoryProperties) {
+				return i;
+			}
+		}
+		throw std::runtime_error("failed to find suitable memory type!");
+	}
+
 	// REFERENCES:
 	// [1] Vulkan Tutorial, Logical device and queues, https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues
 	// [2] Vulkan Tutorial, Swap chain, https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain
@@ -943,4 +966,5 @@ namespace cgb
 	// [6] Vulkan Tutorial, Framebuffers, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Framebuffers
 	// [7] Vulkan Tutorial, Command Buffers, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers
 	// [8] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
+	// [9] Vulkan Tutorial, Vertex buffers, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
 }
