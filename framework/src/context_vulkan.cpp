@@ -2,6 +2,9 @@
 
 namespace cgb
 {
+	size_t vulkan::sSettingMaxFramesInFlight = 2;
+	size_t vulkan::sActualMaxFramesInFlight = 2;
+
 	std::vector<const char*> vulkan::sRequiredDeviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
@@ -22,7 +25,9 @@ namespace cgb
 		return supportedValidationLayers;
 	}
 
-	vulkan::vulkan() : generic_glfw()
+	vulkan::vulkan()
+		: generic_glfw()
+		, mFrameCounter(0)
 	{
 		// So it begins
 		create_instance();
@@ -56,6 +61,9 @@ namespace cgb
 		}
 		mSurfSwap.clear();
 
+		// Destroy the semaphores
+		cleanup_sync_objects();
+
 		// Destroy logical device
 		mLogicalDevice.destroy();
 
@@ -69,6 +77,31 @@ namespace cgb
 
 		// Destroy everything
 		mInstance.destroy();
+	}
+
+	void vulkan::begin_composition()
+	{ 
+	}
+
+	void vulkan::end_composition()
+	{
+		mLogicalDevice.waitIdle();
+	}
+
+	void vulkan::begin_frame()
+	{
+		mFrameCounter += 1;
+	
+		// Wait for the prev-prev frame (fence-ping-pong)
+		// TODO: We should only wait for fences if some were submitted 
+		//       ...during the last RENDER-call!!!
+		auto& fence = fence_current_frame();
+		mLogicalDevice.waitForFences(1u, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		mLogicalDevice.resetFences(1u, &fence);
+	}
+
+	void vulkan::end_frame()
+	{
 	}
 
 	void vulkan::draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer)
@@ -87,6 +120,9 @@ namespace cgb
 		if (0u == wnd->id() && wnd->handle()) { // We need a surface to create the logical device => do it after the first window has been created
 			// This finishes Vulkan initialization:
 			create_and_assign_logical_device(surface);
+			// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
+			sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
+			create_sync_objects();
 		}
 		// Continue tuple creation
 		auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
@@ -128,6 +164,42 @@ namespace cgb
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		// Create it, errors will result in an exception.
 		mInstance = vk::createInstance(instCreateInfo);
+	}
+
+	void vulkan::create_sync_objects()
+	{
+		auto semaphoreInfo = vk::SemaphoreCreateInfo();
+		for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
+			mImageAvailableSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
+		}
+		for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
+			mRenderFinishedSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
+		}
+
+		auto fenceInfo = vk::FenceCreateInfo()
+			.setFlags(vk::FenceCreateFlagBits::eSignaled);
+		for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
+			mInFlightFences.push_back(mLogicalDevice.createFence(fenceInfo));
+		}
+
+	}
+
+	void vulkan::cleanup_sync_objects()
+	{
+		for (auto& fen : mInFlightFences) {
+			mLogicalDevice.destroyFence(fen);
+		}
+		mInFlightFences.clear();
+
+		for (auto& sem : mRenderFinishedSemaphores) {
+			mLogicalDevice.destroySemaphore(sem);
+		}
+		mRenderFinishedSemaphores.clear();
+
+		for (auto& sem : mImageAvailableSemaphores) {
+			mLogicalDevice.destroySemaphore(sem);
+		}
+		mImageAvailableSemaphores.clear();
 	}
 
 	bool vulkan::is_validation_layer_supported(const char* pName)
@@ -666,14 +738,14 @@ namespace cgb
 		return mLogicalDevice.createRenderPass(renderPassInfo); // TODO: use this
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow)
+	pipeline vulkan::create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc)
 	{
 		auto data = get_surf_swap_tuple_for_window(pWindow);
 		assert(data);
-		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data);
+		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pBindingDesc, pAttributeDesc);
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData)
+	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc)
 	{
 		// GATHER ALL THE SHADER INFORMATION
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
@@ -688,10 +760,10 @@ namespace cgb
 		
 		// DESCRIBE THE VERTEX INPUT
 		auto vertexInputinfo = vk::PipelineVertexInputStateCreateInfo()
-			.setVertexBindingDescriptionCount(0u)
-			.setPVertexBindingDescriptions(nullptr)
-			.setVertexAttributeDescriptionCount(0u)
-			.setPVertexAttributeDescriptions(nullptr);
+			.setVertexBindingDescriptionCount(1u)
+			.setPVertexBindingDescriptions(&pBindingDesc)
+			.setVertexAttributeDescriptionCount(static_cast<uint32_t>(pAttributeDesc.size()))
+			.setPVertexAttributeDescriptions(pAttributeDesc.data());
 
 		// HOW TO INTERPRET THE VERTEX INPUT
 		auto inputAssembly = vk::PipelineInputAssemblyStateCreateInfo()

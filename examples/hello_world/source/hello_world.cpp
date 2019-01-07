@@ -5,29 +5,68 @@ using namespace std;
 
 class hello_behavior : public cgb::cg_element
 {
+	struct Vertex
+	{
+		glm::vec2 pos;
+		glm::vec3 color;
+
+		static vk::VertexInputBindingDescription binding_description()
+		{
+			return vk::VertexInputBindingDescription()
+				.setBinding(0u)
+				.setStride(sizeof(Vertex))
+				.setInputRate(vk::VertexInputRate::eVertex);
+		}
+
+		static std::array<vk::VertexInputAttributeDescription, 2> attribute_descriptions()
+		{
+			return { {
+					vk::VertexInputAttributeDescription()
+						.setBinding(0u)
+						.setLocation(0u)
+						.setFormat(vk::Format::eR32G32Sfloat)
+						.setOffset(static_cast<uint32_t>(offsetof(Vertex, pos))),
+					vk::VertexInputAttributeDescription()
+						.setBinding(0u)
+						.setLocation(1u)
+						.setFormat(vk::Format::eR32G32B32Sfloat)
+						.setOffset(static_cast<uint32_t>(offsetof(Vertex, color)))
+				} };
+		}
+	};
+
 public:
 	hello_behavior(cgb::window* pMainWnd) 
 		: mMainWnd(pMainWnd)
-	{ }
-
-#ifdef USE_VULKAN_CONTEXT
-	void create_semaphores()
-	{
-		auto semaphoreInfo = vk::SemaphoreCreateInfo();
-		mImageAvailableSemaphore = cgb::context().logical_device().createSemaphore(semaphoreInfo);
-		mRenderFinishedSemaphore = cgb::context().logical_device().createSemaphore(semaphoreInfo);
+		, mVertices({{ {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+					{  {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
+					{  {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }})
+	{ 
 	}
 
-	void cleanup_semaphores()
+#ifdef USE_VULKAN_CONTEXT
+	void create_vertex_buffer()
 	{
-		cgb::context().logical_device().destroySemaphore(mRenderFinishedSemaphore);
-		cgb::context().logical_device().destroySemaphore(mImageAvailableSemaphore);
+		auto bufferInfo = vk::BufferCreateInfo()
+			.setSize(static_cast<vk::DeviceSize>(sizeof(mVertices[0]) * mVertices.size()))
+			.setUsage(vk::BufferUsageFlagBits::eVertexBuffer)
+			.setSharingMode(vk::SharingMode::eExclusive)
+			.setFlags(vk::BufferCreateFlags()); // The flags parameter is used to configure sparse buffer memory, which is not relevant right now. We'll leave it at the default value of 0. [2]
+
+		mVertexBuffer = cgb::context().logical_device().createBuffer(bufferInfo);
+	}
+
+	void delete_vertex_buffer()
+	{
+		cgb::context().logical_device().destroyBuffer(mVertexBuffer);
 	}
 
 	void initialize() override
 	{
 		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
 		assert(mSwapChainData);
+
+		create_vertex_buffer();
 
 		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
 		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
@@ -36,7 +75,7 @@ public:
 		std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
-		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd);
+		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd, Vertex::binding_description(), Vertex::attribute_descriptions());
 		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd);
 		mCmdPool = cgb::context().create_command_pool();
 		mCmdBfrs = cgb::context().create_command_buffers(static_cast<uint32_t>(mFrameBuffers.size()), mCmdPool);
@@ -48,13 +87,11 @@ public:
 			cmdbfr.end_render_pass();
 			cmdbfr.end_recording();
 		}
-
-		create_semaphores();
 	}
 
 	void finalize() override
 	{
-		cleanup_semaphores();
+		delete_vertex_buffer();
 	}
 
 	void render() override
@@ -63,23 +100,24 @@ public:
 		cgb::context().logical_device().acquireNextImageKHR(
 			mSwapChainData->mSwapChain, // the swap chain from which we wish to acquire an image [1]
 			std::numeric_limits<uint64_t>::max(), // a timeout in nanoseconds for an image to become available. Using the maximum value of a 64 bit unsigned integer disables the timeout. [1]
-			mImageAvailableSemaphore, // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
+			cgb::context().image_available_semaphore_current_frame(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
 			nullptr,
 			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
 
 		auto submitInfo = vk::SubmitInfo()
 			.setWaitSemaphoreCount(1u)
-			.setPWaitSemaphores(&mImageAvailableSemaphore)
+			.setPWaitSemaphores(&cgb::context().image_available_semaphore_current_frame())
 			.setPWaitDstStageMask(std::begin({ vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput) }))
 			.setCommandBufferCount(1u)
 			.setPCommandBuffers(&mCmdBfrs[imageIndex].mCommandBuffer)
 			.setSignalSemaphoreCount(1u)
-			.setPSignalSemaphores(&mRenderFinishedSemaphore);
-		cgb::context().graphics_queue().submit(1u, &submitInfo, nullptr);
+			.setPSignalSemaphores(&cgb::context().render_finished_semaphore_current_frame());
+		// TODO: This only works because we are using cgb::varying_update_only_timer which makes a call to render() in each and every frame
+		cgb::context().graphics_queue().submit(1u, &submitInfo, cgb::context().fence_current_frame());
 
 		auto presentInfo = vk::PresentInfoKHR()
 			.setWaitSemaphoreCount(1u)
-			.setPWaitSemaphores(&mRenderFinishedSemaphore)
+			.setPWaitSemaphores(&cgb::context().render_finished_semaphore_current_frame())
 			.setSwapchainCount(1u)
 			.setPSwapchains(&mSwapChainData->mSwapChain)
 			.setPImageIndices(&imageIndex)
@@ -104,17 +142,18 @@ public:
 
 private:
 	cgb::window* mMainWnd;
+	const std::vector<Vertex> mVertices;
 #ifdef USE_VULKAN_CONTEXT
+	vk::Buffer mVertexBuffer;
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::pipeline mPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;
 	cgb::command_pool mCmdPool;
 	std::vector<cgb::command_buffer> mCmdBfrs;
-	vk::Semaphore mImageAvailableSemaphore;
-	vk::Semaphore mRenderFinishedSemaphore;
 #endif
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
+	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
 };
 
 
@@ -147,7 +186,7 @@ int main()
 		//  - an executor
 		//  - a window
 		//  - a behavior
-		auto hello = cgb::composition<cgb::fixed_update_timer, cgb::sequential_executor>({
+		auto hello = cgb::composition<cgb::varying_update_only_timer, cgb::sequential_executor>({
 				mainWnd 
 			}, {
 				&helloBehavior

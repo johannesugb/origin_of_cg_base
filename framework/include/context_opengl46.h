@@ -36,5 +36,8 @@ namespace cgb
 		{
 
 		}
+
+		/** Completes all pending work on the device, blocks the current thread until then. */
+		void finish_pending_work();
 	};
 }

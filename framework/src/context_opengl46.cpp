@@ -68,4 +68,8 @@ namespace cgb
 		return hasError;
 	}
 
+	void opengl46::finish_pending_work()
+	{
+
+	}
 }

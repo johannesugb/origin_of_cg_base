@@ -177,6 +177,9 @@ namespace cgb
 
 			while (!thiz->mShouldStop)
 			{
+				// signal context
+				cgb::context().begin_frame();
+
 				frameType = thiz->mTimer.tick();
 
 				wait_for_input_buffers_swapped(thiz);
@@ -184,14 +187,11 @@ namespace cgb
 				// 2. fixed_update
 				if ((frameType & timer_frame_type::fixed) != timer_frame_type::none)
 				{
-					//LOG_INFO("fixed frame with fixed delta-time[%f]", composition_interface::current()->time().fixed_delta_time());
 					thiz->mExecutor.execute_fixed_updates(thiz->mElements);
 				}
 
 				if ((frameType & timer_frame_type::varying) != timer_frame_type::none)
 				{
-					//LOG_INFO("varying frame with delta-time[%f]", composition_interface::current()->time().delta_time());
-
 					// 3. update
 					thiz->mExecutor.execute_updates(thiz->mElements);
 
@@ -209,10 +209,14 @@ namespace cgb
 				}
 				else
 				{
-					// Or if not from 'A)', tell the main thread for our input buffer update desire from B) here:
+					// If not done from inside the positive if-branch, tell the main thread of our input buffer update desire here:
 					please_swap_input_buffers(thiz);
 				}
+
+				// signal context
+				cgb::context().end_frame();
 			}
+
 		}
 
 	public:
@@ -224,6 +228,9 @@ namespace cgb
 		{
 			// Make myself the current composition_interface
 			composition_interface::set_current(this);
+
+			// 0. Signal context
+			cgb::context().begin_composition();
 
 			// 1. initialize
 			for (auto& o : mElements)
@@ -274,6 +281,8 @@ namespace cgb
 				o->finalize();
 			}
 
+			// 8. signal context
+			cgb::context().end_composition();
 		}
 
 		/** Stop a currently running game/rendering-loop for this composition_interface */

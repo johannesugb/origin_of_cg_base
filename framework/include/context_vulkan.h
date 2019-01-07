@@ -33,6 +33,8 @@ namespace cgb
 		friend struct command_pool;
 		friend struct command_buffer;
 	public:
+		static size_t sSettingMaxFramesInFlight;
+
 		vulkan();
 		vulkan(const vulkan&) = delete;
 		vulkan(vulkan&&) = delete;
@@ -59,6 +61,21 @@ namespace cgb
 
 		void draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer);
 
+		/** Completes all pending work on the device, blocks the current thread until then. */
+		void finish_pending_work();
+
+		/** Used to signal the context about the beginning of a composition */
+		void begin_composition();
+
+		/** Used to signal the context about the end of a composition */
+		void end_composition();
+
+		/** Used to signal the context about the beginning of a new frame */
+		void begin_frame();
+
+		/** Used to signal the context about the end of a frame */
+		void end_frame();
+
 	public: // TODO: private
 		/** Queries the instance layer properties for validation layers 
 		 *  and returns true if a layer with the given name could be found.
@@ -76,6 +93,15 @@ namespace cgb
 		 *	also set the required instance extensions which GLFW demands.
 		 */
 		void create_instance();
+
+		/** Create semaphores and fences according to the sActualMaxFramesInFlight parameter,
+		 *	(which is set to sSettingMaxFramesInFlight in the constructor)
+		 */
+		void create_sync_objects();
+
+		/** Cleans up all the semaphores and fences
+		 */
+		void cleanup_sync_objects();
 
 		/** Method which handles debug callbacks from the validation layers */
 		static VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*, void*);
@@ -143,9 +169,9 @@ namespace cgb
 		vk::RenderPass create_render_pass(image_format pImageFormat);
 
 		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow);
+		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc);
 		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData);
+		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc);
 
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow);
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData);
@@ -154,8 +180,25 @@ namespace cgb
 
 		std::vector<command_buffer> create_command_buffers(uint32_t pCount, const command_pool& pCommandPool);
 		
+		/** Calculates the semaphore index of the current frame */
+		size_t sync_index_curr_frame() const { return mFrameCounter % sActualMaxFramesInFlight; }
+
+		/** Calculates the semaphore index of the previous frame */
+		size_t sync_index_prev_frame() const { return (mFrameCounter - 1) % sActualMaxFramesInFlight; }
+
+		vk::Semaphore& image_available_semaphore_current_frame() { return mImageAvailableSemaphores[sync_index_curr_frame()]; }
+
+		vk::Semaphore& render_finished_semaphore_current_frame() { return mRenderFinishedSemaphores[sync_index_curr_frame()]; }
+
+		vk::Fence& fence_current_frame() { return mInFlightFences[sync_index_curr_frame()]; }
+
 	private:
 		static std::vector<const char*> sRequiredDeviceExtensions;
+		static size_t sActualMaxFramesInFlight;
+		size_t mFrameCounter;
+		std::vector<vk::Semaphore> mImageAvailableSemaphores; // GPU-GPU synchronization
+		std::vector<vk::Semaphore> mRenderFinishedSemaphores; // GPU-GPU synchronization
+		std::vector<vk::Fence> mInFlightFences;  // CPU-GPU synchronization
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
 		std::vector<swap_chain_data_ptr> mSurfSwap;
