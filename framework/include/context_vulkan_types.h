@@ -213,6 +213,8 @@ namespace cgb
 		vk::Buffer mBuffer;
 		vk::DeviceMemory mMemory;
 	};
+	
+	void copy(const buffer& pSource, const buffer& pDestination);
 
 	struct vertex_buffer : buffer
 	{
@@ -230,7 +232,7 @@ namespace cgb
 	struct index_buffer : buffer
 	{
 		index_buffer() noexcept;
-		index_buffer(const vertex_buffer&) = delete;
+		index_buffer(const index_buffer&) = delete;
 		index_buffer(index_buffer&&) noexcept;
 		index_buffer& operator=(const index_buffer&) = delete;
 		index_buffer& operator=(index_buffer&&) noexcept;
@@ -241,5 +243,40 @@ namespace cgb
 		uint32_t mIndexCount;
 	};
 
-	void copy(const buffer& pSource, const buffer& pDestination);
+	struct uniform_buffer : buffer
+	{
+		uniform_buffer() noexcept;
+		uniform_buffer(const uniform_buffer&) = delete;
+		uniform_buffer(uniform_buffer&&) noexcept;
+		uniform_buffer& operator=(const uniform_buffer&) = delete;
+		uniform_buffer& operator=(uniform_buffer&&) noexcept;
+
+		static uniform_buffer create(size_t pBufferSize, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
+	};
+
+	struct descriptor_pool
+	{
+		descriptor_pool() noexcept;
+		descriptor_pool(const vk::DescriptorPool&);
+		descriptor_pool(const descriptor_pool&) = delete;
+		descriptor_pool(descriptor_pool&&) noexcept;
+		descriptor_pool& operator=(const descriptor_pool&) = delete;
+		descriptor_pool& operator=(descriptor_pool&&) noexcept;
+		~descriptor_pool();
+
+		vk::DescriptorPool mDescriptorPool;
+	};
+
+	struct descriptor_set
+	{
+		descriptor_set() noexcept;
+		descriptor_set(const vk::DescriptorSet&);
+		descriptor_set(const descriptor_set&) = delete;
+		descriptor_set(descriptor_set&&) noexcept;
+		descriptor_set& operator=(const descriptor_set&) = delete;
+		descriptor_set& operator=(descriptor_set&&) noexcept;
+
+		vk::DescriptorSet mDescriptorSet;
+	};
+
 }

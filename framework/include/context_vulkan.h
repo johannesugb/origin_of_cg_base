@@ -177,9 +177,9 @@ namespace cgb
 		vk::RenderPass create_render_pass(image_format pImageFormat);
 
 		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc);
+		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc);
+		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow);
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData);
@@ -215,6 +215,10 @@ namespace cgb
 		 */
 		void set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo);
 
+		descriptor_pool& get_descriptor_pool();
+
+		std::vector<descriptor_set> create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData);
+
 	private:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		static size_t sActualMaxFramesInFlight;
@@ -237,5 +241,6 @@ namespace cgb
 		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
 
 		std::vector<command_pool> mCommandPools;
+		std::vector<descriptor_pool> mDescriptorPools;
 	};
 }

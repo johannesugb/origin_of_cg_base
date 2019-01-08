@@ -35,6 +35,13 @@ class hello_behavior : public cgb::cg_element
 		}
 	};
 
+	struct UniformBufferObject
+	{
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
+
 public:
 	hello_behavior(cgb::window* pMainWnd) 
 		: mMainWnd(pMainWnd)
@@ -88,6 +95,54 @@ public:
 		cgb:copy(stagingBuffer, mIndexBuffer);
 	}
 
+	void create_uniform_buffers()
+	{
+		for (auto i = 0; i < mFrameBuffers.size(); ++i) {
+			mUniformBuffers.push_back(cgb::uniform_buffer::create(
+				sizeof(UniformBufferObject),
+				vk::BufferUsageFlags(),
+				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+		}
+	}
+
+	auto create_descriptor_set_layout()
+	{
+		auto uboLayoutBinding = vk::DescriptorSetLayoutBinding()
+			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+			.setDescriptorCount(1u)
+			.setStageFlags(vk::ShaderStageFlagBits::eVertex)
+			.setPImmutableSamplers(nullptr); // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
+
+		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(1u)
+			.setPBindings(&uboLayoutBinding);
+
+		return cgb::context().logical_device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+	}
+
+	void create_descriptor_sets()
+	{
+		std::vector<vk::DescriptorSetLayout> layouts;
+		for (int i = 0; i < mFrameBuffers.size(); ++i) {
+			layouts.push_back(create_descriptor_set_layout());
+		}
+		mDescriptorSets = cgb::context().create_descriptor_set(layouts);
+		for (auto i = 0; i < mDescriptorSets.size(); ++i) {
+			auto bufferInfo = vk::DescriptorBufferInfo()
+				.setBuffer(mUniformBuffers[i].mBuffer)
+				.setOffset(0)
+				.setRange(sizeof(UniformBufferObject));
+			auto descriptorWrite = vk::WriteDescriptorSet()
+				.setDstSet(mDescriptorSets[i].mDescriptorSet)
+				.setDstBinding(0u)
+				.setDstArrayElement(0u)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(1u)
+				.setPBufferInfo(&bufferInfo);
+			cgb::context().logical_device().updateDescriptorSets({ descriptorWrite }, {});
+		}
+	}
+
 	void initialize() override
 	{
 		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
@@ -104,13 +159,24 @@ public:
 		std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
-		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd, Vertex::binding_description(), Vertex::attribute_descriptions());
+
+		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd, Vertex::binding_description(), Vertex::attribute_descriptions(), { create_descriptor_set_layout() });
 		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd);
 		mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
+
+		create_uniform_buffers();
+		create_descriptor_sets();
+
 		for (auto i = 0; i < mCmdBfrs.size(); ++i) { // TODO: WTF, this must be abstracted somehow!
 			auto& cmdbfr = mCmdBfrs[i];
 			cmdbfr.begin_recording();
 			cmdbfr.begin_render_pass(mPipeline.mRenderPass, mFrameBuffers[i].mFramebuffer, { 0, 0 }, mSwapChainData->mSwapChainExtent);
+			cmdbfr.mCommandBuffer.bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics,
+				mPipeline.mPipelineLayout,
+				0u,
+				{ mDescriptorSets[i].mDescriptorSet },
+				{});
 			//cgb::context().draw_triangle(mPipeline, cmdbfr);
 			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
 			cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
@@ -132,6 +198,19 @@ public:
 			cgb::context().image_available_semaphore_current_frame(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
 			nullptr,
 			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
+
+		UniformBufferObject ubo{
+			glm::rotate(glm::mat4(1.0f), cgb::time().frame_time() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+			glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+			glm::perspective(glm::radians(45.0f), mSwapChainData->mSwapChainExtent.width / static_cast<float>(mSwapChainData->mSwapChainExtent.height), 0.1f, 10.0f)
+		};
+		// GLM was originally designed for OpenGL, where the Y coordinate of the clip coordinates is inverted. 
+		//The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in 
+		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
+		ubo.proj[1][1] *= -1;
+		void* uboData = cgb::context().logical_device().mapMemory(mUniformBuffers[imageIndex].mMemory, 0, sizeof(ubo));
+		memcpy(uboData, &ubo, sizeof(ubo));
+		cgb::context().logical_device().unmapMemory(mUniformBuffers[imageIndex].mMemory);
 
 		auto submitInfo = vk::SubmitInfo()
 			.setWaitSemaphoreCount(1u)
@@ -176,14 +255,17 @@ private:
 #ifdef USE_VULKAN_CONTEXT
 	cgb::vertex_buffer mVertexBuffer;
 	cgb::index_buffer mIndexBuffer;
+	std::vector<cgb::uniform_buffer> mUniformBuffers;
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::pipeline mPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;
 	std::vector<cgb::command_buffer> mCmdBfrs;
+	std::vector<cgb::descriptor_set> mDescriptorSets;
 #endif
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
+	// [3] Vulkan Tutorial, Descriptor layout and buffer, https://vulkan-tutorial.com/Uniform_buffers/Descriptor_layout_and_buffer
 };
 
 

@@ -46,6 +46,9 @@ namespace cgb
 
 	vulkan::~vulkan()
 	{
+		// Destroy all descriptor pools before the queues and the device is destroyed
+		mDescriptorPools.clear();
+
 		// Destroy all command pools before the queues and the device is destroyed
 		mCommandPools.clear();
 
@@ -780,14 +783,14 @@ namespace cgb
 		return mLogicalDevice.createRenderPass(renderPassInfo); // TODO: use this
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc)
+	pipeline vulkan::create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
 	{
 		auto data = get_surf_swap_tuple_for_window(pWindow);
 		assert(data);
-		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pBindingDesc, pAttributeDesc);
+		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pBindingDesc, pAttributeDesc, pDescriptorSets);
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc)
+	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
 	{
 		// GATHER ALL THE SHADER INFORMATION
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
@@ -840,7 +843,8 @@ namespace cgb
 			.setPolygonMode(vk::PolygonMode::eFill) // fill the polygon || draw wireframe || draw points
 			.setLineWidth(1.0f) // Even if we're not using wireframe mode, we still have to set it, otherwise we'll get a Vulkan error
 			.setCullMode(vk::CullModeFlagBits::eBack)
-			.setFrontFace(vk::FrontFace::eClockwise)
+			.setFrontFace(vk::FrontFace::eCounterClockwise)
+			//.setFrontFace(vk::FrontFace::eClockwise)
 			.setDepthBiasEnable(VK_FALSE) // The rasterizer can alter the depth values by adding a constant value or biasing them based on a fragment's slope. This is sometimes used for shadow mapping [4]
 			.setDepthBiasConstantFactor(0.0f) // Optional
 			.setDepthBiasClamp(0.0f) // Optional
@@ -886,8 +890,8 @@ namespace cgb
 		// PIPELINE LAYOUT
 		// These uniform values (Anm.: passed to shaders) need to be specified during pipeline creation by creating a VkPipelineLayout object. [4]
 		auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(0u)
-			.setPSetLayouts(nullptr)
+			.setSetLayoutCount(static_cast<uint32_t>(pDescriptorSets.size()))
+			.setPSetLayouts(pDescriptorSets.data())
 			.setPushConstantRangeCount(0u)
 			.setPPushConstantRanges(nullptr);
 		auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo); 
@@ -1031,6 +1035,37 @@ namespace cgb
 		}
 	}
 
+	descriptor_pool& vulkan::get_descriptor_pool()
+	{
+		if (mDescriptorPools.size() == 0) {
+			auto poolSize = vk::DescriptorPoolSize()
+				.setDescriptorCount(128u); // TODO: is that a good pool size? and what to do beyond that number?
+			auto poolInfo = vk::DescriptorPoolCreateInfo()
+				.setPoolSizeCount(1u)
+				.setPPoolSizes(&poolSize)
+				.setMaxSets(128u) // TODO: is that a good max sets-number? and what to do beyond that number?
+				.setFlags(vk::DescriptorPoolCreateFlags()); // The structure has an optional flag similar to command pools that determines if individual descriptor sets can be freed or not: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT. We're not going to touch the descriptor set after creating it, so we don't need this flag. [10]
+			return mDescriptorPools.emplace_back(logical_device().createDescriptorPool(poolInfo));
+		}
+		return mDescriptorPools[0];
+	}
+
+	std::vector<descriptor_set> vulkan::create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData)
+	{
+		auto allocInfo = vk::DescriptorSetAllocateInfo()
+			.setDescriptorPool(get_descriptor_pool().mDescriptorPool)
+			.setDescriptorSetCount(static_cast<uint32_t>(pData.size()))
+			.setPSetLayouts(pData.data());
+		auto descriptorSets = logical_device().allocateDescriptorSets(allocInfo); // The call to vkAllocateDescriptorSets will allocate descriptor sets, each with one uniform buffer descriptor. [10]
+		std::vector<descriptor_set> result;
+		std::transform(std::begin(descriptorSets), std::end(descriptorSets),
+					   std::back_inserter(result),
+					   [](const auto& vkDescSet) {
+						   return descriptor_set(vkDescSet);
+					   });
+		return result;
+	}
+
 	// REFERENCES:
 	// [1] Vulkan Tutorial, Logical device and queues, https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues
 	// [2] Vulkan Tutorial, Swap chain, https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain
@@ -1041,4 +1076,5 @@ namespace cgb
 	// [7] Vulkan Tutorial, Command Buffers, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers
 	// [8] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [9] Vulkan Tutorial, Vertex buffers, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
+	// [10] Vulkan Tutorial, Descriptor pool and sets, https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets
 }
