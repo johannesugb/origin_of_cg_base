@@ -45,8 +45,12 @@ namespace cgb
 		vk::Instance& vulkan_instance() { return mInstance; }
 		vk::PhysicalDevice& physical_device() { return mPhysicalDevice; }
 		vk::Device& logical_device() { return mLogicalDevice; }
+		uint32_t graphics_queue_index() const { return mGraphicsQueueIndex; }
+		uint32_t presentation_queue_index() const { return mPresentQueueIndex; }
+		uint32_t transfer_queue_index() const { return mTransferQueueIndex; }
 		vk::Queue& graphics_queue() { return mGraphicsQueue; }
 		vk::Queue& presentation_queue() { return mPresentQueue; }
+		vk::Queue& transfer_queue() { return mTransferQueue; }
 
 		window* create_window(const window_params&, const swap_chain_params&);
 
@@ -61,7 +65,9 @@ namespace cgb
 
 		void draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer);
 
-		void draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, vk::ArrayProxy<const vk::Buffer> pBuffers, uint32_t pVertexCount);
+		void draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer);
+
+		void draw_indexed(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer, const index_buffer& pIndexBuffer);
 
 		/** Completes all pending work on the device, blocks the current thread until then. */
 		void finish_pending_work();
@@ -178,9 +184,12 @@ namespace cgb
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow);
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData);
 
-		command_pool create_command_pool();
+		command_pool& get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex);
 
-		std::vector<command_buffer> create_command_buffers(uint32_t pCount, const command_pool& pCommandPool);
+		std::vector<command_buffer> create_command_buffers(size_t pCount, uint32_t pQueueFamilyIndex, vk::CommandBufferUsageFlags pUsageFlags);
+		std::vector<command_buffer> create_command_buffers_for_graphics(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+		std::vector<command_buffer> create_command_buffers_for_transfer(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		std::vector<command_buffer> create_command_buffers_for_presentation(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlags());
 		
 		/** Calculates the semaphore index of the current frame */
 		size_t sync_index_curr_frame() const { return mFrameCounter % sActualMaxFramesInFlight; }
@@ -200,6 +209,12 @@ namespace cgb
 		 */
 		uint32_t find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties);
 
+		/** Sets the sharing mode parameter on the given @ref vk::BufferCreateInfo struct.
+		 *	If there are two distinct queue families, concurrent sharing mode will be set for both queues,
+		 *	if there is only one queue family to handle transfer and graphics, sharing mode will be set to exclusive.
+		 */
+		void set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo);
+
 	private:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		static size_t sActualMaxFramesInFlight;
@@ -212,7 +227,15 @@ namespace cgb
 		std::vector<swap_chain_data_ptr> mSurfSwap;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
+
 		vk::Queue mGraphicsQueue;
+		uint32_t mGraphicsQueueIndex;
 		vk::Queue mPresentQueue;
+		uint32_t mPresentQueueIndex;
+		vk::Queue mTransferQueue;
+		uint32_t mTransferQueueIndex;
+		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
+
+		std::vector<command_pool> mCommandPools;
 	};
 }

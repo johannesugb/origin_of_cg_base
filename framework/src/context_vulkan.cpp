@@ -46,6 +46,9 @@ namespace cgb
 
 	vulkan::~vulkan()
 	{
+		// Destroy all command pools before the queues and the device is destroyed
+		mCommandPools.clear();
+
 		// Destroy all:
 		//  - swap chains,
 		//  - surfaces,
@@ -110,11 +113,19 @@ namespace cgb
 		pCommandBuffer.mCommandBuffer.draw(3u, 1u, 0u, 0u);
 	}
 
-	void vulkan::draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, vk::ArrayProxy<const vk::Buffer> pBuffers, uint32_t pVertexCount)
+	void vulkan::draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer)
 	{
 		pCommandBuffer.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
-		pCommandBuffer.mCommandBuffer.bindVertexBuffers(0u, std::move(pBuffers), { 0 });
-		pCommandBuffer.mCommandBuffer.draw(pVertexCount, 1u, 0u, 0u);
+		pCommandBuffer.mCommandBuffer.bindVertexBuffers(0u, { pVertexBuffer.mBuffer }, { 0 });
+		pCommandBuffer.mCommandBuffer.draw(pVertexBuffer.mVertexCount, 1u, 0u, 0u);
+	}
+
+	void vulkan::draw_indexed(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer, const index_buffer& pIndexBuffer)
+	{
+		pCommandBuffer.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+		pCommandBuffer.mCommandBuffer.bindVertexBuffers(0u, { pVertexBuffer.mBuffer }, { 0 });
+		pCommandBuffer.mCommandBuffer.bindIndexBuffer(pIndexBuffer.mBuffer, 0u, pIndexBuffer.mIndexType);
+		pCommandBuffer.mCommandBuffer.drawIndexed(pIndexBuffer.mIndexCount, 1u, 0u, 0u, 0u);
 	}
 
 	window* vulkan::create_window(const window_params& pWndParams, const swap_chain_params& pSwapParams)
@@ -489,6 +500,7 @@ namespace cgb
 		auto familiesWithGraphicsSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt);
 		auto familiesWithPresentSupport = find_queue_families_for_criteria(std::nullopt, pSurface);
 		auto familiesWithGrahicsAndPresentSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, pSurface);
+		auto transferOnlyFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, std::nullopt);
 		
 		const float queuePriority = 1.0f; // TODO: Is this supposed to be priority=1 always? 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
@@ -519,6 +531,13 @@ namespace cgb
 				.setPQueuePriorities(&queuePriority);
 		}
 
+		if (transferOnlyFamilies.size() > 0) {
+			queueCreateInfos.emplace_back()
+				.setQueueFamilyIndex(std::get<0>(transferOnlyFamilies[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
+				.setQueueCount(1u)
+				.setPQueuePriorities(&queuePriority);
+		}
+
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		
@@ -537,11 +556,27 @@ namespace cgb
 		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
 
 		if (familiesWithGrahicsAndPresentSupport.size() == 0) {
-			mGraphicsQueue = mLogicalDevice.getQueue(std::get<0>(familiesWithGraphicsSupport[0]), 0u);
-			mPresentQueue = mLogicalDevice.getQueue(std::get<0>(familiesWithPresentSupport[0]), 0u);
+			mGraphicsQueueIndex = std::get<0>(familiesWithGraphicsSupport[0]);
+			mGraphicsQueue = mLogicalDevice.getQueue(mGraphicsQueueIndex, 0u);
+
+			mPresentQueueIndex = std::get<0>(familiesWithPresentSupport[0]);
+			mPresentQueue = mLogicalDevice.getQueue(mPresentQueueIndex, 0u);
 		}
 		else {
-			mGraphicsQueue = mPresentQueue = mLogicalDevice.getQueue(std::get<0>(familiesWithGrahicsAndPresentSupport[0]), 0u);
+			mGraphicsQueueIndex = std::get<0>(familiesWithGrahicsAndPresentSupport[0]);
+			mGraphicsQueue = mPresentQueue = mLogicalDevice.getQueue(mGraphicsQueueIndex, 0u);
+		}
+
+		if (transferOnlyFamilies.size() > 0) {
+			mTransferQueueIndex = std::get<0>(transferOnlyFamilies[0]);
+			mTransferQueue = mLogicalDevice.getQueue(mTransferQueueIndex, 0u);
+			mTransferAndGraphicsQueueIndices.push_back(mTransferQueueIndex);
+			mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueueIndex);
+		}
+		else {
+			mTransferQueueIndex = mGraphicsQueueIndex;
+			mTransferQueue = mGraphicsQueue;
+			mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueueIndex);
 		}
 	}
 
@@ -913,32 +948,59 @@ namespace cgb
 		return framebuffers;
 	}
 
-	command_pool vulkan::create_command_pool()
+	command_pool& vulkan::get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex)
 	{
-		auto familiesWithGraphicsSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt);
-		auto commandPoolInfo = vk::CommandPoolCreateInfo()
-			.setQueueFamilyIndex(std::get<uint32_t>(familiesWithGraphicsSupport[0]))
-			.setFlags(vk::CommandPoolCreateFlags()); // Optional
-		// Possible values for the flags [7]
-		//  - VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
-		//  - VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
-
-		return command_pool{ mLogicalDevice.createCommandPool(commandPoolInfo) };
+		auto it = std::find_if(std::begin(mCommandPools), std::end(mCommandPools),
+							   [pQueueFamilyIndex](const auto& existing) {
+								   return existing.mQueueFamilyIndex == pQueueFamilyIndex;
+							   });
+		if (it == std::end(mCommandPools)) {
+			auto commandPoolInfo = vk::CommandPoolCreateInfo()
+				.setQueueFamilyIndex(pQueueFamilyIndex)
+				.setFlags(vk::CommandPoolCreateFlags()); // Optional
+			// Possible values for the flags [7]
+			//  - VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
+			//  - VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
+			return mCommandPools.emplace_back(pQueueFamilyIndex, mLogicalDevice.createCommandPool(commandPoolInfo));
+		}
+		return *it;
 	}
 
-	std::vector<command_buffer> vulkan::create_command_buffers(uint32_t pCount, const command_pool& pCommandPool)
+	std::vector<command_buffer> vulkan::create_command_buffers(size_t pCount, uint32_t pQueueFamilyIndex, vk::CommandBufferUsageFlags pUsageFlags)
 	{
+		auto& pool = get_command_pool_for_queue_family(pQueueFamilyIndex);
+
 		auto bufferAllocInfo = vk::CommandBufferAllocateInfo()
-			.setCommandPool(pCommandPool.mCommandPool)
+			.setCommandPool(pool.mCommandPool)
 			.setLevel(vk::CommandBufferLevel::ePrimary) // TODO: make configurable?!
-			.setCommandBufferCount(pCount);
+			.setCommandBufferCount(static_cast<uint32_t>(pCount));
 
 		std::vector<command_buffer> buffers;
 		auto tmp = mLogicalDevice.allocateCommandBuffers(bufferAllocInfo);
 		std::transform(std::begin(tmp), std::end(tmp),
 					   std::back_inserter(buffers),
-					   [](const auto& vkCb) { return command_buffer{ vkCb }; });
+					   [pUsageFlags](const auto& vkCb) {
+						   auto beginInfo = vk::CommandBufferBeginInfo()
+							   .setFlags(pUsageFlags)
+							   .setPInheritanceInfo(nullptr);
+						   return command_buffer{ beginInfo, vkCb };
+					   });
 		return buffers;
+	}
+
+	std::vector<command_buffer> vulkan::create_command_buffers_for_graphics(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags)
+	{
+		return create_command_buffers(pCount, graphics_queue_index(), pUsageFlags);
+	}
+
+	std::vector<command_buffer> vulkan::create_command_buffers_for_transfer(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags)
+	{
+		return create_command_buffers(pCount, transfer_queue_index(), pUsageFlags);
+	}
+
+	std::vector<command_buffer> vulkan::create_command_buffers_for_presentation(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags)
+	{
+		return create_command_buffers(pCount, presentation_queue_index(), pUsageFlags);
 	}
 
 	uint32_t vulkan::find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties)
@@ -955,6 +1017,18 @@ namespace cgb
 			}
 		}
 		throw std::runtime_error("failed to find suitable memory type!");
+	}
+
+	void vulkan::set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo)
+	{
+		if (mGraphicsQueueIndex == mTransferQueueIndex) {
+			pCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
+		}
+		else {
+			pCreateInfo.setSharingMode(vk::SharingMode::eConcurrent);
+			pCreateInfo.setQueueFamilyIndexCount(2u);
+			pCreateInfo.setPQueueFamilyIndices(mTransferAndGraphicsQueueIndices.data());
+		}
 	}
 
 	// REFERENCES:

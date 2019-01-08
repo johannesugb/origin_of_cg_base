@@ -38,46 +38,54 @@ class hello_behavior : public cgb::cg_element
 public:
 	hello_behavior(cgb::window* pMainWnd) 
 		: mMainWnd(pMainWnd)
-		, mVertices({{ {0.0f, -0.5f}, {1.0f, 1.0f, 1.0f} },
-					{  {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
-					{  {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }})
+		, mVertices({	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+						{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+						{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+						{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}} })
+		, mIndices({ { 0, 1, 2, 2, 3, 0 } })
 	{ 
 	}
 
 #ifdef USE_VULKAN_CONTEXT
 	void create_vertex_buffer()
 	{
-		auto bufferInfo = vk::BufferCreateInfo()
-			.setSize(static_cast<vk::DeviceSize>(sizeof(mVertices[0]) * mVertices.size()))
-			.setUsage(vk::BufferUsageFlagBits::eVertexBuffer)
-			.setSharingMode(vk::SharingMode::eExclusive)
-			.setFlags(vk::BufferCreateFlags()); // The flags parameter is used to configure sparse buffer memory, which is not relevant right now. We'll leave it at the default value of 0. [2]
+		auto stagingBuffer = cgb::buffer::create(
+			sizeof(mVertices[0]) * mVertices.size(),
+			vk::BufferUsageFlagBits::eTransferSrc,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-		mVertexBuffer = cgb::context().logical_device().createBuffer(bufferInfo);
+		// Filling the staging buffer!
+		//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
+		void* data = cgb::context().logical_device().mapMemory(stagingBuffer.mMemory, 0, mVertexBuffer.mSize);
+		memcpy(data, mVertices.data(), stagingBuffer.mSize);
+		cgb::context().logical_device().unmapMemory(stagingBuffer.mMemory);
 
-		// The buffer has been created, but it doesn't actually have any memory assigned to it yet. 
-		// The first step of allocating memory for the buffer is to query its memory requirements [2]
-		auto memRequirements = cgb::context().logical_device().getBufferMemoryRequirements(mVertexBuffer);
-		
-		// Allocate the memory!
-		auto allocInfo = vk::MemoryAllocateInfo()
-			.setAllocationSize(memRequirements.size)
-			.setMemoryTypeIndex(cgb::context().find_memory_type_index(
-				memRequirements.memoryTypeBits,
-				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-		mVertexBufferMemory = cgb::context().logical_device().allocateMemory(allocInfo);
+		mVertexBuffer = cgb::vertex_buffer::create(
+			sizeof(mVertices[0]), mVertices.size(),
+			vk::BufferUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-		// If memory allocation was successful, then we can now associate this memory with the buffer
-		cgb::context().logical_device().bindBufferMemory(mVertexBuffer, mVertexBufferMemory, 0);
+		// Transfer the data from the staging buffer into the vertex buffer
+		cgb::copy(stagingBuffer, mVertexBuffer);
 	}
 
-	void delete_vertex_buffer()
+	void create_index_buffer()
 	{
-		cgb::context().logical_device().destroyBuffer(mVertexBuffer);
-		mVertexBuffer = nullptr;
-		// Memory that is bound to a buffer object may be freed once the buffer is no longer used, so let's free it after the buffer has been destroyed [2]:
-		cgb::context().logical_device().freeMemory(mVertexBufferMemory);
-		mVertexBufferMemory = nullptr;
+		auto stagingBuffer = cgb::buffer::create(
+			sizeof(mIndices[0]) * mIndices.size(),
+			vk::BufferUsageFlagBits::eTransferSrc,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		
+		void* data = cgb::context().logical_device().mapMemory(stagingBuffer.mMemory, 0, mVertexBuffer.mSize);
+		memcpy(data, mIndices.data(), stagingBuffer.mSize);
+		cgb::context().logical_device().unmapMemory(stagingBuffer.mMemory);
+
+		mIndexBuffer = cgb::index_buffer::create(
+			vk::IndexType::eUint16, mIndices.size(),
+			vk::BufferUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		cgb:copy(stagingBuffer, mIndexBuffer);
 	}
 
 	void initialize() override
@@ -85,13 +93,9 @@ public:
 		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
 		assert(mSwapChainData);
 
+		// create the buffer and its memory
 		create_vertex_buffer();
-		// Filling the vertex buffer!
-		//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
-		auto bufferSize = sizeof(mVertices[0]) * mVertices.size();
-		void* data = cgb::context().logical_device().mapMemory(mVertexBufferMemory, 0, bufferSize);
-		memcpy(data, mVertices.data(), bufferSize);
-		cgb::context().logical_device().unmapMemory(mVertexBufferMemory);
+		create_index_buffer();
 
 		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
 		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
@@ -102,14 +106,14 @@ public:
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
 		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd, Vertex::binding_description(), Vertex::attribute_descriptions());
 		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd);
-		mCmdPool = cgb::context().create_command_pool();
-		mCmdBfrs = cgb::context().create_command_buffers(static_cast<uint32_t>(mFrameBuffers.size()), mCmdPool);
+		mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
 		for (auto i = 0; i < mCmdBfrs.size(); ++i) { // TODO: WTF, this must be abstracted somehow!
 			auto& cmdbfr = mCmdBfrs[i];
 			cmdbfr.begin_recording();
 			cmdbfr.begin_render_pass(mPipeline.mRenderPass, mFrameBuffers[i].mFramebuffer, { 0, 0 }, mSwapChainData->mSwapChainExtent);
 			//cgb::context().draw_triangle(mPipeline, cmdbfr);
-			cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer, static_cast<uint32_t>(mVertices.size()));
+			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
+			cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
 			cmdbfr.end_render_pass();
 			cmdbfr.end_recording();
 		}
@@ -117,7 +121,6 @@ public:
 
 	void finalize() override
 	{
-		delete_vertex_buffer();
 	}
 
 	void render() override
@@ -169,13 +172,13 @@ public:
 private:
 	cgb::window* mMainWnd;
 	const std::vector<Vertex> mVertices;
+	const std::vector<uint16_t> mIndices;
 #ifdef USE_VULKAN_CONTEXT
-	vk::Buffer mVertexBuffer;
-	vk::DeviceMemory mVertexBufferMemory;
+	cgb::vertex_buffer mVertexBuffer;
+	cgb::index_buffer mIndexBuffer;
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::pipeline mPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;
-	cgb::command_pool mCmdPool;
 	std::vector<cgb::command_buffer> mCmdBfrs;
 #endif
 

@@ -175,13 +175,14 @@ namespace cgb
 	struct command_pool
 	{
 		command_pool() noexcept;
-		command_pool(const vk::CommandPool&) noexcept;
+		command_pool(uint32_t, const vk::CommandPool&) noexcept;
 		command_pool(const command_pool&) = delete;
 		command_pool(command_pool&&) noexcept;
 		command_pool& operator=(const command_pool&) = delete;
 		command_pool& operator=(command_pool&&) noexcept;
 		~command_pool();
 
+		uint32_t mQueueFamilyIndex;
 		vk::CommandPool mCommandPool;
 	};
 
@@ -192,6 +193,53 @@ namespace cgb
 		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);
 		void end_render_pass();
 
+		vk::CommandBufferBeginInfo mBeginInfo;
 		vk::CommandBuffer mCommandBuffer;
 	};
+
+	struct buffer
+	{
+		buffer() noexcept;
+		buffer(size_t, const vk::Buffer&, const vk::DeviceMemory&) noexcept;
+		buffer(const buffer&) = delete;
+		buffer(buffer&&) noexcept;
+		buffer& operator=(const buffer&) = delete;
+		buffer& operator=(buffer&&) noexcept;
+		~buffer();
+
+		static buffer create(size_t pBufferSize, vk::BufferUsageFlags pUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
+
+		size_t mSize;
+		vk::Buffer mBuffer;
+		vk::DeviceMemory mMemory;
+	};
+
+	struct vertex_buffer : buffer
+	{
+		vertex_buffer() noexcept;
+		vertex_buffer(const vertex_buffer&) = delete;
+		vertex_buffer(vertex_buffer&&) noexcept;
+		vertex_buffer& operator=(const vertex_buffer&) = delete;
+		vertex_buffer& operator=(vertex_buffer&&) noexcept;
+
+		static vertex_buffer create(size_t pVertexDataSize, size_t pVertexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
+
+		uint32_t mVertexCount;
+	};
+
+	struct index_buffer : buffer
+	{
+		index_buffer() noexcept;
+		index_buffer(const vertex_buffer&) = delete;
+		index_buffer(index_buffer&&) noexcept;
+		index_buffer& operator=(const index_buffer&) = delete;
+		index_buffer& operator=(index_buffer&&) noexcept;
+
+		static index_buffer create(vk::IndexType pIndexType, size_t pIndexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
+
+		vk::IndexType mIndexType;
+		uint32_t mIndexCount;
+	};
+
+	void copy(const buffer& pSource, const buffer& pDestination);
 }

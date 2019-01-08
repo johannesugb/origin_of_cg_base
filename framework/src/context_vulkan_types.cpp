@@ -503,22 +503,28 @@ namespace cgb
 	}
 
 	command_pool::command_pool() noexcept
-		: mCommandPool()
+		: mQueueFamilyIndex(0u)
+		, mCommandPool()
 	{ }
 
-	command_pool::command_pool(const vk::CommandPool& pCommandPool) noexcept
-		: mCommandPool(pCommandPool)
+	command_pool::command_pool(uint32_t pQueueFamilyIndex, const vk::CommandPool& pCommandPool) noexcept
+		: mQueueFamilyIndex(pQueueFamilyIndex)
+		, mCommandPool(pCommandPool)
 	{ }
 
 	command_pool::command_pool(command_pool&& other) noexcept
-		: mCommandPool(other.mCommandPool)
+		: mQueueFamilyIndex(std::move(other.mQueueFamilyIndex))
+		, mCommandPool(std::move(other.mCommandPool))
 	{
+		other.mQueueFamilyIndex = 0u;
 		other.mCommandPool = nullptr;
 	}
 
 	command_pool& command_pool::operator=(command_pool&& other) noexcept
 	{
-		mCommandPool = other.mCommandPool;
+		mQueueFamilyIndex = std::move(other.mQueueFamilyIndex);
+		mCommandPool = std::move(other.mCommandPool);
+		other.mQueueFamilyIndex = 0u;
 		other.mCommandPool = nullptr;
 		return *this;
 	}
@@ -534,11 +540,7 @@ namespace cgb
 
 	void command_buffer::begin_recording()
 	{
-		auto beginInfo = vk::CommandBufferBeginInfo()
-			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse) // TODO: Make configurable
-			.setPInheritanceInfo(nullptr); // Optional
-
-		mCommandBuffer.begin(beginInfo);
+		mCommandBuffer.begin(mBeginInfo);
 	}
 
 	void command_buffer::end_recording()
@@ -570,4 +572,188 @@ namespace cgb
 	{
 		mCommandBuffer.endRenderPass();
 	}
+
+	buffer::buffer() noexcept
+		: mSize{ 0u }, mBuffer(nullptr), mMemory(nullptr)
+	{ }
+
+	buffer::buffer(size_t pSize, const vk::Buffer& pBuffer, const vk::DeviceMemory& pMemory) noexcept
+		: mSize{ pSize }, mBuffer{ pBuffer }, mMemory{ pMemory }
+	{ }
+
+	buffer::buffer(buffer&& other) noexcept
+		: mSize{ std::move(other.mSize) }, mBuffer{ std::move(other.mBuffer) }, mMemory{ std::move(other.mMemory) }
+	{ 
+		other.mSize = 0u;
+		other.mBuffer = nullptr;
+		other.mMemory = nullptr;
+	}
+
+	buffer& buffer::operator=(buffer&& other) noexcept
+	{
+		mSize = std::move(other.mSize);
+		mBuffer = std::move(other.mBuffer);
+		mMemory = std::move(other.mMemory);
+		other.mSize = 0u;
+		other.mBuffer = nullptr;
+		other.mMemory = nullptr;
+		return *this;
+	}
+
+	buffer::~buffer()
+	{
+		if (mBuffer) {
+			context().logical_device().destroyBuffer(mBuffer);
+			mBuffer = nullptr;
+		}
+		if (mMemory) {
+			context().logical_device().freeMemory(mMemory);
+			mMemory = nullptr;
+		}
+	}
+
+	buffer buffer::create(size_t pBufferSize, vk::BufferUsageFlags pUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
+	{
+		auto bufferCreateInfo = vk::BufferCreateInfo()
+			.setSize(static_cast<vk::DeviceSize>(pBufferSize))
+			.setUsage(pUsageFlags)
+			.setFlags(vk::BufferCreateFlags()); // The flags parameter is used to configure sparse buffer memory, which is not relevant right now. We'll leave it at the default value of 0. [2]
+		
+		if ((pUsageFlags & vk::BufferUsageFlagBits::eTransferSrc) == vk::BufferUsageFlagBits::eTransferSrc) {
+			// It is intended for transfer => let the context set the appropriate sharing mode
+			context().set_sharing_mode_for_transfer(bufferCreateInfo);
+		}
+		else {
+			// If it is not intended for transfer => just set to exclusive!
+			bufferCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
+		}
+
+		auto vkBuffer = context().logical_device().createBuffer(bufferCreateInfo);
+
+		// The buffer has been created, but it doesn't actually have any memory assigned to it yet. 
+		// The first step of allocating memory for the buffer is to query its memory requirements [2]
+		auto memRequirements = context().logical_device().getBufferMemoryRequirements(vkBuffer);
+
+		auto allocInfo = vk::MemoryAllocateInfo()
+			.setAllocationSize(memRequirements.size)
+			.setMemoryTypeIndex(context().find_memory_type_index(
+				memRequirements.memoryTypeBits, 
+				pMemoryProperties));
+
+		auto vkMemory = context().logical_device().allocateMemory(allocInfo);
+
+		// If memory allocation was successful, then we can now associate this memory with the buffer
+		cgb::context().logical_device().bindBufferMemory(vkBuffer, vkMemory, 0);
+
+		return buffer(pBufferSize, vkBuffer, vkMemory);
+	}
+
+	void copy(const buffer& pSource, const buffer& pDestination)
+	{
+		auto commandBuffer = context().create_command_buffers_for_transfer(1);
+
+		// Immediately start recording the command buffer:
+		auto beginInfo = vk::CommandBufferBeginInfo()
+			.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		commandBuffer[0].begin_recording();
+
+		auto copyRegion = vk::BufferCopy()
+			.setSrcOffset(0u)
+			.setDstOffset(0u)
+			.setSize(static_cast<vk::DeviceSize>(pSource.mSize));
+		commandBuffer[0].mCommandBuffer.copyBuffer(pSource.mBuffer, pDestination.mBuffer, { copyRegion });
+
+		// That's all
+		commandBuffer[0].end_recording();
+
+		auto submitInfo = vk::SubmitInfo()
+			.setCommandBufferCount(1u)
+			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
+		cgb::context().transfer_queue().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
+		cgb::context().transfer_queue().waitIdle();
+	}
+
+	vertex_buffer::vertex_buffer() noexcept
+		: buffer()
+		, mVertexCount(0)
+	{ }
+
+	vertex_buffer::vertex_buffer(vertex_buffer&& other) noexcept
+		: buffer(std::move(other))
+		, mVertexCount(std::move(other.mVertexCount))
+	{
+		other.mVertexCount = 0;
+	}
+
+	vertex_buffer& vertex_buffer::operator=(vertex_buffer&& other) noexcept
+	{
+		buffer::operator=(std::move(other));
+		mVertexCount = std::move(other.mVertexCount);
+		other.mVertexCount = 0;
+		return *this;
+	}
+
+	vertex_buffer vertex_buffer::create(size_t pVertexDataSize, size_t pVertexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
+	{
+		auto buffer = buffer::create(pVertexDataSize * pVertexCount, vk::BufferUsageFlagBits::eVertexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
+
+		auto vertexBuffer = vertex_buffer();
+		static_cast<cgb::buffer&>(vertexBuffer) = std::move(buffer);
+		vertexBuffer.mVertexCount = static_cast<uint32_t>(pVertexCount);
+		return vertexBuffer;
+	}
+
+
+	index_buffer::index_buffer() noexcept
+		: buffer()
+		, mIndexType()
+		, mIndexCount(0u)
+	{ }
+
+	index_buffer::index_buffer(index_buffer&& other) noexcept
+		: buffer(std::move(other))
+		, mIndexType(std::move(other.mIndexType))
+		, mIndexCount(std::move(other.mIndexCount))
+	{ 
+		other.mIndexType = vk::IndexType();
+		other.mIndexCount = 0u;
+	}
+
+	index_buffer& index_buffer::operator=(index_buffer&& other) noexcept
+	{
+		buffer::operator=(std::move(other));
+		mIndexType = std::move(other.mIndexType);
+		mIndexCount = std::move(other.mIndexCount);
+		other.mIndexType = vk::IndexType();
+		other.mIndexCount = 0u;
+		return *this;
+	}
+
+	index_buffer index_buffer::create(vk::IndexType pIndexType, size_t pIndexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
+	{
+		size_t elSize = 0;
+		switch (pIndexType) {
+		case vk::IndexType::eUint16:
+			elSize = sizeof(uint16_t);
+			break;
+		case vk::IndexType::eUint32:
+			elSize = sizeof(uint32_t);
+			break;
+		case vk::IndexType::eNoneNV:
+			elSize = 0;
+			break;
+		default:
+			throw std::runtime_error("Can't handle that vk::IndexType");
+		}
+		auto buffer = buffer::create(elSize * pIndexCount, vk::BufferUsageFlagBits::eIndexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
+
+		auto indexBuffer = index_buffer();
+		static_cast<cgb::buffer&>(indexBuffer) = std::move(buffer);
+		indexBuffer.mIndexType = pIndexType;
+		indexBuffer.mIndexCount = static_cast<uint32_t>(pIndexCount);
+		return indexBuffer;
+	}
+
+	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
+	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
 }
