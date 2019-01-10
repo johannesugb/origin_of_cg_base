@@ -107,15 +107,24 @@ public:
 
 	auto create_descriptor_set_layout()
 	{
-		auto uboLayoutBinding = vk::DescriptorSetLayoutBinding()
-			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-			.setDescriptorCount(1u)
-			.setStageFlags(vk::ShaderStageFlagBits::eVertex)
-			.setPImmutableSamplers(nullptr); // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
+		std::array bindings = { 
+			vk::DescriptorSetLayoutBinding()
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(1u)
+				.setStageFlags(vk::ShaderStageFlagBits::eVertex)
+				.setPImmutableSamplers(nullptr) // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
+			,
+			vk::DescriptorSetLayoutBinding()
+				.setBinding(1u)
+				.setDescriptorCount(1u)
+				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+				.setPImmutableSamplers(nullptr)
+				.setStageFlags(vk::ShaderStageFlagBits::eFragment)
+		};
 
 		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
-			.setBindingCount(1u)
-			.setPBindings(&uboLayoutBinding);
+			.setBindingCount(static_cast<uint32_t>(bindings.size()))
+			.setPBindings(bindings.data());
 
 		return cgb::context().logical_device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 	}
@@ -127,20 +136,62 @@ public:
 			layouts.push_back(create_descriptor_set_layout());
 		}
 		mDescriptorSets = cgb::context().create_descriptor_set(layouts);
+
 		for (auto i = 0; i < mDescriptorSets.size(); ++i) {
 			auto bufferInfo = vk::DescriptorBufferInfo()
 				.setBuffer(mUniformBuffers[i].mBuffer)
 				.setOffset(0)
 				.setRange(sizeof(UniformBufferObject));
-			auto descriptorWrite = vk::WriteDescriptorSet()
+			auto descriptorWriteBuffer = vk::WriteDescriptorSet()
 				.setDstSet(mDescriptorSets[i].mDescriptorSet)
 				.setDstBinding(0u)
 				.setDstArrayElement(0u)
 				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 				.setDescriptorCount(1u)
 				.setPBufferInfo(&bufferInfo);
-			cgb::context().logical_device().updateDescriptorSets({ descriptorWrite }, {});
+
+			auto imageInfo = vk::DescriptorImageInfo()
+				.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+				.setImageView(mImageView.mImageView)
+				.setSampler(mSampler.mSampler);
+			auto descriptorWriteSampler = vk::WriteDescriptorSet()
+				.setDstSet(mDescriptorSets[i].mDescriptorSet)
+				.setDstBinding(1u)
+				.setDstArrayElement(0u)
+				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+				.setDescriptorCount(1u)
+				.setPImageInfo(&imageInfo);
+
+			cgb::context().logical_device().updateDescriptorSets({ descriptorWriteBuffer/*, descriptorWriteSampler*/ }, {});
 		}
+	}
+
+	void create_texture_image()
+	{
+		int width, height, channels;
+		stbi_uc* pixels = stbi_load("assets/texture.jpg", &width, &height, &channels, STBI_rgb_alpha);
+		size_t imageSize = width * height * 4;
+
+		if (!pixels) {
+			throw std::runtime_error("Couldnt load image using stbi_load");
+		}
+
+		auto stagingBuffer = cgb::buffer::create(
+			imageSize,
+			vk::BufferUsageFlagBits::eTransferSrc,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		// Copy texture into staging buffer
+		void* data = cgb::context().logical_device().mapMemory(stagingBuffer.mMemory, 0, stagingBuffer.mSize);
+		memcpy(data, pixels, imageSize);
+		cgb::context().logical_device().unmapMemory(stagingBuffer.mMemory);
+
+		stbi_image_free(pixels);
+
+		auto img = cgb::image::create2D(width, height);
+		cgb::transition_image_layout(img, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+		cgb::copy_buffer_to_image(stagingBuffer, img);
+		cgb::transition_image_layout(img, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+		mImage = std::make_shared<cgb::image>(std::move(img));
 	}
 
 	void initialize() override
@@ -151,6 +202,9 @@ public:
 		// create the buffer and its memory
 		create_vertex_buffer();
 		create_index_buffer();
+		create_texture_image();
+		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm);
+		mSampler = cgb::sampler::create();
 
 		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
 		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
@@ -212,10 +266,11 @@ public:
 		memcpy(uboData, &ubo, sizeof(ubo));
 		cgb::context().logical_device().unmapMemory(mUniformBuffers[imageIndex].mMemory);
 
+		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		auto submitInfo = vk::SubmitInfo()
 			.setWaitSemaphoreCount(1u)
 			.setPWaitSemaphores(&cgb::context().image_available_semaphore_current_frame())
-			.setPWaitDstStageMask(std::begin({ vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput) }))
+			.setPWaitDstStageMask(waitStages.data())
 			.setCommandBufferCount(1u)
 			.setPCommandBuffers(&mCmdBfrs[imageIndex].mCommandBuffer)
 			.setSignalSemaphoreCount(1u)
@@ -261,6 +316,9 @@ private:
 	std::vector<cgb::framebuffer> mFrameBuffers;
 	std::vector<cgb::command_buffer> mCmdBfrs;
 	std::vector<cgb::descriptor_set> mDescriptorSets;
+	std::shared_ptr<cgb::image> mImage;
+	cgb::image_view mImageView;
+	cgb::sampler mSampler;
 #endif
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -271,7 +329,7 @@ private:
 
 int main()
 {
-	try {
+	//try {
 		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
 			.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear); })
 			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
@@ -306,11 +364,11 @@ int main()
 
 		// Let's go:
 		hello.start();
-	}
-	catch (std::runtime_error& re)
-	{
-		LOG_ERROR_EM(re.what());
-	}
+	//}
+	//catch (std::runtime_error& re)
+	//{
+	//	LOG_ERROR_EM(re.what());
+	//}
 }
 
 

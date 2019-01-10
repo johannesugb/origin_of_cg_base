@@ -214,7 +214,7 @@ namespace cgb
 		vk::DeviceMemory mMemory;
 	};
 	
-	void copy(const buffer& pSource, const buffer& pDestination);
+	extern void copy(const buffer& pSource, const buffer& pDestination);
 
 	struct vertex_buffer : buffer
 	{
@@ -279,4 +279,60 @@ namespace cgb
 		vk::DescriptorSet mDescriptorSet;
 	};
 
+	struct image
+	{
+		image() noexcept;
+		image(const vk::ImageCreateInfo&, const vk::Image&, const vk::DeviceMemory&) noexcept;
+		image(const image&) = delete;
+		image(image&&) noexcept;
+		image& operator=(const image&) = delete;
+		image& operator=(image&&) noexcept;
+		~image();
+
+		static image create2D(int width, int height, 
+							  vk::Format format = vk::Format::eR8G8B8A8Unorm, 
+							  vk::ImageTiling tiling = vk::ImageTiling::eOptimal, 
+							  vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+							  vk::MemoryPropertyFlags properties = vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		vk::ImageCreateInfo mInfo;
+		vk::Image mImage;
+		vk::DeviceMemory mMemory;
+	};
+
+	extern void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout);
+
+	extern void copy_buffer_to_image(const buffer& pSrcBuffer, const image& pDstImage);
+
+	struct image_view
+	{
+		image_view() noexcept;
+		image_view(const vk::ImageViewCreateInfo& pInfo, const vk::ImageView& pImageView, const std::shared_ptr<image>& pImage);
+		image_view(const image_view&) = delete;
+		image_view(image_view&&) noexcept;
+		image_view& operator=(const image_view&) = delete;
+		image_view& operator=(image_view&&) noexcept;
+		~image_view();
+
+		static image_view create(const std::shared_ptr<image>& pImage, vk::Format pFormat);
+
+		vk::ImageViewCreateInfo mInfo;
+		vk::ImageView mImageView;
+		std::shared_ptr<image> mImage;
+	};
+
+	struct sampler
+	{
+		sampler() noexcept;
+		sampler(const vk::Sampler& pSampler);
+		sampler(const sampler&) = delete;
+		sampler(sampler&&) noexcept;
+		sampler& operator=(const sampler&) = delete;
+		sampler& operator=(sampler&&) noexcept;
+		~sampler();
+
+		static sampler create();
+
+		vk::Sampler mSampler;
+	};
 }

@@ -653,8 +653,6 @@ namespace cgb
 		auto commandBuffer = context().create_command_buffers_for_transfer(1);
 
 		// Immediately start recording the command buffer:
-		auto beginInfo = vk::CommandBufferBeginInfo()
-			.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 		commandBuffer[0].begin_recording();
 
 		auto copyRegion = vk::BufferCopy()
@@ -827,7 +825,306 @@ namespace cgb
 		return *this;
 	}
 
+	image::image() noexcept
+		: mInfo(), mImage(), mMemory()
+	{ }
+
+	image::image(const vk::ImageCreateInfo& pInfo, const vk::Image& pImage, const vk::DeviceMemory& pMemory) noexcept
+		: mInfo(pInfo), mImage(pImage), mMemory(pMemory)
+	{ }
+
+	image::image(image&& other) noexcept
+		: mInfo(std::move(other.mInfo))
+		, mImage(std::move(other.mImage))
+		, mMemory(std::move(other.mMemory))
+	{ 
+		other.mInfo = vk::ImageCreateInfo();
+		other.mImage = nullptr;
+		other.mMemory = nullptr;
+	}
+
+	image& image::operator=(image&& other) noexcept
+	{
+		mInfo = std::move(other.mInfo);
+		mImage = std::move(other.mImage);
+		mMemory = std::move(other.mMemory);
+		other.mInfo = vk::ImageCreateInfo();
+		other.mImage = nullptr;
+		other.mMemory = nullptr;
+		return *this;
+	}
+
+	image::~image()
+	{
+		if (mImage) {
+			context().logical_device().destroyImage(mImage);
+			mImage = nullptr;
+		}
+		if (mMemory) {
+			context().logical_device().freeMemory(mMemory);
+			mMemory = nullptr;
+		}
+	}
+
+	image image::create2D(int width, int height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties)
+	{
+		auto imageInfo = vk::ImageCreateInfo()
+			.setImageType(vk::ImageType::e2D)
+			.setExtent(vk::Extent3D(static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1u))
+			.setMipLevels(1u)
+			.setArrayLayers(1u)
+			.setFormat(format)
+			.setTiling(tiling)
+			.setInitialLayout(vk::ImageLayout::eUndefined)
+			.setUsage(usage)
+			.setSharingMode(vk::SharingMode::eExclusive) // The image will only be used by one queue family: the one that supports graphics (and therefore also) transfer operations. [3]
+			.setSamples(vk::SampleCountFlagBits::e1)
+			.setFlags(vk::ImageCreateFlags()); // Optional
+		auto vkImage = context().logical_device().createImage(imageInfo);
+
+		auto memRequirements = context().logical_device().getImageMemoryRequirements(vkImage);
+
+		auto allocInfo = vk::MemoryAllocateInfo()
+			.setAllocationSize(memRequirements.size)
+			.setMemoryTypeIndex(context().find_memory_type_index(memRequirements.memoryTypeBits, properties));
+
+		auto vkMemory = context().logical_device().allocateMemory(allocInfo);
+
+		// bind together:
+		context().logical_device().bindImageMemory(vkImage, vkMemory, 0);
+		return image(imageInfo, vkImage, vkMemory);
+	}
+
+	void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout)
+	{
+		auto commandBuffer = context().create_command_buffers_for_graphics(1, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+		// Immediately start recording the command buffer:
+		commandBuffer[0].begin_recording();
+
+		// One of the most common ways to perform layout transitions is using an image memory barrier. A pipeline barrier like that 
+		// is generally used to synchronize access to resources, like ensuring that a write to a buffer completes before reading from 
+		// it, but it can also be used to transition image layouts and transfer queue family ownership when VK_SHARING_MODE_EXCLUSIVE 
+		// is used.There is an equivalent buffer memory barrier to do this for buffers. [3]
+		auto barrier = vk::ImageMemoryBarrier()
+			.setOldLayout(pOldLayout)
+			.setNewLayout(pNewLayout)
+			// If you are using the barrier to transfer queue family ownership, then these two fields should be the indices of the queue 
+			// families.They must be set to VK_QUEUE_FAMILY_IGNORED if you don't want to do this (not the default value!). [3]
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(pImage.mImage)
+			.setSubresourceRange(vk::ImageSubresourceRange()
+								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
+								 .setBaseMipLevel(0u)
+								 .setLevelCount(1u)
+								 .setBaseArrayLayer(0u)
+								 .setLayerCount(1u))
+			.setSrcAccessMask(vk::AccessFlags()) // set below
+			.setDstAccessMask(vk::AccessFlags()); // set below
+
+		vk::PipelineStageFlags sourceStageFlags;
+		vk::PipelineStageFlags destinationStageFlags;
+
+		// There are two transitions we need to handle [3]:
+		//  - Undefined --> transfer destination : transfer writes that don't need to wait on anything
+		//  - Transfer destination --> shader reading : shader reads should wait on transfer writes, specifically the shader reads in the fragment shader, because that's where we're going to use the texture
+		if (pOldLayout == vk::ImageLayout::eUndefined && pNewLayout == vk::ImageLayout::eTransferDstOptimal) {
+			barrier
+				.setSrcAccessMask(vk::AccessFlags())
+				.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
+			
+			sourceStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
+			destinationStageFlags = vk::PipelineStageFlagBits::eTransfer;
+		}
+		else if (pOldLayout == vk::ImageLayout::eTransferDstOptimal && pNewLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+			barrier
+				.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+				.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+
+			sourceStageFlags = vk::PipelineStageFlagBits::eTransfer;
+			destinationStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
+		}
+		else {
+			throw std::invalid_argument("unsupported layout transition");
+		}
+
+		// The pipeline stages that you are allowed to specify before and after the barrier depend on how you use the resource before and 
+		// after the barrier.The allowed values are listed in this table of the specification.For example, if you're going to read from a 
+		// uniform after the barrier, you would specify a usage of VK_ACCESS_UNIFORM_READ_BIT and the earliest shader that will read from 
+		// the uniform as pipeline stage, for example VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT. It would not make sense to specify a non-shader 
+		// pipeline stage for this type of usage and the validation layers will warn you when you specify a pipeline stage that does not 
+		// match the type of usage. [3]
+		commandBuffer[0].mCommandBuffer.pipelineBarrier(
+			sourceStageFlags,
+			destinationStageFlags,
+			vk::DependencyFlags(), // The third parameter is either 0 or VK_DEPENDENCY_BY_REGION_BIT. The latter turns the barrier into a per-region condition. That means that the implementation is allowed to already begin reading from the parts of a resource that were written so far, for example. [3]
+			{},
+			{},
+			{ barrier });
+
+		// That's all
+		commandBuffer[0].end_recording();
+
+		auto submitInfo = vk::SubmitInfo()
+			.setCommandBufferCount(1u)
+			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
+		cgb::context().graphics_queue().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
+		cgb::context().graphics_queue().waitIdle();
+	}
 	
+	void copy_buffer_to_image(const buffer& pSrcBuffer, const image& pDstImage)
+	{
+		auto commandBuffer = context().create_command_buffers_for_transfer(1);
+
+		// Immediately start recording the command buffer:
+		commandBuffer[0].begin_recording();
+
+		auto copyRegion = vk::BufferImageCopy()
+			.setBufferOffset(0)
+			// The bufferRowLength and bufferImageHeight fields specify how the pixels are laid out in memory. For example, you could have some padding 
+			// bytes between rows of the image. Specifying 0 for both indicates that the pixels are simply tightly packed like they are in our case. [3]
+			.setBufferRowLength(0)
+			.setBufferImageHeight(0)
+			.setImageSubresource(vk::ImageSubresourceLayers()
+								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
+								 .setMipLevel(0u)
+								 .setBaseArrayLayer(0u)
+								 .setLayerCount(0u))
+			.setImageOffset({ 0u, 0u, 0u })
+			.setImageExtent(pDstImage.mInfo.extent);
+
+		commandBuffer[0].mCommandBuffer.copyBufferToImage(
+			pSrcBuffer.mBuffer, 
+			pDstImage.mImage, 
+			vk::ImageLayout::eTransferDstOptimal,
+			{ copyRegion });
+
+		// That's all
+		commandBuffer[0].end_recording();
+
+		auto submitInfo = vk::SubmitInfo()
+			.setCommandBufferCount(1u)
+			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
+		cgb::context().transfer_queue().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
+		cgb::context().transfer_queue().waitIdle();
+	}
+
+	image_view::image_view() noexcept
+		: mInfo()
+		, mImageView()
+		, mImage()
+	{ }
+	
+	image_view::image_view(const vk::ImageViewCreateInfo& pInfo, const vk::ImageView& pImageView, const std::shared_ptr<image>& pImage)
+		: mInfo(pInfo)
+		, mImageView(pImageView)
+		, mImage(pImage)
+	{ }
+	
+	image_view::image_view(image_view&& other) noexcept
+		: mInfo(std::move(other.mInfo))
+		, mImageView(std::move(other.mImageView))
+		, mImage(std::move(other.mImage))
+	{ 
+		other.mInfo = vk::ImageViewCreateInfo();
+		other.mImageView = nullptr;
+		other.mImage.reset(); // TODO: should not be neccessary, because it has already been moved from, right?
+	}
+
+	image_view& image_view::operator=(image_view&& other) noexcept
+	{ 
+		mInfo = std::move(other.mInfo);
+		mImageView = std::move(other.mImageView);
+		mImage = std::move(other.mImage);
+		other.mInfo = vk::ImageViewCreateInfo();
+		other.mImageView = nullptr;
+		other.mImage.reset(); // TODO: should not be neccessary, because it has already been moved from, right?
+		return *this;
+	}
+
+	image_view::~image_view()
+	{ 
+		if (mImageView) {
+			context().logical_device().destroyImageView(mImageView);
+			mImageView = nullptr;
+		}
+	}
+
+	image_view image_view::create(const std::shared_ptr<image>& pImage, vk::Format pFormat)
+	{ 
+		auto viewInfo = vk::ImageViewCreateInfo()
+			.setImage(pImage->mImage)
+			.setViewType(vk::ImageViewType::e2D)
+			.setFormat(pFormat)
+			.setSubresourceRange(vk::ImageSubresourceRange()
+								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
+								 .setBaseMipLevel(0u)
+								 .setLevelCount(0u)
+								 .setBaseArrayLayer(0u)
+								 .setLayerCount(1u));
+		return image_view(viewInfo, context().logical_device().createImageView(viewInfo), pImage);
+	}
+
+	sampler::sampler() noexcept
+		: mSampler()
+	{ }
+
+	sampler::sampler(const vk::Sampler& pSampler)
+		: mSampler(pSampler)
+	{ }
+
+	sampler::sampler(sampler&& other) noexcept
+		: mSampler(std::move(other.mSampler))
+	{ 
+		other.mSampler = nullptr;
+	}
+
+	sampler& sampler::operator=(sampler&& other) noexcept
+	{
+		mSampler = std::move(other.mSampler);
+		other.mSampler = nullptr;
+		return *this;
+	}
+
+	sampler::~sampler()
+	{
+		if (mSampler) {
+			context().logical_device().destroySampler(mSampler);
+			mSampler = nullptr;
+		}
+	}
+
+	sampler sampler::create()
+	{
+		auto samplerInfo = vk::SamplerCreateInfo()
+			.setMagFilter(vk::Filter::eLinear)
+			.setMinFilter(vk::Filter::eLinear)
+			.setAddressModeU(vk::SamplerAddressMode::eRepeat)
+			.setAddressModeV(vk::SamplerAddressMode::eRepeat)
+			.setAddressModeW(vk::SamplerAddressMode::eRepeat)
+			.setAnisotropyEnable(VK_TRUE)
+			.setMaxAnisotropy(16.0f)
+			.setBorderColor(vk::BorderColor::eFloatOpaqueBlack)
+			// The unnormalizedCoordinates field specifies which coordinate system you want to use to address texels in an image. 
+			// If this field is VK_TRUE, then you can simply use coordinates within the [0, texWidth) and [0, texHeight) range.
+			// If it is VK_FALSE, then the texels are addressed using the [0, 1) range on all axes. Real-world applications almost 
+			// always use normalized coordinates, because then it's possible to use textures of varying resolutions with the exact 
+			// same coordinates. [4]
+			.setUnnormalizedCoordinates(VK_FALSE)
+			// If a comparison function is enabled, then texels will first be compared to a value, and the result of that comparison 
+			// is used in filtering operations. This is mainly used for percentage-closer filtering on shadow maps. [4]
+			.setCompareEnable(VK_FALSE)
+			.setCompareOp(vk::CompareOp::eAlways)
+			.setMipmapMode(vk::SamplerMipmapMode::eLinear)
+			.setMipLodBias(0.0f)
+			.setMinLod(0.0f)
+			.setMaxLod(0.0f);
+		return sampler(context().logical_device().createSampler(samplerInfo));
+	}
+
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
+	// [3] Vulkan Tutorial, Images, https://vulkan-tutorial.com/Texture_mapping/Images
+	// [4] Vulkan Tutorial, Image view and sampler, https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler
 }

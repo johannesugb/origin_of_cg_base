@@ -423,7 +423,7 @@ namespace cgb
 		for (const auto& device : devices) {
 			// get features and queues
 			auto properties = device.getProperties();
-			auto features = device.getFeatures();
+			auto supportedFeatures = device.getFeatures();
 			auto queueFamilyProps = device.getQueueFamilyProperties(); 
 			// check for required features
 			bool graphicsBitSet = false;
@@ -444,6 +444,11 @@ namespace cgb
 
 			// Check if extensions are required
 			if (!supports_all_required_extensions(device)) {
+				score = 0;
+			}
+
+			// Check if anisotropy is supported
+			if (!supportedFeatures.samplerAnisotropy) {
 				score = 0;
 			}
 
@@ -544,7 +549,8 @@ namespace cgb
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		
-		auto deviceFeatures = vk::PhysicalDeviceFeatures();
+		auto deviceFeatures = vk::PhysicalDeviceFeatures()
+			.setSamplerAnisotropy(VK_TRUE);
 		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
 		auto deviceCreateInfo = vk::DeviceCreateInfo()
 			.setQueueCreateInfoCount(static_cast<uint32_t>(queueCreateInfos.size()))
@@ -1038,11 +1044,18 @@ namespace cgb
 	descriptor_pool& vulkan::get_descriptor_pool()
 	{
 		if (mDescriptorPools.size() == 0) {
-			auto poolSize = vk::DescriptorPoolSize()
+
+			std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
+			poolSizes[0]
+				.setType(vk::DescriptorType::eUniformBuffer)
 				.setDescriptorCount(128u); // TODO: is that a good pool size? and what to do beyond that number?
+			//poolSizes[1]
+			//	.setType(vk::DescriptorType::eCombinedImageSampler)
+			//	.setDescriptorCount(128u); // TODO: is that a good pool size? and what to do beyond that number?
+
 			auto poolInfo = vk::DescriptorPoolCreateInfo()
-				.setPoolSizeCount(1u)
-				.setPPoolSizes(&poolSize)
+				.setPoolSizeCount(static_cast<uint32_t>(poolSizes.size()))
+				.setPPoolSizes(poolSizes.data())
 				.setMaxSets(128u) // TODO: is that a good max sets-number? and what to do beyond that number?
 				.setFlags(vk::DescriptorPoolCreateFlags()); // The structure has an optional flag similar to command pools that determines if individual descriptor sets can be freed or not: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT. We're not going to touch the descriptor set after creating it, so we don't need this flag. [10]
 			return mDescriptorPools.emplace_back(logical_device().createDescriptorPool(poolInfo));
