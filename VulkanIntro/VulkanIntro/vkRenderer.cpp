@@ -1,13 +1,16 @@
 #include "vkRenderer.h"
 
 
+size_t vkRenderer::mCurrentFrame = 0;
+
 // TODO Renderer Predecessors and their signal semaphores
 vkRenderer::vkRenderer(std::shared_ptr<vkImagePresenter> imagePresenter, std::shared_ptr<vulkan_render_queue> vulkanRenderQueue,
-	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager) : 
-	mImagePresenter(imagePresenter), mVulkanRenderQueue(vulkanRenderQueue), mDrawCommandBufferManager(drawCommandBufferManager)
+	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>> predecessors) :
+	mImagePresenter(imagePresenter), mVulkanRenderQueue(vulkanRenderQueue), mDrawCommandBufferManager(drawCommandBufferManager),
+	mPredecessors(predecessors)
 {
-	mCurrentFrame = 0; 
 	mCurrentInFlightFence = VK_NULL_HANDLE;
+	mSubmitted = false;
 	create_sync_objects();
 }
 
@@ -30,7 +33,13 @@ void vkRenderer::start_frame()
 
 void vkRenderer::render(std::vector<vkRenderObject*> renderObjects, vkDrawer * drawer)
 {
+	// first submit all predeccessors
+	for (std::shared_ptr<vkRenderer> renderer : mPredecessors) {
+		renderer->submit_render();
+		mCurrentImageAvailableSemaphores.push_back(renderer->mRenderFinishedSemaphores[mCurrentFrame]);
+	}
 	drawer->draw(renderObjects);
+	mSubmitted = false;
 }
 
 void vkRenderer::end_frame()
@@ -42,15 +51,19 @@ void vkRenderer::end_frame()
 
 void vkRenderer::submit_render()
 {
-	std::vector<VkCommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->getRecordedCommandBuffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-	mVulkanRenderQueue->submit(secondaryCommandBuffers, mCurrentInFlightFence, { mCurrentImageAvailableSemaphores }, { mRenderFinishedSemaphores[mCurrentFrame] }, mImagePresenter->get_swap_chain_extent());
-	// reset fence to null handle, if this an intermediate renderer it will not have started a frame and therefore the fence wil stay null -> 
-	// no unnecessary fence is submitted to the queue
-	mCurrentInFlightFence = VK_NULL_HANDLE; 
-	// reset waiting semaphores, because we get new ones for the next frame
-	mCurrentImageAvailableSemaphores.clear();
-	// maybe trim command pool each minute or so
-	// vkTrimCommandPool
+	if (!mSubmitted) {
+		std::vector<VkCommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->getRecordedCommandBuffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		mVulkanRenderQueue->submit(secondaryCommandBuffers, mCurrentInFlightFence, { mCurrentImageAvailableSemaphores }, { mRenderFinishedSemaphores[mCurrentFrame] }, mImagePresenter->get_swap_chain_extent());
+		// reset fence to null handle, if this an intermediate renderer it will not have started a frame and therefore the fence wil stay null -> 
+		// no unnecessary fence is submitted to the queue
+		mCurrentInFlightFence = VK_NULL_HANDLE;
+		// reset waiting semaphores, because we get new ones for the next frame
+		mCurrentImageAvailableSemaphores.clear();
+		
+		mSubmitted = true;
+		// maybe trim command pool each minute or so
+		// vkTrimCommandPool
+	}
 }
 
 void vkRenderer::create_sync_objects() {

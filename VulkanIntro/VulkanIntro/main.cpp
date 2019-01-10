@@ -137,6 +137,7 @@ private:
 	}
 
 	vkRenderObject* renderObject;
+	vkRenderObject* renderObject2;
 	vkTexture* texture;
 	vkCgbImage* textureImage;
 	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager;
@@ -191,6 +192,11 @@ private:
 		createDescriptorPool();
 
 		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
+		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
+
+		renderObject2->updateUniformBuffer(0, 0, imagePresenter->get_swap_chain_extent());
+		renderObject2->updateUniformBuffer(1, 0, imagePresenter->get_swap_chain_extent());
+		renderObject2->updateUniformBuffer(2, 0, imagePresenter->get_swap_chain_extent());
 		//loadModel();
 	}
 
@@ -211,6 +217,7 @@ private:
 		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
 		delete renderObject;
+		delete renderObject2;
 		delete texture;
 		delete textureImage;
 		delete transferCommandBufferManager;
@@ -892,6 +899,7 @@ private:
 
 		std::vector<vkRenderObject*> renderObjects;
 		renderObjects.push_back(renderObject);
+		renderObjects.push_back(renderObject2);
 
 		mRenderer->render(renderObjects, drawer);
 		mRenderer->end_frame();
@@ -927,15 +935,15 @@ private:
 	void createDescriptorPool() {
 		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count());
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count());
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count());
+		poolInfo.maxSets = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count() * 2);
 
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor pool!");
