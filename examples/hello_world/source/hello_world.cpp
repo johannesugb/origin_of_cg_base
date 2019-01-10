@@ -7,7 +7,7 @@ class hello_behavior : public cgb::cg_element
 {
 	struct Vertex
 	{
-		glm::vec2 pos;
+		glm::vec3 pos;
 		glm::vec3 color;
 		glm::vec2 texCoord;
 
@@ -25,7 +25,7 @@ class hello_behavior : public cgb::cg_element
 				vk::VertexInputAttributeDescription()
 					.setBinding(0u)
 					.setLocation(0u)
-					.setFormat(vk::Format::eR32G32Sfloat)
+					.setFormat(vk::Format::eR32G32B32Sfloat)
 					.setOffset(static_cast<uint32_t>(offsetof(Vertex, pos)))
 				,
 				vk::VertexInputAttributeDescription()
@@ -54,11 +54,17 @@ class hello_behavior : public cgb::cg_element
 public:
 	hello_behavior(cgb::window* pMainWnd) 
 		: mMainWnd(pMainWnd)
-		, mVertices({	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-						{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-						{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-						{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}} })
-		, mIndices({ { 0, 1, 2, 2, 3, 0 } })
+		, mVertices({	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+						{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+						{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+						{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+						{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+						{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+						{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+						{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}} })
+		, mIndices({ {	0, 1, 2, 2, 3, 0,
+						4, 5, 6, 6, 7, 4 } })
 	{ 
 	}
 
