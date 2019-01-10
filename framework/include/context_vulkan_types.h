@@ -158,7 +158,6 @@ namespace cgb
 		vk::Pipeline mPipeline;
 	};
 
-
 	struct framebuffer
 	{
 		framebuffer() noexcept;
@@ -200,7 +199,7 @@ namespace cgb
 	struct buffer
 	{
 		buffer() noexcept;
-		buffer(size_t, const vk::Buffer&, const vk::DeviceMemory&) noexcept;
+		buffer(size_t, const vk::BufferUsageFlags&, const vk::Buffer&, const vk::MemoryPropertyFlags&, const vk::DeviceMemory&) noexcept;
 		buffer(const buffer&) = delete;
 		buffer(buffer&&) noexcept;
 		buffer& operator=(const buffer&) = delete;
@@ -208,14 +207,17 @@ namespace cgb
 		~buffer();
 
 		static buffer create(size_t pBufferSize, vk::BufferUsageFlags pUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
+		void fill_host_coherent_memory(const void* pData, std::optional<size_t> pSize = std::nullopt);
 
 		size_t mSize;
+		vk::BufferUsageFlags mBufferFlags;
 		vk::Buffer mBuffer;
+		vk::MemoryPropertyFlags mMemoryProperties;
 		vk::DeviceMemory mMemory;
 	};
 	
 	extern void copy(const buffer& pSource, const buffer& pDestination);
-
+	
 	struct vertex_buffer : buffer
 	{
 		vertex_buffer() noexcept;
@@ -334,5 +336,20 @@ namespace cgb
 		static sampler create();
 
 		vk::Sampler mSampler;
+	};
+
+	struct descriptor_set_layout
+	{
+		descriptor_set_layout() noexcept;
+		descriptor_set_layout(const vk::DescriptorSetLayout& pDescriptorSetLayout);
+		descriptor_set_layout(const descriptor_set_layout&) = delete;
+		descriptor_set_layout(descriptor_set_layout&&) noexcept;
+		descriptor_set_layout& operator=(const descriptor_set_layout&) = delete;
+		descriptor_set_layout& operator=(descriptor_set_layout&&) noexcept;
+		~descriptor_set_layout();
+
+		static descriptor_set_layout create(const vk::DescriptorSetLayoutCreateInfo& pCreateInfo);
+
+		vk::DescriptorSetLayout mDescriptorSetLayout;
 	};
 }

@@ -574,28 +574,38 @@ namespace cgb
 	}
 
 	buffer::buffer() noexcept
-		: mSize{ 0u }, mBuffer(nullptr), mMemory(nullptr)
+		: mSize{ 0u }, mBufferFlags(), mBuffer(nullptr), mMemoryProperties(), mMemory(nullptr)
 	{ }
 
-	buffer::buffer(size_t pSize, const vk::Buffer& pBuffer, const vk::DeviceMemory& pMemory) noexcept
-		: mSize{ pSize }, mBuffer{ pBuffer }, mMemory{ pMemory }
+	buffer::buffer(size_t pSize, const vk::BufferUsageFlags& pBufferFlags, const vk::Buffer& pBuffer, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory) noexcept
+		: mSize{ pSize }, mBufferFlags(pBufferFlags), mBuffer{ pBuffer }, mMemoryProperties(pMemoryProperties), mMemory{ pMemory }
 	{ }
 
 	buffer::buffer(buffer&& other) noexcept
-		: mSize{ std::move(other.mSize) }, mBuffer{ std::move(other.mBuffer) }, mMemory{ std::move(other.mMemory) }
+		: mSize{ std::move(other.mSize) }
+		, mBufferFlags{ std::move(other.mBufferFlags) }
+		, mBuffer{ std::move(other.mBuffer) }
+		, mMemoryProperties{ std::move(other.mMemoryProperties) }
+		, mMemory{ std::move(other.mMemory) }
 	{ 
 		other.mSize = 0u;
+		other.mBufferFlags = vk::BufferUsageFlags();
 		other.mBuffer = nullptr;
+		other.mMemoryProperties = vk::MemoryPropertyFlags();
 		other.mMemory = nullptr;
 	}
 
 	buffer& buffer::operator=(buffer&& other) noexcept
 	{
 		mSize = std::move(other.mSize);
+		mBufferFlags = std::move(other.mBufferFlags);
 		mBuffer = std::move(other.mBuffer);
+		mMemoryProperties = std::move(other.mMemoryProperties);
 		mMemory = std::move(other.mMemory);
 		other.mSize = 0u;
+		other.mBufferFlags = vk::BufferUsageFlags();
 		other.mBuffer = nullptr;
+		other.mMemoryProperties = vk::MemoryPropertyFlags();
 		other.mMemory = nullptr;
 		return *this;
 	}
@@ -645,7 +655,16 @@ namespace cgb
 		// If memory allocation was successful, then we can now associate this memory with the buffer
 		cgb::context().logical_device().bindBufferMemory(vkBuffer, vkMemory, 0);
 
-		return buffer(pBufferSize, vkBuffer, vkMemory);
+		return buffer(pBufferSize, pUsageFlags, vkBuffer, pMemoryProperties, vkMemory);
+	}
+
+	void buffer::fill_host_coherent_memory(const void* pData, std::optional<size_t> pSize)
+	{
+		assert((mMemoryProperties & (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent)) == (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+		vk::DeviceSize copySize = pSize ? *pSize : mSize;
+		void* mapped = context().logical_device().mapMemory(mMemory, 0, copySize);
+		memcpy(mapped, pData, copySize);
+		context().logical_device().unmapMemory(mMemory);
 	}
 
 	void copy(const buffer& pSource, const buffer& pDestination)
@@ -990,7 +1009,7 @@ namespace cgb
 								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
 								 .setMipLevel(0u)
 								 .setBaseArrayLayer(0u)
-								 .setLayerCount(0u))
+								 .setLayerCount(1u))
 			.setImageOffset({ 0u, 0u, 0u })
 			.setImageExtent(pDstImage.mInfo.extent);
 
@@ -1060,7 +1079,7 @@ namespace cgb
 			.setSubresourceRange(vk::ImageSubresourceRange()
 								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
 								 .setBaseMipLevel(0u)
-								 .setLevelCount(0u)
+								 .setLevelCount(1u)
 								 .setBaseArrayLayer(0u)
 								 .setLayerCount(1u));
 		return image_view(viewInfo, context().logical_device().createImageView(viewInfo), pImage);
@@ -1122,6 +1141,41 @@ namespace cgb
 			.setMaxLod(0.0f);
 		return sampler(context().logical_device().createSampler(samplerInfo));
 	}
+
+	descriptor_set_layout::descriptor_set_layout() noexcept
+		: mDescriptorSetLayout()
+	{ }
+
+	descriptor_set_layout::descriptor_set_layout(const vk::DescriptorSetLayout& pDescriptorSetLayout)
+		: mDescriptorSetLayout(pDescriptorSetLayout)
+	{ }
+
+	descriptor_set_layout::descriptor_set_layout(descriptor_set_layout&& other) noexcept
+		: mDescriptorSetLayout(std::move(other.mDescriptorSetLayout))
+	{
+		other.mDescriptorSetLayout = vk::DescriptorSetLayout();
+	}
+
+	descriptor_set_layout& descriptor_set_layout::operator=(descriptor_set_layout&& other) noexcept
+	{
+		mDescriptorSetLayout = std::move(other.mDescriptorSetLayout);
+		other.mDescriptorSetLayout = vk::DescriptorSetLayout();
+		return *this;
+	}
+
+	descriptor_set_layout::~descriptor_set_layout()
+	{
+		if (mDescriptorSetLayout) {
+			context().logical_device().destroyDescriptorSetLayout(mDescriptorSetLayout);
+			mDescriptorSetLayout = nullptr;
+		}
+	}
+
+	descriptor_set_layout descriptor_set_layout::create(const vk::DescriptorSetLayoutCreateInfo& pCreateInfo)
+	{
+		return descriptor_set_layout(context().logical_device().createDescriptorSetLayout(pCreateInfo));
+	}
+
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation

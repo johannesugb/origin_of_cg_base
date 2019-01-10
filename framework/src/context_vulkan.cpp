@@ -470,7 +470,7 @@ namespace cgb
 		mPhysicalDevice = *currentSelection;
 	}
 
-	auto vulkan::find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::SurfaceKHR> pSurface)
+	auto vulkan::find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::QueueFlagBits> pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface)
 	{
 		assert(mPhysicalDevice);
 		// All queue families:
@@ -488,10 +488,13 @@ namespace cgb
 		// Select the subset
 		std::copy_if(std::begin(indexedQueueFamilies), std::end(indexedQueueFamilies),
 					 std::back_inserter(selection),
-					 [pRequiredFlags, pSurface, this](const std::tuple<uint32_t, decltype(queueFamilies)::value_type>& tpl) {
+					 [pRequiredFlags, pForbiddenFlags, pSurface, this](const std::tuple<uint32_t, decltype(queueFamilies)::value_type>& tpl) {
 						 bool requirements_met = true;
 						 if (pRequiredFlags) {
 							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & *pRequiredFlags) == *pRequiredFlags);
+						 }
+						 if (pForbiddenFlags) {
+							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & *pForbiddenFlags) != *pForbiddenFlags);
 						 }
 						 if (pSurface) {
 							 requirements_met = requirements_met && (mPhysicalDevice.getSurfaceSupportKHR(std::get<0>(tpl), *pSurface));
@@ -505,10 +508,10 @@ namespace cgb
 	{
 		assert(mPhysicalDevice);
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
-		auto familiesWithGraphicsSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt);
-		auto familiesWithPresentSupport = find_queue_families_for_criteria(std::nullopt, pSurface);
-		auto familiesWithGrahicsAndPresentSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, pSurface);
-		auto transferOnlyFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, std::nullopt);
+		auto familiesWithGraphicsSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, std::nullopt);
+		auto familiesWithPresentSupport = find_queue_families_for_criteria(std::nullopt, std::nullopt, pSurface);
+		auto familiesWithGrahicsAndPresentSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, pSurface);
+		auto transferOnlyFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics, std::nullopt);
 		
 		const float queuePriority = 1.0f; // TODO: Is this supposed to be priority=1 always? 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
@@ -676,7 +679,7 @@ namespace cgb
 			.setOldSwapchain({}); // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
 
 		// See if we can find a queue family which satisfies both criteria: graphics AND presentation (on the given surface)
-		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, pSurface);
+		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, pSurface);
 		std::vector<uint32_t> queueFamilyIndices;
 		if (allInclFamilies.size() != 0) {
 			// Found a queue family which supports both!
@@ -687,8 +690,8 @@ namespace cgb
 				.setPQueueFamilyIndices(nullptr); // Optional [2]
 		}
 		else {
-			auto graphicsFamily = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt);
-			auto presentFamily = find_queue_families_for_criteria(std::nullopt, pSurface);
+			auto graphicsFamily = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, std::nullopt);
+			auto presentFamily = find_queue_families_for_criteria(std::nullopt, std::nullopt, pSurface);
 			assert(graphicsFamily.size() > 0);
 			assert(presentFamily.size() > 0);
 			queueFamilyIndices.push_back(std::get<0>(graphicsFamily[0]));

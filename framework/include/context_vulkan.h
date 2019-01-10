@@ -158,7 +158,7 @@ namespace cgb
 		 *				of the tuple, i.e. use @ref std::get<0>() to get the index, @ref std::get<1>() 
 		 *				for the data
 		 */
-		auto find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::SurfaceKHR> pSurface);
+		auto find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::QueueFlagBits> pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface);
 
 		/**
 		 *

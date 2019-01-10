@@ -63,9 +63,7 @@ public:
 
 		// Filling the staging buffer!
 		//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
-		void* data = cgb::context().logical_device().mapMemory(stagingBuffer.mMemory, 0, mVertexBuffer.mSize);
-		memcpy(data, mVertices.data(), stagingBuffer.mSize);
-		cgb::context().logical_device().unmapMemory(stagingBuffer.mMemory);
+		stagingBuffer.fill_host_coherent_memory(mVertices.data());
 
 		mVertexBuffer = cgb::vertex_buffer::create(
 			sizeof(mVertices[0]), mVertices.size(),
@@ -83,9 +81,7 @@ public:
 			vk::BufferUsageFlagBits::eTransferSrc,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 		
-		void* data = cgb::context().logical_device().mapMemory(stagingBuffer.mMemory, 0, mVertexBuffer.mSize);
-		memcpy(data, mIndices.data(), stagingBuffer.mSize);
-		cgb::context().logical_device().unmapMemory(stagingBuffer.mMemory);
+		stagingBuffer.fill_host_coherent_memory(mIndices.data());
 
 		mIndexBuffer = cgb::index_buffer::create(
 			vk::IndexType::eUint16, mIndices.size(),
@@ -105,7 +101,7 @@ public:
 		}
 	}
 
-	auto create_descriptor_set_layout()
+	void create_descriptor_set_layout()
 	{
 		std::array bindings = { 
 			vk::DescriptorSetLayoutBinding()
@@ -126,14 +122,14 @@ public:
 			.setBindingCount(static_cast<uint32_t>(bindings.size()))
 			.setPBindings(bindings.data());
 
-		return cgb::context().logical_device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+		mDescriptorSetLayout = cgb::descriptor_set_layout::create(descriptorSetLayoutCreateInfo);
 	}
 
 	void create_descriptor_sets()
 	{
 		std::vector<vk::DescriptorSetLayout> layouts;
 		for (int i = 0; i < mFrameBuffers.size(); ++i) {
-			layouts.push_back(create_descriptor_set_layout());
+			layouts.push_back(mDescriptorSetLayout.mDescriptorSetLayout);
 		}
 		mDescriptorSets = cgb::context().create_descriptor_set(layouts);
 
@@ -181,9 +177,7 @@ public:
 			vk::BufferUsageFlagBits::eTransferSrc,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 		// Copy texture into staging buffer
-		void* data = cgb::context().logical_device().mapMemory(stagingBuffer.mMemory, 0, stagingBuffer.mSize);
-		memcpy(data, pixels, imageSize);
-		cgb::context().logical_device().unmapMemory(stagingBuffer.mMemory);
+		stagingBuffer.fill_host_coherent_memory(pixels);
 
 		stbi_image_free(pixels);
 
@@ -213,8 +207,10 @@ public:
 		std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
 		shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
+		
+		create_descriptor_set_layout();
 
-		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd, Vertex::binding_description(), Vertex::attribute_descriptions(), { create_descriptor_set_layout() });
+		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd, Vertex::binding_description(), Vertex::attribute_descriptions(), { mDescriptorSetLayout.mDescriptorSetLayout });
 		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd);
 		mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
 
@@ -262,9 +258,7 @@ public:
 		//The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in 
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
 		ubo.proj[1][1] *= -1;
-		void* uboData = cgb::context().logical_device().mapMemory(mUniformBuffers[imageIndex].mMemory, 0, sizeof(ubo));
-		memcpy(uboData, &ubo, sizeof(ubo));
-		cgb::context().logical_device().unmapMemory(mUniformBuffers[imageIndex].mMemory);
+		mUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
 
 		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		auto submitInfo = vk::SubmitInfo()
@@ -312,6 +306,7 @@ private:
 	cgb::index_buffer mIndexBuffer;
 	std::vector<cgb::uniform_buffer> mUniformBuffers;
 	cgb::swap_chain_data* mSwapChainData;
+	cgb::descriptor_set_layout mDescriptorSetLayout;
 	cgb::pipeline mPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;
 	std::vector<cgb::command_buffer> mCmdBfrs;
