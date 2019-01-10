@@ -177,9 +177,19 @@ namespace cgb
 		vk::RenderPass create_render_pass(image_format pImageFormat);
 
 		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
+		pipeline create_graphics_pipeline_for_window(
+			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, 
+			const window* pWindow, 
+			const vk::VertexInputBindingDescription& pBindingDesc, 
+			size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
+			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
+		pipeline create_graphics_pipeline_for_swap_chain(
+			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, 
+			const swap_chain_data& pSwapChainData, 
+			const vk::VertexInputBindingDescription& pBindingDesc, 
+			size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
+			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow);
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData);

@@ -792,14 +792,24 @@ namespace cgb
 		return mLogicalDevice.createRenderPass(renderPassInfo); // TODO: use this
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_window(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const window* pWindow, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
+	pipeline vulkan::create_graphics_pipeline_for_window(
+		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
+		const window* pWindow,
+		const vk::VertexInputBindingDescription& pBindingDesc,
+		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
+		const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
 	{
 		auto data = get_surf_swap_tuple_for_window(pWindow);
 		assert(data);
-		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pBindingDesc, pAttributeDesc, pDescriptorSets);
+		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pBindingDesc, pNumAttributeDesc, pAttributeDescDataPtr, pDescriptorSets);
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_swap_chain(const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, const swap_chain_data& pSwapChainData, const vk::VertexInputBindingDescription& pBindingDesc, const std::array<vk::VertexInputAttributeDescription, 2>& pAttributeDesc, const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
+	pipeline vulkan::create_graphics_pipeline_for_swap_chain(
+		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
+		const swap_chain_data& pSwapChainData,
+		const vk::VertexInputBindingDescription& pBindingDesc,
+		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
+		const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
 	{
 		// GATHER ALL THE SHADER INFORMATION
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
@@ -816,8 +826,8 @@ namespace cgb
 		auto vertexInputinfo = vk::PipelineVertexInputStateCreateInfo()
 			.setVertexBindingDescriptionCount(1u)
 			.setPVertexBindingDescriptions(&pBindingDesc)
-			.setVertexAttributeDescriptionCount(static_cast<uint32_t>(pAttributeDesc.size()))
-			.setPVertexAttributeDescriptions(pAttributeDesc.data());
+			.setVertexAttributeDescriptionCount(static_cast<uint32_t>(pNumAttributeDesc))
+			.setPVertexAttributeDescriptions(pAttributeDescDataPtr);
 
 		// HOW TO INTERPRET THE VERTEX INPUT
 		auto inputAssembly = vk::PipelineInputAssemblyStateCreateInfo()
@@ -1048,13 +1058,15 @@ namespace cgb
 	{
 		if (mDescriptorPools.size() == 0) {
 
-			std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
-			poolSizes[0]
-				.setType(vk::DescriptorType::eUniformBuffer)
-				.setDescriptorCount(128u); // TODO: is that a good pool size? and what to do beyond that number?
-			//poolSizes[1]
-			//	.setType(vk::DescriptorType::eCombinedImageSampler)
-			//	.setDescriptorCount(128u); // TODO: is that a good pool size? and what to do beyond that number?
+			std::array poolSizes = {
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eUniformBuffer)
+					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eCombinedImageSampler)
+					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+			};
 
 			auto poolInfo = vk::DescriptorPoolCreateInfo()
 				.setPoolSizeCount(static_cast<uint32_t>(poolSizes.size()))

@@ -9,6 +9,7 @@ class hello_behavior : public cgb::cg_element
 	{
 		glm::vec2 pos;
 		glm::vec3 color;
+		glm::vec2 texCoord;
 
 		static vk::VertexInputBindingDescription binding_description()
 		{
@@ -18,20 +19,28 @@ class hello_behavior : public cgb::cg_element
 				.setInputRate(vk::VertexInputRate::eVertex);
 		}
 
-		static std::array<vk::VertexInputAttributeDescription, 2> attribute_descriptions()
+		static auto attribute_descriptions()
 		{
-			return { {
-					vk::VertexInputAttributeDescription()
-						.setBinding(0u)
-						.setLocation(0u)
-						.setFormat(vk::Format::eR32G32Sfloat)
-						.setOffset(static_cast<uint32_t>(offsetof(Vertex, pos))),
-					vk::VertexInputAttributeDescription()
-						.setBinding(0u)
-						.setLocation(1u)
-						.setFormat(vk::Format::eR32G32B32Sfloat)
-						.setOffset(static_cast<uint32_t>(offsetof(Vertex, color)))
-				} };
+			static std::array attribDescs = {
+				vk::VertexInputAttributeDescription()
+					.setBinding(0u)
+					.setLocation(0u)
+					.setFormat(vk::Format::eR32G32Sfloat)
+					.setOffset(static_cast<uint32_t>(offsetof(Vertex, pos)))
+				,
+				vk::VertexInputAttributeDescription()
+					.setBinding(0u)
+					.setLocation(1u)
+					.setFormat(vk::Format::eR32G32B32Sfloat)
+					.setOffset(static_cast<uint32_t>(offsetof(Vertex, color)))
+				,
+				vk::VertexInputAttributeDescription()
+					.setBinding(0u)
+					.setLocation(2u)
+					.setFormat(vk::Format::eR32G32Sfloat)
+					.setOffset(static_cast<uint32_t>(offsetof(Vertex, texCoord)))
+			};
+			return attribDescs;
 		}
 	};
 
@@ -45,10 +54,10 @@ class hello_behavior : public cgb::cg_element
 public:
 	hello_behavior(cgb::window* pMainWnd) 
 		: mMainWnd(pMainWnd)
-		, mVertices({	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-						{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-						{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-						{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}} })
+		, mVertices({	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+						{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+						{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+						{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}} })
 		, mIndices({ { 0, 1, 2, 2, 3, 0 } })
 	{ 
 	}
@@ -158,7 +167,7 @@ public:
 				.setDescriptorCount(1u)
 				.setPImageInfo(&imageInfo);
 
-			cgb::context().logical_device().updateDescriptorSets({ descriptorWriteBuffer/*, descriptorWriteSampler*/ }, {});
+			cgb::context().logical_device().updateDescriptorSets({ descriptorWriteBuffer, descriptorWriteSampler }, {});
 		}
 	}
 
@@ -210,7 +219,13 @@ public:
 		
 		create_descriptor_set_layout();
 
-		mPipeline = cgb::context().create_graphics_pipeline_for_window(shaderInfos, mMainWnd, Vertex::binding_description(), Vertex::attribute_descriptions(), { mDescriptorSetLayout.mDescriptorSetLayout });
+		auto vertexAttribDesc = Vertex::attribute_descriptions();
+		mPipeline = cgb::context().create_graphics_pipeline_for_window(
+			shaderInfos, mMainWnd, 
+			Vertex::binding_description(), 
+			vertexAttribDesc.size(), 
+			vertexAttribDesc.data(), 
+			{ mDescriptorSetLayout.mDescriptorSetLayout });
 		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd);
 		mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
 
