@@ -103,7 +103,48 @@ public:
 			vk::BufferUsageFlagBits::eTransferDst,
 			vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-		cgb:copy(stagingBuffer, mIndexBuffer);
+		cgb::copy(stagingBuffer, mIndexBuffer);
+	}
+
+	void load_model()
+	{
+		mModel = cgb::Model::LoadFromFile("assets/chalet.obj", glm::mat4(1.0f));
+		auto& mesh = mModel->mesh_at(0);
+		
+		{
+			auto stagingBuffer = cgb::buffer::create(
+				mesh.m_vertex_data.size(),
+				vk::BufferUsageFlagBits::eTransferSrc,
+				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+			// Filling the staging buffer!
+			//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
+			stagingBuffer.fill_host_coherent_memory(mesh.m_vertex_data.data());
+
+			mModelVertices = cgb::vertex_buffer::create(
+				mesh.m_size_one_vertex, mesh.m_vertex_data.size() / mesh.m_size_one_vertex,
+				vk::BufferUsageFlagBits::eTransferDst,
+				vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+			// Transfer the data from the staging buffer into the vertex buffer
+			cgb::copy(stagingBuffer, mModelVertices);
+		}
+
+		{
+			auto stagingBuffer = cgb::buffer::create(
+				sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
+				vk::BufferUsageFlagBits::eTransferSrc,
+				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+			stagingBuffer.fill_host_coherent_memory(mesh.m_indices.data());
+
+			mModelIndices = cgb::index_buffer::create(
+				vk::IndexType::eUint32, mesh.m_indices.size(),
+				vk::BufferUsageFlagBits::eTransferDst,
+				vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+			cgb::copy(stagingBuffer, mModelIndices);
+		}
 	}
 
 	void create_uniform_buffers()
@@ -203,6 +244,28 @@ public:
 		mImage = std::make_shared<cgb::image>(std::move(img));
 	}
 
+	void create_depth_buffer()
+	{
+		// Select a suitable format
+		vk::Format selectedFormat;
+		std::array desiredFormats = { vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint };
+		for (auto& f : desiredFormats) {
+			if (cgb::context().is_format_supported(f, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment)) {
+				selectedFormat = f;
+				break;
+			}
+		}
+
+		mDepthImage = std::make_shared<cgb::image>(std::move(cgb::image::create2D(
+			mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height,
+			selectedFormat,
+			vk::ImageTiling::eOptimal,
+			vk::ImageUsageFlagBits::eDepthStencilAttachment,
+			vk::MemoryPropertyFlagBits::eDeviceLocal)));
+		mDepthImageView = cgb::image_view::create(mDepthImage, selectedFormat, vk::ImageAspectFlagBits::eDepth);
+		cgb::transition_image_layout(*mDepthImage, selectedFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	}
+
 	void initialize() override
 	{
 		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
@@ -211,9 +274,11 @@ public:
 		// create the buffer and its memory
 		create_vertex_buffer();
 		create_index_buffer();
+		load_model();
 		create_texture_image();
-		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm);
+		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
 		mSampler = cgb::sampler::create();
+		create_depth_buffer();
 
 		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
 		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
@@ -227,12 +292,14 @@ public:
 
 		auto vertexAttribDesc = Vertex::attribute_descriptions();
 		mPipeline = cgb::context().create_graphics_pipeline_for_window(
-			shaderInfos, mMainWnd, 
+			shaderInfos, 
+			mMainWnd, 
+			cgb::image_format(mDepthImage->mInfo.format),
 			Vertex::binding_description(), 
 			vertexAttribDesc.size(), 
 			vertexAttribDesc.data(), 
 			{ mDescriptorSetLayout.mDescriptorSetLayout });
-		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd);
+		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd, mDepthImageView);
 		mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
 
 		create_uniform_buffers();
@@ -250,7 +317,8 @@ public:
 				{});
 			//cgb::context().draw_triangle(mPipeline, cmdbfr);
 			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
-			cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
+			//cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
+			cgb::context().draw_indexed(mPipeline, cmdbfr, mModelVertices, mModelIndices);
 			cmdbfr.end_render_pass();
 			cmdbfr.end_recording();
 		}
@@ -322,7 +390,10 @@ private:
 	cgb::window* mMainWnd;
 	const std::vector<Vertex> mVertices;
 	const std::vector<uint16_t> mIndices;
+	std::unique_ptr<cgb::Model> mModel;
 #ifdef USE_VULKAN_CONTEXT
+	cgb::vertex_buffer mModelVertices;
+	cgb::index_buffer mModelIndices;
 	cgb::vertex_buffer mVertexBuffer;
 	cgb::index_buffer mIndexBuffer;
 	std::vector<cgb::uniform_buffer> mUniformBuffers;
@@ -335,6 +406,8 @@ private:
 	std::shared_ptr<cgb::image> mImage;
 	cgb::image_view mImageView;
 	cgb::sampler mSampler;
+	std::shared_ptr<cgb::image> mDepthImage;
+	cgb::image_view mDepthImageView;
 #endif
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -347,7 +420,7 @@ int main()
 {
 	//try {
 		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
-			.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear); })
+			.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm); })
 			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
 
 		cgb::settings::gApplicationName = "Hello World";

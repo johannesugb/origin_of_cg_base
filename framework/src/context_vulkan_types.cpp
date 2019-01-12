@@ -6,12 +6,12 @@ namespace cgb
 	image_format::image_format() noexcept
 	{ }
 
-	image_format::image_format(const vk::SurfaceFormatKHR& pSrfFrmt) noexcept 
-		: mFormat{ pSrfFrmt.format }, mColorSpace{ pSrfFrmt.colorSpace }
+	image_format::image_format(const vk::Format& pFormat) noexcept
+		: mFormat{ pFormat }
 	{ }
 
-	image_format::image_format(const vk::Format& pFormat, const vk::ColorSpaceKHR& pColorSpace) noexcept
-		: mFormat{ pFormat }, mColorSpace{ pColorSpace }
+	image_format::image_format(const vk::SurfaceFormatKHR& pSrfFrmt) noexcept 
+		: mFormat{ pSrfFrmt.format }
 	{ }
 
 	bool is_srgb_format(const image_format& pImageFormat)
@@ -348,6 +348,16 @@ namespace cgb
 		return it != abgrFormats.end();
 	}
 
+	bool has_stencil_component(const image_format& pImageFormat)
+	{
+		static std::set<vk::Format> stencilFormats = {
+			vk::Format::eD32SfloatS8Uint,
+			vk::Format::eD24UnormS8Uint,
+		};
+		auto it = std::find(std::begin(stencilFormats), std::end(stencilFormats), pImageFormat.mFormat);
+		return it != stencilFormats.end();
+	}
+
 	shader_handle shader_handle::create_from_binary_code(const std::vector<char>& code)
 	{
 		auto createInfo = vk::ShaderModuleCreateInfo()
@@ -550,8 +560,11 @@ namespace cgb
 
 	void command_buffer::begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent)
 	{
-		std::vector<vk::ClearValue> clearValues;
-		clearValues.emplace_back(vk::ClearColorValue{ std::array<float,4>{ {0.5f, 0.0f, 0.5f, 1.0f} } });
+		std::array clearValues = {
+			vk::ClearValue(vk::ClearColorValue{ make_array<float>( 0.5f, 0.0f, 0.5f, 1.0f ) }),
+			vk::ClearValue(vk::ClearDepthStencilValue{ 1.0f, 0 })
+		};
+		// TODO: how to determine the number of attachments => and the number of clear-values? omg...
 
 		auto renderPassBeginInfo = vk::RenderPassBeginInfo()
 			.setRenderPass(pRenderPass)
@@ -559,9 +572,9 @@ namespace cgb
 			.setRenderArea(vk::Rect2D()
 						   .setOffset(pOffset)
 						   .setExtent(pExtent))
-			.setClearValueCount(1u)
+			.setClearValueCount(static_cast<uint32_t>(clearValues.size()))
 			.setPClearValues(clearValues.data());
-
+		
 		mCommandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 		// 2nd parameter: how the drawing commands within the render pass will be provided. It can have one of two values [7]:
 		//  - VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be embedded in the primary command buffer itself and no secondary command buffers will be executed.
@@ -921,6 +934,17 @@ namespace cgb
 		// Immediately start recording the command buffer:
 		commandBuffer[0].begin_recording();
 
+		vk::ImageAspectFlags aspectMask;
+		if (pNewLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+			aspectMask = vk::ImageAspectFlagBits::eDepth;
+			if (has_stencil_component(cgb::image_format(pFormat))) {
+				aspectMask |= vk::ImageAspectFlagBits::eStencil;
+			}
+		}
+		else {
+			aspectMask = vk::ImageAspectFlagBits::eColor;
+		}
+
 		// One of the most common ways to perform layout transitions is using an image memory barrier. A pipeline barrier like that 
 		// is generally used to synchronize access to resources, like ensuring that a write to a buffer completes before reading from 
 		// it, but it can also be used to transition image layouts and transfer queue family ownership when VK_SHARING_MODE_EXCLUSIVE 
@@ -934,7 +958,7 @@ namespace cgb
 			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			.setImage(pImage.mImage)
 			.setSubresourceRange(vk::ImageSubresourceRange()
-								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
+								 .setAspectMask(aspectMask)
 								 .setBaseMipLevel(0u)
 								 .setLevelCount(1u)
 								 .setBaseArrayLayer(0u)
@@ -963,6 +987,14 @@ namespace cgb
 
 			sourceStageFlags = vk::PipelineStageFlagBits::eTransfer;
 			destinationStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
+		}
+		else if (pOldLayout == vk::ImageLayout::eUndefined && pNewLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+			barrier
+				.setSrcAccessMask(vk::AccessFlags())
+				.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+
+			sourceStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
+			destinationStageFlags = vk::PipelineStageFlagBits::eEarlyFragmentTests;
 		}
 		else {
 			throw std::invalid_argument("unsupported layout transition");
@@ -1070,14 +1102,14 @@ namespace cgb
 		}
 	}
 
-	image_view image_view::create(const std::shared_ptr<image>& pImage, vk::Format pFormat)
+	image_view image_view::create(const std::shared_ptr<image>& pImage, vk::Format pFormat, vk::ImageAspectFlags pAspectFlags)
 	{ 
 		auto viewInfo = vk::ImageViewCreateInfo()
 			.setImage(pImage->mImage)
 			.setViewType(vk::ImageViewType::e2D)
 			.setFormat(pFormat)
 			.setSubresourceRange(vk::ImageSubresourceRange()
-								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
+								 .setAspectMask(pAspectFlags)
 								 .setBaseMipLevel(0u)
 								 .setLevelCount(1u)
 								 .setBaseArrayLayer(0u)

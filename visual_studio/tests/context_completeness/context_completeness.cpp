@@ -28,7 +28,7 @@ int main()
 #if defined(USE_OPENGL46_CONTEXT)
 	auto imageTypeSrgb = image_format{ GL_SRGB8_ALPHA8 };
 #elif defined(USE_VULKAN_CONTEXT)
-	auto imageTypeSrgb = image_format( vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear );
+	auto imageTypeSrgb = image_format( vk::Format::eR8G8B8A8Srgb );
 #endif
 	assert(true  == is_srgb_format(imageTypeSrgb));
 	assert(true  == is_uint8_format(imageTypeSrgb));

@@ -196,7 +196,7 @@ namespace cgb
 					thiz->mExecutor.execute_updates(thiz->mElements);
 
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
-					please_swap_input_buffers(thiz); 
+					please_swap_input_buffers(thiz);
 
 					// 4. render
 					thiz->mExecutor.execute_renders(thiz->mElements);

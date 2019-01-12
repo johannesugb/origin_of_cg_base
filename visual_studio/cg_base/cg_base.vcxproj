@@ -48,8 +48,8 @@
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\input_buffer.cpp" />
     <ClCompile Include="..\..\framework\src\log.cpp" />
+    <ClCompile Include="..\..\framework\src\model.cpp" />
     <ClCompile Include="..\..\framework\src\shader.cpp" />
-    <ClCompile Include="..\..\framework\src\utils.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp" />
     <ClCompile Include="..\..\framework\src\window.cpp" />
     <ClCompile Include="..\src\cg_stdafx.cpp">
@@ -90,12 +90,14 @@
     <ClInclude Include="..\..\framework\include\key_code.h" />
     <ClInclude Include="..\..\framework\include\key_state.h" />
     <ClInclude Include="..\..\framework\include\log.h" />
+    <ClInclude Include="..\..\framework\include\model.h" />
+    <ClInclude Include="..\..\framework\include\string_utils.h" />
     <ClInclude Include="..\..\framework\include\sequential_executor.h" />
     <ClInclude Include="..\..\framework\include\shader.h" />
     <ClInclude Include="..\..\framework\include\shader_source_info.h" />
     <ClInclude Include="..\..\framework\include\timer_frame_type.h" />
     <ClInclude Include="..\..\framework\include\timer_interface.h" />
-    <ClInclude Include="..\..\framework\include\utils.h" />
+    <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_only_timer.h" />
     <ClInclude Include="..\..\framework\include\window.h" />
     <ClInclude Include="..\include\cg_stdafx.h" />

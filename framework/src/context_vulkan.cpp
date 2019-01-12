@@ -233,7 +233,7 @@ namespace cgb
 			});
 	}
 
-	VKAPI_ATTR VkBool32 VKAPI_CALL  vulkan::vk_debug_callback(
+	VKAPI_ATTR VkBool32 VKAPI_CALL vulkan::vk_debug_callback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT pMessageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT pMessageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -257,28 +257,28 @@ namespace cgb
 
 		if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 			assert(pCallbackData);
-			LOG_ERROR(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
-				pCallbackData->messageIdNumber,
+			LOG_ERROR__(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+				pCallbackData->messageIdNumber, 
 				pCallbackData->pMessageIdName,
 				pCallbackData->pMessage));
 		}
 		else if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
 			assert(pCallbackData);
-			LOG_WARNING(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+			LOG_WARNING__(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
 				pCallbackData->messageIdNumber,
 				pCallbackData->pMessageIdName,
 				pCallbackData->pMessage));
 		}
 		else if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
 			assert(pCallbackData);
-			LOG_INFO(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+			LOG_INFO__(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
 				pCallbackData->messageIdNumber,
 				pCallbackData->pMessageIdName,
 				pCallbackData->pMessage));
 		}
 		else if (pMessageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
 			assert(pCallbackData);
-			LOG_VERBOSE(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
+			LOG_VERBOSE__(fmt::format("Vk-callback with Id[{}|{}] and Message[{}]",
 				pCallbackData->messageIdNumber,
 				pCallbackData->pMessageIdName,
 				pCallbackData->pMessage));
@@ -746,26 +746,46 @@ namespace cgb
 		return swapChainData;
 	}
 
-	vk::RenderPass vulkan::create_render_pass(image_format pImageFormat)
+	vk::RenderPass vulkan::create_render_pass(image_format pImageFormat, image_format pDepthFormat)
 	{
-		auto colorAttachment = vk::AttachmentDescription()
-			.setFormat(pImageFormat.mFormat)
-			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(vk::AttachmentLoadOp::eClear) // what to do with the data in the attachment before rendering and after rendering [5]
-			.setStoreOp(vk::AttachmentStoreOp::eStore)
-			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-			.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-			.setInitialLayout(vk::ImageLayout::eUndefined) // we don't care what previous layout the image was in. The caveat of this special value is that the contents of the image are not guaranteed to be preserved, but that doesn't matter since we're going to clear it anyway. [5]
-			.setFinalLayout(vk::ImageLayout::ePresentSrcKHR); //  Images to be presented in the swap chain [5]
+		std::array attachments = {
+			// COLOR ATTACHMENT
+			vk::AttachmentDescription() 
+				.setFormat(pImageFormat.mFormat)
+				.setSamples(vk::SampleCountFlagBits::e1)
+				.setLoadOp(vk::AttachmentLoadOp::eClear) // what to do with the data in the attachment before rendering and after rendering [5]
+				.setStoreOp(vk::AttachmentStoreOp::eStore)
+				.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+				.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+				.setInitialLayout(vk::ImageLayout::eUndefined) // we don't care what previous layout the image was in. The caveat of this special value is that the contents of the image are not guaranteed to be preserved, but that doesn't matter since we're going to clear it anyway. [5]
+				.setFinalLayout(vk::ImageLayout::ePresentSrcKHR) //  Images to be presented in the swap chain [5]
+			,
+			// DEPTH ATTACHMENT
+			vk::AttachmentDescription()
+				.setFormat(pDepthFormat.mFormat)
+				.setSamples(vk::SampleCountFlagBits::e1)
+				.setLoadOp(vk::AttachmentLoadOp::eClear) // what to do with the data in the attachment before rendering and after rendering [5]
+				.setStoreOp(vk::AttachmentStoreOp::eDontCare)
+				.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+				.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+				.setInitialLayout(vk::ImageLayout::eUndefined) // we don't care what previous layout the image was in. The caveat of this special value is that the contents of the image are not guaranteed to be preserved, but that doesn't matter since we're going to clear it anyway. [5]
+				.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal) //  Images to be presented in the swap chain [5]
+		};
 
 		// Attachment references for subpasses
 		auto colorAttachmentRef = vk::AttachmentReference()
+			.setAttachment(0u)
 			.setLayout(vk::ImageLayout::eColorAttachmentOptimal); // We intend to use the attachment to function as a color buffer => this layout will give us the best performance [5]
+
+		auto depthAttachmentRef = vk::AttachmentReference()
+			.setAttachment(1u)
+			.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 		auto subpassDesc = vk::SubpassDescription()
 			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 			.setColorAttachmentCount(1u)
-			.setPColorAttachments(&colorAttachmentRef);
+			.setPColorAttachments(&colorAttachmentRef)
+			.setPDepthStencilAttachment(&depthAttachmentRef);
 		// The following other types of attachments can be referenced by a subpass [5]:
 		// - pInputAttachments: Attachments that are read from a shader
 		// - pResolveAttachments: Attachments used for multisampling color attachments
@@ -783,8 +803,8 @@ namespace cgb
 
 		// Create the render pass
 		auto renderPassInfo = vk::RenderPassCreateInfo()
-			.setAttachmentCount(1u)
-			.setPAttachments(&colorAttachment)
+			.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
+			.setPAttachments(attachments.data())
 			.setSubpassCount(1u)
 			.setPSubpasses(&subpassDesc)
 			.setDependencyCount(1u)
@@ -795,18 +815,20 @@ namespace cgb
 	pipeline vulkan::create_graphics_pipeline_for_window(
 		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
 		const window* pWindow,
+		image_format pDepthFormat,
 		const vk::VertexInputBindingDescription& pBindingDesc,
 		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
 		const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
 	{
 		auto data = get_surf_swap_tuple_for_window(pWindow);
 		assert(data);
-		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pBindingDesc, pNumAttributeDesc, pAttributeDescDataPtr, pDescriptorSets);
+		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pDepthFormat, pBindingDesc, pNumAttributeDesc, pAttributeDescDataPtr, pDescriptorSets);
 	}
 
 	pipeline vulkan::create_graphics_pipeline_for_swap_chain(
 		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
 		const swap_chain_data& pSwapChainData,
+		image_format pDepthFormat,
 		const vk::VertexInputBindingDescription& pBindingDesc,
 		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
 		const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
@@ -878,9 +900,6 @@ namespace cgb
 			.setAlphaToCoverageEnable(VK_FALSE) // Optional
 			.setAlphaToOneEnable(VK_FALSE); // Optional
 
-		// DEPTH AND STENCIL TESTING
-		auto depthStencil = vk::PipelineDepthStencilStateCreateInfo();
-
 		// COLOR BLENDING
 		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState()
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
@@ -917,7 +936,20 @@ namespace cgb
 
 
 		// CREATE RENDER PASS (for sure, this is the wrong place to do so => refactor!)
-		auto renderPass = create_render_pass(pSwapChainData.mSwapChainImageFormat);
+		auto renderPass = create_render_pass(pSwapChainData.mSwapChainImageFormat, pDepthFormat);
+
+
+		// DEPTH AND STENCIL STATE
+		auto depthStencil = vk::PipelineDepthStencilStateCreateInfo()
+			.setDepthTestEnable(true)
+			.setDepthWriteEnable(true)
+			.setDepthCompareOp(vk::CompareOp::eLess)
+			.setDepthBoundsTestEnable(VK_FALSE)
+			.setMinDepthBounds(0.0f)
+			.setMaxDepthBounds(1.0f)
+			.setStencilTestEnable(VK_FALSE)
+			.setFront(vk::StencilOpState())
+			.setBack(vk::StencilOpState());
 
 
 		// PIPELINE CREATION
@@ -929,7 +961,7 @@ namespace cgb
 			.setPViewportState(&viewportInfo)
 			.setPRasterizationState(&rasterizer)
 			.setPMultisampleState(&multisampling)
-			.setPDepthStencilState(nullptr) // Optional
+			.setPDepthStencilState(&depthStencil) // Optional
 			.setPColorBlendState(&colorBlendingInfo)
 			.setPDynamicState(nullptr) // Optional
 			.setLayout(pipelineLayout)
@@ -947,21 +979,22 @@ namespace cgb
 				pipelineInfo));
 	}
 
-	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow)
+	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow, const image_view& pDepthImageView)
 	{
 		auto data = get_surf_swap_tuple_for_window(pWindow);
 		assert(data);
-		return create_framebuffers(renderPass, *data);
+		return create_framebuffers(renderPass, *data, pDepthImageView);
 	}
 
-	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData)
+	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData, const image_view& pDepthImageView)
 	{
 		std::vector<framebuffer> framebuffers;
 		for (auto& imageView : pSwapChainData.mSwapChainImageViews) {
+			std::array attachments = { imageView, pDepthImageView.mImageView };
 			auto framebufferInfo = vk::FramebufferCreateInfo()
 				.setRenderPass(renderPass)
-				.setAttachmentCount(1u)
-				.setPAttachments(&imageView)
+				.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
+				.setPAttachments(attachments.data())
 				.setWidth(pSwapChainData.mSwapChainExtent.width)
 				.setHeight(pSwapChainData.mSwapChainExtent.height)
 				.setLayers(1u); // number of layers in image arrays [6]
@@ -1092,6 +1125,20 @@ namespace cgb
 						   return descriptor_set(vkDescSet);
 					   });
 		return result;
+	}
+
+	bool vulkan::is_format_supported(vk::Format pFormat, vk::ImageTiling pTiling, vk::FormatFeatureFlags pFormatFeatures)
+	{
+		auto formatProps = mPhysicalDevice.getFormatProperties(pFormat);
+		if (pTiling == vk::ImageTiling::eLinear 
+			&& (formatProps.linearTilingFeatures & pFormatFeatures) == pFormatFeatures) {
+			return true;
+		}
+		else if (pTiling == vk::ImageTiling::eOptimal 
+				 && (formatProps.optimalTilingFeatures & pFormatFeatures) == pFormatFeatures) {
+			return true;
+		}
+		return false;
 	}
 
 	// REFERENCES:

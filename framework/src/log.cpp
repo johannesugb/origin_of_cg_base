@@ -2,6 +2,8 @@
 
 namespace cgb
 {
+	std::mutex gLogMutex;
+
 	void set_console_output_color(cgb::log_type level, cgb::log_importance importance)
 	{
 #ifdef _WIN32

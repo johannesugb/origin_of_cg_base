@@ -25,6 +25,7 @@
 
 // ----------------------- externals -----------------------
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <stb_image.h>
 
 #include <assimp/Importer.hpp>  // C++ importer interface
@@ -46,8 +47,9 @@
 // -------------------- CG-Base includes --------------------
 #include "context_types.h"
 #include "context.h"
+#include "string_utils.h"
 #include "log.h"
-#include "utils.h"
+#include "various_utils.h"
 #include "key_code.h"
 #include "key_state.h"
 #include "window.h"
@@ -60,3 +62,4 @@
 #include "composition_interface.h"
 #include "sequential_executor.h"
 #include "composition.h"
+#include "model.h"

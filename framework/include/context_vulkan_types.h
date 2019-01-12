@@ -17,11 +17,10 @@ namespace cgb
 	struct image_format
 	{
 		image_format() noexcept;
+		image_format(const vk::Format& pFormat) noexcept;
 		image_format(const vk::SurfaceFormatKHR& pSrfFrmt) noexcept;
-		image_format(const vk::Format& pFormat, const vk::ColorSpaceKHR& pColorSpace) noexcept;
 
 		vk::Format mFormat;
-		vk::ColorSpaceKHR mColorSpace;
 	};
 
 	/** Returns true if the given image format is a sRGB format
@@ -72,6 +71,9 @@ namespace cgb
 	/** Returns true if the given image's color channels are ordered like follows: ABGR
 	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
 	extern bool is_abgr_format(const image_format& pImageFormat);
+	/** Returns true if the given image format is a depth/depth-stencil format and has a stencil component.
+	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
+	extern bool has_stencil_component(const image_format& pImageFormat);
 
 	/** Struct which stores data for a swap chain */
 	struct swap_chain_data
@@ -316,7 +318,7 @@ namespace cgb
 		image_view& operator=(image_view&&) noexcept;
 		~image_view();
 
-		static image_view create(const std::shared_ptr<image>& pImage, vk::Format pFormat);
+		static image_view create(const std::shared_ptr<image>& pImage, vk::Format pFormat, vk::ImageAspectFlags pAspectFlags);
 
 		vk::ImageViewCreateInfo mInfo;
 		vk::ImageView mImageView;

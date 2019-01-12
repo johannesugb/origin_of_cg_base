@@ -13,9 +13,6 @@
     <ClCompile Include="..\..\framework\src\log.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\utils.cpp">
-      <Filter>Source Files\utils</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\external\src\glad.cpp">
       <Filter>Source Files\external</Filter>
     </ClCompile>
@@ -67,6 +64,9 @@
     <ClCompile Include="..\..\framework\src\context_opengl46_types.cpp">
       <Filter>Source Files\context\opengl46</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\model.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -85,9 +85,6 @@
       <Filter>Header Files\environment</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\log.h">
-      <Filter>Header Files\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\utils.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h">
@@ -152,6 +149,15 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\context_types.h">
       <Filter>Header Files\context</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\various_utils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\string_utils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\model.h">
+      <Filter>Header Files\geometry</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -235,6 +241,12 @@
     </Filter>
     <Filter Include="Source Files\context\vulkan">
       <UniqueIdentifier>{ea0fdf81-c732-4701-a2d4-ab296818eaba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\geometry">
+      <UniqueIdentifier>{7e592d59-e1a9-4f56-a9d2-2fdb56a7075f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\geometry">
+      <UniqueIdentifier>{50fa4b81-fe6d-4215-80a8-6d974e43b960}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
