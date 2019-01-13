@@ -20,9 +20,9 @@ void vulkan_render_queue::submit(std::vector<VkCommandBuffer> secondaryCommandBu
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	VkCommandBuffer primCmdBuffer = mDrawCommandBufferManager->getCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, beginInfo);
+	VkCommandBuffer primCmdBuffer = mDrawCommandBufferManager->get_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, beginInfo);
 	recordPrimaryCommandBuffer(primCmdBuffer, secondaryCommandBuffers, extent);
-	std::vector<VkCommandBuffer> primaryCommandBuffers = mDrawCommandBufferManager->getRecordedCommandBuffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	std::vector<VkCommandBuffer> primaryCommandBuffers = mDrawCommandBufferManager->get_recorded_command_buffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

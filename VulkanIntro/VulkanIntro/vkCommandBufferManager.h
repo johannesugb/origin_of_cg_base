@@ -12,20 +12,20 @@ public:
 	virtual ~vkCommandBufferManager();
 
 	// TODO better command buffer management, do not always begin command buffer, only if it has not begun yet, etc.
-	VkCommandBuffer getCommandBuffer(VkCommandBufferLevel bufferLevel, VkCommandBufferBeginInfo &beginInfo);
-	std::vector<VkCommandBuffer> getRecordedCommandBuffers(VkCommandBufferLevel bufferLevel);
+	VkCommandBuffer get_command_buffer(VkCommandBufferLevel bufferLevel, VkCommandBufferBeginInfo &beginInfo);
+	std::vector<VkCommandBuffer> get_recorded_command_buffers(VkCommandBufferLevel bufferLevel);
 
-	VkCommandBuffer beginSingleTimeCommands();
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	VkCommandBuffer begin_single_time_commands();
+	void end_single_time_commands(VkCommandBuffer commandBuffer);
 private:
-	uint32_t _imageCount;
+	uint32_t mImageCount;
 
-	VkCommandPool _commandPool;
+	VkCommandPool mCommandPool;
 	VkQueue mTransferQueue;
 
-	std::vector<VkCommandBuffer> _secondaryCommandBuffers; // deleted with command pool
-	std::vector<VkCommandBuffer> _primaryCommandBuffers; // deleted with command pool
+	std::vector<VkCommandBuffer> mSecondaryCommandBuffers; // deleted with command pool
+	std::vector<VkCommandBuffer> mPrimaryCommandBuffers; // deleted with command pool
 
-	void createCommandBuffers();
+	void create_command_buffers();
 };
 

@@ -52,7 +52,7 @@ void vkRenderer::end_frame()
 void vkRenderer::submit_render()
 {
 	if (!mSubmitted) {
-		std::vector<VkCommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->getRecordedCommandBuffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		std::vector<VkCommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->get_recorded_command_buffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 		mVulkanRenderQueue->submit(secondaryCommandBuffers, mCurrentInFlightFence, { mCurrentImageAvailableSemaphores }, { mRenderFinishedSemaphores[mCurrentFrame] }, mImagePresenter->get_swap_chain_extent());
 		// reset fence to null handle, if this an intermediate renderer it will not have started a frame and therefore the fence wil stay null -> 
 		// no unnecessary fence is submitted to the queue

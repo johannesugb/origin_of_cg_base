@@ -1,57 +1,57 @@
 #include "vkCommandBufferManager.h"
 
-vkCommandBufferManager::vkCommandBufferManager(VkCommandPool &commandPool, VkQueue &transferQueue) : _imageCount(0), _commandPool(commandPool), mTransferQueue(transferQueue)
+vkCommandBufferManager::vkCommandBufferManager(VkCommandPool &commandPool, VkQueue &transferQueue) : mImageCount(0), mCommandPool(commandPool), mTransferQueue(transferQueue)
 {
 }
 
-vkCommandBufferManager::vkCommandBufferManager(uint32_t imageCount, VkCommandPool &commandPool, VkQueue &transferQueue) : _imageCount(imageCount), _commandPool(commandPool),
+vkCommandBufferManager::vkCommandBufferManager(uint32_t imageCount, VkCommandPool &commandPool, VkQueue &transferQueue) : mImageCount(imageCount), mCommandPool(commandPool),
 mTransferQueue(transferQueue)
 {
-	createCommandBuffers();
+	create_command_buffers();
 }
 
 
 vkCommandBufferManager::~vkCommandBufferManager()
 {
-	vkFreeCommandBuffers(vkContext::instance().device, _commandPool, static_cast<uint32_t>(_primaryCommandBuffers.size()), _primaryCommandBuffers.data());
-	vkFreeCommandBuffers(vkContext::instance().device, _commandPool, static_cast<uint32_t>(_secondaryCommandBuffers.size()), _secondaryCommandBuffers.data());
+	vkFreeCommandBuffers(vkContext::instance().device, mCommandPool, static_cast<uint32_t>(mPrimaryCommandBuffers.size()), mPrimaryCommandBuffers.data());
+	vkFreeCommandBuffers(vkContext::instance().device, mCommandPool, static_cast<uint32_t>(mSecondaryCommandBuffers.size()), mSecondaryCommandBuffers.data());
 }
 
-void vkCommandBufferManager::createCommandBuffers() {
+void vkCommandBufferManager::create_command_buffers() {
 	// allocate primary command buffers
-	_primaryCommandBuffers.resize(_imageCount);
+	mPrimaryCommandBuffers.resize(mImageCount);
 
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = _commandPool;
+	allocInfo.commandPool = mCommandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t)_primaryCommandBuffers.size();
+	allocInfo.commandBufferCount = (uint32_t)mPrimaryCommandBuffers.size();
 
-	if (vkAllocateCommandBuffers(vkContext::instance().device, &allocInfo, _primaryCommandBuffers.data()) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(vkContext::instance().device, &allocInfo, mPrimaryCommandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 
 	// allocate secondary command buffers
-	_secondaryCommandBuffers.resize(_imageCount);
+	mSecondaryCommandBuffers.resize(mImageCount);
 
 	allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = _commandPool;
+	allocInfo.commandPool = mCommandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-	allocInfo.commandBufferCount = (uint32_t)_secondaryCommandBuffers.size();
+	allocInfo.commandBufferCount = (uint32_t)mSecondaryCommandBuffers.size();
 
-	if (vkAllocateCommandBuffers(vkContext::instance().device, &allocInfo, _secondaryCommandBuffers.data()) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(vkContext::instance().device, &allocInfo, mSecondaryCommandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 }
 
-VkCommandBuffer vkCommandBufferManager::getCommandBuffer(VkCommandBufferLevel bufferLevel, VkCommandBufferBeginInfo &beginInfo) {
+VkCommandBuffer vkCommandBufferManager::get_command_buffer(VkCommandBufferLevel bufferLevel, VkCommandBufferBeginInfo &beginInfo) {
 	VkCommandBuffer ret = nullptr;
 	if (VK_COMMAND_BUFFER_LEVEL_PRIMARY == bufferLevel) {
-		ret = _primaryCommandBuffers[vkContext::instance().currentFrame];
+		ret = mPrimaryCommandBuffers[vkContext::instance().currentFrame];
 	}
 	else if (VK_COMMAND_BUFFER_LEVEL_SECONDARY == bufferLevel) {
-		ret = _secondaryCommandBuffers[vkContext::instance().currentFrame];
+		ret = mSecondaryCommandBuffers[vkContext::instance().currentFrame];
 	}
 	// implictley resets the command buffer before beginning it
 	if (vkBeginCommandBuffer(ret, &beginInfo) != VK_SUCCESS) {
@@ -63,14 +63,14 @@ VkCommandBuffer vkCommandBufferManager::getCommandBuffer(VkCommandBufferLevel bu
 	throw std::runtime_error("No command buffer found for given buffer level!");
 }
 
-std::vector<VkCommandBuffer> vkCommandBufferManager::getRecordedCommandBuffers(VkCommandBufferLevel bufferLevel)
+std::vector<VkCommandBuffer> vkCommandBufferManager::get_recorded_command_buffers(VkCommandBufferLevel bufferLevel)
 {
 	std::vector<VkCommandBuffer> ret;
 	if (VK_COMMAND_BUFFER_LEVEL_PRIMARY == bufferLevel) {
-		ret.push_back(_primaryCommandBuffers[vkContext::instance().currentFrame]);
+		ret.push_back(mPrimaryCommandBuffers[vkContext::instance().currentFrame]);
 	}
 	else if (VK_COMMAND_BUFFER_LEVEL_SECONDARY == bufferLevel) {
-		ret.push_back(_secondaryCommandBuffers[vkContext::instance().currentFrame]);
+		ret.push_back(mSecondaryCommandBuffers[vkContext::instance().currentFrame]);
 	}
 	for (VkCommandBuffer cmdBuf : ret) {
 		if (vkEndCommandBuffer(cmdBuf) != VK_SUCCESS) {
@@ -80,11 +80,11 @@ std::vector<VkCommandBuffer> vkCommandBufferManager::getRecordedCommandBuffers(V
 	return ret;
 }
 
-VkCommandBuffer vkCommandBufferManager::beginSingleTimeCommands() {
+VkCommandBuffer vkCommandBufferManager::begin_single_time_commands() {
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = _commandPool;
+	allocInfo.commandPool = mCommandPool;
 	allocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer commandBuffer;
@@ -99,7 +99,7 @@ VkCommandBuffer vkCommandBufferManager::beginSingleTimeCommands() {
 	return commandBuffer;
 }
 
-void vkCommandBufferManager::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void vkCommandBufferManager::end_single_time_commands(VkCommandBuffer commandBuffer) {
 	vkEndCommandBuffer(commandBuffer);
 
 	VkSubmitInfo submitInfo = {};
@@ -110,5 +110,5 @@ void vkCommandBufferManager::endSingleTimeCommands(VkCommandBuffer commandBuffer
 	vkQueueSubmit(mTransferQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(mTransferQueue);
 
-	vkFreeCommandBuffers(vkContext::instance().device, _commandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(vkContext::instance().device, mCommandPool, 1, &commandBuffer);
 }

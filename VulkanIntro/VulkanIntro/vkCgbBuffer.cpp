@@ -54,13 +54,13 @@ void vkCgbBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMe
 }
 
 void vkCgbBuffer::copyBuffer(VkBuffer srcBuffer, VkDeviceSize size) {
-	VkCommandBuffer commandBuffer = _commandBufferManager->beginSingleTimeCommands();
+	VkCommandBuffer commandBuffer = _commandBufferManager->begin_single_time_commands();
 
 	VkBufferCopy copyRegion = {};
 	copyRegion.size = size;
 	vkCmdCopyBuffer(commandBuffer, srcBuffer, _buffer, 1, &copyRegion);
 
-	_commandBufferManager->endSingleTimeCommands(commandBuffer);
+	_commandBufferManager->end_single_time_commands(commandBuffer);
 }
 
 void vkCgbBuffer::updateBuffer(void* bufferData, VkDeviceSize size)

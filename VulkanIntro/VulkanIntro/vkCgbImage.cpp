@@ -80,7 +80,7 @@ void vkCgbImage::createImage(uint32_t width, uint32_t height, uint32_t mipLevels
 }
 
 void vkCgbImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
-	VkCommandBuffer commandBuffer = _commandBufferManager->beginSingleTimeCommands();
+	VkCommandBuffer commandBuffer = _commandBufferManager->begin_single_time_commands();
 
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -149,7 +149,7 @@ void vkCgbImage::transitionImageLayout(VkFormat format, VkImageLayout oldLayout,
 		1, &barrier
 	);
 
-	_commandBufferManager->endSingleTimeCommands(commandBuffer);
+	_commandBufferManager->end_single_time_commands(commandBuffer);
 }
 
 bool vkCgbImage::hasStencilComponent(VkFormat format) {
@@ -157,7 +157,7 @@ bool vkCgbImage::hasStencilComponent(VkFormat format) {
 }
 
 void vkCgbImage::copyBufferToImage(vkCgbBuffer& buffer, VkImage image, uint32_t width, uint32_t height) {
-	VkCommandBuffer commandBuffer = _commandBufferManager->beginSingleTimeCommands();
+	VkCommandBuffer commandBuffer = _commandBufferManager->begin_single_time_commands();
 
 	VkBufferImageCopy region = {};
 	region.bufferOffset = 0;
@@ -185,7 +185,7 @@ void vkCgbImage::copyBufferToImage(vkCgbBuffer& buffer, VkImage image, uint32_t 
 		&region
 	);
 
-	_commandBufferManager->endSingleTimeCommands(commandBuffer);
+	_commandBufferManager->end_single_time_commands(commandBuffer);
 }
 
 void vkCgbImage::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
@@ -196,7 +196,7 @@ void vkCgbImage::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t te
 		throw std::runtime_error("texture image format does not support linear blitting!");
 	}
 
-	VkCommandBuffer commandBuffer = _commandBufferManager->beginSingleTimeCommands();
+	VkCommandBuffer commandBuffer = _commandBufferManager->begin_single_time_commands();
 
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -271,7 +271,7 @@ void vkCgbImage::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t te
 		0, nullptr,
 		1, &barrier);
 
-	_commandBufferManager->endSingleTimeCommands(commandBuffer);
+	_commandBufferManager->end_single_time_commands(commandBuffer);
 }
 
 void vkCgbImage::createTextureImageView() {

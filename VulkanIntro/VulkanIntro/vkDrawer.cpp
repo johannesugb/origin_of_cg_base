@@ -31,7 +31,7 @@ void vkDrawer::recordSecondaryCommandBuffer(std::vector<vkRenderObject*> renderO
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 	beginInfo.pInheritanceInfo = &inheritanceInfo;
 
-	VkCommandBuffer commandBuffer = _commandBufferManager->getCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY, beginInfo);
+	VkCommandBuffer commandBuffer = _commandBufferManager->get_command_buffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY, beginInfo);
 
 	for (vkRenderObject* renderObject : renderObjects) {
 		// bind pipeline for this draw command
