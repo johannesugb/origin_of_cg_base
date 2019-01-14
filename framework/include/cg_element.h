@@ -30,19 +30,28 @@ namespace cgb
 		 */
 		cg_element() :
 			mName("cg_element #" + std::to_string(sGeneratedNameId++))
-		{
-		}
+		{ }
 
 		/**	@brief Constructor
 		 *	@param pName Name by which this object can be identified
 		 */
 		cg_element(std::string pName) : 
 			mName(pName)
+		{ }
+
+		virtual ~cg_element()
 		{
+			// Make sure, this element gets removed from the composition
+			cgb::current_composition().remove_element_immediately(*this, true);
 		}
 
 		/** Returns the name of this cg_element */
 		const std::string& name() const { return mName; }
+
+		/** Returns the (constant) priority of this element. 
+		 *	0 represents the default priority.
+		 */
+		virtual int32_t priority() const { return 0; }
 
 		/**	@brief Initialize this cg_element
 		 *

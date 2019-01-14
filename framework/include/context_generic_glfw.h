@@ -58,6 +58,15 @@ namespace cgb
 		/** Determine the window's extent */
 		static glm::uvec2 window_extent(const window& pWindow);
 
+		/** Hides or shows the cursor */
+		static void hide_cursor(const window& pWindow, bool pHide);
+
+		/** Returns whether or not the cursor is hidden */
+		static bool is_cursor_hidden(const window& pWindow);
+
+		/** Sets the cursor to the given coordinates */
+		static void set_cursor_pos(const window& pWindow, glm::dvec2 pCursorPos);
+
 	protected:
 		static void glfw_error_callback(int error, const char* description);
 		static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods);

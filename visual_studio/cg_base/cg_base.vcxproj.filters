@@ -38,7 +38,7 @@
       <Filter>Source Files\input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\shader.cpp">
-      <Filter>Source Files\shader</Filter>
+      <Filter>Source Files\pipeline</Filter>
     </ClCompile>
     <ClCompile Include="..\src\cg_stdafx.cpp">
       <Filter>Source Files</Filter>
@@ -66,6 +66,21 @@
     </ClCompile>
     <ClCompile Include="..\..\framework\src\model.cpp">
       <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\transform.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\math_utils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\cg_element.cpp">
+      <Filter>Source Files\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\camera.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\quake_camera.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -109,10 +124,10 @@
       <Filter>Header Files\input</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\shader.h">
-      <Filter>Header Files\shader</Filter>
+      <Filter>Header Files\pipeline</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\shader_source_info.h">
-      <Filter>Header Files\shader</Filter>
+      <Filter>Header Files\pipeline</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\sequential_executor.h">
       <Filter>Header Files\general</Filter>
@@ -159,6 +174,18 @@
     <ClInclude Include="..\..\framework\include\model.h">
       <Filter>Header Files\geometry</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include\transform.h">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\math_utils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\camera.h">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\quake_camera.h">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="external">
@@ -188,9 +215,6 @@
     <Filter Include="Header Files\input">
       <UniqueIdentifier>{13e34ef1-6c80-45ea-a246-44fbddb451b7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\shader">
-      <UniqueIdentifier>{bbc1b475-3f01-4d00-bc33-444e7d205aee}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{99cf0065-9330-4485-b7e0-b67aa6c775cc}</UniqueIdentifier>
     </Filter>
@@ -218,9 +242,6 @@
     <Filter Include="Source Files\input">
       <UniqueIdentifier>{6d1f1374-07cc-43fd-909b-d1666ae073dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\shader">
-      <UniqueIdentifier>{0fdd72a4-7319-41db-8135-463523b4cb94}</UniqueIdentifier>
-    </Filter>
     <Filter Include="external\fmt">
       <UniqueIdentifier>{b7ee0645-b8f3-43ad-ac4c-25c4d5ae61f2}</UniqueIdentifier>
     </Filter>
@@ -247,6 +268,18 @@
     </Filter>
     <Filter Include="Source Files\geometry">
       <UniqueIdentifier>{50fa4b81-fe6d-4215-80a8-6d974e43b960}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene">
+      <UniqueIdentifier>{874fb75f-84d8-4d21-bc49-4a0b2b414996}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pipeline">
+      <UniqueIdentifier>{bbc1b475-3f01-4d00-bc33-444e7d205aee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pipeline">
+      <UniqueIdentifier>{0fdd72a4-7319-41db-8135-463523b4cb94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene">
+      <UniqueIdentifier>{7e028abe-dc0a-4bc4-a113-c1f9c61d73b8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

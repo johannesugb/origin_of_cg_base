@@ -272,6 +272,25 @@ namespace cgb
 		return glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 	}
 
+	void generic_glfw::hide_cursor(const window& pWindow, bool pHide)
+	{
+		assert(pWindow.handle());
+		glfwSetInputMode(pWindow.handle()->mHandle, GLFW_CURSOR, 
+						 pHide ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
+	}
+
+	bool generic_glfw::is_cursor_hidden(const window& pWindow)
+	{
+		assert(pWindow.handle());
+		return glfwGetInputMode(pWindow.handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
+	}
+
+	void generic_glfw::set_cursor_pos(const window& pWindow, glm::dvec2 pCursorPos)
+	{
+		assert(pWindow.handle());
+		glfwSetCursorPos(pWindow.handle()->mHandle, pCursorPos.x, pCursorPos.y);
+	}
+
 	void generic_glfw::glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
 		assert(sTargetInputBuffer);

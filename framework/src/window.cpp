@@ -83,4 +83,30 @@ namespace cgb
 		// TODO: assign the window to the monitor
 	}
 
+	void window::set_cursor_hidden(bool pHidden)
+	{
+		context().hide_cursor(*this, pHidden);
+	}
+
+	bool window::is_cursor_hidden() const
+	{
+		return context().is_cursor_hidden(*this);
+	}
+
+	void window::set_cursor_position(int pX, int pY)
+	{
+		context().set_cursor_pos(*this, { static_cast<double>(pX), static_cast<double>(pY) });
+	}
+
+	void window::center_cursor_position()
+	{
+		set_cursor_position(width() / 2, height() / 2);
+	}
+
+	glm::ivec2 window::cursor_position()
+	{
+		auto dPos = context().cursor_position(*this);
+		return glm::ivec2(static_cast<int>(dPos[0]), static_cast<int>(dPos[1]));
+	}
+
 }

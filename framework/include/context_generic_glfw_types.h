@@ -10,6 +10,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/ext.hpp>
 #include <glm/mat4x4.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/transform2.hpp>
 
 namespace cgb
 {

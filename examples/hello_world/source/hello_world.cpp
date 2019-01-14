@@ -322,6 +322,10 @@ public:
 			cmdbfr.end_render_pass();
 			cmdbfr.end_recording();
 		}
+
+
+		// Add the camera to the composition (and let it handle the updates)
+		cgb::current_composition().add_element(mQuakeCam);
 	}
 
 	void finalize() override
@@ -409,6 +413,8 @@ private:
 	std::shared_ptr<cgb::image> mDepthImage;
 	cgb::image_view mDepthImageView;
 #endif
+
+	cgb::QuakeCamera mQuakeCam;
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation

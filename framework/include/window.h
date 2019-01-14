@@ -72,6 +72,21 @@ namespace cgb
 		 */
 		void change_monitor(std::optional<monitor_handle> pMonitor);
 
+		/** Sets whether or not the cursor should be hidden */
+		void set_cursor_hidden(bool pHidden);
+
+		/** Returns if the cursor is hidden or not */
+		bool is_cursor_hidden() const;
+
+		/** Sets the cursor position to the given coordinates */
+		void set_cursor_position(int pX, int pY);
+
+		/** Positions the cursor in the center of the screen */
+		void center_cursor_position();
+
+		/** Returs the cursor position */
+		glm::ivec2 cursor_position();
+
 	private:
 		/** Static variable which holds the ID that the next window will get assigned */
 		static uint32_t mNextWindowId;

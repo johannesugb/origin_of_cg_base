@@ -2,29 +2,6 @@
 
 namespace cgb
 {
-#pragma region global data representing the currently active composition
-	/**	@brief Get the current timer, which represents the current game-/render-time 
-	 *	\remark This is just a shortcut to @ref composition_interface::current()->time();
-	 */
-	inline timer_interface& time() {
-		return composition_interface::current()->time();
-	}
-
-	/** @brief Get the current frame's input data 
-	 *	\remark This is just a shortcut to @ref composition_interface::current()->input();
-	 */
-	inline input_buffer& input() {
-		return composition_interface::current()->input();
-	}
-
-	/** @brief Get access to the currently active objects 
-	 *	\remark This is just a shortcut to @ref *composition_interface::current();
-	 */
-	inline composition_interface& current_composition() {
-		return *composition_interface::current();
-	}
-#pragma endregion 
-
 	/**	A composition brings together all of the separate components, which there are
 	 *	 - A timer
 	 *	 - One or more windows
@@ -140,6 +117,28 @@ namespace cgb
 			return nullptr;
 		}
 
+		/** Add all elements which are about to be added to the composition */
+		void add_pending_elements()
+		{
+			// Make a copy of all the elements to be added to not interfere with erase-operations:
+			auto toBeAdded = mElementsToBeAdded;
+			for (auto el : toBeAdded) {
+				add_element_immediately(*el);
+			}
+			assert(mElementsToBeAdded.size() == 0);
+		}
+
+		/** Remove all elements which are about to be removed */
+		void remove_pending_elements()
+		{
+			// Make a copy of all the elements to be added to not interfere with erase-operations:
+			auto toBeRemoved = mElementsToBeRemoved;
+			for (auto el : toBeRemoved) {
+				remove_element_immediately(*el);
+			}
+			assert(mElementsToBeRemoved.size() == 0);
+		}
+
 	private:
 		/** Signal the main thread to start swapping input buffers */
 		static void please_swap_input_buffers(composition* thiz)
@@ -177,6 +176,8 @@ namespace cgb
 
 			while (!thiz->mShouldStop)
 			{
+				thiz->add_pending_elements();
+
 				// signal context
 				cgb::context().begin_frame();
 
@@ -215,15 +216,74 @@ namespace cgb
 
 				// signal context
 				cgb::context().end_frame();
+
+				thiz->remove_pending_elements();
 			}
 
 		}
 
 	public:
-		/** Start a game/rendering-loop for this composition_interface,
-		 *	This will also spawn a separate rendering thread.
-		 *	The main thread will mainly focus on processing input.
-		 */
+		void add_element(cg_element& pElement) override
+		{
+			mElementsToBeAdded.push_back(&pElement);
+		}
+
+		void add_element_immediately(cg_element& pElement) override
+		{
+			mElements.push_back(&pElement);
+			pElement.initialize();
+			// Remove from mElementsToBeAdded container (if it was contained in it)
+			mElementsToBeAdded.erase(std::remove(std::begin(mElementsToBeAdded), std::end(mElementsToBeAdded), &pElement));
+		}
+
+		void remove_element(cg_element& pElement) override
+		{
+			mElementsToBeRemoved.push_back(&pElement);
+		}
+
+		void remove_element_immediately(cg_element& pElement, bool pIsBeingDestructed = false) override
+		{
+			if (!pIsBeingDestructed) {
+				assert(std::find(std::begin(mElements), std::end(mElements), &pElement) != mElements.end());
+				pElement.finalize();
+				// Remove from the actual elements-container
+				mElements.erase(std::remove(std::begin(mElements), std::end(mElements), &pElement));
+				// ...and from mElementsToBeRemoved
+				mElementsToBeRemoved.erase(std::remove(std::begin(mElementsToBeRemoved), std::end(mElementsToBeRemoved), &pElement));
+			}
+			else {
+				LOG_DEBUG_EM(fmt::format("Removing element with name[{}] and address[{}] issued from cg_element's destructor",
+										 pElement.name(),
+										 fmt::ptr(&pElement)));
+			}
+		}
+
+		window* window_in_focus() override
+		{
+			if (mWindows.size() > 0) {
+				return mWindows[0];
+			}
+			return nullptr;
+		}
+
+		window* window_by_name(const std::string& pName) override
+		{
+			auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
+								   [&pName](const window* w) {
+									   return w->name() == pName;
+								   });
+			return it != mWindows.end() ? *it : nullptr;
+		}
+
+		window* window_by_id(uint32_t pId) override
+		{
+			auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
+								   [&pId](const window* w) {
+									   return w->id() == pId;
+								   });
+			return it != mWindows.end() ? *it : nullptr;
+		}
+
 		void start() override
 		{
 			// Make myself the current composition_interface
@@ -301,6 +361,8 @@ namespace cgb
 		static composition* sComposition;
 		std::vector<window*> mWindows;
 		std::vector<cg_element*> mElements;
+		std::vector<cg_element*> mElementsToBeAdded;
+		std::vector<cg_element*> mElementsToBeRemoved;
 		TTimer mTimer;
 		TExecutor mExecutor;
 		std::array<input_buffer, 2> mInputBuffers;
