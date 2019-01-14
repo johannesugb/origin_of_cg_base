@@ -5,53 +5,53 @@
 #include <memory>
 
 struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
+	vk::SurfaceCapabilitiesKHR capabilities;
+	std::vector<vk::SurfaceFormatKHR> formats;
+	std::vector<vk::PresentModeKHR> presentModes;
 };
 
 class vkImagePresenter
 {
 public:
-	vkImagePresenter(VkQueue &presentQueue, VkSurfaceKHR surface, QueueFamilyIndices queueFamilyIndices);
+	vkImagePresenter(vk::Queue &presentQueue, vk::SurfaceKHR surface, QueueFamilyIndices queueFamilyIndices);
 	virtual ~vkImagePresenter();
 
-	void fetch_next_swapchain_image(VkFence inFlightFence, VkSemaphore signalSemaphore);
-	void present_image(std::vector<VkSemaphore> waitSemaphores);
+	void fetch_next_swapchain_image(vk::Fence inFlightFence, vk::Semaphore signalSemaphore);
+	void present_image(std::vector<vk::Semaphore> waitSemaphores);
 
 	bool is_swap_chain_recreated() { return mSwapChainRecreated; }
 	void recreate_swapchain();
 
-	VkFormat get_swap_chain_image_format() { return mSwapChainImageFormat; }
-	VkExtent2D get_swap_chain_extent() { return mSwapChainExtent; }
+	vk::Format get_swap_chain_image_format() { return mSwapChainImageFormat; }
+	vk::Extent2D get_swap_chain_extent() { return mSwapChainExtent; }
 	size_t get_swap_chain_images_count() { return mSwapChainImages.size(); }
-	std::vector<VkImageView> get_swap_chain_image_views() { return mSwapChainImageViews; }
+	std::vector<vk::ImageView> get_swap_chain_image_views() { return mSwapChainImageViews; }
 private:
-	VkSwapchainKHR mSwapChain;
-	std::vector<VkImage> mSwapChainImages; // created and destroyed with the swap chain
-	std::vector<VkImageView> mSwapChainImageViews;
-	VkFormat mSwapChainImageFormat;
-	VkExtent2D mSwapChainExtent;
+	vk::SwapchainKHR mSwapChain;
+	std::vector<vk::Image> mSwapChainImages; // created and destroyed with the swap chain
+	std::vector<vk::ImageView> mSwapChainImageViews;
+	vk::Format mSwapChainImageFormat;
+	vk::Extent2D mSwapChainExtent;
 
 	bool mSwapChainRecreated;
 	uint32_t mImageIndex;
 	uint32_t mOldImageIndex;
 
-	VkQueue mPresentQueue;
+	vk::Queue mPresentQueue;
 	std::shared_ptr<GLFWwindow> mWindow;
-	VkSurfaceKHR mSurface;
+	vk::SurfaceKHR mSurface;
 	QueueFamilyIndices mQueueFamilyIndices;
 
 
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes);
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabilities);
+	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device);
+	vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
+	vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> availablePresentModes);
+	vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR & capabilities);
 
 	void cleanup();
 	void createSwapChain();
 	void createImageViews();
 
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+	vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 };
 

@@ -10,17 +10,17 @@
 class vkDrawer
 {
 public:
-	vkDrawer(vkCommandBufferManager* commandBufferManager, VkPipeline &graphicsPipeline,
-		VkPipelineLayout &pipelineLayout);
+	vkDrawer(vkCommandBufferManager* commandBufferManager, vk::Pipeline &graphicsPipeline,
+		vk::PipelineLayout &pipelineLayout);
 	virtual ~vkDrawer();
 
 	void draw(std::vector<vkRenderObject*> renderObjects);
 private:
-	vkCommandBufferManager * _commandBufferManager;
+	vkCommandBufferManager * mCommandBufferManager;
 
-	VkPipeline _graphicsPipeline;
-	VkPipelineLayout _pipelineLayout;
+	vk::Pipeline mGraphicsPipeline;
+	vk::PipelineLayout mPipelineLayout;
 
-	void recordSecondaryCommandBuffer(std::vector<vkRenderObject*> renderObjects);
+	void record_secondary_command_buffer(std::vector<vkRenderObject*> renderObjects);
 };
 

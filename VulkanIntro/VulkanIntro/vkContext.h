@@ -26,17 +26,17 @@ public:
 	vkContext();
 	~vkContext();
 
-	VkInstance vkInstance;
-	VkDebugUtilsMessengerEXT callback;
-	VkPhysicalDevice physicalDevice;
-	VkDevice device;
+	vk::Instance vkInstance;
+	vk::DebugUtilsMessengerEXT callback;
+	vk::PhysicalDevice physicalDevice;
+	vk::Device device;
 
 	vkMemoryManager* memoryManager;
 
-	VkRenderPass renderPass;
+	vk::RenderPass renderPass;
 
 	// updated per frame/pass
-	VkFramebuffer frameBuffer;
+	vk::Framebuffer frameBuffer;
 	int currentFrame;
 
 	static vkContext& instance()

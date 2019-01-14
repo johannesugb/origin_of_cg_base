@@ -6,7 +6,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-vkImagePresenter::vkImagePresenter(VkQueue &presentQueue, VkSurfaceKHR surface, QueueFamilyIndices queueFamilyIndices) :
+vkImagePresenter::vkImagePresenter(vk::Queue &presentQueue, vk::SurfaceKHR surface, QueueFamilyIndices queueFamilyIndices) :
 	mPresentQueue(presentQueue), mSurface(surface), mQueueFamilyIndices(queueFamilyIndices)
 {
 	mSwapChainRecreated = false;
@@ -43,18 +43,18 @@ void vkImagePresenter::recreate_swapchain() {
 	createImageViews();
 }
 
-void vkImagePresenter::fetch_next_swapchain_image(VkFence inFlightFence, VkSemaphore signalSemaphore) {
-	vkWaitForFences(vkContext::instance().device, 1, &inFlightFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+void vkImagePresenter::fetch_next_swapchain_image(vk::Fence inFlightFence, vk::Semaphore signalSemaphore) {
+	vkContext::instance().device.waitForFences(1, &inFlightFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(vkContext::instance().device, mSwapChain, std::numeric_limits<uint64_t>::max(), signalSemaphore, VK_NULL_HANDLE, &imageIndex);
+	vk::Result result = vkContext::instance().device.acquireNextImageKHR(mSwapChain, std::numeric_limits<uint64_t>::max(), signalSemaphore, nullptr, &imageIndex);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+	if (result == vk::Result::eErrorOutOfDateKHR) {
 		recreate_swapchain();
 		mSwapChainRecreated = true;
 		return;
 	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+	else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 	vkContext::instance().currentFrame = imageIndex;
@@ -62,26 +62,24 @@ void vkImagePresenter::fetch_next_swapchain_image(VkFence inFlightFence, VkSemap
 
 }
 
-void vkImagePresenter::present_image(std::vector<VkSemaphore> waitSemaphores) {
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
+void vkImagePresenter::present_image(std::vector<vk::Semaphore> waitSemaphores) {
+	vk::PresentInfoKHR presentInfo = {};
 	presentInfo.waitSemaphoreCount = waitSemaphores.size();
 	presentInfo.pWaitSemaphores = waitSemaphores.data();
 
-	VkSwapchainKHR swapChains[] = { mSwapChain };
+	vk::SwapchainKHR swapChains[] = { mSwapChain };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &mImageIndex;
 	presentInfo.pResults = nullptr; // Optional
 
-	VkResult result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+	vk::Result result = mPresentQueue.presentKHR(&presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+	if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
 		mSwapChainRecreated = true;
 		recreate_swapchain();
 	}
-	else if (result != VK_SUCCESS) {
+	else if (result != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
@@ -90,36 +88,36 @@ void vkImagePresenter::present_image(std::vector<VkSemaphore> waitSemaphores) {
 
 // swap chain create functions
 
-SwapChainSupportDetails vkImagePresenter::querySwapChainSupport(VkPhysicalDevice device) {
+SwapChainSupportDetails vkImagePresenter::querySwapChainSupport(vk::PhysicalDevice device) {
 	SwapChainSupportDetails details;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.capabilities);
+	device.getSurfaceCapabilitiesKHR(mSurface, &details.capabilities);
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
+	device.getSurfaceFormatsKHR(mSurface, &formatCount, nullptr);
 
 	if (formatCount != 0) {
 		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.formats.data());
+		device.getSurfaceFormatsKHR(mSurface, &formatCount, details.formats.data());
 	}
 
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
+	 device.getSurfacePresentModesKHR(mSurface, &presentModeCount, nullptr);
 
 	if (presentModeCount != 0) {
 		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, details.presentModes.data());
+		device.getSurfacePresentModesKHR(mSurface, &presentModeCount, details.presentModes.data());
 	}
 
 	return details;
 }
 
-VkSurfaceFormatKHR vkImagePresenter::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
-	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED) {
-		return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+vk::SurfaceFormatKHR vkImagePresenter::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
+	if (availableFormats.size() == 1 && availableFormats[0].format == vk::Format::eUndefined) {
+		return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
 	}
 
 	for (const auto& availableFormat : availableFormats) {
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+		if (availableFormat.format == vk::Format::eB8G8R8A8Unorm && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
 			return availableFormat;
 		}
 	}
@@ -127,14 +125,14 @@ VkSurfaceFormatKHR vkImagePresenter::chooseSwapSurfaceFormat(const std::vector<V
 	return availableFormats[0];
 }
 
-VkPresentModeKHR vkImagePresenter::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes) {
-	VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
+vk::PresentModeKHR vkImagePresenter::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> availablePresentModes) {
+	vk::PresentModeKHR bestMode = vk::PresentModeKHR::eFifo;
 
 	for (const auto& availablePresentMode : availablePresentModes) {
-		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+		if (availablePresentMode == vk::PresentModeKHR::eMailbox) {
 			return availablePresentMode;
 		}
-		else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+		else if (availablePresentMode == vk::PresentModeKHR::eImmediate) {
 			bestMode = availablePresentMode;
 		}
 	}
@@ -142,7 +140,7 @@ VkPresentModeKHR vkImagePresenter::chooseSwapPresentMode(const std::vector<VkPre
 	return bestMode;
 }
 
-VkExtent2D vkImagePresenter::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+vk::Extent2D vkImagePresenter::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities) {
 	// if window manager (GLFW) is flexible with the resolution, the extends of the capabilities are std::numeric_limits<uint32_t>::max()
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
@@ -152,7 +150,7 @@ VkExtent2D vkImagePresenter::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
 		GLFWwindow* window = mWindow.get();
 		glfwGetFramebufferSize(window, &width, &height);
 
-		VkExtent2D actualExtent = {
+		vk::Extent2D actualExtent = {
 			static_cast<uint32_t>(width),
 			static_cast<uint32_t>(height)
 		};
@@ -167,17 +165,16 @@ VkExtent2D vkImagePresenter::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
 void vkImagePresenter::createSwapChain() {
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(vkContext::instance().physicalDevice);
 
-	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+	vk::PresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+	vk::Extent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
 		imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
 
-	VkSwapchainCreateInfoKHR createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	vk::SwapchainCreateInfoKHR createInfo = {};
 	createInfo.surface = mSurface;
 
 	createInfo.minImageCount = imageCount;
@@ -185,36 +182,36 @@ void vkImagePresenter::createSwapChain() {
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
 	createInfo.imageArrayLayers = 1;
-	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
 	QueueFamilyIndices indices = mQueueFamilyIndices;
 
 	if (indices.graphicsFamily != indices.presentFamily) {
 		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
-		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 		createInfo.queueFamilyIndexCount = 2;
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
 	}
 	else {
-		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		createInfo.imageSharingMode = vk::SharingMode::eExclusive;
 		createInfo.queueFamilyIndexCount = 0; // Optional
 		createInfo.pQueueFamilyIndices = nullptr; // Optional
 	}
 
 	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
-	createInfo.oldSwapchain = VK_NULL_HANDLE;
+	createInfo.oldSwapchain = nullptr;
 
-	if (vkCreateSwapchainKHR(vkContext::instance().device, &createInfo, nullptr, &mSwapChain) != VK_SUCCESS) {
+	if (vkContext::instance().device.createSwapchainKHR(&createInfo, nullptr, &mSwapChain) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to create swap chain!");
 	}
 
-	vkGetSwapchainImagesKHR(vkContext::instance().device, mSwapChain, &imageCount, nullptr);
+	vkContext::instance().device.getSwapchainImagesKHR(mSwapChain, &imageCount, nullptr);
 	mSwapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(vkContext::instance().device, mSwapChain, &imageCount, mSwapChainImages.data());
+	vkContext::instance().device.getSwapchainImagesKHR(mSwapChain, &imageCount, mSwapChainImages.data());
 
 	mSwapChainImageFormat = surfaceFormat.format;
 	mSwapChainExtent = extent;
@@ -224,16 +221,15 @@ void vkImagePresenter::createImageViews() {
 	mSwapChainImageViews.resize(mSwapChainImages.size());
 
 	for (uint32_t i = 0; i < mSwapChainImages.size(); i++) {
-		mSwapChainImageViews[i] = createImageView(mSwapChainImages[i], mSwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+		mSwapChainImageViews[i] = createImageView(mSwapChainImages[i], mSwapChainImageFormat, vk::ImageAspectFlagBits::eColor, 1);
 	}
 }
 
 // TODO optional, move to image or utility class
-VkImageView vkImagePresenter::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
-	VkImageViewCreateInfo viewInfo = {};
-	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+vk::ImageView vkImagePresenter::createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) {
+	vk::ImageViewCreateInfo viewInfo = {};
 	viewInfo.image = image;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.viewType = vk::ImageViewType::e2D;
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
@@ -241,8 +237,8 @@ VkImageView vkImagePresenter::createImageView(VkImage image, VkFormat format, Vk
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = 1;
 
-	VkImageView imageView;
-	if (vkCreateImageView(vkContext::instance().device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+	vk::ImageView imageView;
+	if (vkContext::instance().device.createImageView(&viewInfo, nullptr, &imageView) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to create texture image view!");
 	}
 

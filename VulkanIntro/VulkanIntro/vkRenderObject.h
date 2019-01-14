@@ -107,8 +107,8 @@ public:
 		vkTexture* texture, vkCommandBufferManager* commandBufferManager);
 	virtual ~vkRenderObject();
 
-	std::vector<Vertex> getVertices() { return _vertices; }
-	std::vector<uint32_t> getIndices() { return _indices; }
+	std::vector<Vertex> get_vertices() { return _vertices; }
+	std::vector<uint32_t> get_indices() { return _indices; }
 
 	VkBuffer getVertexBuffer() { return _vertexBuffer.getVkBuffer(); }
 	//void setVertexBuffer(VkBuffer vertexBuffer) { _vertexBuffer = vertexBuffer; }
