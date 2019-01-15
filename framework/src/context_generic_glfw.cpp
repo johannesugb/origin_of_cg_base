@@ -272,6 +272,12 @@ namespace cgb
 		return glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 	}
 
+	void generic_glfw::set_window_size(const window& pWindow, glm::uvec2 pSize)
+	{
+		assert(pWindow.handle());
+		glfwSetWindowSize(pWindow.handle()->mHandle, pSize.x, pSize.y);
+	}
+
 	void generic_glfw::hide_cursor(const window& pWindow, bool pHide)
 	{
 		assert(pWindow.handle());

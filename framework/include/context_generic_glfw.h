@@ -58,6 +58,9 @@ namespace cgb
 		/** Determine the window's extent */
 		static glm::uvec2 window_extent(const window& pWindow);
 
+		/** Sets a new size to the window */
+		static void set_window_size(const window& pWindow, glm::uvec2 pSize);
+
 		/** Hides or shows the cursor */
 		static void hide_cursor(const window& pWindow, bool pHide);
 

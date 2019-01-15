@@ -252,7 +252,7 @@ namespace cgb
 				mElementsToBeRemoved.erase(std::remove(std::begin(mElementsToBeRemoved), std::end(mElementsToBeRemoved), &pElement));
 			}
 			else {
-				LOG_DEBUG_EM(fmt::format("Removing element with name[{}] and address[{}] issued from cg_element's destructor",
+				LOG_DEBUG(fmt::format("Removing element with name[{}] and address[{}] issued from cg_element's destructor",
 										 pElement.name(),
 										 fmt::ptr(&pElement)));
 			}
@@ -317,7 +317,7 @@ namespace cgb
 				if (mShouldSwapInputBuffers)
 				{
 					std::swap(mInputBufferUpdateIndex, mInputBufferConsumerIndex);
-					mInputBuffers[mInputBufferUpdateIndex].prepare_for_next_frame(mInputBuffers[mInputBufferConsumerIndex]);
+					mInputBuffers[mInputBufferUpdateIndex].prepare_for_next_frame(mInputBuffers[mInputBufferConsumerIndex], window_in_focus());
 					context().change_target_input_buffer(mInputBuffers[mInputBufferUpdateIndex]);
 					have_swapped_input_buffers();
 				}

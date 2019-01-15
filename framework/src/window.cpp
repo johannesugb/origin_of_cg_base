@@ -8,8 +8,6 @@ namespace cgb
 		mWindowId(mNextWindowId++),
 		mName(),
 		mHandle(std::move(handle)),
-		mWidth(0),
-		mHeight(0),
 		mTitle(),
 		mMonitor()
 	{
@@ -28,15 +26,11 @@ namespace cgb
 	window::window(window&& other) noexcept :
 		mName(std::move(other.mName)),
 		mHandle(std::move(other.mHandle)),
-		mWidth(std::move(other.mWidth)),
-		mHeight(std::move(other.mHeight)),
 		mTitle(std::move(other.mTitle)),
 		mMonitor(std::move(other.mMonitor))
 	{
 		other.mName = "moved from";
 		other.mHandle = std::nullopt;
-		other.mWidth = 0;
-		other.mHeight = 0;
 		other.mTitle = "moved from";
 		other.mMonitor = std::nullopt;
 	}
@@ -45,15 +39,11 @@ namespace cgb
 	{
 		mName = std::move(other.mName);
 		mHandle = std::move(other.mHandle);
-		mWidth = std::move(other.mWidth);
-		mHeight = std::move(other.mHeight);
 		mTitle = std::move(other.mTitle);
 		mMonitor = std::move(other.mMonitor);
 
 		other.mName = "moved from";
 		other.mHandle = std::nullopt;
-		other.mWidth = 0;
-		other.mHeight = 0;
 		other.mTitle = "moved from";
 		other.mMonitor = std::nullopt;
 
@@ -65,10 +55,20 @@ namespace cgb
 		mName = pName;
 	}
 
-	void window::set_resolution(int pWidth, int pHeight)
+	glm::uvec2 window::resolution() const
 	{
-		mWidth = pWidth;
-		mHeight = pHeight;
+		return context().window_extent(*this);
+	}
+
+	double window::aspect_ratio() const
+	{
+		auto res = resolution();
+		return static_cast<double>(res.x) / static_cast<double>(res.y);
+	}
+
+	void window::set_resolution(glm::uvec2 pExtent)
+	{
+		context().set_window_size(*this, pExtent);
 	}
 
 	void window::set_title(std::string pTitle)
@@ -81,32 +81,6 @@ namespace cgb
 	{
 		mMonitor = pMonitor;
 		// TODO: assign the window to the monitor
-	}
-
-	void window::set_cursor_hidden(bool pHidden)
-	{
-		context().hide_cursor(*this, pHidden);
-	}
-
-	bool window::is_cursor_hidden() const
-	{
-		return context().is_cursor_hidden(*this);
-	}
-
-	void window::set_cursor_position(int pX, int pY)
-	{
-		context().set_cursor_pos(*this, { static_cast<double>(pX), static_cast<double>(pY) });
-	}
-
-	void window::center_cursor_position()
-	{
-		set_cursor_position(width() / 2, height() / 2);
-	}
-
-	glm::ivec2 window::cursor_position()
-	{
-		auto dPos = context().cursor_position(*this);
-		return glm::ivec2(static_cast<int>(dPos[0]), static_cast<int>(dPos[1]));
 	}
 
 }

@@ -27,7 +27,7 @@ namespace cgb
 		/** Prepares this input buffer for the next frame based on data of
 		 *	the previous frame. This means that key-down states are preserved.
 		 */
-		void prepare_for_next_frame(const input_buffer& pPreviousFrame, std::optional<window> pWindow = std::nullopt);
+		void prepare_for_next_frame(const input_buffer& pPreviousFrame, window* pWindow = nullptr);
 
 		/** @brief Keyboard key pressed-down?
 		 *
@@ -94,6 +94,18 @@ namespace cgb
 		 */
 		const glm::dvec2& scroll_delta();
 
+		/** Sets whether or not the cursor should be hidden */
+		void set_cursor_hidden(bool pHidden);
+
+		/** Returns if the cursor is hidden or not */
+		bool is_cursor_hidden() const;
+
+		/** Sets the cursor position to the given coordinates */
+		void set_cursor_position(glm::dvec2 pPosition);
+
+		/** Positions the cursor in the center of the screen */
+		void center_cursor_position(window& pWindow);
+
 	private:
 		/** Keyboard button states */
 		std::array<key_state, static_cast<size_t>(key_code::max_value)> mKeyboardKeys;
@@ -107,5 +119,13 @@ namespace cgb
 		/** Scrolling wheel position data */
 		glm::dvec2 mScrollPosition;
 
+		/** True if the cursor is hidden, false otherwise */
+		bool mCursorHidden;
+
+		/** Has value if the cursor's visibility should be changed */
+		std::optional<bool> mSetCursorHidden;
+
+		/** Has value if the cursor's position should be changed */
+		std::optional<glm::dvec2> mSetCursorPosition;
 	};
 }

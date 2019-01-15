@@ -221,7 +221,8 @@ public:
 	void create_texture_image()
 	{
 		int width, height, channels;
-		stbi_uc* pixels = stbi_load("assets/texture.jpg", &width, &height, &channels, STBI_rgb_alpha);
+		stbi_set_flip_vertically_on_load(true);
+		stbi_uc* pixels = stbi_load("assets/chalet.jpg", &width, &height, &channels, STBI_rgb_alpha);
 		size_t imageSize = width * height * 4;
 
 		if (!pixels) {
@@ -325,6 +326,9 @@ public:
 
 
 		// Add the camera to the composition (and let it handle the updates)
+		mQuakeCam.set_position(glm::vec3(-3.0f, 1.0f, 0.0f));
+		mQuakeCam.LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::current_composition().window_in_focus()->aspect_ratio(), 0.1f, 1000.0f);
 		cgb::current_composition().add_element(mQuakeCam);
 	}
 
@@ -343,9 +347,12 @@ public:
 			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
 
 		UniformBufferObject ubo{
-			glm::rotate(glm::mat4(1.0f), cgb::time().frame_time() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-			glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-			glm::perspective(glm::radians(45.0f), mSwapChainData->mSwapChainExtent.width / static_cast<float>(mSwapChainData->mSwapChainExtent.height), 0.1f, 10.0f)
+			glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
+			mQuakeCam.CalculateViewMatrix(),
+			mQuakeCam.projection_matrix()
+			//glm::rotate(glm::mat4(1.0f), cgb::time().frame_time() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+			//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+			//glm::perspective(glm::radians(45.0f), mSwapChainData->mSwapChainExtent.width / static_cast<float>(mSwapChainData->mSwapChainExtent.height), 0.1f, 10.0f)
 		};
 		// GLM was originally designed for OpenGL, where the Y coordinate of the clip coordinates is inverted. 
 		//The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in 
@@ -375,20 +382,6 @@ public:
 		cgb::context().presentation_queue().presentKHR(presentInfo);
 	}
 #endif
-
-	void update() override
-	{
-		if (cgb::input().key_down(cgb::key_code::a))
-			LOG_INFO("a pressed");
-		if (cgb::input().key_down(cgb::key_code::s))
-			LOG_INFO("s pressed");
-		if (cgb::input().key_down(cgb::key_code::w))
-			LOG_INFO("w pressed");
-		if (cgb::input().key_down(cgb::key_code::d))
-			LOG_INFO("d pressed");
-		if (cgb::input().key_down(cgb::key_code::escape))
-			cgb::current_composition().stop();
-	}
 
 private:
 	cgb::window* mMainWnd;

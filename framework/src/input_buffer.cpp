@@ -17,24 +17,35 @@ namespace cgb
 		mScrollPosition = { 0.0, 0.0 };
 	}
 
-	void input_buffer::prepare_for_next_frame(const input_buffer& pPreviousFrame, std::optional<window> pWindow)
+	void input_buffer::prepare_for_next_frame(const input_buffer& pPreviousFrame, window* pWindow)
 	{
-		for (auto i = 0; i < mKeyboardKeys.size(); ++i)
-		{
+		if (nullptr != pWindow) {
+			if (mSetCursorPosition) {
+				context().set_cursor_pos(*pWindow, *mSetCursorPosition);
+			}
+			mSetCursorPosition = std::nullopt;
+			mCursorPosition = context().cursor_position(*pWindow);
+
+			if (mSetCursorHidden) {
+				context().hide_cursor(*pWindow, *mSetCursorHidden);
+			}
+			mSetCursorHidden = std::nullopt;
+			mCursorHidden = context().is_cursor_hidden(*pWindow);
+		}
+		else {
+			mSetCursorPosition = std::nullopt;
+			mCursorPosition = { 0.0, 0.0 };
+			mSetCursorHidden = std::nullopt;
+			mCursorHidden = false;
+		}
+
+		for (auto i = 0; i < mKeyboardKeys.size(); ++i) {
 			mKeyboardKeys[i] = (pPreviousFrame.mKeyboardKeys[i] & key_state::down);
 		}
-		if (pWindow)
-		{
-			mCursorPosition = context().cursor_position(*pWindow);
-		}
-		else
-		{
-			mCursorPosition = { 0.0, 0.0 };
-		}
-		for (auto i = 0; i < mMouseKeys.size(); ++i)
-		{
+		for (auto i = 0; i < mMouseKeys.size(); ++i) {
 			mMouseKeys[i] = (pPreviousFrame.mMouseKeys[i] & key_state::down);
 		}
+
 		mScrollPosition = { 0.0, 0.0 };
 	}
 
@@ -81,5 +92,26 @@ namespace cgb
 	const glm::dvec2& input_buffer::scroll_delta()
 	{
 		return mScrollPosition;
+	}
+
+	void input_buffer::set_cursor_hidden(bool pHidden)
+	{
+		mSetCursorHidden = pHidden;
+	}
+
+	bool input_buffer::is_cursor_hidden() const
+	{
+		return mCursorHidden;
+	}
+
+	void input_buffer::set_cursor_position(glm::dvec2 pPosition)
+	{
+		mSetCursorPosition = pPosition;
+	}
+
+	void input_buffer::center_cursor_position(window& pWindow)
+	{
+		auto res = pWindow.resolution();
+		mSetCursorPosition = glm::dvec2(res.x / 2.0, res.y / 2.0);
 	}
 }

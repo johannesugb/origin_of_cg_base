@@ -32,10 +32,10 @@ namespace cgb
 	void QuakeCamera::AddToCameraPositionAbsolute(const glm::vec4& homoVectorToAdd, double deltaTime)
 	{
 		float speedMultiplier = 1.0f;
-		if (input().key_pressed(key_code::left_shift)) {
+		if (input().key_down(key_code::left_shift)) {
 			speedMultiplier = m_fast_multiplier;
 		}
-		if (input().key_pressed(key_code::left_control)) {
+		if (input().key_down(key_code::left_control)) {
 			speedMultiplier = m_slow_multiplier;
 		}
 		Translate(m_move_speed * speedMultiplier * static_cast<float>(deltaTime) * homoVectorToAdd);
@@ -45,16 +45,14 @@ namespace cgb
 	void QuakeCamera::HandleInputOnly()
 	{
 		auto wnd = current_composition().window_in_focus();
-		auto width = wnd->width();
-		auto height = wnd->height();
 
 		// switch mode
 		if (input().key_pressed(key_code::tab)) {
-			auto currentlyHidden = wnd->is_cursor_hidden();
+			auto currentlyHidden = input().is_cursor_hidden();
 			auto newMode = !currentlyHidden;
-			wnd->set_cursor_hidden(newMode);
+			//wnd->set_cursor_hidden(newMode);
 			m_capture_input = newMode == true;
-			wnd->center_cursor_position();
+			input().center_cursor_position(*wnd);
 		}
 
 		// display info
@@ -69,32 +67,30 @@ namespace cgb
 
 	void QuakeCamera::initialize()
 	{
-		current_composition().window_in_focus()->set_cursor_hidden(true);
+		//current_composition().window_in_focus()->set_cursor_hidden(true);
 	}
 
 	void QuakeCamera::finalize()
 	{
-		current_composition().window_in_focus()->set_cursor_hidden(false);
+		//current_composition().window_in_focus()->set_cursor_hidden(false);
 	}
 
 	void QuakeCamera::update()
 	{
 		HandleInputOnly();
-
 		if (!m_capture_input) {
 			return;
 		}
 
 		auto wnd = current_composition().window_in_focus();
-		auto width = wnd->width();
-		auto height = wnd->height();
+		auto extent = wnd->resolution();
 		auto deltaTime = time().delta_time();
 
 		// query the position of the mouse cursor
-		auto mousePos = wnd->cursor_position();
+		auto mousePos = input().cursor_position();
 
 		// calculate how much the cursor has moved from the center of the screen
-		glm::ivec2 mouseMoved = glm::ivec2(width / 2 - mousePos.x, height / 2 - mousePos.y);
+		auto mouseMoved = glm::dvec2(extent.x / 2.0 - mousePos.x, extent.y / 2.0 - mousePos.y);
 
 		// accumulate values and create rotation-matrix
 		m_accumulated_mouse_movement.x += m_rotation_speed * static_cast<float>(mouseMoved.x);
@@ -106,20 +102,20 @@ namespace cgb
 		set_rotation(cameraRotation);
 
 		// move camera to new position
-		if (input().key_pressed(key_code::w))
+		if (input().key_down(key_code::w))
 			AddToCameraPositionRelative(kFrontVec4, deltaTime);
-		if (input().key_pressed(key_code::s))
+		if (input().key_down(key_code::s))
 			AddToCameraPositionRelative(-kFrontVec4, deltaTime);
-		if (input().key_pressed(key_code::d))
+		if (input().key_down(key_code::d))
 			AddToCameraPositionRelative(kSideVec4, deltaTime);
-		if (input().key_pressed(key_code::a))
+		if (input().key_down(key_code::a))
 			AddToCameraPositionRelative(-kSideVec4, deltaTime);
-		if (input().key_pressed(key_code::q))
+		if (input().key_down(key_code::q))
 			AddToCameraPositionAbsolute(-kUpVec4, deltaTime);
-		if (input().key_pressed(key_code::e))
+		if (input().key_down(key_code::e))
 			AddToCameraPositionAbsolute(kUpVec4, deltaTime);
 
 		// reset the mouse-cursor to the center of the screen
-		wnd->center_cursor_position();
+		input().center_cursor_position(*wnd);
 	}
 }

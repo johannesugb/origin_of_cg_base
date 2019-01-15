@@ -39,11 +39,11 @@ namespace cgb
 		 *	or has been destroyed. */
 		std::optional<window_handle> handle() const { return mHandle; }
 
-		/** Returns the inner width, i.e. which is usable for rendering */
-		int width() const { return mWidth; }
+		/** Returns the inner window size, i.e. the extent of the pixels which can be rendered into */
+		glm::uvec2 resolution() const;
 
-		/** Returns the inner height, i.e. which is usable for rendering */
-		int height() const { return mHeight; }
+		/** Returns the aspect ratio of the window, which is width/height */
+		double aspect_ratio() const;
 
 		/** The window title */
 		const std::string& title() const { return mTitle; }
@@ -61,7 +61,7 @@ namespace cgb
 		 *  this window's underlying framebuffer 
 		 *  TODO: Resize underlying framebuffer!
 		 */
-		void set_resolution(int pWidth, int pHeight);
+		void set_resolution(glm::uvec2 pExtent);
 
 		/** Set a new title */
 		void set_title(std::string pTitle);
@@ -72,20 +72,6 @@ namespace cgb
 		 */
 		void change_monitor(std::optional<monitor_handle> pMonitor);
 
-		/** Sets whether or not the cursor should be hidden */
-		void set_cursor_hidden(bool pHidden);
-
-		/** Returns if the cursor is hidden or not */
-		bool is_cursor_hidden() const;
-
-		/** Sets the cursor position to the given coordinates */
-		void set_cursor_position(int pX, int pY);
-
-		/** Positions the cursor in the center of the screen */
-		void center_cursor_position();
-
-		/** Returs the cursor position */
-		glm::ivec2 cursor_position();
 
 	private:
 		/** Static variable which holds the ID that the next window will get assigned */
@@ -99,12 +85,6 @@ namespace cgb
 
 		/** Handle of this window */
 		std::optional<window_handle> mHandle;
-
-		/** This window's width */
-		int mWidth;
-
-		/** This window's height */
-		int mHeight;
 
 		/** This window's title */
 		std::string mTitle;
