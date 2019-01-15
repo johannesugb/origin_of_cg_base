@@ -1256,7 +1256,7 @@ namespace cgb
 	acceleration_structure::~acceleration_structure()
 	{
 		if (mAccStructure) {
-			context().logical_device().destroyAccelerationStructureNV(mAccStructure);
+			context().logical_device().destroyAccelerationStructureNV(mAccStructure, nullptr, cgb::context().dynamic_dispatch());
 			mAccStructure = nullptr;
 		}
 		if (mMemory) {
@@ -1291,12 +1291,12 @@ namespace cgb
 		auto createInfo = vk::AccelerationStructureCreateInfoNV()
 			.setCompactedSize(0)
 			.setInfo(accInfo);
-		auto accStructure = context().logical_device().createAccelerationStructureNV(createInfo);
+		auto accStructure = context().logical_device().createAccelerationStructureNV(createInfo, nullptr, cgb::context().dynamic_dispatch());
 
 		auto accStructMemInfo = vk::AccelerationStructureMemoryRequirementsInfoNV()
 			.setAccelerationStructure(accStructure)
 			.setType(vk::AccelerationStructureMemoryRequirementsTypeNV::eObject);
-		auto memRequirements = context().logical_device().getAccelerationStructureMemoryRequirementsNV(accStructMemInfo);
+		auto memRequirements = context().logical_device().getAccelerationStructureMemoryRequirementsNV(accStructMemInfo, cgb::context().dynamic_dispatch());
 
 		auto memPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
@@ -1314,10 +1314,10 @@ namespace cgb
 			.setMemoryOffset(0)
 			.setDeviceIndexCount(0)
 			.setPDeviceIndices(nullptr);
-		context().logical_device().bindAccelerationStructureMemoryNV({ bindInfo });
+		context().logical_device().bindAccelerationStructureMemoryNV({ bindInfo }, cgb::context().dynamic_dispatch());
 
 		acceleration_structure_handle handle;
-		context().logical_device().getAccelerationStructureHandleNV(accStructure, sizeof(handle.mHandle), &handle.mHandle);
+		context().logical_device().getAccelerationStructureHandleNV(accStructure, sizeof(handle.mHandle), &handle.mHandle, cgb::context().dynamic_dispatch());
 
 		return acceleration_structure(accInfo, accStructure, handle, memPropertyFlags, deviceMemory);
 	}
@@ -1328,7 +1328,7 @@ namespace cgb
 			.setAccelerationStructure(mAccStructure)
 			.setType(vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch);
 
-		auto memRequirements = context().logical_device().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
+		auto memRequirements = context().logical_device().getAccelerationStructureMemoryRequirementsNV(memReqInfo, cgb::context().dynamic_dispatch());
 		return static_cast<size_t>(memRequirements.memoryRequirements.size);
 	}
 

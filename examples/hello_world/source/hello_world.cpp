@@ -333,7 +333,8 @@ public:
 			VK_FALSE,								// update = false
 			mBottomLevelAccStructure.mAccStructure, // destination AS
 			nullptr,								// no source AS
-			scratchBuffer.mBuffer, 0);				// scratch buffer + offset
+			scratchBuffer.mBuffer, 0,				// scratch buffer + offset
+			cgb::context().dynamic_dispatch());
 
 		// Barrier
 		commandBuffers[0].mCommandBuffer.pipelineBarrier(
@@ -350,7 +351,8 @@ public:
 			VK_FALSE,								// update = false
 			mTopLevelAccStructure.mAccStructure,	// destination AS
 			nullptr,								// no source AS
-			scratchBuffer.mBuffer, 0);				// scratch buffer + offset
+			scratchBuffer.mBuffer, 0,				// scratch buffer + offset
+			cgb::context().dynamic_dispatch());
 
 		// Barrier
 		commandBuffers[0].mCommandBuffer.pipelineBarrier(
@@ -380,11 +382,11 @@ public:
 		create_index_buffer();
 
 		// RAY TRACING DATA start
-		//create_rt_geometry();
-		//mBottomLevelAccStructure = cgb::acceleration_structure::create_bottom_level(mGeometries);
-		//create_rt_geometry_instances();
-		//mTopLevelAccStructure = cgb::acceleration_structure::create_top_level(static_cast<uint32_t>(mGeometryInstances.size()));
-		//build_acceleration_structures();
+		create_rt_geometry();
+		mBottomLevelAccStructure = cgb::acceleration_structure::create_bottom_level(mGeometries);
+		create_rt_geometry_instances();
+		mTopLevelAccStructure = cgb::acceleration_structure::create_top_level(static_cast<uint32_t>(mGeometryInstances.size()));
+		build_acceleration_structures();
 		// RAY TRACING DATA end
 
 		load_model();

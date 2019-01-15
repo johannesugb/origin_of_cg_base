@@ -48,6 +48,7 @@ namespace cgb
 		vk::Instance& vulkan_instance() { return mInstance; }
 		vk::PhysicalDevice& physical_device() { return mPhysicalDevice; }
 		vk::Device& logical_device() { return mLogicalDevice; }
+		vk::DispatchLoaderDynamic& dynamic_dispatch() { return mDynamicDispatch; }
 		uint32_t graphics_queue_index() const { return mGraphicsQueueIndex; }
 		uint32_t presentation_queue_index() const { return mPresentQueueIndex; }
 		uint32_t transfer_queue_index() const { return mTransferQueueIndex; }
@@ -257,6 +258,7 @@ namespace cgb
 		std::vector<swap_chain_data_ptr> mSurfSwap;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
+		vk::DispatchLoaderDynamic mDynamicDispatch;
 
 		vk::Queue mGraphicsQueue;
 		uint32_t mGraphicsQueueIndex;

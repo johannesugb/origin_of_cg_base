@@ -612,6 +612,8 @@ namespace cgb
 			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
+		// Create a dynamic dispatch loader for extensions
+		mDynamicDispatch = vk::DispatchLoaderDynamic(mInstance, mLogicalDevice);
 
 		mGraphicsQueue = mLogicalDevice.getQueue(mGraphicsQueueIndex, 0u);
 		mPresentQueue = mLogicalDevice.getQueue(mPresentQueueIndex, 0u);
