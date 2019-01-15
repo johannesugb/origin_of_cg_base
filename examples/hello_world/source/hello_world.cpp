@@ -51,6 +51,16 @@ class hello_behavior : public cgb::cg_element
 		glm::mat4 proj;
 	};
 
+	struct GeometryInstance
+	{
+		glm::mat4 transform;
+		uint32_t instanceId : 24;
+		uint32_t mask : 8;
+		uint32_t instanceOffset : 24;
+		uint32_t flags : 8;
+		uint64_t accelerationStructureHandle;
+	};
+
 public:
 	hello_behavior(cgb::window* pMainWnd) 
 		: mMainWnd(pMainWnd)
@@ -267,14 +277,116 @@ public:
 		cgb::transition_image_layout(*mDepthImage, selectedFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	}
 
+	void create_rt_geometry()
+	{
+		mGeometries.emplace_back()
+			.setGeometryType(vk::GeometryTypeNV::eTriangles)
+			.setGeometry(vk::GeometryDataNV()
+						 .setTriangles(vk::GeometryTrianglesNV()
+									   .setVertexData(mVertexBuffer.mBuffer)
+									   .setVertexOffset(0)
+									   .setVertexCount(mVertexBuffer.mVertexCount)
+									   .setVertexStride(mVertexBuffer.mSize / mVertexBuffer.mVertexCount)
+									   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
+									   .setIndexData(mIndexBuffer.mBuffer)
+									   .setIndexOffset(0)
+									   .setIndexCount(mIndexBuffer.mIndexCount)
+									   .setIndexType(mIndexBuffer.mIndexType)
+									   .setTransformData(nullptr)
+									   .setTransformOffset(0)));
+	}
+
+	void create_rt_geometry_instances()
+	{
+		auto& inst = mGeometryInstances.emplace_back();
+		inst.transform = glm::mat4(1.0f);
+		inst.instanceId = 0;
+		inst.mask = 0xff;
+		inst.instanceOffset = 0;
+		inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
+		inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
+
+		auto& bfr = mGeometryInstanceBuffers.emplace_back(cgb::buffer::create(
+			sizeof(GeometryInstance),
+			vk::BufferUsageFlagBits::eRayTracingNV,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+		bfr.fill_host_coherent_memory(&inst);
+	}
+
+	void build_acceleration_structures()
+	{
+		auto scratchBuffer = cgb::buffer::create(std::max(mBottomLevelAccStructure.get_scratch_buffer_size(), mTopLevelAccStructure.get_scratch_buffer_size()),
+												 vk::BufferUsageFlagBits::eRayTracingNV,
+												 vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		auto commandBuffers = cgb::context().create_command_buffers_for_graphics(1, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		commandBuffers[0].begin_recording();
+
+		auto memoryBarrier = vk::MemoryBarrier()
+			.setSrcAccessMask(vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV)
+			.setDstAccessMask(vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV);
+
+		// Build BLAS
+		commandBuffers[0].mCommandBuffer.buildAccelerationStructureNV(
+			mBottomLevelAccStructure.mAccStructureInfo,
+			nullptr, 0,								// no instance data for bottom level AS
+			VK_FALSE,								// update = false
+			mBottomLevelAccStructure.mAccStructure, // destination AS
+			nullptr,								// no source AS
+			scratchBuffer.mBuffer, 0);				// scratch buffer + offset
+
+		// Barrier
+		commandBuffers[0].mCommandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
+			vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
+			vk::DependencyFlags(),
+			{ memoryBarrier }, 
+			{}, {});
+
+		// Build TLAS
+		commandBuffers[0].mCommandBuffer.buildAccelerationStructureNV(
+			mTopLevelAccStructure.mAccStructureInfo,
+			mGeometryInstanceBuffers[0].mBuffer, 0,	// buffer containing the instance data (only one)
+			VK_FALSE,								// update = false
+			mTopLevelAccStructure.mAccStructure,	// destination AS
+			nullptr,								// no source AS
+			scratchBuffer.mBuffer, 0);				// scratch buffer + offset
+
+		// Barrier
+		commandBuffers[0].mCommandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
+			vk::PipelineStageFlagBits::eRayTracingShaderNV,
+			vk::DependencyFlags(),
+			{ memoryBarrier },
+			{}, {});
+
+		commandBuffers[0].end_recording();
+		auto submitInfo = vk::SubmitInfo()
+			.setCommandBufferCount(1u)
+			.setPCommandBuffers(&commandBuffers[0].mCommandBuffer);
+		cgb::context().graphics_queue().submit({ submitInfo }, nullptr); 
+		cgb::context().graphics_queue().waitIdle();
+	}
+
 	void initialize() override
 	{
+		auto rtProps = cgb::context().get_ray_tracing_properties();
+
 		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
 		assert(mSwapChainData);
 
 		// create the buffer and its memory
 		create_vertex_buffer();
 		create_index_buffer();
+
+		// RAY TRACING DATA start
+		//create_rt_geometry();
+		//mBottomLevelAccStructure = cgb::acceleration_structure::create_bottom_level(mGeometries);
+		//create_rt_geometry_instances();
+		//mTopLevelAccStructure = cgb::acceleration_structure::create_top_level(static_cast<uint32_t>(mGeometryInstances.size()));
+		//build_acceleration_structures();
+		// RAY TRACING DATA end
+
 		load_model();
 		create_texture_image();
 		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
@@ -405,9 +517,16 @@ private:
 	cgb::sampler mSampler;
 	std::shared_ptr<cgb::image> mDepthImage;
 	cgb::image_view mDepthImageView;
+
+	std::vector<vk::GeometryNV> mGeometries;
+	std::vector<GeometryInstance> mGeometryInstances;
+	std::vector<cgb::buffer> mGeometryInstanceBuffers;
+	cgb::acceleration_structure mBottomLevelAccStructure;
+	cgb::acceleration_structure mTopLevelAccStructure;
 #endif
 
 	cgb::QuakeCamera mQuakeCam;
+
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation

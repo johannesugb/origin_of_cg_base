@@ -41,6 +41,7 @@
 #ifdef _WIN32
 // Include that after the assimp includes due to some conflict
 // with the global scope operator :: in material.inl
+#define NOMINMAX
 #include <windows.h>
 #endif
 

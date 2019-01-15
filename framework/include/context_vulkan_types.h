@@ -354,4 +354,33 @@ namespace cgb
 
 		vk::DescriptorSetLayout mDescriptorSetLayout;
 	};
+
+
+	struct acceleration_structure_handle
+	{
+		uint64_t mHandle;
+	};
+
+	struct acceleration_structure
+	{
+		acceleration_structure() noexcept;
+		acceleration_structure(const vk::AccelerationStructureInfoNV& pAccStructureInfo, const vk::AccelerationStructureNV& pAccStructure, const acceleration_structure_handle& pHandle, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory);
+		acceleration_structure(const buffer&) = delete;
+		acceleration_structure(acceleration_structure&&) noexcept;
+		acceleration_structure& operator=(const acceleration_structure&) = delete;
+		acceleration_structure& operator=(acceleration_structure&&) noexcept;
+		~acceleration_structure();
+
+		static acceleration_structure create_top_level(uint32_t pInstanceCount);
+		static acceleration_structure create_bottom_level(const std::vector<vk::GeometryNV>& pGeometries);
+		static acceleration_structure create(vk::AccelerationStructureTypeNV pType, const std::vector<vk::GeometryNV>& pGeometries, uint32_t pInstanceCount);
+		
+		size_t get_scratch_buffer_size();
+
+		vk::AccelerationStructureInfoNV mAccStructureInfo; // TODO: This is potentially dangerous! The structure stores the pGeometries pointer which might have become invalid. What to do?
+		vk::AccelerationStructureNV mAccStructure;
+		acceleration_structure_handle mHandle;
+		vk::MemoryPropertyFlags mMemoryProperties;
+		vk::DeviceMemory mMemory;
+	};
 }

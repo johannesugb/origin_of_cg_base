@@ -470,7 +470,7 @@ namespace cgb
 		mPhysicalDevice = *currentSelection;
 	}
 
-	auto vulkan::find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::QueueFlagBits> pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface)
+	auto vulkan::find_queue_families_for_criteria(vk::QueueFlags pRequiredFlags, vk::QueueFlags pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface)
 	{
 		assert(mPhysicalDevice);
 		// All queue families:
@@ -491,10 +491,10 @@ namespace cgb
 					 [pRequiredFlags, pForbiddenFlags, pSurface, this](const std::tuple<uint32_t, decltype(queueFamilies)::value_type>& tpl) {
 						 bool requirements_met = true;
 						 if (pRequiredFlags) {
-							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & *pRequiredFlags) == *pRequiredFlags);
+							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & pRequiredFlags) == pRequiredFlags);
 						 }
 						 if (pForbiddenFlags) {
-							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & *pForbiddenFlags) != *pForbiddenFlags);
+							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & pForbiddenFlags) != pForbiddenFlags);
 						 }
 						 if (pSurface) {
 							 requirements_met = requirements_met && (mPhysicalDevice.getSurfaceSupportKHR(std::get<0>(tpl), *pSurface));
@@ -504,51 +504,97 @@ namespace cgb
 		return selection;
 	}
 
+	const float vulkan::sQueuePriority = 1.0f;
+	std::vector<vk::DeviceQueueCreateInfo> vulkan::compile_create_infos_and_assign_members(
+		std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> pProps,
+		std::vector<std::reference_wrapper<uint32_t>> pAssign)
+	{
+		assert(pProps.size() == pAssign.size() || (pProps.size() == 1 && pAssign.size() >= 1));
+		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+		for (size_t i = 0; i < pProps.size(); ++i) {
+			queueCreateInfos.emplace_back()
+				.setQueueFamilyIndex(std::get<0>(pProps[i]))
+				.setQueueCount(1u)
+				.setPQueuePriorities(&sQueuePriority);
+
+			if (pProps.size() == pAssign.size()) {
+				pAssign[i].get() = std::get<0>(pProps[i]);
+			}
+			else {
+				for (auto& assign : pAssign) {
+					assign.get() = std::get<0>(pProps[i]);
+				}
+			}
+		}
+		return queueCreateInfos;
+	}
+
 	void vulkan::create_and_assign_logical_device(vk::SurfaceKHR pSurface)
 	{
 		assert(mPhysicalDevice);
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
-		auto familiesWithGraphicsSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, std::nullopt);
-		auto familiesWithPresentSupport = find_queue_families_for_criteria(std::nullopt, std::nullopt, pSurface);
-		auto familiesWithGrahicsAndPresentSupport = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, pSurface);
-		auto transferOnlyFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics, std::nullopt);
+		auto nope = vk::QueueFlags();
 		
-		const float queuePriority = 1.0f; // TODO: Is this supposed to be priority=1 always? 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-
-		if (familiesWithGrahicsAndPresentSupport.size() == 0) {
-			if (familiesWithPresentSupport.size() == 0 && familiesWithGraphicsSupport.size() == 0) {
-				throw std::runtime_error("Unable to find queue families which support the vk::QueueFlagBits::eGraphics flag");
-			}
-			LOG_WARNING_EM("Funny: No queue families which support both, graphics and presentation, but found suitable (but different) families for both.");
-
-			// Have to add two different queues, because couldn't find one which can handle both
-			// 1. add the graphics queue:
-			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(familiesWithGraphicsSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
-				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. [1]
-				.setPQueuePriorities(&queuePriority);
-			// 2. add the present queue:
-			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(familiesWithPresentSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
-				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. [1]
-				.setPQueuePriorities(&queuePriority);
+		// find everything:
+		auto everything = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, nope, pSurface);
+		if (everything.size() != 0) {
+			queueCreateInfos = compile_create_infos_and_assign_members(everything, { mGraphicsQueueIndex, mComputeQueueIndex, mPresentQueueIndex });
 		}
 		else {
-			// Found a queue which can handle both, graphics and present => add only one instead of two
-			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(familiesWithGrahicsAndPresentSupport[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
-				.setQueueCount(1u) // The currently available drivers will only allow you to create a small number of queues for each queue family and you don't really need more than one. [1]
-				.setPQueuePriorities(&queuePriority);
-		}
+			// can we have graphics and present?
+			auto g_and_p = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pSurface);
+			if (g_and_p.size() != 0) {
+				queueCreateInfos = compile_create_infos_and_assign_members(g_and_p, { mGraphicsQueueIndex, mPresentQueueIndex });
 
-		if (transferOnlyFamilies.size() > 0) {
-			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(transferOnlyFamilies[0])) // Question: Is it okay to just select the first queue family? (Why not the others?)
-				.setQueueCount(1u)
-				.setPQueuePriorities(&queuePriority);
+				// we also need compute support
+				auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, std::nullopt);
+				if (c_only.size() == 0) {
+					throw std::runtime_error("Couldn't find queue families (problem with c_only)");
+				}
+				auto tmp = compile_create_infos_and_assign_members(c_only, { mComputeQueueIndex });
+				queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+			}
+			else {
+				// Everything on their own queue!
+				auto g_only = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, std::nullopt);
+				auto p_only = find_queue_families_for_criteria(nope, nope, pSurface);
+				auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, nope, std::nullopt);
+				if (g_only.size() > 0) {
+					auto tmp = compile_create_infos_and_assign_members(g_only, { mGraphicsQueueIndex });
+					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+				} 
+				else {
+					throw std::runtime_error("Couldn't find queue families (problem with g_only)");
+				}
+				
+				if (p_only.size() > 0) {
+					auto tmp = compile_create_infos_and_assign_members(p_only, { mPresentQueueIndex });
+					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+				}
+				else {
+					throw std::runtime_error("Couldn't find queue families (problem with p_only)");
+				}
+				
+				if (c_only.size() > 0) {
+					auto tmp = compile_create_infos_and_assign_members(c_only, { mComputeQueueIndex });
+					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+				}
+				else {
+					throw std::runtime_error("Couldn't find queue families (problem with c_only)");
+				}
+			}
 		}
-
+		// Handle transfer queue separately
+		auto t_only = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute), std::nullopt);
+		if (t_only.size() > 0) {
+			auto tmp = compile_create_infos_and_assign_members(t_only, { mTransferQueueIndex });
+			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+		}
+		else {
+			mTransferQueueIndex = mGraphicsQueueIndex;
+		}
+		
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		
@@ -567,28 +613,14 @@ namespace cgb
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
 
-		if (familiesWithGrahicsAndPresentSupport.size() == 0) {
-			mGraphicsQueueIndex = std::get<0>(familiesWithGraphicsSupport[0]);
-			mGraphicsQueue = mLogicalDevice.getQueue(mGraphicsQueueIndex, 0u);
+		mGraphicsQueue = mLogicalDevice.getQueue(mGraphicsQueueIndex, 0u);
+		mPresentQueue = mLogicalDevice.getQueue(mPresentQueueIndex, 0u);
+		mTransferQueue = mLogicalDevice.getQueue(mTransferQueueIndex, 0u);
+		mComputeQueue = mLogicalDevice.getQueue(mComputeQueueIndex, 0u);
 
-			mPresentQueueIndex = std::get<0>(familiesWithPresentSupport[0]);
-			mPresentQueue = mLogicalDevice.getQueue(mPresentQueueIndex, 0u);
-		}
-		else {
-			mGraphicsQueueIndex = std::get<0>(familiesWithGrahicsAndPresentSupport[0]);
-			mGraphicsQueue = mPresentQueue = mLogicalDevice.getQueue(mGraphicsQueueIndex, 0u);
-		}
-
-		if (transferOnlyFamilies.size() > 0) {
-			mTransferQueueIndex = std::get<0>(transferOnlyFamilies[0]);
-			mTransferQueue = mLogicalDevice.getQueue(mTransferQueueIndex, 0u);
+		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueueIndex);
+		if (mGraphicsQueueIndex != mTransferQueueIndex) {
 			mTransferAndGraphicsQueueIndices.push_back(mTransferQueueIndex);
-			mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueueIndex);
-		}
-		else {
-			mTransferQueueIndex = mGraphicsQueueIndex;
-			mTransferQueue = mGraphicsQueue;
-			mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueueIndex);
 		}
 	}
 
@@ -678,8 +710,10 @@ namespace cgb
 			.setClipped(VK_TRUE) // we don't care about the color of pixels that are obscured, for example because another window is in front of them.  [2]
 			.setOldSwapchain({}); // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
 
+		auto nope = vk::QueueFlags();
+
 		// See if we can find a queue family which satisfies both criteria: graphics AND presentation (on the given surface)
-		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, pSurface);
+		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pSurface);
 		std::vector<uint32_t> queueFamilyIndices;
 		if (allInclFamilies.size() != 0) {
 			// Found a queue family which supports both!
@@ -690,8 +724,8 @@ namespace cgb
 				.setPQueueFamilyIndices(nullptr); // Optional [2]
 		}
 		else {
-			auto graphicsFamily = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, std::nullopt, std::nullopt);
-			auto presentFamily = find_queue_families_for_criteria(std::nullopt, std::nullopt, pSurface);
+			auto graphicsFamily = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, std::nullopt);
+			auto presentFamily = find_queue_families_for_criteria(nope, nope, pSurface);
 			assert(graphicsFamily.size() > 0);
 			assert(presentFamily.size() > 0);
 			queueFamilyIndices.push_back(std::get<0>(graphicsFamily[0]));
@@ -1137,8 +1171,18 @@ namespace cgb
 		else if (pTiling == vk::ImageTiling::eOptimal 
 				 && (formatProps.optimalTilingFeatures & pFormatFeatures) == pFormatFeatures) {
 			return true;
-		}
+		} 
 		return false;
+	}
+
+
+	vk::PhysicalDeviceRayTracingPropertiesNV vulkan::get_ray_tracing_properties()
+	{
+		vk::PhysicalDeviceRayTracingPropertiesNV rtProps;
+		vk::PhysicalDeviceProperties2 props2;
+		props2.pNext = &rtProps;
+		mPhysicalDevice.getProperties2(&props2);
+		return rtProps;
 	}
 
 	// REFERENCES:

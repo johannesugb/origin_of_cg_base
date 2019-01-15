@@ -161,7 +161,12 @@ namespace cgb
 		 *				of the tuple, i.e. use @ref std::get<0>() to get the index, @ref std::get<1>() 
 		 *				for the data
 		 */
-		auto find_queue_families_for_criteria(std::optional<vk::QueueFlagBits> pRequiredFlags, std::optional<vk::QueueFlagBits> pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface);
+		auto find_queue_families_for_criteria(vk::QueueFlags pRequiredFlags, vk::QueueFlags pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface);
+
+		static const float sQueuePriority;
+		std::vector<vk::DeviceQueueCreateInfo> compile_create_infos_and_assign_members(
+			std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> pProps, 
+			std::vector<std::reference_wrapper<uint32_t>> pAssign);
 
 		/**
 		 *
@@ -236,6 +241,10 @@ namespace cgb
 
 		bool is_format_supported(vk::Format pFormat, vk::ImageTiling pTiling, vk::FormatFeatureFlags pFormatFeatures);
 
+
+
+		vk::PhysicalDeviceRayTracingPropertiesNV get_ray_tracing_properties();
+
 	private:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		static size_t sActualMaxFramesInFlight;
@@ -255,6 +264,8 @@ namespace cgb
 		uint32_t mPresentQueueIndex;
 		vk::Queue mTransferQueue;
 		uint32_t mTransferQueueIndex;
+		vk::Queue mComputeQueue;
+		uint32_t mComputeQueueIndex;
 		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
 
 		std::vector<command_pool> mCommandPools;
