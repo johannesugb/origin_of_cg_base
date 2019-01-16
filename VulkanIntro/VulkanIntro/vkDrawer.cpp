@@ -35,12 +35,12 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 		// bind pipeline for this draw command
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
-		vk::Buffer vertexBuffers[] = { renderObject->getVertexBuffer() , renderObject->getVertexBuffer() };
+		vk::Buffer vertexBuffers[] = { renderObject->get_vertex_buffer() , renderObject->get_vertex_buffer() };
 		vk::DeviceSize offsets[] = { 0, 0 };
 		commandBuffer.bindVertexBuffers(1, 2, vertexBuffers, offsets);
-		commandBuffer.bindIndexBuffer(renderObject->getIndexBuffer(), 0, vk::IndexType::eUint32);
+		commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &(renderObject->getDescriptorSet()), 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
 
 		//renderObject->updateUniformBuffer(frameIndex, 0, swapChainExtent);
 
@@ -50,8 +50,8 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 			VK_SHADER_STAGE_VERTEX_BIT,
 			0,
 			sizeof(PushUniforms),
-			&(renderObject->getPushUniforms()));
+			&(renderObject->get_push_uniforms()));
 
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(renderObject->getIndices().size()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(renderObject->get_indices().size()), 1, 0, 0, 0);
 	}
 }

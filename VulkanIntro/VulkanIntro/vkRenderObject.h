@@ -17,37 +17,37 @@ struct Vertex {
 	glm::vec3 color;
 	glm::vec2 texCoord;
 
-	static VkVertexInputBindingDescription getBindingDescription() {
-		VkVertexInputBindingDescription bindingDescription = {};
+	static vk::VertexInputBindingDescription getBindingDescription() {
+		vk::VertexInputBindingDescription bindingDescription = {};
 		bindingDescription.binding = 1;
 		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		bindingDescription.inputRate = vk::VertexInputRate::eVertex;
 		return bindingDescription;
 	}
 
-	static VkVertexInputBindingDescription getBindingDescription2() {
-		VkVertexInputBindingDescription bindingDescription = {};
+	static vk::VertexInputBindingDescription getBindingDescription2() {
+		vk::VertexInputBindingDescription bindingDescription = {};
 		bindingDescription.binding = 2;
 		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		bindingDescription.inputRate = vk::VertexInputRate::eVertex;
 		return bindingDescription;
 	}
 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
+	static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions() {
+		std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions = {};
 		attributeDescriptions[0].binding = 1;
 		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;
 		attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
 		attributeDescriptions[1].binding = 2;
 		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;
 		attributeDescriptions[1].offset = offsetof(Vertex, color);
 
 		attributeDescriptions[2].binding = 2;
 		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[2].format = vk::Format::eR32G32Sfloat;
 		attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
 
 		return attributeDescriptions;
@@ -103,45 +103,45 @@ class vkRenderObject
 {
 public:
 	vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, 
+		vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
 		vkTexture* texture, vkCommandBufferManager* commandBufferManager);
 	virtual ~vkRenderObject();
 
-	std::vector<Vertex> get_vertices() { return _vertices; }
-	std::vector<uint32_t> get_indices() { return _indices; }
+	std::vector<Vertex> get_vertices() { return mVertices; }
+	std::vector<uint32_t> get_indices() { return mIndices; }
 
-	VkBuffer getVertexBuffer() { return _vertexBuffer.getVkBuffer(); }
-	//void setVertexBuffer(VkBuffer vertexBuffer) { _vertexBuffer = vertexBuffer; }
-	VkBuffer getIndexBuffer() { return _indexBuffer.getVkBuffer(); }
-	//void setIndexBuffer(VkBuffer indexBuffer) { _indexBuffer = indexBuffer; }
+	vk::Buffer get_vertex_buffer() { return mVertexBuffer.getVkBuffer(); }
+	//void setVertexBuffer(vk::Buffer vertexBuffer) { _vertexBuffer = vertexBuffer; }
+	vk::Buffer get_index_buffer() { return mIndexBuffer.getVkBuffer(); }
+	//void setIndexBuffer(vk::Buffer indexBuffer) { _indexBuffer = indexBuffer; }
 
-	std::vector<VkDescriptorSet> getDescriptorSets() { return _descriptorSets; }
-	VkDescriptorSet& getDescriptorSet() { return _descriptorSets[vkContext::instance().currentFrame]; }
-	PushUniforms getPushUniforms() { return _pushUniforms; }
+	std::vector<vk::DescriptorSet> get_descriptor_sets() { return mDescriptorSets; }
+	vk::DescriptorSet& get_descriptor_set() { return mDescriptorSets[vkContext::instance().currentFrame]; }
+	PushUniforms get_push_uniforms() { return mPushUniforms; }
 
-	void updateUniformBuffer(uint32_t currentImage, float time, VkExtent2D swapChainExtent);
+	void update_uniform_buffer(uint32_t currentImage, float time, vk::Extent2D swapChainExtent);
 
 private:
-	uint32_t _imageCount;
+	uint32_t mImageCount;
 
-	std::vector<Vertex> _vertices;
-	std::vector<uint32_t> _indices;
+	std::vector<Vertex> mVertices;
+	std::vector<uint32_t> mIndices;
 
-	vkCgbBuffer _vertexBuffer;
-	vkCgbBuffer _indexBuffer;
+	vkCgbBuffer mVertexBuffer;
+	vkCgbBuffer mIndexBuffer;
 
-	std::vector<vkCgbBuffer*> _uniformBuffers;
+	std::vector<vkCgbBuffer*> mUniformBuffers;
 
-	PushUniforms _pushUniforms;
+	PushUniforms mPushUniforms;
 	// TODO PERFORMANCE use multiple descriptor sets / per render pass, e.g. shadow pass does not use textures
 	// or like suggested for AMD Hardware, use one large descriptor set for everything and index into Texture arrays and uniforms
 	// suggestion: use an array of descriptor sets, the drawer then can decide, which descriptor set to use, 
 	// additionally allow global/per drawer descriptor sets
 	// this offers the most flexibility for the user of the framework, while still being easy to use
-	std::vector<VkDescriptorSet> _descriptorSets;
+	std::vector<vk::DescriptorSet> mDescriptorSets;
 
-	void createUniformBuffer(vkCommandBufferManager* commandBufferManager);
-	void createDescriptorSets(VkDescriptorSetLayout &descriptorSetLayout, VkDescriptorPool &descriptorPool, 
+	void create_uniform_buffer(vkCommandBufferManager* commandBufferManager);
+	void create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
 		vkTexture* texture);
 };
 

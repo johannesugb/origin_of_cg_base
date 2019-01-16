@@ -198,9 +198,9 @@ private:
 		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
 		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
 
-		renderObject2->updateUniformBuffer(0, 0, imagePresenter->get_swap_chain_extent());
-		renderObject2->updateUniformBuffer(1, 0, imagePresenter->get_swap_chain_extent());
-		renderObject2->updateUniformBuffer(2, 0, imagePresenter->get_swap_chain_extent());
+		renderObject2->update_uniform_buffer(0, 0, imagePresenter->get_swap_chain_extent());
+		renderObject2->update_uniform_buffer(1, 0, imagePresenter->get_swap_chain_extent());
+		renderObject2->update_uniform_buffer(2, 0, imagePresenter->get_swap_chain_extent());
 		//loadModel();
 	}
 
@@ -211,14 +211,14 @@ private:
 		}
 
 		// wait for all commands to complete
-		vk::DeviceWaitIdle(device);
+		device.waitIdle();
 	}
 
 	void cleanup() {
 		cleanupSwapChain();
 
-		vk::DestroyDescriptorPool(device, descriptorPool, nullptr);
-		vk::DestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+		device.destroyDescriptorPool(descriptorPool);
+		device.destroyDescriptorSetLayout(descriptorSetLayout);
 
 		delete renderObject;
 		delete renderObject2;
@@ -228,15 +228,15 @@ private:
 		mVulkanRenderQueue.reset();
 		drawCommandBufferManager.reset();
 
-		vk::DestroyCommandPool(device, transferCommandPool, nullptr);
-		vk::DestroyCommandPool(device, commandPool, nullptr);
+		device.destroyCommandPool(transferCommandPool);
+		device.destroyCommandPool(commandPool);
 
-		vk::DestroyDevice(device, nullptr);
+		device.destroy();
 		if (enableValidationLayers) {
 			DestroyDebugUtilsMessengerEXT(instance, callback, nullptr);
 		}
-		vk::DestroySurfaceKHR(instance, surface, nullptr);
-		vk::DestroyInstance(instance, nullptr);
+		instance.destroySurfaceKHR(surface, nullptr);
+		instance.destroy();
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -259,12 +259,12 @@ private:
 
 
 		for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
-			vk::DestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
+			device.destroyFramebuffer(swapChainFramebuffers[i], nullptr);
 		}
 
-		vk::DestroyPipeline(device, graphicsPipeline, nullptr);
-		vk::DestroyPipelineLayout(device, pipelineLayout, nullptr);
-		vk::DestroyRenderPass(device, renderPass, nullptr);
+		device.destroyPipeline(graphicsPipeline, nullptr);
+		device.destroyPipelineLayout(pipelineLayout, nullptr);
+		device.destroyRenderPass(renderPass, nullptr);
 
 		imagePresenter.reset();
 		mRenderer.reset();
@@ -277,12 +277,12 @@ private:
 			glfwWaitEvents();
 		}
 
-		vk::DeviceWaitIdle(device);
+		device.waitIdle();
 
 		cleanupSwapChain();
 
-		imagePresenter = std::make_shared<vk::ImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
-		mRenderer = std::make_unique<vk::Renderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
+		imagePresenter = std::make_shared<vkImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
+		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
 		createRenderPass();
 		createGraphicsPipeline();
 		createColorResources();
@@ -292,25 +292,23 @@ private:
 
 	void createInstance() {
 		vk::ApplicationInfo appInfo = {};
-		appInfo.sType = vk::_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = "Hello Triangle";
-		appInfo.applicationVersion = vk::_MAKE_VERSION(1, 0, 0);
+		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "No Engine";
-		appInfo.engineVersion = vk::_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = vk::_API_VERSION_1_0;
+		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.apiVersion = VK_API_VERSION_1_0;
 
 		vk::InstanceCreateInfo createInfo = {};
-		createInfo.sType = vk::_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		createInfo.pApplicationInfo = &appInfo;
 
 		// extensions
 		auto requiredExtensions = getRequiredExtensions();
 
 		uint32_t extensionCount = 0;
-		vk::EnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+		//vk::enumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
 		std::vector<vk::ExtensionProperties> extensions(extensionCount);
-		vk::EnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+		vk::enumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
 		std::cout << "available extensions:" << std::endl;
 		for (const auto& extension : extensions) {
@@ -335,17 +333,17 @@ private:
 		}
 
 		// create instance
-		if (vk::CreateInstance(&createInfo, nullptr, &instance) != vk::_SUCCESS) {
+		if (vk::createInstance(&createInfo, nullptr, &instance) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to create instance!");
 		}
 	}
 
 	bool checkValidationLayerSupport() {
 		uint32_t layerCount;
-		vk::EnumerateInstanceLayerProperties(&layerCount, nullptr);
+		vk::enumerateInstanceLayerProperties(&layerCount, nullptr);
 
 		std::vector<vk::LayerProperties> availableLayers(layerCount);
-		vk::EnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+		vk::enumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
 		for (const char* layerName : validationLayers) {
 			bool layerFound = false;
@@ -373,7 +371,7 @@ private:
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
 		if (enableValidationLayers) {
-			extensions.push_back(vk::_EXT_DEBUG_UTILS_EXTENSION_NAME);
+			extensions.push_back(vk::debugutils _EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
 
 		return extensions;
@@ -895,7 +893,7 @@ private:
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		renderObject->updateUniformBuffer(vk::Context::instance().currentFrame, time, imagePresenter->get_swap_chain_extent());
+		renderObject->update_uniform_buffer(vk::Context::instance().currentFrame, time, imagePresenter->get_swap_chain_extent());
 
 		// start drawing, record draw commands, etc.
 		vk::Context::instance().renderPass = renderPass;

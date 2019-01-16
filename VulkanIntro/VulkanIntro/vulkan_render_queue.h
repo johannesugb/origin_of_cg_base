@@ -10,17 +10,17 @@
 class vulkan_render_queue
 {
 public:
-	vulkan_render_queue(VkQueue &graphicsQueue, std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager);
+	vulkan_render_queue(vk::Queue &graphicsQueue, std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager);
 	virtual ~vulkan_render_queue();
 
-	void submit(std::vector<VkCommandBuffer> secondaryCommandBuffers, VkFence inFlightFence, std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkExtent2D extent);
+	void submit(std::vector<vk::CommandBuffer> secondaryCommandBuffers, vk::Fence inFlightFence, std::vector<vk::Semaphore> waitSemaphores, std::vector<vk::Semaphore> signalSemaphores, vk::Extent2D extent);
 
 private:
 
-	VkQueue mGraphicsQueue;
+	vk::Queue mGraphicsQueue;
 	std::shared_ptr<vkCommandBufferManager> mDrawCommandBufferManager;
 
-	void recordPrimaryCommandBuffer(VkCommandBuffer & commandBuffer, std::vector<VkCommandBuffer> secondaryCommandBuffers, VkExtent2D extent);
+	void recordPrimaryCommandBuffer(vk::CommandBuffer & commandBuffer, std::vector<vk::CommandBuffer> secondaryCommandBuffers, vk::Extent2D extent);
 
 };
 

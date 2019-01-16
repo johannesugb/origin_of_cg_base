@@ -9,7 +9,7 @@ vkRenderer::vkRenderer(std::shared_ptr<vkImagePresenter> imagePresenter, std::sh
 	mImagePresenter(imagePresenter), mVulkanRenderQueue(vulkanRenderQueue), mDrawCommandBufferManager(drawCommandBufferManager),
 	mPredecessors(predecessors)
 {
-	mCurrentInFlightFence = VK_NULL_HANDLE;
+	mCurrentInFlightFence = nullptr;
 	mSubmitted = false;
 	create_sync_objects();
 }
@@ -52,11 +52,11 @@ void vkRenderer::end_frame()
 void vkRenderer::submit_render()
 {
 	if (!mSubmitted) {
-		std::vector<VkCommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->get_recorded_command_buffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		std::vector<vk::CommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->get_recorded_command_buffers(vk::CommandBufferLevel::eSecondary);
 		mVulkanRenderQueue->submit(secondaryCommandBuffers, mCurrentInFlightFence, { mCurrentImageAvailableSemaphores }, { mRenderFinishedSemaphores[mCurrentFrame] }, mImagePresenter->get_swap_chain_extent());
 		// reset fence to null handle, if this an intermediate renderer it will not have started a frame and therefore the fence wil stay null -> 
 		// no unnecessary fence is submitted to the queue
-		mCurrentInFlightFence = VK_NULL_HANDLE;
+		mCurrentInFlightFence = nullptr;
 		// reset waiting semaphores, because we get new ones for the next frame
 		mCurrentImageAvailableSemaphores.clear();
 		
@@ -71,17 +71,15 @@ void vkRenderer::create_sync_objects() {
 	mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	mInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkSemaphoreCreateInfo semaphoreInfo = {};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	vk::SemaphoreCreateInfo semaphoreInfo = {};
 
-	VkFenceCreateInfo fenceInfo = {};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	vk::FenceCreateInfo fenceInfo = {};
+	fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		if (vkCreateSemaphore(vkContext::instance().device, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(vkContext::instance().device, &semaphoreInfo, nullptr, &mRenderFinishedSemaphores[i]) != VK_SUCCESS ||
-			vkCreateFence(vkContext::instance().device, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS) {
+		if (vkContext::instance().device.createSemaphore(&semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != vk::Result::eSuccess ||
+			vkContext::instance().device.createSemaphore(&semaphoreInfo, nullptr, &mRenderFinishedSemaphores[i]) != vk::Result::eSuccess ||
+			vkContext::instance().device.createFence(&fenceInfo, nullptr, &mInFlightFences[i]) != vk::Result::eSuccess) {
 
 			throw std::runtime_error("failed to create synchronization objects for a frame!");
 		}

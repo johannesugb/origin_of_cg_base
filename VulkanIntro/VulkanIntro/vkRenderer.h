@@ -31,12 +31,12 @@ private:
 	std::vector<std::shared_ptr<vkRenderer>> mPredecessors;
 
 	// synchronization
-	std::vector<VkSemaphore> mImageAvailableSemaphores;
-	std::vector<VkSemaphore> mRenderFinishedSemaphores;
-	std::vector<VkFence> mInFlightFences;
+	std::vector<vk::Semaphore> mImageAvailableSemaphores;
+	std::vector<vk::Semaphore> mRenderFinishedSemaphores;
+	std::vector<vk::Fence> mInFlightFences;
 	static size_t mCurrentFrame; // current frame for synchronization purposes, only used inside this class
-	VkFence mCurrentInFlightFence;
-	std::vector<VkSemaphore> mCurrentImageAvailableSemaphores;
+	vk::Fence mCurrentInFlightFence;
+	std::vector<vk::Semaphore> mCurrentImageAvailableSemaphores;
 
 	bool mSubmitted;
 
