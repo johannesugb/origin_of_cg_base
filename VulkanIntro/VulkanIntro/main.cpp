@@ -419,7 +419,7 @@ private:
 			}
 		}
 
-		if (physicalDevice == VK_NULL_HANDLE) {
+		if (!physicalDevice) {
 			throw std::runtime_error("failed to find a suitable GPU!");
 		}
 	}
