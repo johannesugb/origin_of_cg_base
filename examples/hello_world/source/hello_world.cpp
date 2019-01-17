@@ -191,6 +191,33 @@ public:
 		mDescriptorSetLayout = cgb::descriptor_set_layout::create(descriptorSetLayoutCreateInfo);
 	}
 
+	void create_rt_descriptor_set_layout()
+	{
+		// CREATE DESCRIPTOR SET LAYOUT:
+		std::array descriptorSetLayoutBindings = {
+			// Acceleration Structure Layout Binding:
+			vk::DescriptorSetLayoutBinding()
+			.setBinding(0u)
+			.setDescriptorType(vk::DescriptorType::eAccelerationStructureNV)
+			.setDescriptorCount(1u)
+			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+			,
+			// Output Image Layout Binding:
+			vk::DescriptorSetLayoutBinding()
+			.setBinding(1u)
+			.setDescriptorType(vk::DescriptorType::eStorageImage)
+			.setDescriptorCount(1u)
+			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+		};
+
+		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
+			.setFlags(vk::DescriptorSetLayoutCreateFlags())
+			.setBindingCount(static_cast<uint32_t>(descriptorSetLayoutBindings.size()))
+			.setPBindings(descriptorSetLayoutBindings.data());
+
+		mRtDescriptorSetLayout = cgb::descriptor_set_layout::create(descriptorSetLayoutCreateInfo);
+	}
+
 	void create_descriptor_sets()
 	{
 		std::vector<vk::DescriptorSetLayout> layouts;
@@ -370,6 +397,59 @@ public:
 		cgb::context().graphics_queue().waitIdle();
 	}
 
+	void create_rt_descriptor_set()
+	{
+		// create an offscreen image for each one:
+		for (int i = 0; i < mFrameBuffers.size(); ++i) {
+			// image
+			auto img = cgb::image::create2D(
+				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height,
+				mSwapChainData->mSwapChainImageFormat.mFormat,
+				vk::ImageTiling::eOptimal, 
+				vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc,
+				vk::MemoryPropertyFlagBits::eDeviceLocal);
+			mOffscreenImages.emplace_back(std::make_shared<cgb::image>(std::move(img)));
+			// view
+			mOffscreenImageViews.emplace_back(cgb::image_view::create(mOffscreenImages[i], mOffscreenImages[i]->mInfo.format, vk::ImageAspectFlagBits::eColor));
+		}
+
+		// One for each framebuffer like in `void create_descriptor_sets()`, kk?!
+		std::vector<vk::DescriptorSetLayout> layouts;
+		for (int i = 0; i < mFrameBuffers.size(); ++i) {
+			layouts.push_back(mRtDescriptorSetLayout.mDescriptorSetLayout);
+		}
+		mRtDescriptorSets = cgb::context().create_descriptor_set(layouts);
+
+		for (auto i = 0; i < mRtDescriptorSets.size(); ++i) { // currently, there is only one (see comment above)
+			// binding 0:
+			auto accStructInfo = vk::WriteDescriptorSetAccelerationStructureNV()
+				.setAccelerationStructureCount(1u)
+				.setPAccelerationStructures(&mTopLevelAccStructure.mAccStructure);
+			auto accStructWrite = vk::WriteDescriptorSet()
+				.setPNext(&accStructInfo) // use pNext here instead of pBufferInfo or pImageInfo!
+				.setDstSet(mRtDescriptorSets[i].mDescriptorSet)
+				.setDstBinding(0u) 
+				.setDstArrayElement(0u)
+				.setDescriptorCount(1u)
+				.setDescriptorType(vk::DescriptorType::eAccelerationStructureNV);
+
+			// binding 1:
+			auto outputImageInfo = vk::DescriptorImageInfo()
+				.setSampler(nullptr)
+				.setImageView(mOffscreenImageViews[i].mImageView) // TODO: can this work? OMG? The plan is to write into the current swap chain's image view (thanks, captain Obvious)
+				.setImageLayout(vk::ImageLayout::eGeneral); // TODO: Dunno if that layout is the right choice
+			auto outputImageWrite = vk::WriteDescriptorSet()
+				.setDstSet(mRtDescriptorSets[i].mDescriptorSet)
+				.setDstBinding(1u)
+				.setDstArrayElement(0u)
+				.setDescriptorCount(1u)
+				.setDescriptorType(vk::DescriptorType::eStorageImage)
+				.setPImageInfo(&outputImageInfo);
+
+			cgb::context().logical_device().updateDescriptorSets({ accStructWrite, outputImageWrite }, {});
+		}
+	}
+
 	void initialize() override
 	{
 		auto rtProps = cgb::context().get_ray_tracing_properties();
@@ -395,10 +475,11 @@ public:
 		mSampler = cgb::sampler::create();
 		create_depth_buffer();
 
-		create_descriptor_set_layout();
 
 		// Ordinary graphics pipeline:
 		{
+			create_descriptor_set_layout();
+
 			auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
 			auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
 			// PROBLEME:
@@ -424,31 +505,54 @@ public:
 
 		// Ray tracing pipeline OMG:
 		{
+			create_rt_descriptor_set_layout();
+
 			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/rt_basic.rgen.spv"));
 			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
 
-			mRtPipeline = cgb::context().create_ray_tracing_pipeline(shaderInfos);
+			mRtPipeline = cgb::context().create_ray_tracing_pipeline(shaderInfos, { mRtDescriptorSetLayout.mDescriptorSetLayout });
+			mShaderBindingTable = cgb::shader_binding_table::create(mRtPipeline);
 		}
 
 		create_uniform_buffers();
 		create_descriptor_sets();
+		create_rt_descriptor_set();
 
 		for (auto i = 0; i < mCmdBfrs.size(); ++i) { // TODO: WTF, this must be abstracted somehow!
 			auto& cmdbfr = mCmdBfrs[i];
 			cmdbfr.begin_recording();
 			cmdbfr.begin_render_pass(mPipeline.mRenderPass, mFrameBuffers[i].mFramebuffer, { 0, 0 }, mSwapChainData->mSwapChainExtent);
-			cmdbfr.mCommandBuffer.bindDescriptorSets(
-				vk::PipelineBindPoint::eGraphics,
-				mPipeline.mPipelineLayout,
-				0u,
-				{ mDescriptorSets[i].mDescriptorSet },
-				{});
+			cmdbfr.mCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline.mPipelineLayout, 0u, { mDescriptorSets[i].mDescriptorSet }, {});
 			//cgb::context().draw_triangle(mPipeline, cmdbfr);
 			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
 			//cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
 			cgb::context().draw_indexed(mPipeline, cmdbfr, mModelVertices, mModelIndices);
 			cmdbfr.end_render_pass();
+
+			// TODO: image barriers instead of wait idle!!
+			cgb::context().graphics_queue().waitIdle();
+
+			cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlags(), vk::AccessFlagBits::eShaderWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral));
+
+			cmdbfr.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipeline);
+			cmdbfr.mCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipelineLayout, 0u, { mRtDescriptorSets[i].mDescriptorSet }, {});
+			cmdbfr.mCommandBuffer.traceRaysNV(
+				mShaderBindingTable.mBuffer, 0,
+				mShaderBindingTable.mBuffer, 0, rtProps.shaderGroupHandleSize,
+				mShaderBindingTable.mBuffer, 0, rtProps.shaderGroupHandleSize,
+				nullptr, 0, 0,
+				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height, 1,
+				cgb::context().dynamic_dispatch());
+
+			cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal));
+			cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eTransferRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal));
+
+			cmdbfr.copy_image(*mOffscreenImages[i], mSwapChainData->mSwapChainImages[i]);
+
+			cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlagBits::eTransferWrite, vk::AccessFlags(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR));
+	
+
 			cmdbfr.end_recording();
 		}
 
@@ -531,11 +635,13 @@ private:
 	std::vector<cgb::uniform_buffer> mUniformBuffers;
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::descriptor_set_layout mDescriptorSetLayout;
+	cgb::descriptor_set_layout mRtDescriptorSetLayout;
 	cgb::pipeline mPipeline;
 	cgb::pipeline mRtPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;
 	std::vector<cgb::command_buffer> mCmdBfrs;
 	std::vector<cgb::descriptor_set> mDescriptorSets;
+	std::vector<cgb::descriptor_set> mRtDescriptorSets;
 	std::shared_ptr<cgb::image> mImage;
 	cgb::image_view mImageView;
 	cgb::sampler mSampler;
@@ -547,6 +653,10 @@ private:
 	std::vector<cgb::buffer> mGeometryInstanceBuffers;
 	cgb::acceleration_structure mBottomLevelAccStructure;
 	cgb::acceleration_structure mTopLevelAccStructure;
+	cgb::shader_binding_table mShaderBindingTable;
+
+	std::vector<std::shared_ptr<cgb::image>> mOffscreenImages;
+	std::vector<cgb::image_view> mOffscreenImageViews;
 #endif
 
 	cgb::QuakeCamera mQuakeCam;

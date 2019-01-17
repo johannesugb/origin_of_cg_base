@@ -855,11 +855,11 @@ namespace cgb
 		image_format pDepthFormat,
 		const vk::VertexInputBindingDescription& pBindingDesc,
 		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
-		const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
+		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
 	{
 		auto data = get_surf_swap_tuple_for_window(pWindow);
 		assert(data);
-		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pDepthFormat, pBindingDesc, pNumAttributeDesc, pAttributeDescDataPtr, pDescriptorSets);
+		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pDepthFormat, pBindingDesc, pNumAttributeDesc, pAttributeDescDataPtr, pDescriptorSetLayouts);
 	}
 
 	pipeline vulkan::create_graphics_pipeline_for_swap_chain(
@@ -868,7 +868,7 @@ namespace cgb
 		image_format pDepthFormat,
 		const vk::VertexInputBindingDescription& pBindingDesc,
 		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
-		const std::vector<vk::DescriptorSetLayout>& pDescriptorSets)
+		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
 	{
 		// GATHER ALL THE SHADER INFORMATION
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
@@ -965,8 +965,8 @@ namespace cgb
 		// PIPELINE LAYOUT
 		// These uniform values (Anm.: passed to shaders) need to be specified during pipeline creation by creating a VkPipelineLayout object. [4]
 		auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(static_cast<uint32_t>(pDescriptorSets.size()))
-			.setPSetLayouts(pDescriptorSets.data())
+			.setSetLayoutCount(static_cast<uint32_t>(pDescriptorSetLayouts.size()))
+			.setPSetLayouts(pDescriptorSetLayouts.data())
 			.setPushConstantRangeCount(0u)
 			.setPPushConstantRanges(nullptr);
 		auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo); 
@@ -1017,36 +1017,13 @@ namespace cgb
 	}
 
 	pipeline vulkan::create_ray_tracing_pipeline(
-		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos)
+		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
+		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
 	{
-		// CREATE DESCRIPTOR SET LAYOUT:
-		std::array descriptorSetLayoutBindings = {
-			// Acceleration Structure Layout Binding:
-			vk::DescriptorSetLayoutBinding()
-			.setBinding(0u)
-			.setDescriptorType(vk::DescriptorType::eAccelerationStructureNV)
-			.setDescriptorCount(1u)
-			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
-			,
-			// Output Image Layout Binding:
-			vk::DescriptorSetLayoutBinding()
-			.setBinding(1u)
-			.setDescriptorType(vk::DescriptorType::eStorageImage)
-			.setDescriptorCount(1u)
-			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
-		};
-
-		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
-			.setFlags(vk::DescriptorSetLayoutCreateFlags())
-			.setBindingCount(static_cast<uint32_t>(descriptorSetLayoutBindings.size()))
-			.setPBindings(descriptorSetLayoutBindings.data());
-
-		auto descriptorSetLayout = context().logical_device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
-
 		// CREATE PIPELINE
 		auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(1u)
-			.setPSetLayouts(&descriptorSetLayout)
+			.setSetLayoutCount(static_cast<uint32_t>(pDescriptorSetLayouts.size()))
+			.setPSetLayouts(pDescriptorSetLayouts.data())
 			.setPushConstantRangeCount(0u)
 			.setPPushConstantRanges(nullptr);
 		auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo);
@@ -1209,6 +1186,14 @@ namespace cgb
 				,
 				vk::DescriptorPoolSize()
 					.setType(vk::DescriptorType::eCombinedImageSampler)
+					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eStorageImage)
+					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eAccelerationStructureNV)
 					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
 			};
 

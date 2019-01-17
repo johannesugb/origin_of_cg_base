@@ -581,6 +581,31 @@ namespace cgb
 		//  - VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : The render pass commands will be executed from secondary command buffers.
 	}
 
+	void command_buffer::set_image_barrier(const vk::ImageMemoryBarrier& pBarrierInfo)
+	{
+		mCommandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eAllCommands,
+			vk::PipelineStageFlagBits::eAllCommands,
+			vk::DependencyFlags(),
+			{}, {}, { pBarrierInfo });
+	}
+
+	void command_buffer::copy_image(const image& pSource, const vk::Image& pDestination)
+	{ // TODO: fix this hack after the RTX-VO!
+		auto fullImageOffset = vk::Offset3D(0, 0, 0);
+		auto fullImageExtent = pSource.mInfo.extent;
+		auto halfImageOffset = vk::Offset3D(pSource.mInfo.extent.width / 2, 0, 0);
+		auto halfImageExtent = vk::Extent3D(pSource.mInfo.extent.width / 2, pSource.mInfo.extent.height, pSource.mInfo.extent.depth);
+
+		auto copyInfo = vk::ImageCopy()
+			.setSrcSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0u, 0u, 1u))
+			.setSrcOffset(halfImageOffset)
+			.setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0u, 0u, 1u))
+			.setDstOffset(halfImageOffset)
+			.setExtent(halfImageExtent);
+		mCommandBuffer.copyImage(pSource.mImage, vk::ImageLayout::eTransferSrcOptimal, pDestination, vk::ImageLayout::eTransferDstOptimal, { copyInfo });
+	}
+
 	void command_buffer::end_render_pass()
 	{
 		mCommandBuffer.endRenderPass();
@@ -725,10 +750,10 @@ namespace cgb
 
 	vertex_buffer vertex_buffer::create(size_t pVertexDataSize, size_t pVertexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
 	{
-		auto buffer = buffer::create(pVertexDataSize * pVertexCount, vk::BufferUsageFlagBits::eVertexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
+		auto b = buffer::create(pVertexDataSize * pVertexCount, vk::BufferUsageFlagBits::eVertexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
 
 		auto vertexBuffer = vertex_buffer();
-		static_cast<cgb::buffer&>(vertexBuffer) = std::move(buffer);
+		static_cast<cgb::buffer&>(vertexBuffer) = std::move(b);
 		vertexBuffer.mVertexCount = static_cast<uint32_t>(pVertexCount);
 		return vertexBuffer;
 	}
@@ -775,10 +800,10 @@ namespace cgb
 		default:
 			throw std::runtime_error("Can't handle that vk::IndexType");
 		}
-		auto buffer = buffer::create(elSize * pIndexCount, vk::BufferUsageFlagBits::eIndexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
+		auto b = buffer::create(elSize * pIndexCount, vk::BufferUsageFlagBits::eIndexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
 
 		auto indexBuffer = index_buffer();
-		static_cast<cgb::buffer&>(indexBuffer) = std::move(buffer);
+		static_cast<cgb::buffer&>(indexBuffer) = std::move(b);
 		indexBuffer.mIndexType = pIndexType;
 		indexBuffer.mIndexCount = static_cast<uint32_t>(pIndexCount);
 		return indexBuffer;
@@ -800,10 +825,10 @@ namespace cgb
 
 	uniform_buffer uniform_buffer::create(size_t pBufferSize, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
 	{
-		auto buffer = buffer::create(pBufferSize, vk::BufferUsageFlagBits::eUniformBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
+		auto b = buffer::create(pBufferSize, vk::BufferUsageFlagBits::eUniformBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
 
 		auto uniformBuffer = uniform_buffer();
-		static_cast<cgb::buffer&>(uniformBuffer) = std::move(buffer);
+		static_cast<cgb::buffer&>(uniformBuffer) = std::move(b);
 		return uniformBuffer;
 	}
 
@@ -927,6 +952,46 @@ namespace cgb
 		return image(imageInfo, vkImage, vkMemory);
 	}
 
+	vk::ImageMemoryBarrier create_image_barrier(vk::Image pImage, vk::Format pFormat, vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange)
+	{
+		if (!pSubresourceRange) {
+			vk::ImageAspectFlags aspectMask;
+			if (pNewLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+				aspectMask = vk::ImageAspectFlagBits::eDepth;
+				if (has_stencil_component(cgb::image_format(pFormat))) {
+					aspectMask |= vk::ImageAspectFlagBits::eStencil;
+				}
+			}
+			else {
+				aspectMask = vk::ImageAspectFlagBits::eColor;
+			}
+
+			pSubresourceRange = vk::ImageSubresourceRange()
+				.setAspectMask(aspectMask)
+				.setBaseMipLevel(0u)
+				.setLevelCount(1u)
+				.setBaseArrayLayer(0u)
+				.setLayerCount(1u);
+		}
+
+		return vk::ImageMemoryBarrier()
+			.setOldLayout(pOldLayout)
+			.setNewLayout(pNewLayout)
+			// If you are using the barrier to transfer queue family ownership, then these two fields should be the indices of the queue 
+			// families.They must be set to VK_QUEUE_FAMILY_IGNORED if you don't want to do this (not the default value!). [3]
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(pImage)
+			.setSubresourceRange(*pSubresourceRange)
+			.setSrcAccessMask(pSrcAccessMask)
+			.setDstAccessMask(pDstAccessMask);
+	}
+
+	vk::ImageMemoryBarrier image::create_barrier(vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange) const
+	{
+		return create_image_barrier(mImage, mInfo.format, pSrcAccessMask, pDstAccessMask, pOldLayout, pNewLayout, pSubresourceRange);
+	}
+
 	void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout)
 	{
 		auto commandBuffer = context().create_command_buffers_for_graphics(1, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -934,71 +999,40 @@ namespace cgb
 		// Immediately start recording the command buffer:
 		commandBuffer[0].begin_recording();
 
-		vk::ImageAspectFlags aspectMask;
-		if (pNewLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
-			aspectMask = vk::ImageAspectFlagBits::eDepth;
-			if (has_stencil_component(cgb::image_format(pFormat))) {
-				aspectMask |= vk::ImageAspectFlagBits::eStencil;
-			}
-		}
-		else {
-			aspectMask = vk::ImageAspectFlagBits::eColor;
-		}
-
-		// One of the most common ways to perform layout transitions is using an image memory barrier. A pipeline barrier like that 
-		// is generally used to synchronize access to resources, like ensuring that a write to a buffer completes before reading from 
-		// it, but it can also be used to transition image layouts and transfer queue family ownership when VK_SHARING_MODE_EXCLUSIVE 
-		// is used.There is an equivalent buffer memory barrier to do this for buffers. [3]
-		auto barrier = vk::ImageMemoryBarrier()
-			.setOldLayout(pOldLayout)
-			.setNewLayout(pNewLayout)
-			// If you are using the barrier to transfer queue family ownership, then these two fields should be the indices of the queue 
-			// families.They must be set to VK_QUEUE_FAMILY_IGNORED if you don't want to do this (not the default value!). [3]
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(pImage.mImage)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-								 .setAspectMask(aspectMask)
-								 .setBaseMipLevel(0u)
-								 .setLevelCount(1u)
-								 .setBaseArrayLayer(0u)
-								 .setLayerCount(1u))
-			.setSrcAccessMask(vk::AccessFlags()) // set below
-			.setDstAccessMask(vk::AccessFlags()); // set below
-
-		vk::PipelineStageFlags sourceStageFlags;
-		vk::PipelineStageFlags destinationStageFlags;
+		vk::AccessFlags sourceAccessMask, destinationAccessMask;
+		vk::PipelineStageFlags sourceStageFlags, destinationStageFlags;
 
 		// There are two transitions we need to handle [3]:
 		//  - Undefined --> transfer destination : transfer writes that don't need to wait on anything
 		//  - Transfer destination --> shader reading : shader reads should wait on transfer writes, specifically the shader reads in the fragment shader, because that's where we're going to use the texture
 		if (pOldLayout == vk::ImageLayout::eUndefined && pNewLayout == vk::ImageLayout::eTransferDstOptimal) {
-			barrier
-				.setSrcAccessMask(vk::AccessFlags())
-				.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
-			
+			sourceAccessMask = vk::AccessFlags();
+			destinationAccessMask = vk::AccessFlagBits::eTransferWrite;
 			sourceStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
 			destinationStageFlags = vk::PipelineStageFlagBits::eTransfer;
 		}
 		else if (pOldLayout == vk::ImageLayout::eTransferDstOptimal && pNewLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-			barrier
-				.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-				.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
-
+			sourceAccessMask = vk::AccessFlagBits::eTransferWrite;
+			destinationAccessMask = vk::AccessFlagBits::eShaderRead;
 			sourceStageFlags = vk::PipelineStageFlagBits::eTransfer;
 			destinationStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
 		}
 		else if (pOldLayout == vk::ImageLayout::eUndefined && pNewLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
-			barrier
-				.setSrcAccessMask(vk::AccessFlags())
-				.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-
+			sourceAccessMask = vk::AccessFlags();
+			destinationAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 			sourceStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
 			destinationStageFlags = vk::PipelineStageFlagBits::eEarlyFragmentTests;
 		}
 		else {
 			throw std::invalid_argument("unsupported layout transition");
 		}
+
+
+		// One of the most common ways to perform layout transitions is using an image memory barrier. A pipeline barrier like that 
+		// is generally used to synchronize access to resources, like ensuring that a write to a buffer completes before reading from 
+		// it, but it can also be used to transition image layouts and transfer queue family ownership when VK_SHARING_MODE_EXCLUSIVE 
+		// is used.There is an equivalent buffer memory barrier to do this for buffers. [3]
+		auto barrier = pImage.create_barrier(sourceAccessMask, destinationAccessMask, pOldLayout, pNewLayout);
 
 		// The pipeline stages that you are allowed to specify before and after the barrier depend on how you use the resource before and 
 		// after the barrier.The allowed values are listed in this table of the specification.For example, if you're going to read from a 
@@ -1332,6 +1366,46 @@ namespace cgb
 		return static_cast<size_t>(memRequirements.memoryRequirements.size);
 	}
 
+	shader_binding_table::shader_binding_table() noexcept
+		: buffer()
+	{ }
+
+	shader_binding_table::shader_binding_table(size_t pSize, const vk::BufferUsageFlags& pBufferFlags, const vk::Buffer& pBuffer, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory) noexcept
+		: buffer(pSize, pBufferFlags, pBuffer, pMemoryProperties, pMemory)
+	{ }
+
+	shader_binding_table::shader_binding_table(shader_binding_table&& other) noexcept
+		: buffer(std::move(other))
+	{ }
+
+	shader_binding_table& shader_binding_table::operator=(shader_binding_table&& other) noexcept
+	{ 
+		buffer::operator=(std::move(other));
+		return *this;
+	}
+
+	shader_binding_table::~shader_binding_table()
+	{ }
+
+	shader_binding_table shader_binding_table::create(const pipeline& pRtPipeline)
+	{
+		auto numGroups = 1u; // TODO: store groups in `pipeline` (or rather in `ray_tracing_pipeline : pipeline`) and then, read from pRtPipeline
+		auto rtProps = context().get_ray_tracing_properties();
+		auto shaderBindingTableSize = rtProps.shaderGroupHandleSize * numGroups;
+
+		auto b = buffer::create(shaderBindingTableSize,
+								vk::BufferUsageFlagBits::eTransferSrc,
+								vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+		void* mapped = context().logical_device().mapMemory(b.mMemory, 0, b.mSize);
+		// Transfer something into the buffer's memory...
+		context().logical_device().getRayTracingShaderGroupHandlesNV(pRtPipeline.mPipeline, 0, numGroups, b.mSize, mapped, context().dynamic_dispatch());
+		context().logical_device().unmapMemory(b.mMemory);
+		
+		auto sbt = shader_binding_table();
+		static_cast<buffer&>(sbt) = std::move(b);
+		return sbt;
+	}
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation

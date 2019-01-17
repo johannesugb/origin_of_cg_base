@@ -187,17 +187,6 @@ namespace cgb
 		vk::CommandPool mCommandPool;
 	};
 
-	struct command_buffer
-	{
-		void begin_recording();
-		void end_recording();
-		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);
-		void end_render_pass();
-
-		vk::CommandBufferBeginInfo mBeginInfo;
-		vk::CommandBuffer mCommandBuffer;
-	};
-
 	struct buffer
 	{
 		buffer() noexcept;
@@ -220,7 +209,7 @@ namespace cgb
 	
 	extern void copy(const buffer& pSource, const buffer& pDestination);
 	
-	struct vertex_buffer : buffer
+	struct vertex_buffer : public buffer
 	{
 		vertex_buffer() noexcept;
 		vertex_buffer(const vertex_buffer&) = delete;
@@ -233,7 +222,7 @@ namespace cgb
 		uint32_t mVertexCount;
 	};
 
-	struct index_buffer : buffer
+	struct index_buffer : public buffer
 	{
 		index_buffer() noexcept;
 		index_buffer(const index_buffer&) = delete;
@@ -247,7 +236,7 @@ namespace cgb
 		uint32_t mIndexCount;
 	};
 
-	struct uniform_buffer : buffer
+	struct uniform_buffer : public buffer
 	{
 		uniform_buffer() noexcept;
 		uniform_buffer(const uniform_buffer&) = delete;
@@ -283,6 +272,8 @@ namespace cgb
 		vk::DescriptorSet mDescriptorSet;
 	};
 
+	extern vk::ImageMemoryBarrier create_image_barrier(vk::Image pImage, vk::Format pFormat, vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt);
+
 	struct image
 	{
 		image() noexcept;
@@ -299,6 +290,8 @@ namespace cgb
 							  vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
 							  vk::MemoryPropertyFlags properties = vk::MemoryPropertyFlagBits::eDeviceLocal);
 
+		vk::ImageMemoryBarrier create_barrier(vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt) const;
+
 		vk::ImageCreateInfo mInfo;
 		vk::Image mImage;
 		vk::DeviceMemory mMemory;
@@ -307,6 +300,19 @@ namespace cgb
 	extern void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout);
 
 	extern void copy_buffer_to_image(const buffer& pSrcBuffer, const image& pDstImage);
+
+	struct command_buffer
+	{
+		void begin_recording();
+		void end_recording();
+		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);
+		void set_image_barrier(const vk::ImageMemoryBarrier& pBarrierInfo);
+		void copy_image(const image& pSource, const vk::Image& pDestination);
+		void end_render_pass();
+
+		vk::CommandBufferBeginInfo mBeginInfo;
+		vk::CommandBuffer mCommandBuffer;
+	};
 
 	struct image_view
 	{
@@ -382,5 +388,18 @@ namespace cgb
 		acceleration_structure_handle mHandle;
 		vk::MemoryPropertyFlags mMemoryProperties;
 		vk::DeviceMemory mMemory;
+	};
+
+	struct shader_binding_table : public buffer
+	{
+		shader_binding_table() noexcept;
+		shader_binding_table(size_t, const vk::BufferUsageFlags&, const vk::Buffer&, const vk::MemoryPropertyFlags&, const vk::DeviceMemory&) noexcept;
+		shader_binding_table(const sampler&) = delete;
+		shader_binding_table(shader_binding_table&&) noexcept;
+		shader_binding_table& operator=(const shader_binding_table&) = delete;
+		shader_binding_table& operator=(shader_binding_table&&) noexcept;
+		~shader_binding_table();
+
+		static shader_binding_table create(const pipeline& pRtPipeline);
 	};
 }
