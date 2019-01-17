@@ -202,6 +202,9 @@ namespace cgb
 			size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
 			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
+		pipeline create_ray_tracing_pipeline(
+			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos);
+
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow, const image_view& pDepthImageView);
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData, const image_view& pDepthImageView);
 

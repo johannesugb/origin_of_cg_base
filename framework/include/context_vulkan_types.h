@@ -148,7 +148,7 @@ namespace cgb
 	struct pipeline
 	{
 		pipeline() noexcept;
-		pipeline(const vk::RenderPass&, const vk::PipelineLayout&, const vk::Pipeline&) noexcept;
+		pipeline(const vk::PipelineLayout& pPipelineLayout, const vk::Pipeline& pPipeline, vk::RenderPass pRenderPass = nullptr) noexcept;
 		pipeline(const pipeline&) = delete;
 		pipeline(pipeline&&) noexcept;
 		pipeline& operator=(const pipeline&) = delete;

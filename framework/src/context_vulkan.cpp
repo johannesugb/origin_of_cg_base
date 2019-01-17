@@ -599,7 +599,8 @@ namespace cgb
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		
 		auto deviceFeatures = vk::PhysicalDeviceFeatures()
-			.setSamplerAnisotropy(VK_TRUE);
+			.setSamplerAnisotropy(VK_TRUE)
+			.setVertexPipelineStoresAndAtomics(VK_TRUE);
 		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
 		auto deviceCreateInfo = vk::DeviceCreateInfo()
 			.setQueueCreateInfoCount(static_cast<uint32_t>(queueCreateInfos.size()))
@@ -1008,11 +1009,85 @@ namespace cgb
 
 		// Create the pipeline, return it and also store the render pass and the pipeline layout in the struct!
 		return pipeline(
-			renderPass,
 			pipelineLayout, 
 			mLogicalDevice.createGraphicsPipeline(
 				nullptr, // references an optional VkPipelineCache object. A pipeline cache can be used to store and reuse data relevant to pipeline creation across multiple calls to vkCreateGraphicsPipelines and even across program executions [5]
-				pipelineInfo));
+				pipelineInfo),
+			renderPass);
+	}
+
+	pipeline vulkan::create_ray_tracing_pipeline(
+		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos)
+	{
+		// CREATE DESCRIPTOR SET LAYOUT:
+		std::array descriptorSetLayoutBindings = {
+			// Acceleration Structure Layout Binding:
+			vk::DescriptorSetLayoutBinding()
+			.setBinding(0u)
+			.setDescriptorType(vk::DescriptorType::eAccelerationStructureNV)
+			.setDescriptorCount(1u)
+			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+			,
+			// Output Image Layout Binding:
+			vk::DescriptorSetLayoutBinding()
+			.setBinding(1u)
+			.setDescriptorType(vk::DescriptorType::eStorageImage)
+			.setDescriptorCount(1u)
+			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+		};
+
+		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
+			.setFlags(vk::DescriptorSetLayoutCreateFlags())
+			.setBindingCount(static_cast<uint32_t>(descriptorSetLayoutBindings.size()))
+			.setPBindings(descriptorSetLayoutBindings.data());
+
+		auto descriptorSetLayout = context().logical_device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+
+		// CREATE PIPELINE
+		auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
+			.setSetLayoutCount(1u)
+			.setPSetLayouts(&descriptorSetLayout)
+			.setPushConstantRangeCount(0u)
+			.setPPushConstantRanges(nullptr);
+		auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo);
+
+		// Gather the shader infos
+		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+		std::transform(std::begin(pShaderInfos), std::end(pShaderInfos),
+					   std::back_inserter(shaderStages),
+					   [](const auto& tpl) {
+						   return vk::PipelineShaderStageCreateInfo()
+							   .setStage(convert(std::get<shader_type>(tpl)))
+							   .setModule(std::get<shader_handle*>(tpl)->mShaderModule)
+							   .setPName("main"); // TODO: support different entry points?!
+					   });
+
+		// Create shader groups
+		std::array shaderGroups = {
+			// group0 = [raygen]
+			vk::RayTracingShaderGroupCreateInfoNV()
+			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
+			.setGeneralShader(0)
+			.setClosestHitShader(VK_SHADER_UNUSED_NV)
+			.setAnyHitShader(VK_SHADER_UNUSED_NV)
+			.setIntersectionShader(VK_SHADER_UNUSED_NV)
+		};
+
+		// Do it:
+		auto pipelineCreateInfo = vk::RayTracingPipelineCreateInfoNV()
+			.setStageCount(static_cast<uint32_t>(shaderStages.size()))
+			.setPStages(shaderStages.data())
+			.setGroupCount(static_cast<uint32_t>(shaderGroups.size()))
+			.setPGroups(shaderGroups.data())
+			.setMaxRecursionDepth(1u)
+			.setLayout(pipelineLayout);
+		return pipeline(
+			pipelineLayout,
+			context().logical_device().createRayTracingPipelineNV(
+				nullptr,						// no pipeline cache
+				pipelineCreateInfo,				// pipeline description
+				nullptr,						// no allocation callbacks
+				context().dynamic_dispatch()));	// dynamic dispatch for extension
 	}
 
 	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow, const image_view& pDepthImageView)

@@ -60,10 +60,10 @@ namespace cgb
 		return context().window_extent(*this);
 	}
 
-	double window::aspect_ratio() const
+	float window::aspect_ratio() const
 	{
 		auto res = resolution();
-		return static_cast<double>(res.x) / static_cast<double>(res.y);
+		return static_cast<float>(res.x) / static_cast<float>(res.y);
 	}
 
 	void window::set_resolution(glm::uvec2 pExtent)

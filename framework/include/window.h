@@ -43,7 +43,7 @@ namespace cgb
 		glm::uvec2 resolution() const;
 
 		/** Returns the aspect ratio of the window, which is width/height */
-		double aspect_ratio() const;
+		float aspect_ratio() const;
 
 		/** The window title */
 		const std::string& title() const { return mTitle; }

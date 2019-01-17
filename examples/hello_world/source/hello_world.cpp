@@ -395,27 +395,41 @@ public:
 		mSampler = cgb::sampler::create();
 		create_depth_buffer();
 
-		auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
-		auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
-		// PROBLEME:
-		// - shader_handle* sollte kein Pointer sein!
-		std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
-		shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
-		shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
-		
 		create_descriptor_set_layout();
 
-		auto vertexAttribDesc = Vertex::attribute_descriptions();
-		mPipeline = cgb::context().create_graphics_pipeline_for_window(
-			shaderInfos, 
-			mMainWnd, 
-			cgb::image_format(mDepthImage->mInfo.format),
-			Vertex::binding_description(), 
-			vertexAttribDesc.size(), 
-			vertexAttribDesc.data(), 
-			{ mDescriptorSetLayout.mDescriptorSetLayout });
-		mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd, mDepthImageView);
-		mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
+		// Ordinary graphics pipeline:
+		{
+			auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
+			auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
+			// PROBLEME:
+			// - shader_handle* sollte kein Pointer sein!
+			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
+			shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
+			shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
+		
+
+			auto vertexAttribDesc = Vertex::attribute_descriptions();
+
+			mPipeline = cgb::context().create_graphics_pipeline_for_window(
+				shaderInfos, 
+				mMainWnd, 
+				cgb::image_format(mDepthImage->mInfo.format),
+				Vertex::binding_description(), 
+				vertexAttribDesc.size(), 
+				vertexAttribDesc.data(), 
+				{ mDescriptorSetLayout.mDescriptorSetLayout });
+			mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd, mDepthImageView);
+			mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
+		}
+
+		// Ray tracing pipeline OMG:
+		{
+			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/rt_basic.rgen.spv"));
+			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
+			shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
+
+			mRtPipeline = cgb::context().create_ray_tracing_pipeline(shaderInfos);
+		}
 
 		create_uniform_buffers();
 		create_descriptor_sets();
@@ -444,6 +458,13 @@ public:
 		mQuakeCam.LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
 		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::current_composition().window_in_focus()->aspect_ratio(), 0.1f, 1000.0f);
 		cgb::current_composition().add_element(mQuakeCam);
+	}
+
+	void update() override
+	{
+		if (cgb::input().key_pressed(cgb::key_code::escape)) {
+			cgb::current_composition().stop();
+		}
 	}
 
 	void finalize() override
@@ -511,6 +532,7 @@ private:
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::descriptor_set_layout mDescriptorSetLayout;
 	cgb::pipeline mPipeline;
+	cgb::pipeline mRtPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;
 	std::vector<cgb::command_buffer> mCmdBfrs;
 	std::vector<cgb::descriptor_set> mDescriptorSets;

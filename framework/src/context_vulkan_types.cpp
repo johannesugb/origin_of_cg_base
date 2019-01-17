@@ -438,7 +438,7 @@ namespace cgb
 		, mPipeline()
 	{ }
 
-	pipeline::pipeline(const vk::RenderPass& pRenderPass, const vk::PipelineLayout& pPipelineLayout, const vk::Pipeline& pPipeline) noexcept
+	pipeline::pipeline(const vk::PipelineLayout& pPipelineLayout, const vk::Pipeline& pPipeline, vk::RenderPass pRenderPass) noexcept
 		: mRenderPass(pRenderPass)
 		, mPipelineLayout(pPipelineLayout)
 		, mPipeline(pPipeline)
