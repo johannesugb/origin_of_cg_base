@@ -8,24 +8,24 @@
 class vkCgbBuffer
 {
 public:
-	vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager);
+	vkCgbBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager);
 
 	// initializes the memory of the buffer with the given data
 	// uses a staging buffer to copy the data
-	vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager, void* data);
+	vkCgbBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager, void* data);
 
 	virtual ~vkCgbBuffer();
 
-	VkBuffer getVkBuffer() { return _buffer; }
+	vk::Buffer get_vkk_buffer() { return mBuffer; }
 
-	void copyBuffer(VkBuffer srcBuffer, VkDeviceSize size);
-	void updateBuffer(void* bufferData, VkDeviceSize size);
+	void copy_buffer(vk::Buffer srcBuffer, vk::DeviceSize size);
+	void update_buffer(void* bufferData, vk::DeviceSize size);
 
 private:
-	VkBuffer _buffer;
-	vkCgbMemory _bufferMemory;
-	vkCommandBufferManager* _commandBufferManager;
+	vk::Buffer mBuffer;
+	vkCgbMemory mBufferMemory;
+	vkCommandBufferManager* mCommandBufferManager;
 
-	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer & buffer, vkCgbMemory & cgbMemory);
+	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer & buffer, vkCgbMemory & cgbMemory);
 };
 

@@ -33,25 +33,24 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 
 	for (vkRenderObject* renderObject : renderObjects) {
 		// bind pipeline for this draw command
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mGraphicsPipeline);
 
 		vk::Buffer vertexBuffers[] = { renderObject->get_vertex_buffer() , renderObject->get_vertex_buffer() };
 		vk::DeviceSize offsets[] = { 0, 0 };
 		commandBuffer.bindVertexBuffers(1, 2, vertexBuffers, offsets);
 		commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
+		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
 
 		//renderObject->updateUniformBuffer(frameIndex, 0, swapChainExtent);
 
-		vkCmdPushConstants(
-			commandBuffer,
+		commandBuffer.pushConstants(
 			mPipelineLayout,
-			VK_SHADER_STAGE_VERTEX_BIT,
+			vk::ShaderStageFlagBits::eVertex,
 			0,
 			sizeof(PushUniforms),
 			&(renderObject->get_push_uniforms()));
 
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(renderObject->get_indices().size()), 1, 0, 0, 0);
+		commandBuffer.drawIndexed(static_cast<uint32_t>(renderObject->get_indices().size()), 1, 0, 0, 0);
 	}
 }

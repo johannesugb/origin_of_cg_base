@@ -6,8 +6,8 @@ vkRenderObject::vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices
 	vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
 	vkTexture* texture, vkCommandBufferManager* commandBufferManager)
 	: mImageCount(imageCount), mVertices(vertices), mIndices(indices),
-	mVertexBuffer(sizeof(mVertices[0]) * mVertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandBufferManager, mVertices.data()),
-	mIndexBuffer(sizeof(mIndices[0]) * mIndices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandBufferManager, mIndices.data())
+	mVertexBuffer(sizeof(mVertices[0]) * mVertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mVertices.data()),
+	mIndexBuffer(sizeof(mIndices[0]) * mIndices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mIndices.data())
 {
 	create_uniform_buffer(commandBufferManager);
 	create_descriptor_sets(descriptorSetLayout, descriptorPool, texture);
@@ -27,7 +27,7 @@ void vkRenderObject::create_uniform_buffer(vkCommandBufferManager* commandBuffer
 	mUniformBuffers.resize(mImageCount);
 
 	for (size_t i = 0; i < mImageCount; i++) {
-		mUniformBuffers[i] = new vkCgbBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, commandBufferManager);
+		mUniformBuffers[i] = new vkCgbBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, commandBufferManager);
 	}
 }
 
@@ -45,7 +45,7 @@ void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorS
 
 	for (size_t i = 0; i < mImageCount; i++) {
 		vk::DescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = mUniformBuffers[i]->getVkBuffer();
+		bufferInfo.buffer = mUniformBuffers[i]->get_vkk_buffer();
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(UniformBufferObject);
 
@@ -88,5 +88,5 @@ void vkRenderObject::update_uniform_buffer(uint32_t currentImage, float time, vk
 	mPushUniforms.proj = ubo.proj;
 	mPushUniforms.mvp = ubo.mvp;
 
-	mUniformBuffers[currentImage]->updateBuffer(&ubo, sizeof(ubo));
+	mUniformBuffers[currentImage]->update_buffer(&ubo, sizeof(ubo));
 }

@@ -71,9 +71,10 @@ std::vector<vk::CommandBuffer> vkCommandBufferManager::get_recorded_command_buff
 		ret.push_back(mSecondaryCommandBuffers[vkContext::instance().currentFrame]);
 	}
 	for (vk::CommandBuffer cmdBuf : ret) {
-		if (vkEndCommandBuffer(cmdBuf) != VK_SUCCESS) {
-			throw std::runtime_error("failed to record command buffer!");
-		}
+		cmdBuf.end();
+		//if (vkEndCommandBuffer(cmdBuf) != vk::Result::eSuccess) {
+		//	throw std::runtime_error("failed to record command buffer!");
+		//}
 	}
 	return ret;
 }

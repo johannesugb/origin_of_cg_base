@@ -10,36 +10,36 @@ class vkCgbImage
 public:
 	vkCgbImage(vkCommandBufferManager* commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels);
 
-	vkCgbImage(vkCommandBufferManager * commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling,
-		VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlags aspects);
+	vkCgbImage(vkCommandBufferManager * commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
+		vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects);
 
 	virtual ~vkCgbImage();
 
-	VkImageView getImageView() { return _imageView; };
-	uint32_t getMipLevels() { return _mipLevels; };
+	vk::ImageView get_image_view() { return mImageView; };
+	uint32_t get_mip_levels() { return mMipLevels; };
 
-	void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+	void transition_image_layout(vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, uint32_t mipLevels);
 private:
-	int _texWidth;
-	int _texHeight;
-	int _texChannels;
+	int mTexWidth;
+	int mTexHeight;
+	int mTtexChannels;
 
-	VkImage _image;
-	vkCgbMemory _imageMemory;
-	VkImageView _imageView;
+	vk::Image mImage;
+	vkCgbMemory mImageMemory;
+	vk::ImageView mImageView;
 
-	uint32_t _mipLevels;
+	uint32_t mMipLevels;
 
-	vkCommandBufferManager* _commandBufferManager;
+	vkCommandBufferManager* mCommandBufferManager;
 
-	void createTextureImage(void * pixels, int texWidth, int texHeight, int texChannels);
-	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-		VkMemoryPropertyFlags properties, VkImage & image, vkCgbMemory & imageMemory);
-	bool hasStencilComponent(VkFormat format);
-	void copyBufferToImage(vkCgbBuffer& buffer, VkImage image, uint32_t width, uint32_t height);
-	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+	void create_texture_image(void * pixels, int texWidth, int texHeight, int texChannels);
+	void create_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+		vk::MemoryPropertyFlags properties, vk::Image & image, vkCgbMemory & imageMemory);
+	bool has_stencil_component(vk::Format format);
+	void copy_buffer_to_image(vkCgbBuffer& buffer, vk::Image image, uint32_t width, uint32_t height);
+	void generate_mipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
-	void createTextureImageView();
-	VkImageView createImageView(VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+	void create_texture_image_view();
+	vk::ImageView create_image_view(vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 };
 

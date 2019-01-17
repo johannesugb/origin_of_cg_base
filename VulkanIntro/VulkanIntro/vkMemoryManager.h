@@ -9,9 +9,9 @@ public:
 	vkMemoryManager();
 	virtual ~vkMemoryManager();
 
-	void allocateMemory(VkMemoryRequirements memRequirements, VkMemoryPropertyFlags properties, vkCgbMemory &cgbMemory);
-	void freeMemory(vkCgbMemory &cgbMemory);
+	void allocate_memory(vk::MemoryRequirements memRequirements, vk::MemoryPropertyFlags properties, vkCgbMemory &cgbMemory);
+	void free_memory(vkCgbMemory &cgbMemory);
 private:
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	uint32_t find_memory_type(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 };
 

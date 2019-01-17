@@ -110,9 +110,9 @@ public:
 	std::vector<Vertex> get_vertices() { return mVertices; }
 	std::vector<uint32_t> get_indices() { return mIndices; }
 
-	vk::Buffer get_vertex_buffer() { return mVertexBuffer.getVkBuffer(); }
+	vk::Buffer get_vertex_buffer() { return mVertexBuffer.get_vkk_buffer(); }
 	//void setVertexBuffer(vk::Buffer vertexBuffer) { _vertexBuffer = vertexBuffer; }
-	vk::Buffer get_index_buffer() { return mIndexBuffer.getVkBuffer(); }
+	vk::Buffer get_index_buffer() { return mIndexBuffer.get_vkk_buffer(); }
 	//void setIndexBuffer(vk::Buffer indexBuffer) { _indexBuffer = indexBuffer; }
 
 	std::vector<vk::DescriptorSet> get_descriptor_sets() { return mDescriptorSets; }

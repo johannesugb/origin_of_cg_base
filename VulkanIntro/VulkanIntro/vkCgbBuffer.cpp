@@ -4,69 +4,68 @@
 
 #include "vkMemoryManager.h"
 
-vkCgbBuffer::vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager) : 
-_commandBufferManager(commandBufferManager) {
-	createBuffer(size, usage, properties, _buffer, _bufferMemory);
+vkCgbBuffer::vkCgbBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager) : 
+mCommandBufferManager(commandBufferManager) {
+	createBuffer(size, usage, properties, mBuffer, mBufferMemory);
 }
 
-vkCgbBuffer::vkCgbBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager, void* bufferData) :
-	_commandBufferManager(commandBufferManager) {
-	VkBuffer stagingBuffer;
+vkCgbBuffer::vkCgbBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vkCommandBufferManager* commandBufferManager, void* bufferData) :
+	mCommandBufferManager(commandBufferManager) {
+	vk::Buffer stagingBuffer;
 	vkCgbMemory stagingBufferMemory;
-	createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+	createBuffer(size, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer, stagingBufferMemory);
 
 	void* data;
 	vkMapMemory(vkContext::instance().device, stagingBufferMemory.memory, stagingBufferMemory.offset, size, 0, &data);
 	memcpy(data, bufferData, (size_t)size);
 	vkUnmapMemory(vkContext::instance().device, stagingBufferMemory.memory);
 
-	createBuffer(size, usage, properties, _buffer, _bufferMemory);
+	createBuffer(size, usage, properties, mBuffer, mBufferMemory);
 
-	copyBuffer(stagingBuffer, size);
+	copy_buffer(stagingBuffer, size);
 
 	vkDestroyBuffer(vkContext::instance().device, stagingBuffer, nullptr);
-	vkContext::instance().memoryManager->freeMemory(stagingBufferMemory);
+	vkContext::instance().memoryManager->free_memory(stagingBufferMemory);
 }
 
 vkCgbBuffer::~vkCgbBuffer()
 {
-	vkDestroyBuffer(vkContext::instance().device, _buffer, nullptr);
-	vkContext::instance().memoryManager->freeMemory(_bufferMemory);
+	vkDestroyBuffer(vkContext::instance().device, mBuffer, nullptr);
+	vkContext::instance().memoryManager->free_memory(mBufferMemory);
 }
 
-void vkCgbBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, vkCgbMemory &cgbMemory) {
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+void vkCgbBuffer::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vkCgbMemory &cgbMemory) {
+	vk::BufferCreateInfo bufferInfo = {};
 	bufferInfo.size = size;
 	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	if (vkCreateBuffer(vkContext::instance().device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+	if (vkContext::instance().device.createBuffer(&bufferInfo, nullptr, &buffer) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to create buffer!");
 	}
 
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(vkContext::instance().device, buffer, &memRequirements);
+	vk::MemoryRequirements memRequirements;
+	vkContext::instance().device.getBufferMemoryRequirements(buffer, &memRequirements);
 
-	vkContext::instance().memoryManager->allocateMemory(memRequirements, properties, cgbMemory);
+	vkContext::instance().memoryManager->allocate_memory(memRequirements, properties, cgbMemory);
 
-	vkBindBufferMemory(vkContext::instance().device, buffer, cgbMemory.memory, cgbMemory.offset);
+	vkContext::instance().device.bindBufferMemory(buffer, cgbMemory.memory, cgbMemory.offset);
 }
 
-void vkCgbBuffer::copyBuffer(VkBuffer srcBuffer, VkDeviceSize size) {
-	VkCommandBuffer commandBuffer = _commandBufferManager->begin_single_time_commands();
+void vkCgbBuffer::copy_buffer(vk::Buffer srcBuffer, vk::DeviceSize size) {
+	vk::CommandBuffer commandBuffer = mCommandBufferManager->begin_single_time_commands();
 
-	VkBufferCopy copyRegion = {};
+	vk::BufferCopy copyRegion = {};
 	copyRegion.size = size;
-	vkCmdCopyBuffer(commandBuffer, srcBuffer, _buffer, 1, &copyRegion);
+	commandBuffer.copyBuffer(srcBuffer, mBuffer, 1, &copyRegion);
 
-	_commandBufferManager->end_single_time_commands(commandBuffer);
+	mCommandBufferManager->end_single_time_commands(commandBuffer);
 }
 
-void vkCgbBuffer::updateBuffer(void* bufferData, VkDeviceSize size)
+void vkCgbBuffer::update_buffer(void* bufferData, vk::DeviceSize size)
 {
 	void* data;
-	vkMapMemory(vkContext::instance().device, _bufferMemory.memory, _bufferMemory.offset, size, 0, &data);
+	vkMapMemory(vkContext::instance().device, mBufferMemory.memory, mBufferMemory.offset, size, 0, &data);
 	memcpy(data, bufferData, size);
-	vkUnmapMemory(vkContext::instance().device, _bufferMemory.memory);
+	vkUnmapMemory(vkContext::instance().device, mBufferMemory.memory);
 }

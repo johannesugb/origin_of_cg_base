@@ -12,23 +12,22 @@ vkMemoryManager::~vkMemoryManager()
 {
 }
 
-void vkMemoryManager::allocateMemory(VkMemoryRequirements memRequirements, VkMemoryPropertyFlags properties, vkCgbMemory &cgbMemory)
+void vkMemoryManager::allocate_memory(vk::MemoryRequirements memRequirements, vk::MemoryPropertyFlags properties, vkCgbMemory &cgbMemory)
 {
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	vk::MemoryAllocateInfo allocInfo = {};
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = find_memory_type(memRequirements.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(vkContext::instance().device, &allocInfo, nullptr, &cgbMemory.memory) != VK_SUCCESS) {
+	if (vkContext::instance().device.allocateMemory(&allocInfo, nullptr, &cgbMemory.memory) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to allocate buffer memory!");
 	}
 
 	cgbMemory.offset = 0;
 }
 
-uint32_t vkMemoryManager::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(vkContext::instance().physicalDevice, &memProperties);
+uint32_t vkMemoryManager::find_memory_type(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
+	vk::PhysicalDeviceMemoryProperties memProperties;
+	vkContext::instance().physicalDevice.getMemoryProperties(&memProperties);
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -40,7 +39,7 @@ uint32_t vkMemoryManager::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFl
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void vkMemoryManager::freeMemory(vkCgbMemory &cgbMemory)
+void vkMemoryManager::free_memory(vkCgbMemory &cgbMemory)
 {
 	vkFreeMemory(vkContext::instance().device, cgbMemory.memory, nullptr);
 }

@@ -473,7 +473,7 @@
 //		}
 //
 //		// create instance
-//		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+//		if (vkCreateInstance(&createInfo, nullptr, &instance) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create instance!");
 //		}
 //	}
@@ -527,13 +527,13 @@
 //		createInfo.pfnUserCallback = debugCallback;
 //		createInfo.pUserData = nullptr; // Optional
 //
-//		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
+//		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &callback) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to set up debug callback!");
 //		}
 //	}
 //
 //	void createSurface() {
-//		if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+//		if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create window surface!");
 //		}
 //	}
@@ -676,7 +676,7 @@
 //			createInfo.enabledLayerCount = 0;
 //		}
 //
-//		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+//		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create logical device!");
 //		}
 //
@@ -802,7 +802,7 @@
 //		createInfo.clipped = VK_TRUE;
 //		createInfo.oldSwapchain = VK_NULL_HANDLE;
 //
-//		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+//		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create swap chain!");
 //		}
 //
@@ -954,7 +954,7 @@
 //		pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
 //		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange; // Optional
 //
-//		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+//		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create pipeline layout!");
 //		}
 //
@@ -995,7 +995,7 @@
 //
 //		pipelineInfo.pDepthStencilState = &depthStencil;
 //
-//		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+//		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create graphics pipeline!");
 //		}
 //
@@ -1011,7 +1011,7 @@
 //		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 //
 //		VkShaderModule shaderModule;
-//		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+//		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create shader module!");
 //		}
 //
@@ -1088,7 +1088,7 @@
 //		renderPassInfo.dependencyCount = 1;
 //		renderPassInfo.pDependencies = &dependency;
 //
-//		if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+//		if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create render pass!");
 //		}
 //	}
@@ -1112,7 +1112,7 @@
 //			framebufferInfo.height = swapChainExtent.height;
 //			framebufferInfo.layers = 1;
 //
-//			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+//			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != vk::Result::eSuccess) {
 //				throw std::runtime_error("failed to create framebuffer!");
 //			}
 //		}
@@ -1126,7 +1126,7 @@
 //		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 //		poolInfo.flags = 0; // Optional
 //
-//		if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+//		if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create command pool!");
 //		}
 //
@@ -1136,7 +1136,7 @@
 //		transferPoolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 //		transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT; // Optional
 //
-//		if (vkCreateCommandPool(device, &transferPoolInfo, nullptr, &transferCommandPool) != VK_SUCCESS) {
+//		if (vkCreateCommandPool(device, &transferPoolInfo, nullptr, &transferCommandPool) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create command pool for data transfers!");
 //		}
 //	}
@@ -1150,7 +1150,7 @@
 //		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 //		allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 //
-//		if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+//		if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to allocate command buffers!");
 //		}
 //
@@ -1160,7 +1160,7 @@
 //			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 //			beginInfo.pInheritanceInfo = nullptr; // Optional
 //
-//			if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+//			if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != vk::Result::eSuccess) {
 //				throw std::runtime_error("failed to begin recording command buffer!");
 //			}
 //
@@ -1201,7 +1201,7 @@
 //			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 //			vkCmdEndRenderPass(commandBuffers[i]);
 //
-//			if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+//			if (vkEndCommandBuffer(commandBuffers[i]) != vk::Result::eSuccess) {
 //				throw std::runtime_error("failed to record command buffer!");
 //			}
 //		}
@@ -1220,9 +1220,9 @@
 //		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 //
 //		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-//			if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-//				vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-//				vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+//			if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != vk::Result::eSuccess ||
+//				vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != vk::Result::eSuccess ||
+//				vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != vk::Result::eSuccess) {
 //
 //				throw std::runtime_error("failed to create synchronization objects for a frame!");
 //			}
@@ -1239,7 +1239,7 @@
 //			recreateSwapChain();
 //			return;
 //		}
-//		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+//		else if (result != vk::Result::eSuccess && result != VK_SUBOPTIMAL_KHR) {
 //			throw std::runtime_error("failed to acquire swap chain image!");
 //		}
 //
@@ -1261,7 +1261,7 @@
 //		
 //		vkResetFences(device, 1, &inFlightFences[currentFrame]);
 //
-//		if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+//		if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to submit draw command buffer!");
 //		}
 //
@@ -1283,7 +1283,7 @@
 //			framebufferResized = false;
 //			recreateSwapChain();
 //		}
-//		else if (result != VK_SUCCESS) {
+//		else if (result != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to present swap chain image!");
 //		}
 //
@@ -1337,7 +1337,7 @@
 //		bufferInfo.usage = usage;
 //		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 //
-//		if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+//		if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create buffer!");
 //		}
 //
@@ -1349,7 +1349,7 @@
 //		allocInfo.allocationSize = memRequirements.size;
 //		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 //
-//		if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+//		if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to allocate buffer memory!");
 //		}
 //
@@ -1402,7 +1402,7 @@
 //		layoutInfo.pBindings = bindings.data();
 //
 //
-//		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+//		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create descriptor set layout!");
 //		}
 //	}
@@ -1455,7 +1455,7 @@
 //		poolInfo.pPoolSizes = poolSizes.data();
 //		poolInfo.maxSets = static_cast<uint32_t>(swapChainImages.size());
 //
-//		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+//		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create descriptor pool!");
 //		}
 //	}
@@ -1469,7 +1469,7 @@
 //		allocInfo.pSetLayouts = layouts.data();
 //
 //		descriptorSets.resize(swapChainImages.size());
-//		if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+//		if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to allocate descriptor sets!");
 //		}
 //
@@ -1556,7 +1556,7 @@
 //		imageInfo.samples = numSamples;
 //		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 //
-//		if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+//		if (vkCreateImage(device, &imageInfo, nullptr, &image) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create image!");
 //		}
 //
@@ -1568,7 +1568,7 @@
 //		allocInfo.allocationSize = memRequirements.size;
 //		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 //
-//		if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+//		if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to allocate image memory!");
 //		}
 //
@@ -1731,7 +1731,7 @@
 //		viewInfo.subresourceRange.layerCount = 1;
 //
 //		VkImageView imageView;
-//		if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+//		if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create texture image view!");
 //		}
 //
@@ -1757,7 +1757,7 @@
 //		samplerInfo.minLod = 0.0f;
 //		samplerInfo.maxLod = static_cast<float>(mipLevels);
 //
-//		if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+//		if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != vk::Result::eSuccess) {
 //			throw std::runtime_error("failed to create texture sampler!");
 //		}
 //	}

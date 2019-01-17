@@ -13,7 +13,7 @@ public:
 	vkTexture(vkCgbImage * image, VkSamplerCreateInfo & samplerInfo);
 	virtual ~vkTexture();
 
-	VkImageView getTextureImageView() { return _image->getImageView(); };
+	VkImageView getTextureImageView() { return _image->get_image_view(); };
 	VkSampler getTextureSampler() { return _textureSampler; };
 private:
 	vkCgbImage * _image;

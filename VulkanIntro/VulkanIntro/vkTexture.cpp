@@ -40,7 +40,7 @@ void vkTexture::createTextureSampler() {
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.mipLodBias = 0.0f;
 	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = static_cast<float>(_image->getMipLevels());
+	samplerInfo.maxLod = static_cast<float>(_image->get_mip_levels());
 
 	createTextureSampler(samplerInfo);
 }

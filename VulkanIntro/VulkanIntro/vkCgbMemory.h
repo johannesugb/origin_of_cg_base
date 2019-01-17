@@ -7,7 +7,7 @@ public:
 	vkCgbMemory();
 	~vkCgbMemory();
 
-	VkDeviceMemory memory;
-	VkDeviceSize offset;
+	vk::DeviceMemory memory;
+	vk::DeviceSize offset;
 };
 
