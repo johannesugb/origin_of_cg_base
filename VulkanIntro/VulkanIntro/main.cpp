@@ -72,7 +72,7 @@ VkResult CreateDebugUtilsMessengerEXT(vk::Instance instance, const vk::DebugUtil
 }
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator) {
-	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vk::DestroyDebugUtilsMessengerEXT");
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (func != nullptr) {
 		func(instance, callback, pAllocator);
 	}
@@ -340,11 +340,7 @@ private:
 	}
 
 	bool checkValidationLayerSupport() {
-		uint32_t layerCount;
-		vk::enumerateInstanceLayerProperties(&layerCount, nullptr);
-
-		std::vector<vk::LayerProperties> availableLayers(layerCount);
-		vk::enumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+		std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
 
 		for (const char* layerName : validationLayers) {
 			bool layerFound = false;
@@ -401,15 +397,11 @@ private:
 	}
 
 	void pickPhysicalDevice() {
-		uint32_t deviceCount = 0;
-		instance.enumeratePhysicalDevices(&deviceCount, nullptr);
-
-		if (deviceCount == 0) {
+		std::vector<vk::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
+		if (devices.size() == 0) {
 			throw std::runtime_error("failed to find GPUs with Vulkan support!");
 		}
 
-		std::vector<vk::PhysicalDevice> devices(deviceCount);
-		instance.enumeratePhysicalDevices( &deviceCount, devices.data());
 
 		for (const auto& device : devices) {
 			if (isDeviceSuitable(device)) {
@@ -441,17 +433,13 @@ private:
 		}
 
 		vk::PhysicalDeviceFeatures supportedFeatures;
-		device.getProperties(&supportedFeatures);
+		device.getFeatures(&supportedFeatures);
 
 		return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	}
 
 	bool checkDeviceExtensionSupport(vk::PhysicalDevice device) {
-		uint32_t extensionCount;
-		//device.enumerateDeviceExtensionProperties(nullptr, &extensionCount, nullptr);
-
-		std::vector<vk::ExtensionProperties> availableExtensions(extensionCount);
-		device.enumerateDeviceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
+		std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
 
 		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -465,10 +453,7 @@ private:
 	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device) {
 		QueueFamilyIndices indices;
 
-		uint32_t queueFamilyCount = 0;
-		device.getQueueFamilyProperties(&queueFamilyCount, nullptr);
-		std::vector<vk::QueueFamilyProperties> queueFamilies(queueFamilyCount);
-		device.getQueueFamilyProperties(&queueFamilyCount, queueFamilies.data());
+		std::vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
 
 		int i = 0;
 		for (const auto& queueFamily : queueFamilies) {
@@ -546,23 +531,10 @@ private:
 
 	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device) {
 		SwapChainSupportDetails details;
-		device.getSurfaceCapabilitiesKHR(surface, &details.capabilities);
 
-		uint32_t formatCount;
-		device.getSurfaceFormatsKHR(surface, &formatCount, nullptr);
-
-		if (formatCount != 0) {
-			details.formats.resize(formatCount);
-			device.getSurfaceFormatsKHR(surface, &formatCount, details.formats.data());
-		}
-
-		uint32_t presentModeCount;
-		device.getSurfacePresentModesKHR(surface, &presentModeCount, nullptr);
-
-		if (presentModeCount != 0) {
-			details.presentModes.resize(presentModeCount);
-			device.getSurfacePresentModesKHR(surface, &presentModeCount, details.presentModes.data());
-		}
+		details.capabilities = device.getSurfaceCapabilitiesKHR(surface);
+		details.formats = device.getSurfaceFormatsKHR(surface);
+		details.presentModes = device.getSurfacePresentModesKHR(surface);
 
 		return details;
 	}

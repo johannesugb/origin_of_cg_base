@@ -90,23 +90,10 @@ void vkImagePresenter::present_image(std::vector<vk::Semaphore> waitSemaphores) 
 
 SwapChainSupportDetails vkImagePresenter::querySwapChainSupport(vk::PhysicalDevice device) {
 	SwapChainSupportDetails details;
-	device.getSurfaceCapabilitiesKHR(mSurface, &details.capabilities);
 
-	uint32_t formatCount;
-	device.getSurfaceFormatsKHR(mSurface, &formatCount, nullptr);
-
-	if (formatCount != 0) {
-		details.formats.resize(formatCount);
-		device.getSurfaceFormatsKHR(mSurface, &formatCount, details.formats.data());
-	}
-
-	uint32_t presentModeCount;
-	 device.getSurfacePresentModesKHR(mSurface, &presentModeCount, nullptr);
-
-	if (presentModeCount != 0) {
-		details.presentModes.resize(presentModeCount);
-		device.getSurfacePresentModesKHR(mSurface, &presentModeCount, details.presentModes.data());
-	}
+	details.capabilities = device.getSurfaceCapabilitiesKHR(mSurface);
+	details.formats = device.getSurfaceFormatsKHR(mSurface);
+	details.presentModes = device.getSurfacePresentModesKHR(mSurface);
 
 	return details;
 }
@@ -209,9 +196,7 @@ void vkImagePresenter::createSwapChain() {
 		throw std::runtime_error("failed to create swap chain!");
 	}
 
-	vkContext::instance().device.getSwapchainImagesKHR(mSwapChain, &imageCount, nullptr);
-	mSwapChainImages.resize(imageCount);
-	vkContext::instance().device.getSwapchainImagesKHR(mSwapChain, &imageCount, mSwapChainImages.data());
+	mSwapChainImages = vkContext::instance().device.getSwapchainImagesKHR(mSwapChain);
 
 	mSwapChainImageFormat = surfaceFormat.format;
 	mSwapChainExtent = extent;
