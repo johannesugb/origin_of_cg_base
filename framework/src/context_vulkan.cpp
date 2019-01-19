@@ -706,7 +706,7 @@ namespace cgb
 			.setImageColorSpace(selSurfaceFormat.colorSpace)
 			.setImageExtent(vk::Extent2D(extent.x, extent.y))
 			.setImageArrayLayers(1) // The imageArrayLayers specifies the amount of layers each image consists of. This is always 1 unless you are developing a stereoscopic 3D application. [2]
-			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
 			.setPreTransform(srfCaps.currentTransform) // To specify that you do not want any transformation, simply specify the current transformation. [2]
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // => no blending with other windows
 			.setPresentMode(*selPresModeItr)
@@ -1044,7 +1044,23 @@ namespace cgb
 			// group0 = [raygen]
 			vk::RayTracingShaderGroupCreateInfoNV()
 			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
-			.setGeneralShader(0)
+			.setGeneralShader(0) // Just the ray generation shader here, nothing special
+			.setClosestHitShader(VK_SHADER_UNUSED_NV)
+			.setAnyHitShader(VK_SHADER_UNUSED_NV)
+			.setIntersectionShader(VK_SHADER_UNUSED_NV)
+			,
+			// group1 = [chit]
+			vk::RayTracingShaderGroupCreateInfoNV()
+			.setType(vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup)
+			.setGeneralShader(VK_SHADER_UNUSED_NV) // Unused because we're using the stock triangles intersection functionality
+			.setClosestHitShader(1u) // If we get closest hits, we'd like to have our 2nd entry to the shader table executed
+			.setAnyHitShader(VK_SHADER_UNUSED_NV)
+			.setIntersectionShader(VK_SHADER_UNUSED_NV)
+			,
+			// group1 = [miss]
+			vk::RayTracingShaderGroupCreateInfoNV()
+			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
+			.setGeneralShader(2u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
 			.setClosestHitShader(VK_SHADER_UNUSED_NV)
 			.setAnyHitShader(VK_SHADER_UNUSED_NV)
 			.setIntersectionShader(VK_SHADER_UNUSED_NV)

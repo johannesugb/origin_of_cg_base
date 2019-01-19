@@ -1,6 +1,7 @@
 // hello_world.cpp : Defines the entry point for the console application.
 //
 #include "cg_base.h"
+#include "temp.h"
 using namespace std;
 
 class hello_behavior : public cgb::cg_element
@@ -51,9 +52,9 @@ class hello_behavior : public cgb::cg_element
 		glm::mat4 proj;
 	};
 
-	struct GeometryInstance
+	struct VkGeometryInstance
 	{
-		glm::mat4 transform;
+		float transform[12];
 		uint32_t instanceId : 24;
 		uint32_t mask : 8;
 		uint32_t instanceOffset : 24;
@@ -201,6 +202,7 @@ public:
 			.setDescriptorType(vk::DescriptorType::eAccelerationStructureNV)
 			.setDescriptorCount(1u)
 			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+			.setPImmutableSamplers(nullptr)
 			,
 			// Output Image Layout Binding:
 			vk::DescriptorSetLayoutBinding()
@@ -208,6 +210,7 @@ public:
 			.setDescriptorType(vk::DescriptorType::eStorageImage)
 			.setDescriptorCount(1u)
 			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+			.setPImmutableSamplers(nullptr)
 		};
 
 		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
@@ -306,35 +309,83 @@ public:
 
 	void create_rt_geometry()
 	{
+		struct Vertex
+		{
+			float X, Y, Z;
+		};
+
+		std::vector<Vertex> vertices
+		{
+			{ -0.5f, -0.5f, 0.0f },
+			{ +0.0f, +0.5f, 0.0f },
+			{ +0.5f, -0.5f, 0.0f }
+		};
+		const uint32_t vertexCount = (uint32_t)vertices.size();
+		const VkDeviceSize vertexSize = sizeof(Vertex);
+		const VkDeviceSize vertexBufferSize = vertexCount * vertexSize;
+		const std::vector<uint16_t> indices
+		{
+			{ 0, 1, 2 }
+		};
+		const uint32_t indexCount = (uint32_t)indices.size();
+		const VkDeviceSize indexSize = sizeof(uint16_t);
+		const VkDeviceSize indexBufferSize = indexCount * indexSize;
+		static cgb::vertex_buffer vertexBuffer = cgb::vertex_buffer::create(vertexBufferSize, vertexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		vertexBuffer.fill_host_coherent_memory(vertices.data());
+		static cgb::index_buffer indexBuffer = cgb::index_buffer::create(vk::IndexType::eUint16, indexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		indexBuffer.fill_host_coherent_memory(indices.data());
+
 		mGeometries.emplace_back()
 			.setGeometryType(vk::GeometryTypeNV::eTriangles)
 			.setGeometry(vk::GeometryDataNV()
 						 .setTriangles(vk::GeometryTrianglesNV()
-									   .setVertexData(mVertexBuffer.mBuffer)
+									   .setVertexData(vertexBuffer.mBuffer)
 									   .setVertexOffset(0)
-									   .setVertexCount(mVertexBuffer.mVertexCount)
-									   .setVertexStride(mVertexBuffer.mSize / mVertexBuffer.mVertexCount)
+									   .setVertexCount(vertexCount)
+									   .setVertexStride(vertexSize)
 									   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
-									   .setIndexData(mIndexBuffer.mBuffer)
+									   .setIndexData(indexBuffer.mBuffer)
 									   .setIndexOffset(0)
-									   .setIndexCount(mIndexBuffer.mIndexCount)
-									   .setIndexType(mIndexBuffer.mIndexType)
+									   .setIndexCount(indexCount)
+									   .setIndexType(vk::IndexType::eUint16)
 									   .setTransformData(nullptr)
-									   .setTransformOffset(0)));
+									   .setTransformOffset(0))
+						.setAabbs(vk::GeometryAABBNV()));
+
+
+		//mGeometries.emplace_back()
+		//	.setGeometryType(vk::GeometryTypeNV::eTriangles)
+		//	.setGeometry(vk::GeometryDataNV()
+		//				 .setTriangles(vk::GeometryTrianglesNV()
+		//							   .setVertexData(mVertexBuffer.mBuffer)
+		//							   .setVertexOffset(0)
+		//							   .setVertexCount(mVertexBuffer.mVertexCount)
+		//							   .setVertexStride(mVertexBuffer.mSize / mVertexBuffer.mVertexCount)
+		//							   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
+		//							   .setIndexData(mIndexBuffer.mBuffer)
+		//							   .setIndexOffset(0)
+		//							   .setIndexCount(mIndexBuffer.mIndexCount)
+		//							   .setIndexType(mIndexBuffer.mIndexType)
+		//							   .setTransformData(nullptr)
+		//							   .setTransformOffset(0)));
 	}
 
 	void create_rt_geometry_instances()
 	{
-		auto& inst = mGeometryInstances.emplace_back();
-		inst.transform = glm::mat4(1.0f);
+		VkGeometryInstance inst {
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+		};
 		inst.instanceId = 0;
 		inst.mask = 0xff;
 		inst.instanceOffset = 0;
 		inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
 		inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
+		mGeometryInstances.push_back(inst);
 
 		auto& bfr = mGeometryInstanceBuffers.emplace_back(cgb::buffer::create(
-			sizeof(GeometryInstance),
+			sizeof(VkGeometryInstance),
 			vk::BufferUsageFlagBits::eRayTracingNV,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
 		bfr.fill_host_coherent_memory(&inst);
@@ -452,6 +503,13 @@ public:
 
 	void initialize() override
 	{
+		// temp:
+		ResourceBase::Init(
+			(VkPhysicalDevice)cgb::context().physical_device(),
+			(VkDevice)cgb::context().logical_device(),
+			(VkCommandPool)cgb::context().get_command_pool_for_queue_family(cgb::context().transfer_queue_index()).mCommandPool,
+			(VkQueue)cgb::context().transfer_queue());
+
 		auto rtProps = cgb::context().get_ray_tracing_properties();
 
 		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
@@ -507,9 +565,13 @@ public:
 		{
 			create_rt_descriptor_set_layout();
 
-			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/rt_basic.rgen.spv"));
+			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rgen.spv"));
+			auto rchit = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rchit.spv"));
+			auto rmiss = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rmiss.spv"));
 			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
+			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit));
+			shaderInfos.push_back(std::make_tuple(cgb::shader_type::miss, &rmiss));
 
 			mRtPipeline = cgb::context().create_ray_tracing_pipeline(shaderInfos, { mRtDescriptorSetLayout.mDescriptorSetLayout });
 			mShaderBindingTable = cgb::shader_binding_table::create(mRtPipeline);
@@ -539,8 +601,8 @@ public:
 			cmdbfr.mCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipelineLayout, 0u, { mRtDescriptorSets[i].mDescriptorSet }, {});
 			cmdbfr.mCommandBuffer.traceRaysNV(
 				mShaderBindingTable.mBuffer, 0,
-				mShaderBindingTable.mBuffer, 0, rtProps.shaderGroupHandleSize,
-				mShaderBindingTable.mBuffer, 0, rtProps.shaderGroupHandleSize,
+				mShaderBindingTable.mBuffer, 2 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
+				mShaderBindingTable.mBuffer, 1 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
 				nullptr, 0, 0,
 				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height, 1,
 				cgb::context().dynamic_dispatch());
@@ -649,7 +711,7 @@ private:
 	cgb::image_view mDepthImageView;
 
 	std::vector<vk::GeometryNV> mGeometries;
-	std::vector<GeometryInstance> mGeometryInstances;
+	std::vector<VkGeometryInstance> mGeometryInstances;
 	std::vector<cgb::buffer> mGeometryInstanceBuffers;
 	cgb::acceleration_structure mBottomLevelAccStructure;
 	cgb::acceleration_structure mTopLevelAccStructure;

@@ -594,7 +594,7 @@ namespace cgb
 	{ // TODO: fix this hack after the RTX-VO!
 		auto fullImageOffset = vk::Offset3D(0, 0, 0);
 		auto fullImageExtent = pSource.mInfo.extent;
-		auto halfImageOffset = vk::Offset3D(pSource.mInfo.extent.width / 2, 0, 0);
+		auto halfImageOffset = vk::Offset3D(0, 0, 0); //vk::Offset3D(pSource.mInfo.extent.width / 2, 0, 0);
 		auto halfImageExtent = vk::Extent3D(pSource.mInfo.extent.width / 2, pSource.mInfo.extent.height, pSource.mInfo.extent.depth);
 
 		auto copyInfo = vk::ImageCopy()
@@ -1274,7 +1274,7 @@ namespace cgb
 
 	acceleration_structure& acceleration_structure::operator=(acceleration_structure&& other) noexcept
 	{ 
-		other.mAccStructureInfo = std::move(other.mAccStructureInfo);
+		mAccStructureInfo = std::move(other.mAccStructureInfo);
 		mAccStructure = std::move(other.mAccStructure);
 		mHandle = std::move(other.mHandle);
 		mMemoryProperties = std::move(other.mMemoryProperties);
@@ -1389,7 +1389,7 @@ namespace cgb
 
 	shader_binding_table shader_binding_table::create(const pipeline& pRtPipeline)
 	{
-		auto numGroups = 1u; // TODO: store groups in `pipeline` (or rather in `ray_tracing_pipeline : pipeline`) and then, read from pRtPipeline
+		auto numGroups = 3u; // TODO: store groups in `pipeline` (or rather in `ray_tracing_pipeline : pipeline`) and then, read from pRtPipeline
 		auto rtProps = context().get_ray_tracing_properties();
 		auto shaderBindingTableSize = rtProps.shaderGroupHandleSize * numGroups;
 
