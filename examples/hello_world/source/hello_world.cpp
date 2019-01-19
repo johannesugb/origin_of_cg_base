@@ -309,65 +309,65 @@ public:
 
 	void create_rt_geometry()
 	{
-		struct Vertex
-		{
-			float X, Y, Z;
-		};
+		//struct Vertex
+		//{
+		//	float X, Y, Z;
+		//};
 
-		std::vector<Vertex> vertices
-		{
-			{ -0.5f, -0.5f, 0.0f },
-			{ +0.0f, +0.5f, 0.0f },
-			{ +0.5f, -0.5f, 0.0f }
-		};
-		const uint32_t vertexCount = (uint32_t)vertices.size();
-		const VkDeviceSize vertexSize = sizeof(Vertex);
-		const VkDeviceSize vertexBufferSize = vertexCount * vertexSize;
-		const std::vector<uint16_t> indices
-		{
-			{ 0, 1, 2 }
-		};
-		const uint32_t indexCount = (uint32_t)indices.size();
-		const VkDeviceSize indexSize = sizeof(uint16_t);
-		const VkDeviceSize indexBufferSize = indexCount * indexSize;
-		static cgb::vertex_buffer vertexBuffer = cgb::vertex_buffer::create(vertexBufferSize, vertexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		vertexBuffer.fill_host_coherent_memory(vertices.data());
-		static cgb::index_buffer indexBuffer = cgb::index_buffer::create(vk::IndexType::eUint16, indexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		indexBuffer.fill_host_coherent_memory(indices.data());
-
-		mGeometries.emplace_back()
-			.setGeometryType(vk::GeometryTypeNV::eTriangles)
-			.setGeometry(vk::GeometryDataNV()
-						 .setTriangles(vk::GeometryTrianglesNV()
-									   .setVertexData(vertexBuffer.mBuffer)
-									   .setVertexOffset(0)
-									   .setVertexCount(vertexCount)
-									   .setVertexStride(vertexSize)
-									   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
-									   .setIndexData(indexBuffer.mBuffer)
-									   .setIndexOffset(0)
-									   .setIndexCount(indexCount)
-									   .setIndexType(vk::IndexType::eUint16)
-									   .setTransformData(nullptr)
-									   .setTransformOffset(0))
-						.setAabbs(vk::GeometryAABBNV()));
-
+		//std::vector<Vertex> vertices
+		//{
+		//	{ -0.5f, -0.5f, 0.0f },
+		//	{ +0.0f, +0.5f, 0.0f },
+		//	{ +0.5f, -0.5f, 0.0f }
+		//};
+		//const uint32_t vertexCount = (uint32_t)vertices.size();
+		//const VkDeviceSize vertexSize = sizeof(Vertex);
+		//const VkDeviceSize vertexBufferSize = vertexCount * vertexSize;
+		//const std::vector<uint16_t> indices
+		//{
+		//	{ 0, 1, 2 }
+		//};
+		//const uint32_t indexCount = (uint32_t)indices.size();
+		//const VkDeviceSize indexSize = sizeof(uint16_t);
+		//const VkDeviceSize indexBufferSize = indexCount * indexSize;
+		//static cgb::vertex_buffer vertexBuffer = cgb::vertex_buffer::create(vertexBufferSize, vertexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		//vertexBuffer.fill_host_coherent_memory(vertices.data());
+		//static cgb::index_buffer indexBuffer = cgb::index_buffer::create(vk::IndexType::eUint16, indexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		//indexBuffer.fill_host_coherent_memory(indices.data());
 
 		//mGeometries.emplace_back()
 		//	.setGeometryType(vk::GeometryTypeNV::eTriangles)
 		//	.setGeometry(vk::GeometryDataNV()
 		//				 .setTriangles(vk::GeometryTrianglesNV()
-		//							   .setVertexData(mVertexBuffer.mBuffer)
+		//							   .setVertexData(vertexBuffer.mBuffer)
 		//							   .setVertexOffset(0)
-		//							   .setVertexCount(mVertexBuffer.mVertexCount)
-		//							   .setVertexStride(mVertexBuffer.mSize / mVertexBuffer.mVertexCount)
+		//							   .setVertexCount(vertexCount)
+		//							   .setVertexStride(vertexSize)
 		//							   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
-		//							   .setIndexData(mIndexBuffer.mBuffer)
+		//							   .setIndexData(indexBuffer.mBuffer)
 		//							   .setIndexOffset(0)
-		//							   .setIndexCount(mIndexBuffer.mIndexCount)
-		//							   .setIndexType(mIndexBuffer.mIndexType)
+		//							   .setIndexCount(indexCount)
+		//							   .setIndexType(vk::IndexType::eUint16)
 		//							   .setTransformData(nullptr)
-		//							   .setTransformOffset(0)));
+		//							   .setTransformOffset(0))
+		//				.setAabbs(vk::GeometryAABBNV()));
+
+
+		mGeometries.emplace_back()
+			.setGeometryType(vk::GeometryTypeNV::eTriangles)
+			.setGeometry(vk::GeometryDataNV()
+						 .setTriangles(vk::GeometryTrianglesNV()
+									   .setVertexData(mModelVertices.mBuffer)
+									   .setVertexOffset(0)
+									   .setVertexCount(mModelVertices.mVertexCount)
+									   .setVertexStride(mModelVertices.mSize / mModelVertices.mVertexCount)
+									   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
+									   .setIndexData(mModelIndices.mBuffer)
+									   .setIndexOffset(0)
+									   .setIndexCount(mModelIndices.mIndexCount)
+									   .setIndexType(mModelIndices.mIndexType)
+									   .setTransformData(nullptr)
+									   .setTransformOffset(0)));
 	}
 
 	void create_rt_geometry_instances()
@@ -519,6 +519,12 @@ public:
 		create_vertex_buffer();
 		create_index_buffer();
 
+		load_model();
+		create_texture_image();
+		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
+		mSampler = cgb::sampler::create();
+		create_depth_buffer();
+
 		// RAY TRACING DATA start
 		create_rt_geometry();
 		mBottomLevelAccStructure = cgb::acceleration_structure::create_bottom_level(mGeometries);
@@ -526,13 +532,6 @@ public:
 		mTopLevelAccStructure = cgb::acceleration_structure::create_top_level(static_cast<uint32_t>(mGeometryInstances.size()));
 		build_acceleration_structures();
 		// RAY TRACING DATA end
-
-		load_model();
-		create_texture_image();
-		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
-		mSampler = cgb::sampler::create();
-		create_depth_buffer();
-
 
 		// Ordinary graphics pipeline:
 		{
