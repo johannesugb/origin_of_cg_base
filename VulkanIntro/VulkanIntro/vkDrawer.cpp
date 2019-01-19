@@ -1,10 +1,6 @@
 #include "vkDrawer.h"
 
-
-
-vkDrawer::vkDrawer(vkCommandBufferManager* commandBufferManager, vk::Pipeline &graphicsPipeline,
-	vk::PipelineLayout &pipelineLayout) : mCommandBufferManager(commandBufferManager), mGraphicsPipeline(graphicsPipeline),
-	mPipelineLayout(pipelineLayout)
+vkDrawer::vkDrawer(vkCommandBufferManager* commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline) : mCommandBufferManager(commandBufferManager), mPipeline(pipeline)
 {
 }
 
@@ -33,19 +29,19 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 
 	for (vkRenderObject* renderObject : renderObjects) {
 		// bind pipeline for this draw command
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mGraphicsPipeline);
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_graphics_pipeline());
 
 		vk::Buffer vertexBuffers[] = { renderObject->get_vertex_buffer() , renderObject->get_vertex_buffer() };
 		vk::DeviceSize offsets[] = { 0, 0 };
 		commandBuffer.bindVertexBuffers(1, 2, vertexBuffers, offsets);
 		commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
-		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipelineLayout, 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
+		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
 
 		//renderObject->updateUniformBuffer(frameIndex, 0, swapChainExtent);
 
 		commandBuffer.pushConstants(
-			mPipelineLayout,
+			mPipeline->get_pipeline_layout(),
 			vk::ShaderStageFlagBits::eVertex,
 			0,
 			sizeof(PushUniforms),

@@ -172,6 +172,7 @@
     <ClCompile Include="vkRenderer.cpp" />
     <ClCompile Include="vkRenderObject.cpp" />
     <ClCompile Include="vkTexture.cpp" />
+    <ClCompile Include="vulkan_pipeline.cpp" />
     <ClCompile Include="vulkan_render_queue.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -191,6 +192,7 @@
     <ClInclude Include="vkRenderer.h" />
     <ClInclude Include="vkRenderObject.h" />
     <ClInclude Include="vkTexture.h" />
+    <ClInclude Include="vulkan_pipeline.h" />
     <ClInclude Include="vulkan_render_queue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -66,6 +66,9 @@
     <ClCompile Include="vulkan_render_queue.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="vulkan_pipeline.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\triangle.vert">
@@ -113,6 +116,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="vulkan_render_queue.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkan_pipeline.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
