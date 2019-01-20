@@ -168,6 +168,16 @@ public:
 		}
 	}
 
+	void create_rt_uniform_buffers()
+	{
+		for (auto i = 0; i < mFrameBuffers.size(); ++i) {
+			mRtUniformBuffers.push_back(cgb::uniform_buffer::create(
+				sizeof(UniformBufferObject),
+				vk::BufferUsageFlagBits::eRayTracingNV,
+				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+		}
+	}
+
 	void create_descriptor_set_layout()
 	{
 		std::array bindings = { 
@@ -212,6 +222,14 @@ public:
 			.setDescriptorCount(1u)
 			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV) // ...warum hier allerdings nur RayGen bleibt - k.A.
 			.setPImmutableSamplers(nullptr)
+			,
+			// UBO Binding
+			vk::DescriptorSetLayoutBinding()
+			.setBinding(2u)
+			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+			.setDescriptorCount(1u)
+			.setStageFlags(vk::ShaderStageFlagBits::eAll)
+			.setPImmutableSamplers(nullptr) // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
 		};
 
 		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
@@ -349,11 +367,9 @@ public:
 		auto instId = 0u;
 		// 1 instance of  chalet
 		{
-			VkGeometryInstance inst{
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-			};
+			auto modelMatrixForInstance = glm::transpose( glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)) );
+			VkGeometryInstance inst;
+			memcpy(inst.transform, glm::value_ptr(modelMatrixForInstance), sizeof(inst.transform));
 			inst.instanceId = instId++;
 			inst.mask = 0xff;
 			inst.instanceOffset = 0;
@@ -477,7 +493,7 @@ public:
 		}
 		mRtDescriptorSets = cgb::context().create_descriptor_set(layouts);
 
-		for (auto i = 0; i < mRtDescriptorSets.size(); ++i) { // currently, there is only one (see comment above)
+		for (auto i = 0; i < mRtDescriptorSets.size(); ++i) {
 			// binding 0:
 			auto accStructInfo = vk::WriteDescriptorSetAccelerationStructureNV()
 				.setAccelerationStructureCount(1u)
@@ -503,7 +519,20 @@ public:
 				.setDescriptorType(vk::DescriptorType::eStorageImage)
 				.setPImageInfo(&outputImageInfo);
 
-			cgb::context().logical_device().updateDescriptorSets({ accStructWrite, outputImageWrite }, {});
+			// binding 2:
+			auto bufferInfo = vk::DescriptorBufferInfo()
+				.setBuffer(mRtUniformBuffers[i].mBuffer)
+				.setOffset(0)
+				.setRange(sizeof(UniformBufferObject));
+			auto descriptorWriteBuffer = vk::WriteDescriptorSet()
+				.setDstSet(mRtDescriptorSets[i].mDescriptorSet) // FUCK YOU, Vulkan! Note: Always pay attention to reference the right descriptor set!
+				.setDstBinding(2u)
+				.setDstArrayElement(0u)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(1u)
+				.setPBufferInfo(&bufferInfo);
+
+			cgb::context().logical_device().updateDescriptorSets({ accStructWrite, outputImageWrite, descriptorWriteBuffer }, {}); // ...and fuck you again! Never forgetti!
 		}
 	}
 
@@ -588,6 +617,7 @@ public:
 		}
 
 		create_uniform_buffers();
+		create_rt_uniform_buffers();
 		create_descriptor_sets();
 		create_rt_descriptor_set();
 
@@ -670,6 +700,7 @@ public:
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
 		ubo.proj[1][1] *= -1;
 		mUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
+		mRtUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
 
 		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		auto submitInfo = vk::SubmitInfo()
@@ -708,6 +739,7 @@ private:
 	cgb::vertex_buffer mVertexBuffer;
 	cgb::index_buffer mIndexBuffer;
 	std::vector<cgb::uniform_buffer> mUniformBuffers;
+	std::vector<cgb::uniform_buffer> mRtUniformBuffers;
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::descriptor_set_layout mDescriptorSetLayout;
 	cgb::descriptor_set_layout mRtDescriptorSetLayout;

@@ -596,13 +596,15 @@ namespace cgb
 		auto fullImageExtent = pSource.mInfo.extent;
 		auto halfImageOffset = vk::Offset3D(0, 0, 0); //vk::Offset3D(pSource.mInfo.extent.width / 2, 0, 0);
 		auto halfImageExtent = vk::Extent3D(pSource.mInfo.extent.width / 2, pSource.mInfo.extent.height, pSource.mInfo.extent.depth);
+		auto offset = halfImageOffset;
+		auto extent = halfImageExtent;
 
 		auto copyInfo = vk::ImageCopy()
 			.setSrcSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0u, 0u, 1u))
-			.setSrcOffset(halfImageOffset)
+			.setSrcOffset(offset)
 			.setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0u, 0u, 1u))
-			.setDstOffset(halfImageOffset)
-			.setExtent(halfImageExtent);
+			.setDstOffset(offset)
+			.setExtent(extent);
 		mCommandBuffer.copyImage(pSource.mImage, vk::ImageLayout::eTransferSrcOptimal, pDestination, vk::ImageLayout::eTransferDstOptimal, { copyInfo });
 	}
 
