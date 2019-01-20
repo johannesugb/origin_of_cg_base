@@ -1057,10 +1057,26 @@ namespace cgb
 			.setAnyHitShader(VK_SHADER_UNUSED_NV)
 			.setIntersectionShader(VK_SHADER_UNUSED_NV)
 			,
-			// group1 = [miss]
+			// group2 = [chit1]
+			vk::RayTracingShaderGroupCreateInfoNV()
+			.setType(vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup)
+			.setGeneralShader(VK_SHADER_UNUSED_NV) 
+			.setClosestHitShader(2u) 
+			.setAnyHitShader(VK_SHADER_UNUSED_NV)
+			.setIntersectionShader(VK_SHADER_UNUSED_NV)
+			,
+			// group3 = [miss0]
 			vk::RayTracingShaderGroupCreateInfoNV()
 			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
-			.setGeneralShader(2u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
+			.setGeneralShader(3u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
+			.setClosestHitShader(VK_SHADER_UNUSED_NV)
+			.setAnyHitShader(VK_SHADER_UNUSED_NV)
+			.setIntersectionShader(VK_SHADER_UNUSED_NV)
+			,
+			// group4 = [miss1]
+			vk::RayTracingShaderGroupCreateInfoNV()
+			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
+			.setGeneralShader(4u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
 			.setClosestHitShader(VK_SHADER_UNUSED_NV)
 			.setAnyHitShader(VK_SHADER_UNUSED_NV)
 			.setIntersectionShader(VK_SHADER_UNUSED_NV)
@@ -1072,7 +1088,7 @@ namespace cgb
 			.setPStages(shaderStages.data())
 			.setGroupCount(static_cast<uint32_t>(shaderGroups.size()))
 			.setPGroups(shaderGroups.data())
-			.setMaxRecursionDepth(1u)
+			.setMaxRecursionDepth(2u) // Ho ho ho! Wir recursen!
 			.setLayout(pipelineLayout);
 		return pipeline(
 			pipelineLayout,

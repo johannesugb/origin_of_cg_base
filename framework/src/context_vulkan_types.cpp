@@ -1389,7 +1389,7 @@ namespace cgb
 
 	shader_binding_table shader_binding_table::create(const pipeline& pRtPipeline)
 	{
-		auto numGroups = 3u; // TODO: store groups in `pipeline` (or rather in `ray_tracing_pipeline : pipeline`) and then, read from pRtPipeline
+		auto numGroups = 5u; // TODO: store groups in `pipeline` (or rather in `ray_tracing_pipeline : pipeline`) and then, read from pRtPipeline
 		auto rtProps = context().get_ray_tracing_properties();
 		auto shaderBindingTableSize = rtProps.shaderGroupHandleSize * numGroups;
 

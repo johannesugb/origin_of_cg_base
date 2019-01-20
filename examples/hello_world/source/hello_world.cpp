@@ -117,10 +117,10 @@ public:
 		cgb::copy(stagingBuffer, mIndexBuffer);
 	}
 
-	void load_model()
+	static void load_model(std::string inPath, std::unique_ptr<cgb::Model>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer)
 	{
-		mModel = cgb::Model::LoadFromFile("assets/chalet.obj", glm::mat4(1.0f));
-		auto& mesh = mModel->mesh_at(0);
+		outModel = cgb::Model::LoadFromFile(inPath, glm::mat4(1.0f));
+		auto& mesh = outModel->mesh_at(0);
 		
 		{
 			auto stagingBuffer = cgb::buffer::create(
@@ -132,13 +132,13 @@ public:
 			//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
 			stagingBuffer.fill_host_coherent_memory(mesh.m_vertex_data.data());
 
-			mModelVertices = cgb::vertex_buffer::create(
+			outVertexBuffer = cgb::vertex_buffer::create(
 				mesh.m_size_one_vertex, mesh.m_vertex_data.size() / mesh.m_size_one_vertex,
 				vk::BufferUsageFlagBits::eTransferDst,
 				vk::MemoryPropertyFlagBits::eDeviceLocal);
 
 			// Transfer the data from the staging buffer into the vertex buffer
-			cgb::copy(stagingBuffer, mModelVertices);
+			cgb::copy(stagingBuffer, outVertexBuffer);
 		}
 
 		{
@@ -149,12 +149,12 @@ public:
 
 			stagingBuffer.fill_host_coherent_memory(mesh.m_indices.data());
 
-			mModelIndices = cgb::index_buffer::create(
+			outIndexBuffer = cgb::index_buffer::create(
 				vk::IndexType::eUint32, mesh.m_indices.size(),
 				vk::BufferUsageFlagBits::eTransferDst,
 				vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-			cgb::copy(stagingBuffer, mModelIndices);
+			cgb::copy(stagingBuffer, outIndexBuffer);
 		}
 	}
 
@@ -201,7 +201,8 @@ public:
 			.setBinding(0u)
 			.setDescriptorType(vk::DescriptorType::eAccelerationStructureNV)
 			.setDescriptorCount(1u)
-			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+			// Achtung: Wichtig, hier alle Flags zu setzen, für welche Shader das Ding genutzt werden soll... d.h. ich will RayGen und aber auch ClosestHit, z.B.:
+			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV)
 			.setPImmutableSamplers(nullptr)
 			,
 			// Output Image Layout Binding:
@@ -209,7 +210,7 @@ public:
 			.setBinding(1u)
 			.setDescriptorType(vk::DescriptorType::eStorageImage)
 			.setDescriptorCount(1u)
-			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV)
+			.setStageFlags(vk::ShaderStageFlagBits::eRaygenNV) // ...warum hier allerdings nur RayGen bleibt - k.A.
 			.setPImmutableSamplers(nullptr)
 		};
 
@@ -309,50 +310,7 @@ public:
 
 	void create_rt_geometry()
 	{
-		//struct Vertex
-		//{
-		//	float X, Y, Z;
-		//};
-
-		//std::vector<Vertex> vertices
-		//{
-		//	{ -0.5f, -0.5f, 0.0f },
-		//	{ +0.0f, +0.5f, 0.0f },
-		//	{ +0.5f, -0.5f, 0.0f }
-		//};
-		//const uint32_t vertexCount = (uint32_t)vertices.size();
-		//const VkDeviceSize vertexSize = sizeof(Vertex);
-		//const VkDeviceSize vertexBufferSize = vertexCount * vertexSize;
-		//const std::vector<uint16_t> indices
-		//{
-		//	{ 0, 1, 2 }
-		//};
-		//const uint32_t indexCount = (uint32_t)indices.size();
-		//const VkDeviceSize indexSize = sizeof(uint16_t);
-		//const VkDeviceSize indexBufferSize = indexCount * indexSize;
-		//static cgb::vertex_buffer vertexBuffer = cgb::vertex_buffer::create(vertexBufferSize, vertexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		//vertexBuffer.fill_host_coherent_memory(vertices.data());
-		//static cgb::index_buffer indexBuffer = cgb::index_buffer::create(vk::IndexType::eUint16, indexCount, vk::BufferUsageFlags(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		//indexBuffer.fill_host_coherent_memory(indices.data());
-
-		//mGeometries.emplace_back()
-		//	.setGeometryType(vk::GeometryTypeNV::eTriangles)
-		//	.setGeometry(vk::GeometryDataNV()
-		//				 .setTriangles(vk::GeometryTrianglesNV()
-		//							   .setVertexData(vertexBuffer.mBuffer)
-		//							   .setVertexOffset(0)
-		//							   .setVertexCount(vertexCount)
-		//							   .setVertexStride(vertexSize)
-		//							   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
-		//							   .setIndexData(indexBuffer.mBuffer)
-		//							   .setIndexOffset(0)
-		//							   .setIndexCount(indexCount)
-		//							   .setIndexType(vk::IndexType::eUint16)
-		//							   .setTransformData(nullptr)
-		//							   .setTransformOffset(0))
-		//				.setAabbs(vk::GeometryAABBNV()));
-
-
+		// chalet:
 		mGeometries.emplace_back()
 			.setGeometryType(vk::GeometryTypeNV::eTriangles)
 			.setGeometry(vk::GeometryDataNV()
@@ -368,27 +326,75 @@ public:
 									   .setIndexType(mModelIndices.mIndexType)
 									   .setTransformData(nullptr)
 									   .setTransformOffset(0)));
+		//// sphere:
+		//mGeometries.emplace_back()
+		//	.setGeometryType(vk::GeometryTypeNV::eTriangles)
+		//	.setGeometry(vk::GeometryDataNV()
+		//				 .setTriangles(vk::GeometryTrianglesNV()
+		//							   .setVertexData(mSphereVertices.mBuffer)
+		//							   .setVertexOffset(0)
+		//							   .setVertexCount(mSphereVertices.mVertexCount)
+		//							   .setVertexStride(mSphereVertices.mSize / mSphereVertices.mVertexCount)
+		//							   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
+		//							   .setIndexData(mSphereIndices.mBuffer)
+		//							   .setIndexOffset(0)
+		//							   .setIndexCount(mSphereIndices.mIndexCount)
+		//							   .setIndexType(mSphereIndices.mIndexType)
+		//							   .setTransformData(nullptr)
+		//							   .setTransformOffset(0)));
 	}
 
 	void create_rt_geometry_instances()
 	{
-		VkGeometryInstance inst {
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-		};
-		inst.instanceId = 0;
-		inst.mask = 0xff;
-		inst.instanceOffset = 0;
-		inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
-		inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
-		mGeometryInstances.push_back(inst);
+		auto instId = 0u;
+		// 1 instance of  chalet
+		{
+			VkGeometryInstance inst{
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+			};
+			inst.instanceId = instId++;
+			inst.mask = 0xff;
+			inst.instanceOffset = 0;
+			inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
+			inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
+			mGeometryInstances.push_back(inst);
+		}
+		//// 1st sphere instance
+		//{
+		//	VkGeometryInstance inst{
+		//		1.0f, 0.0f, 0.0f, -1.0f,
+		//		0.0f, 1.0f, 0.0f, 0.0f,
+		//		0.0f, 0.0f, 1.0f, 0.0f,
+		//	};
+		//	inst.instanceId = instId++;
+		//	inst.mask = 0xff;
+		//	inst.instanceOffset = 0;
+		//	inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
+		//	inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
+		//	mGeometryInstances.push_back(inst);
+		//}
+		//// 2nd sphere instance
+		//{
+		//	VkGeometryInstance inst{
+		//		1.0f, 0.0f, 0.0f, 1.0f,
+		//		0.0f, 1.0f, 0.0f, 0.0f,
+		//		0.0f, 0.0f, 1.0f, 0.0f,
+		//	};
+		//	inst.instanceId = instId++;
+		//	inst.mask = 0xff;
+		//	inst.instanceOffset = 0;
+		//	inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
+		//	inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
+		//	mGeometryInstances.push_back(inst);
+		//}
 
 		auto& bfr = mGeometryInstanceBuffers.emplace_back(cgb::buffer::create(
-			sizeof(VkGeometryInstance),
+			sizeof(VkGeometryInstance) * mGeometryInstances.size(),
 			vk::BufferUsageFlagBits::eRayTracingNV,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-		bfr.fill_host_coherent_memory(&inst);
+		bfr.fill_host_coherent_memory(mGeometryInstances.data());
 	}
 
 	void build_acceleration_structures()
@@ -519,7 +525,8 @@ public:
 		create_vertex_buffer();
 		create_index_buffer();
 
-		load_model();
+		load_model("assets/chalet.obj", mModel, mModelVertices, mModelIndices);
+		load_model("assets/sphere.obj", mSphere, mSphereVertices, mSphereIndices);
 		create_texture_image();
 		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
 		mSampler = cgb::sampler::create();
@@ -567,10 +574,14 @@ public:
 			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rgen.spv"));
 			auto rchit = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rchit.spv"));
 			auto rmiss = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rmiss.spv"));
+			auto rchit2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt_scnd.rchit.spv"));
+			auto rmiss2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt_scnd.rmiss.spv"));
 			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit));
+			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit2));
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::miss, &rmiss));
+			shaderInfos.push_back(std::make_tuple(cgb::shader_type::miss, &rmiss2));
 
 			mRtPipeline = cgb::context().create_ray_tracing_pipeline(shaderInfos, { mRtDescriptorSetLayout.mDescriptorSetLayout });
 			mShaderBindingTable = cgb::shader_binding_table::create(mRtPipeline);
@@ -600,7 +611,7 @@ public:
 			cmdbfr.mCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipelineLayout, 0u, { mRtDescriptorSets[i].mDescriptorSet }, {});
 			cmdbfr.mCommandBuffer.traceRaysNV(
 				mShaderBindingTable.mBuffer, 0,
-				mShaderBindingTable.mBuffer, 2 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
+				mShaderBindingTable.mBuffer, 3 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
 				mShaderBindingTable.mBuffer, 1 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
 				nullptr, 0, 0,
 				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height, 1,
@@ -688,9 +699,12 @@ private:
 	const std::vector<Vertex> mVertices;
 	const std::vector<uint16_t> mIndices;
 	std::unique_ptr<cgb::Model> mModel;
+	std::unique_ptr<cgb::Model> mSphere;
 #ifdef USE_VULKAN_CONTEXT
 	cgb::vertex_buffer mModelVertices;
 	cgb::index_buffer mModelIndices;
+	cgb::vertex_buffer mSphereVertices;
+	cgb::index_buffer mSphereIndices;
 	cgb::vertex_buffer mVertexBuffer;
 	cgb::index_buffer mIndexBuffer;
 	std::vector<cgb::uniform_buffer> mUniformBuffers;

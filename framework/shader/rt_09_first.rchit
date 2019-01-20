@@ -4,7 +4,7 @@
 layout(binding = 0) uniform accelerationStructureNV topLevelAS;
 
 layout(location = 0) rayPayloadInNV vec3 hitValue;
-layout(location = 1) hitAttributeNV vec3 attribs;
+hitAttributeNV vec3 attribs;
 layout(location = 2) rayPayloadNV float secondaryRayHitValue;
 
 void main()
