@@ -171,10 +171,19 @@ public:
 	void create_rt_uniform_buffers()
 	{
 		for (auto i = 0; i < mFrameBuffers.size(); ++i) {
-			mRtUniformBuffers.push_back(cgb::uniform_buffer::create(
-				sizeof(UniformBufferObject),
-				vk::BufferUsageFlagBits::eRayTracingNV,
-				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+			auto& vec = mRtUniformBuffers.emplace_back();
+			vec.emplace_back(cgb::uniform_buffer::create( // One buffer for the matrices
+					sizeof(UniformBufferObject),
+					vk::BufferUsageFlagBits::eRayTracingNV,
+					vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+			vec.emplace_back(cgb::uniform_buffer::create( // another 2 for color values
+					sizeof(glm::vec4),
+					vk::BufferUsageFlagBits::eRayTracingNV,
+					vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+			vec.emplace_back(cgb::uniform_buffer::create( // another 2 for color values
+					sizeof(glm::vec4),
+					vk::BufferUsageFlagBits::eRayTracingNV,
+					vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
 		}
 	}
 
@@ -228,6 +237,14 @@ public:
 			.setBinding(2u)
 			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 			.setDescriptorCount(1u)
+			.setStageFlags(vk::ShaderStageFlagBits::eAll)
+			.setPImmutableSamplers(nullptr) // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
+			,
+			// UBO Binding (instance data)
+			vk::DescriptorSetLayoutBinding()
+			.setBinding(3u)
+			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+			.setDescriptorCount(2u) // _instanceNum is an upper bound
 			.setStageFlags(vk::ShaderStageFlagBits::eAll)
 			.setPImmutableSamplers(nullptr) // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
 		};
@@ -343,7 +360,8 @@ public:
 									   .setIndexCount(mModelIndices.mIndexCount)
 									   .setIndexType(mModelIndices.mIndexType)
 									   .setTransformData(nullptr)
-									   .setTransformOffset(0)));
+									   .setTransformOffset(0)))
+			.setFlags(vk::GeometryFlagBitsNV::eOpaque); 
 		//// sphere:
 		//mGeometries.emplace_back()
 		//	.setGeometryType(vk::GeometryTypeNV::eTriangles)
@@ -365,9 +383,9 @@ public:
 	void create_rt_geometry_instances()
 	{
 		auto instId = 0u;
-		// 1 instance of  chalet
+		// 1st instance of chalet
 		{
-			auto modelMatrixForInstance = glm::transpose( glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)) );
+			auto modelMatrixForInstance = glm::transpose(glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)));
 			VkGeometryInstance inst;
 			memcpy(inst.transform, glm::value_ptr(modelMatrixForInstance), sizeof(inst.transform));
 			inst.instanceId = instId++;
@@ -377,34 +395,19 @@ public:
 			inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
 			mGeometryInstances.push_back(inst);
 		}
-		//// 1st sphere instance
-		//{
-		//	VkGeometryInstance inst{
-		//		1.0f, 0.0f, 0.0f, -1.0f,
-		//		0.0f, 1.0f, 0.0f, 0.0f,
-		//		0.0f, 0.0f, 1.0f, 0.0f,
-		//	};
-		//	inst.instanceId = instId++;
-		//	inst.mask = 0xff;
-		//	inst.instanceOffset = 0;
-		//	inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
-		//	inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
-		//	mGeometryInstances.push_back(inst);
-		//}
-		//// 2nd sphere instance
-		//{
-		//	VkGeometryInstance inst{
-		//		1.0f, 0.0f, 0.0f, 1.0f,
-		//		0.0f, 1.0f, 0.0f, 0.0f,
-		//		0.0f, 0.0f, 1.0f, 0.0f,
-		//	};
-		//	inst.instanceId = instId++;
-		//	inst.mask = 0xff;
-		//	inst.instanceOffset = 0;
-		//	inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
-		//	inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
-		//	mGeometryInstances.push_back(inst);
-		//}
+		// 2nd instance of chalet
+		{
+			auto modelMatrixForInstance = glm::transpose(glm::translate(glm::vec3(0.0f, 0.0f, -3.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)));
+			VkGeometryInstance inst;
+			memcpy(inst.transform, glm::value_ptr(modelMatrixForInstance), sizeof(inst.transform));
+			inst.instanceId = instId++;
+			inst.mask = 0xff;
+			inst.instanceOffset = 0;
+			inst.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
+			inst.accelerationStructureHandle = mBottomLevelAccStructure.mHandle.mHandle;
+			mGeometryInstances.push_back(inst);
+		}
+
 
 		auto& bfr = mGeometryInstanceBuffers.emplace_back(cgb::buffer::create(
 			sizeof(VkGeometryInstance) * mGeometryInstances.size(),
@@ -521,7 +524,7 @@ public:
 
 			// binding 2:
 			auto bufferInfo = vk::DescriptorBufferInfo()
-				.setBuffer(mRtUniformBuffers[i].mBuffer)
+				.setBuffer(mRtUniformBuffers[i][0].mBuffer)
 				.setOffset(0)
 				.setRange(sizeof(UniformBufferObject));
 			auto descriptorWriteBuffer = vk::WriteDescriptorSet()
@@ -532,7 +535,27 @@ public:
 				.setDescriptorCount(1u)
 				.setPBufferInfo(&bufferInfo);
 
-			cgb::context().logical_device().updateDescriptorSets({ accStructWrite, outputImageWrite, descriptorWriteBuffer }, {}); // ...and fuck you again! Never forgetti!
+			// binding 3:
+			std::array bufferDescs = {
+				vk::DescriptorBufferInfo()
+				.setBuffer(mRtUniformBuffers[i][1].mBuffer)
+				.setOffset(0)
+				.setRange(sizeof(UniformBufferObject))
+				,
+				vk::DescriptorBufferInfo()
+				.setBuffer(mRtUniformBuffers[i][2].mBuffer)
+				.setOffset(0)
+				.setRange(sizeof(UniformBufferObject))
+			};
+			auto descriptorWriteBuffer2 = vk::WriteDescriptorSet()
+				.setDstSet(mRtDescriptorSets[i].mDescriptorSet) // FUCK YOU, Vulkan! Note: Always pay attention to reference the right descriptor set!
+				.setDstBinding(3u)
+				.setDstArrayElement(0u)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(static_cast<uint32_t>(bufferDescs.size()))
+				.setPBufferInfo(bufferDescs.data());
+
+			cgb::context().logical_device().updateDescriptorSets({ accStructWrite, outputImageWrite, descriptorWriteBuffer, descriptorWriteBuffer2 }, {}); // ...and fuck you again! Never forgetti!
 		}
 	}
 
@@ -700,7 +723,11 @@ public:
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
 		ubo.proj[1][1] *= -1;
 		mUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
-		mRtUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
+		mRtUniformBuffers[imageIndex][0].fill_host_coherent_memory(&ubo);
+		glm::vec4 color1(1.0, 1.0, 0.0, 0.0);
+		glm::vec4 color2(1.0, 0.0, 0.0, 0.0);
+		mRtUniformBuffers[imageIndex][1].fill_host_coherent_memory(&color1);
+		mRtUniformBuffers[imageIndex][2].fill_host_coherent_memory(&color2);
 
 		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		auto submitInfo = vk::SubmitInfo()
@@ -739,7 +766,7 @@ private:
 	cgb::vertex_buffer mVertexBuffer;
 	cgb::index_buffer mIndexBuffer;
 	std::vector<cgb::uniform_buffer> mUniformBuffers;
-	std::vector<cgb::uniform_buffer> mRtUniformBuffers;
+	std::vector<std::vector<cgb::uniform_buffer>> mRtUniformBuffers;
 	cgb::swap_chain_data* mSwapChainData;
 	cgb::descriptor_set_layout mDescriptorSetLayout;
 	cgb::descriptor_set_layout mRtDescriptorSetLayout;
@@ -785,6 +812,7 @@ int main()
 		cgb::settings::gApplicationName = "Hello World";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
 		cgb::settings::gRequiredDeviceExtensions.push_back("VK_NV_ray_tracing");
+		cgb::settings::gRequiredDeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
 
 		// Create a window which we're going to use to render to

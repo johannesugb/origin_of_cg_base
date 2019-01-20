@@ -1,11 +1,26 @@
 #version 460
 #extension GL_NV_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier : require
 
 layout(binding = 0) uniform accelerationStructureNV topLevelAS;
 
 layout(location = 0) rayPayloadInNV vec3 hitValue;
 hitAttributeNV vec3 attribs;
 layout(location = 2) rayPayloadNV float secondaryRayHitValue;
+
+
+
+layout(binding = 3) uniform UniformBuffer
+{
+    vec4 color;
+} uniformBuffers[];
+
+layout(shaderRecordNV) buffer InlineData {
+    vec4 inlineData;
+};
+
+
+
 
 void main()
 {
@@ -20,5 +35,8 @@ void main()
 
     traceNV(topLevelAS, rayFlags, cullMask, 1 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 1 /* missIndex */, origin, tmin, direction, tmax, 2 /*payload location*/);
 
-    hitValue = barycentrics * ( secondaryRayHitValue < tmax ? 0.25 : 1.0 );
+	// gl_InstanceCustomIndex = VkGeometryInstance::instanceId
+    hitValue = (barycentrics * 0.5 + vec3(0.5, 0.5, 0.5))
+		* uniformBuffers[nonuniformEXT(gl_InstanceCustomIndexNV)].color.rgb
+		* ( secondaryRayHitValue < tmax ? 0.25 : 1.0 );
 }
