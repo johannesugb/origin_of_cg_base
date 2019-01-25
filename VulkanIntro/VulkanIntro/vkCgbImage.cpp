@@ -1,7 +1,5 @@
 #include "vkCgbImage.h"
 
-
-
 #include <algorithm>
 #include <stdexcept>
 
@@ -17,7 +15,8 @@ vkCgbImage::vkCgbImage(vkCommandBufferManager* commandBufferManager, void* pixel
 }
 
 vkCgbImage::vkCgbImage(vkCommandBufferManager* commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
-	vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects) : mCommandBufferManager(commandBufferManager), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels)
+	vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects) : mCommandBufferManager(commandBufferManager), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels),
+	mNumSamples(numSamples), mFormat(format), mTiling(tiling), mUsage(usage), mMemoryProperties(properties), mAspects(aspects)
 {
 	create_image(mTexWidth, mTexHeight, mMipLevels, numSamples, format, tiling, usage, properties, mImage, mImageMemory);
 	mImageView = create_image_view(format, aspects, mipLevels);

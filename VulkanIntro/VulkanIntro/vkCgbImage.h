@@ -15,20 +15,34 @@ public:
 
 	virtual ~vkCgbImage();
 
-	vk::ImageView get_image_view() { return mImageView; };
-	uint32_t get_mip_levels() { return mMipLevels; };
+	vk::ImageView get_image_view() { return mImageView; }
+	uint32_t get_mip_levels() { return mMipLevels; }
+
+	vk::SampleCountFlagBits get_num_samples() { return mNumSamples; }
+	vk::Format get_format() { return mFormat; }
+	vk::ImageTiling get_tiling() { return mTiling; }
+	vk::ImageUsageFlags get_usage() { return mUsage; }
+	vk::MemoryPropertyFlags get_memory_properties() { return mMemoryProperties; }
+	vk::ImageAspectFlags get_aspects() { return mAspects; }
 
 	void transition_image_layout(vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, uint32_t mipLevels);
 private:
-	int mTexWidth;
-	int mTexHeight;
-	int mTtexChannels;
-
 	vk::Image mImage;
 	vkCgbMemory mImageMemory;
 	vk::ImageView mImageView;
 
+	// properties of image
+	int mTexWidth;
+	int mTexHeight;
+	int mTtexChannels;
 	uint32_t mMipLevels;
+	vk::SampleCountFlagBits mNumSamples;
+	vk::Format mFormat;  
+	vk::ImageTiling mTiling; 
+	vk::ImageUsageFlags mUsage;
+	vk::MemoryPropertyFlags mMemoryProperties;
+	vk::ImageAspectFlags mAspects;
+
 
 	vkCommandBufferManager* mCommandBufferManager;
 

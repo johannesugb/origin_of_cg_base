@@ -224,7 +224,7 @@ vk::ImageView vkImagePresenter::createImageView(vk::Image image, vk::Format form
 
 	vk::ImageView imageView;
 	if (vkContext::instance().device.createImageView(&viewInfo, nullptr, &imageView) != vk::Result::eSuccess) {
-		throw std::runtime_error("failed to create texture image view!");
+		throw std::runtime_error("failed to create swapchain image view!");
 	}
 
 	return imageView;

@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include "vulkan_framebuffer.h"
+
 
 vulkan_render_queue::vulkan_render_queue(vk::Queue &graphicsQueue, std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager) : 
 	mGraphicsQueue(graphicsQueue), mDrawCommandBufferManager(drawCommandBufferManager)
@@ -43,8 +45,8 @@ void vulkan_render_queue::submit(std::vector<vk::CommandBuffer> secondaryCommand
 
 void vulkan_render_queue::recordPrimaryCommandBuffer(vk::CommandBuffer &commandBuffer, std::vector<vk::CommandBuffer> secondaryCommandBuffers, vk::Extent2D extent) {
 	vk::RenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.renderPass = vkContext::instance().renderPass;
-	renderPassInfo.framebuffer = vkContext::instance().frameBuffer;
+	renderPassInfo.renderPass = vkContext::instance().vulkanFramebuffer->get_render_pass();
+	renderPassInfo.framebuffer = vkContext::instance().vulkanFramebuffer->get_swapchain_framebuffer();
 
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = extent;

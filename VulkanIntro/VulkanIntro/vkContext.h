@@ -5,7 +5,9 @@
 #include <vulkan/vulkan.hpp>
 
 #include <optional>
+#include <memory>
 
+class vulkan_framebuffer;
 class vkMemoryManager;
 
 
@@ -33,10 +35,9 @@ public:
 
 	vkMemoryManager* memoryManager;
 
-	vk::RenderPass renderPass;
+	std::shared_ptr<vulkan_framebuffer> vulkanFramebuffer;
 
 	// updated per frame/pass
-	vk::Framebuffer frameBuffer;
 	int currentFrame;
 
 	static vkContext& instance()

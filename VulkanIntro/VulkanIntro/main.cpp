@@ -38,6 +38,7 @@
 #include "vulkan_render_queue.h"
 #include "VkRenderer.h"
 #include "vulkan_pipeline.h"
+#include "vulkan_framebuffer.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -93,10 +94,7 @@ private:
 
 	
 
-	vk::RenderPass renderPass;
 	vk::DescriptorSetLayout descriptorSetLayout;
-
-	std::vector<vk::Framebuffer> swapChainFramebuffers;
 
 	vk::CommandPool commandPool;
 	vk::CommandPool transferCommandPool;
@@ -132,12 +130,13 @@ private:
 	vkDrawer* drawer;
 
 	// render target needed for MSAA
-	vkCgbImage* colorImage;
-	std::unique_ptr<vkCgbImage> depthImage;
+	std::shared_ptr<vkCgbImage> colorImage;
+	std::shared_ptr<vkCgbImage> depthImage;
 	std::shared_ptr<vkImagePresenter> imagePresenter;
 	std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
 	std::unique_ptr<vkRenderer> mRenderer;
 	std::shared_ptr<vulkan_pipeline> mVulkanPipeline;
+	std::shared_ptr<vulkan_framebuffer> mVulkanFramebuffer;
 
 public:
 	void run() {
@@ -154,11 +153,11 @@ private:
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
+		vkContext::instance().physicalDevice = physicalDevice;
+		vkContext::instance().device = device;
 
 		createCommandPools();
 
-		vkContext::instance().physicalDevice = physicalDevice;
-		vkContext::instance().device = device;
 		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool, graphicsQueue);
 
 		imagePresenter = std::make_shared<vkImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
@@ -166,7 +165,9 @@ private:
 		mVulkanRenderQueue = std::make_shared<vulkan_render_queue>(graphicsQueue, drawCommandBufferManager);
 		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
 
-		createRenderPass();
+		createColorResources();
+		createDepthResources();
+		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(msaaSamples, colorImage, depthImage, imagePresenter);
 		createDescriptorSetLayout();
 
 		vk::Viewport viewport = {};
@@ -181,12 +182,8 @@ private:
 		scissor.offset = { 0, 0 };
 		scissor.extent = imagePresenter->get_swap_chain_extent();
 
-		mVulkanPipeline = std::make_shared<vulkan_pipeline>(renderPass, viewport, scissor, msaaSamples, descriptorSetLayout);
+		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, msaaSamples, descriptorSetLayout);
 		drawer = new vkDrawer(drawCommandBufferManager.get(), mVulkanPipeline);
-
-		createColorResources();
-		createDepthResources();
-		createFramebuffers();
 
 		createTexture();
 
@@ -208,14 +205,14 @@ private:
 		}
 
 		// wait for all commands to complete
-		device.waitIdle();
+		vkContext::instance().device.waitIdle();
 	}
 
 	void cleanup() {
 		cleanupSwapChain();
 
-		device.destroyDescriptorPool(descriptorPool);
-		device.destroyDescriptorSetLayout(descriptorSetLayout);
+		vkContext::instance().device.destroyDescriptorPool(descriptorPool);
+		vkContext::instance().device.destroyDescriptorSetLayout(descriptorSetLayout);
 
 		delete renderObject;
 		delete renderObject2;
@@ -225,10 +222,10 @@ private:
 		mVulkanRenderQueue.reset();
 		drawCommandBufferManager.reset();
 
-		device.destroyCommandPool(transferCommandPool);
-		device.destroyCommandPool(commandPool);
+		vkContext::instance().device.destroyCommandPool(transferCommandPool);
+		vkContext::instance().device.destroyCommandPool(commandPool);
 
-		device.destroy();
+		vkContext::instance().device.destroy();
 		if (enableValidationLayers) {
 			DestroyDebugUtilsMessengerEXT(instance, callback, nullptr);
 		}
@@ -251,16 +248,12 @@ private:
 	}
 
 	void cleanupSwapChain() {
-		delete colorImage;
+		colorImage.reset();
 		depthImage.reset();
 
 
-		for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
-			device.destroyFramebuffer(swapChainFramebuffers[i], nullptr);
-		}
-
 		mVulkanPipeline.reset();
-		device.destroyRenderPass(renderPass, nullptr);
+		mVulkanFramebuffer.reset();
 
 		imagePresenter.reset();
 		mRenderer.reset();
@@ -273,13 +266,15 @@ private:
 			glfwWaitEvents();
 		}
 
-		device.waitIdle();
+		vkContext::instance().device.waitIdle();
 
 		cleanupSwapChain();
 
 		imagePresenter = std::make_shared<vkImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
 		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
-		createRenderPass();
+		createColorResources();
+		createDepthResources();
+		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(msaaSamples, colorImage, depthImage, imagePresenter);
 		
 		vk::Viewport viewport = {};
 		viewport.x = 0.0f;
@@ -293,10 +288,7 @@ private:
 		scissor.offset = { 0, 0 };
 		scissor.extent = imagePresenter->get_swap_chain_extent();
 
-		mVulkanPipeline = std::make_shared<vulkan_pipeline>(renderPass, viewport, scissor, msaaSamples, descriptorSetLayout);
-		createColorResources();
-		createDepthResources();
-		createFramebuffers();
+		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, msaaSamples, descriptorSetLayout);
 	}
 
 	void createInstance() {
@@ -547,104 +539,6 @@ private:
 		return details;
 	}
 
-	void createRenderPass() {
-		vk::AttachmentDescription colorAttachment = {};
-		colorAttachment.format = imagePresenter->get_swap_chain_image_format();
-		colorAttachment.samples = msaaSamples;
-		colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-		colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-		colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-		colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-		colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-
-		vk::AttachmentReference colorAttachmentRef = {};
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-		vk::AttachmentDescription depthAttachment = {};
-		depthAttachment.format = findDepthFormat();
-		depthAttachment.samples = msaaSamples;
-		depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-		depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-		depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-		depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
-		depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-		vk::AttachmentReference depthAttachmentRef = {};
-		depthAttachmentRef.attachment = 1;
-		depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-		vk::AttachmentDescription colorAttachmentResolve = {};
-		colorAttachmentResolve.format = imagePresenter->get_swap_chain_image_format();
-		colorAttachmentResolve.samples = vk::SampleCountFlagBits::e1;
-		colorAttachmentResolve.loadOp = vk::AttachmentLoadOp::eDontCare;
-		colorAttachmentResolve.storeOp = vk::AttachmentStoreOp::eDontCare;
-		colorAttachmentResolve.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-		colorAttachmentResolve.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		colorAttachmentResolve.initialLayout = vk::ImageLayout::eUndefined;
-		colorAttachmentResolve.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-
-		vk::AttachmentReference colorAttachmentResolveRef = {};
-		colorAttachmentResolveRef.attachment = 2;
-		colorAttachmentResolveRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-		vk::SubpassDescription subpass = {};
-		subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
-		subpass.pDepthStencilAttachment = &depthAttachmentRef;
-		subpass.pResolveAttachments = &colorAttachmentResolveRef;
-
-		vk::SubpassDependency dependency = {};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		// wait for the color attachment (the swap chain is finished with the image and the image is ready to be written to)
-		dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		dependency.srcAccessMask = {};
-
-		dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
-
-		std::array<vk::AttachmentDescription, 3> attachments = { colorAttachment, depthAttachment, colorAttachmentResolve };
-		vk::RenderPassCreateInfo renderPassInfo = {};
-		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		renderPassInfo.pAttachments = attachments.data();
-		renderPassInfo.subpassCount = 1;
-		renderPassInfo.pSubpasses = &subpass;
-		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies = &dependency;
-
-		if (device.createRenderPass(&renderPassInfo, nullptr, &renderPass) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to create render pass!");
-		}
-	}
-
-	void createFramebuffers() {
-		swapChainFramebuffers.resize(imagePresenter->get_swap_chain_images_count());
-
-		for (size_t i = 0; i < imagePresenter->get_swap_chain_images_count(); i++) {
-			std::array<vk::ImageView, 3> attachments = {
-				colorImage->get_image_view(),
-				depthImage->get_image_view(),
-				imagePresenter->get_swap_chain_image_views()[i]
-			};
-
-			vk::FramebufferCreateInfo framebufferInfo = {};
-			framebufferInfo.renderPass = renderPass;
-			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-			framebufferInfo.pAttachments = attachments.data();
-			framebufferInfo.width = imagePresenter->get_swap_chain_extent().width;
-			framebufferInfo.height = imagePresenter->get_swap_chain_extent().height;
-			framebufferInfo.layers = 1;
-
-			if (device.createFramebuffer(&framebufferInfo, nullptr, &swapChainFramebuffers[i]) != vk::Result::eSuccess) {
-				throw std::runtime_error("failed to create framebuffer!");
-			}
-		}
-	}
-
 	void createCommandPools() {
 		QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
@@ -652,7 +546,7 @@ private:
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 		poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer; // Optional
 
-		if (device.createCommandPool(&poolInfo, nullptr, &commandPool) != vk::Result::eSuccess) {
+		if (vkContext::instance().device.createCommandPool(&poolInfo, nullptr, &commandPool) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to create command pool!");
 		}
 
@@ -661,7 +555,7 @@ private:
 		transferPoolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 		transferPoolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient; // Optional
 
-		if (device.createCommandPool(&transferPoolInfo, nullptr, &transferCommandPool) != vk::Result::eSuccess) {
+		if (vkContext::instance().device.createCommandPool(&transferPoolInfo, nullptr, &transferCommandPool) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to create command pool for data transfers!");
 		}
 	}
@@ -676,8 +570,7 @@ private:
 		renderObject->update_uniform_buffer(vkContext::instance().currentFrame, time, imagePresenter->get_swap_chain_extent());
 
 		// start drawing, record draw commands, etc.
-		vkContext::instance().renderPass = renderPass;
-		vkContext::instance().frameBuffer = swapChainFramebuffers[vkContext::instance().currentFrame];
+		vkContext::instance().vulkanFramebuffer = mVulkanFramebuffer;
 
 		std::vector<vkRenderObject*> renderObjects;
 		renderObjects.push_back(renderObject);
@@ -708,7 +601,7 @@ private:
 		layoutInfo.pBindings = bindings.data();
 
 
-		if (device.createDescriptorSetLayout(&layoutInfo, nullptr, &descriptorSetLayout) != vk::Result::eSuccess) {
+		if (vkContext::instance().device.createDescriptorSetLayout(&layoutInfo, nullptr, &descriptorSetLayout) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
@@ -725,7 +618,7 @@ private:
 		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count() * 2);
 
-		if (device.createDescriptorPool(&poolInfo, nullptr, &descriptorPool) != vk::Result::eSuccess) {
+		if (vkContext::instance().device.createDescriptorPool(&poolInfo, nullptr, &descriptorPool) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 	}
@@ -846,7 +739,7 @@ private:
 	void createDepthResources() {
 		vk::Format depthFormat = findDepthFormat();
 
-		depthImage = std::make_unique<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, msaaSamples, depthFormat,
+		depthImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, msaaSamples, depthFormat,
 			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth);
 		depthImage->transition_image_layout(depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, 1);
 
@@ -879,7 +772,7 @@ private:
 	void createColorResources() {
 		vk::Format colorFormat = imagePresenter->get_swap_chain_image_format();
 
-		colorImage = new vkCgbImage(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, msaaSamples, colorFormat, 
+		colorImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, msaaSamples, colorFormat, 
 			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 		colorImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
 	}

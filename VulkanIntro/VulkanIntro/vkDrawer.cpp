@@ -1,5 +1,7 @@
 #include "vkDrawer.h"
 
+#include "vulkan_framebuffer.h"
+
 vkDrawer::vkDrawer(vkCommandBufferManager* commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline) : mCommandBufferManager(commandBufferManager), mPipeline(pipeline)
 {
 }
@@ -16,8 +18,8 @@ void vkDrawer::draw(std::vector<vkRenderObject*> renderObjects)
 
 void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> renderObjects) {
 	vk::CommandBufferInheritanceInfo inheritanceInfo = {};
-	inheritanceInfo.renderPass = vkContext::instance().renderPass;
-	inheritanceInfo.framebuffer = vkContext::instance().frameBuffer;
+	inheritanceInfo.renderPass = vkContext::instance().vulkanFramebuffer->get_render_pass();
+	inheritanceInfo.framebuffer = vkContext::instance().vulkanFramebuffer->get_swapchain_framebuffer();
 	inheritanceInfo.subpass = 0;
 	inheritanceInfo.occlusionQueryEnable = VK_FALSE;
 
