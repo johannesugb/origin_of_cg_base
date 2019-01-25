@@ -25,7 +25,6 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <set>
 #include <algorithm>
 #include <fstream>
 #include <array>
@@ -46,52 +45,9 @@ const int HEIGHT = 600;
 const std::string MODEL_PATH = "models/chalet.obj/chalet.obj";
 const std::string TEXTURE_PATH = "textures/chalet.jpg";
 
-const std::vector<const char*> validationLayers = {
-	"VK_LAYER_LUNARG_standard_validation"
-};
-
-const std::vector<const char*> deviceExtensions = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	//, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME // core functionality with vulcan 1.1, not needed anymore
-	, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME // variable rate shading extension
-};
-
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
-
-VkResult CreateDebugUtilsMessengerEXT(vk::Instance instance, const vk::DebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback) {
-	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)instance.getProcAddr("vkCreateDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		const VkDebugUtilsMessengerCreateInfoEXT tmp(*pCreateInfo);
-		return func(instance, &tmp, pAllocator, pCallback);
-	}
-	else {
-		return VK_ERROR_EXTENSION_NOT_PRESENT;
-	}
-}
-
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator) {
-	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		func(instance, callback, pAllocator);
-	}
-}
-
 class HelloTriangleApplication {
 private:
 	GLFWwindow * window;
-	vk::SurfaceKHR surface;
-
-	vk::Instance instance;
-	VkDebugUtilsMessengerEXT callback;
-	vk::PhysicalDevice physicalDevice = nullptr; // will be distroyed automatically on destruction of vk::Instance "instance"
-	vk::Device device;
-	vk::Queue graphicsQueue; // automatically created and destroyed with logical device, "device"
-	vk::Queue presentQueue; // automatically created and destroyed with logical device, "device"
-
 	
 
 	vk::DescriptorSetLayout descriptorSetLayout;
@@ -101,20 +57,7 @@ private:
 
 	vk::DescriptorPool descriptorPool;
 
-	vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
-
 	bool framebufferResized = false;
-
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData) {
-
-		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-		return VK_FALSE;
-	}
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 		auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
@@ -127,7 +70,7 @@ private:
 	vkCgbImage* textureImage;
 	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager;
 	vkCommandBufferManager* transferCommandBufferManager;
-	vkDrawer* drawer;
+	std::unique_ptr<vkDrawer> drawer;
 
 	// render target needed for MSAA
 	std::shared_ptr<vkCgbImage> colorImage;
@@ -148,26 +91,28 @@ public:
 
 private:
 	void initVulkan() {
-		createInstance();
-		setupDebugCallback();
-		createSurface();
-		pickPhysicalDevice();
-		createLogicalDevice();
-		vkContext::instance().physicalDevice = physicalDevice;
-		vkContext::instance().device = device;
+
+		//createInstance();
+		//setupDebugCallback();
+		//createSurface();
+		//pickPhysicalDevice();
+		//createLogicalDevice();
+		//vkContext::instance().physicalDevice = physicalDevice;
+		//vkContext::instance().device = device;
+		vkContext::instance().initVulkan(window);
 
 		createCommandPools();
 
-		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool, graphicsQueue);
+		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool, vkContext::instance().graphicsQueue);
 
-		imagePresenter = std::make_shared<vkImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
-		drawCommandBufferManager = std::make_shared<vkCommandBufferManager>(imagePresenter->get_swap_chain_images_count(), commandPool, graphicsQueue);
-		mVulkanRenderQueue = std::make_shared<vulkan_render_queue>(graphicsQueue, drawCommandBufferManager);
+		imagePresenter = std::make_shared<vkImagePresenter>(vkContext::instance().presentQueue, vkContext::instance().surface, vkContext::instance().findQueueFamilies());
+		drawCommandBufferManager = std::make_shared<vkCommandBufferManager>(imagePresenter->get_swap_chain_images_count(), commandPool, vkContext::instance().graphicsQueue);
+		mVulkanRenderQueue = std::make_shared<vulkan_render_queue>(vkContext::instance().graphicsQueue, drawCommandBufferManager);
 		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
 
 		createColorResources();
 		createDepthResources();
-		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(msaaSamples, colorImage, depthImage, imagePresenter);
+		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(vkContext::instance().msaaSamples, colorImage, depthImage, imagePresenter);
 		createDescriptorSetLayout();
 
 		vk::Viewport viewport = {};
@@ -182,8 +127,8 @@ private:
 		scissor.offset = { 0, 0 };
 		scissor.extent = imagePresenter->get_swap_chain_extent();
 
-		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, msaaSamples, descriptorSetLayout);
-		drawer = new vkDrawer(drawCommandBufferManager.get(), mVulkanPipeline);
+		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
+		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager.get(), mVulkanPipeline);
 
 		createTexture();
 
@@ -225,12 +170,7 @@ private:
 		vkContext::instance().device.destroyCommandPool(transferCommandPool);
 		vkContext::instance().device.destroyCommandPool(commandPool);
 
-		vkContext::instance().device.destroy();
-		if (enableValidationLayers) {
-			DestroyDebugUtilsMessengerEXT(instance, callback, nullptr);
-		}
-		instance.destroySurfaceKHR(surface, nullptr);
-		instance.destroy();
+		// destroy instance (in context)
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -251,7 +191,7 @@ private:
 		colorImage.reset();
 		depthImage.reset();
 
-
+		drawer.reset();
 		mVulkanPipeline.reset();
 		mVulkanFramebuffer.reset();
 
@@ -270,11 +210,11 @@ private:
 
 		cleanupSwapChain();
 
-		imagePresenter = std::make_shared<vkImagePresenter>(presentQueue, surface, findQueueFamilies(physicalDevice));
+		imagePresenter = std::make_shared<vkImagePresenter>(vkContext::instance().presentQueue, vkContext::instance().surface, vkContext::instance().findQueueFamilies());
 		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
 		createColorResources();
 		createDepthResources();
-		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(msaaSamples, colorImage, depthImage, imagePresenter);
+		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(vkContext::instance().msaaSamples, colorImage, depthImage, imagePresenter);
 		
 		vk::Viewport viewport = {};
 		viewport.x = 0.0f;
@@ -288,259 +228,12 @@ private:
 		scissor.offset = { 0, 0 };
 		scissor.extent = imagePresenter->get_swap_chain_extent();
 
-		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, msaaSamples, descriptorSetLayout);
-	}
-
-	void createInstance() {
-		vk::ApplicationInfo appInfo = {};
-		appInfo.pApplicationName = "Hello Triangle";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName = "No Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
-
-		vk::InstanceCreateInfo createInfo = {};
-		createInfo.pApplicationInfo = &appInfo;
-
-		// extensions
-		auto requiredExtensions = getRequiredExtensions();
-
-		uint32_t extensionCount = 0;
-		//vk::enumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-
-		std::vector<vk::ExtensionProperties> extensions(extensionCount);
-		vk::enumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
-
-		std::cout << "available extensions:" << std::endl;
-		for (const auto& extension : extensions) {
-			std::cout << "\t" << extension.extensionName << std::endl;
-		}
-
-		// TODO check if required extensions are present
-		createInfo.enabledExtensionCount = requiredExtensions.size();
-		createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-
-		// validation layers
-		if (enableValidationLayers && !checkValidationLayerSupport()) {
-			throw std::runtime_error("validation layers requested, but not available!");
-		}
-
-		if (enableValidationLayers) {
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-		}
-		else {
-			createInfo.enabledLayerCount = 0;
-		}
-
-		// create instance
-		if (vk::createInstance(&createInfo, nullptr, &instance) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to create instance!");
-		}
-	}
-
-	bool checkValidationLayerSupport() {
-		std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
-
-		for (const char* layerName : validationLayers) {
-			bool layerFound = false;
-
-			for (const auto& layerProperties : availableLayers) {
-				if (strcmp(layerName, layerProperties.layerName) == 0) {
-					layerFound = true;
-					break;
-				}
-			}
-
-			if (!layerFound) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	std::vector<const char*> getRequiredExtensions() {
-		uint32_t glfwExtensionCount = 0;
-		const char** glfwExtensions;
-		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-		if (enableValidationLayers) {
-			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		}
-
-		return extensions;
-	}
-
-	void setupDebugCallback() {
-		if (!enableValidationLayers) return;
-
-		vk::DebugUtilsMessengerCreateInfoEXT createInfo = {};
-		createInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-		createInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-		createInfo.pfnUserCallback = debugCallback;
-		createInfo.pUserData = nullptr; // Optional
-
-		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
-			throw std::runtime_error("failed to set up debug callback!");
-		}
-	}
-
-	void createSurface() {
-		VkSurfaceKHR tempSurface;
-		if (glfwCreateWindowSurface(instance, window, nullptr, &tempSurface) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create window surface!");
-		}
-		surface = vk::SurfaceKHR(tempSurface);
-	}
-
-	void pickPhysicalDevice() {
-		std::vector<vk::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
-		if (devices.size() == 0) {
-			throw std::runtime_error("failed to find GPUs with Vulkan support!");
-		}
-
-
-		for (const auto& device : devices) {
-			if (isDeviceSuitable(device)) {
-				physicalDevice = device;
-				msaaSamples = getMaxUsableSampleCount();
-				break;
-			}
-		}
-
-		if (!physicalDevice) {
-			throw std::runtime_error("failed to find a suitable GPU!");
-		}
-	}
-
-	// important function, checks if the features we will use 
-	// are supported by our physical device
-	// always extend, if more features are used!
-	bool isDeviceSuitable(vk::PhysicalDevice device) {
-		vk::PhysicalDeviceProperties deviceProperties;
-		device.getProperties(&deviceProperties);
-
-		QueueFamilyIndices indices = findQueueFamilies(device);
-		bool extensionsSupported = checkDeviceExtensionSupport(device);
-
-		bool swapChainAdequate = false;
-		if (extensionsSupported) {
-			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-		}
-
-		vk::PhysicalDeviceFeatures supportedFeatures;
-		device.getFeatures(&supportedFeatures);
-
-		return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
-	}
-
-	bool checkDeviceExtensionSupport(vk::PhysicalDevice device) {
-		std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
-
-		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-		for (const auto& extension : availableExtensions) {
-			requiredExtensions.erase(extension.extensionName);
-		}
-
-		return requiredExtensions.empty();
-	}
-
-	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device) {
-		QueueFamilyIndices indices;
-
-		std::vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
-
-		int i = 0;
-		for (const auto& queueFamily : queueFamilies) {
-			// OPTTIONAL_TODO, prefer device with queue which supports both, graphics(drawing) and surface(presentation)
-			// for improved performance
-
-			if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
-				indices.graphicsFamily = i;
-			}
-
-			vk::Bool32 presentSupport = false;
-			device.getSurfaceSupportKHR(i, surface, &presentSupport);
-			if (queueFamily.queueCount > 0 && presentSupport) {
-				indices.presentFamily = i;
-			}
-
-			if (indices.isComplete()) {
-				break;
-			}
-
-			i++;
-		}
-
-		return indices;
-	}
-
-	// here we pick the device features we need
-	// IMPORTANT! add them to the isDeviceSuitable function
-	void createLogicalDevice() {
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
-		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-
-		float queuePriority = 1.0f;
-		for (uint32_t queueFamily : uniqueQueueFamilies) {
-			vk::DeviceQueueCreateInfo queueCreateInfo = {};
-			queueCreateInfo.queueFamilyIndex = queueFamily;
-			queueCreateInfo.queueCount = 1;
-			queueCreateInfo.pQueuePriorities = &queuePriority;
-			queueCreateInfos.push_back(queueCreateInfo);
-		}
-
-
-		// IMPORTANT! add them to the isDeviceSuitable function
-		vk::PhysicalDeviceFeatures deviceFeatures = {};
-		deviceFeatures.samplerAnisotropy = VK_TRUE;
-
-		vk::DeviceCreateInfo createInfo = {};
-
-		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
-		createInfo.pEnabledFeatures = &deviceFeatures;
-		createInfo.enabledExtensionCount = 0;
-
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
-		if (enableValidationLayers) {
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-		}
-		else {
-			createInfo.enabledLayerCount = 0;
-		}
-
-		if (physicalDevice.createDevice(&createInfo, nullptr, &device) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to create logical device!");
-		}
-
-		device.getQueue(indices.graphicsFamily.value(), 0, &graphicsQueue);
-		device.getQueue(indices.presentFamily.value(), 0, &presentQueue);
-	}
-
-	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device) {
-		SwapChainSupportDetails details;
-
-		details.capabilities = device.getSurfaceCapabilitiesKHR(surface);
-		details.formats = device.getSurfaceFormatsKHR(surface);
-		details.presentModes = device.getSurfacePresentModesKHR(surface);
-
-		return details;
+		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
+		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager.get(), mVulkanPipeline);
 	}
 
 	void createCommandPools() {
-		QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+		QueueFamilyIndices queueFamilyIndices = vkContext::instance().findQueueFamilies();
 
 		vk::CommandPoolCreateInfo poolInfo = {};
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
@@ -576,7 +269,7 @@ private:
 		renderObjects.push_back(renderObject);
 		renderObjects.push_back(renderObject2);
 
-		mRenderer->render(renderObjects, drawer);
+		mRenderer->render(renderObjects, drawer.get());
 		mRenderer->end_frame();
 	}
 
@@ -684,62 +377,12 @@ private:
 		renderObject = new vkRenderObject((uint32_t)imagePresenter->get_swap_chain_images_count(), vertices, indices, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
 	}
 
-	// MSAA
-	vk::SampleCountFlagBits getMaxUsableSampleCount() {
-		vk::PhysicalDeviceProperties physicalDeviceProperties;
-		physicalDevice.getProperties(&physicalDeviceProperties);
-
-		auto depthSampleCount = false;
-		auto colorSampleCount = false;
-
-
-		depthSampleCount = depthSampleCount || physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk::SampleCountFlagBits::e64;
-		colorSampleCount = colorSampleCount || physicalDeviceProperties.limits.framebufferColorSampleCounts & vk::SampleCountFlagBits::e64;
-		if (depthSampleCount && colorSampleCount) {
-			return vk::SampleCountFlagBits::e64;
-		}
-		depthSampleCount = depthSampleCount || physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk::SampleCountFlagBits::e32;
-		colorSampleCount = colorSampleCount || physicalDeviceProperties.limits.framebufferColorSampleCounts & vk::SampleCountFlagBits::e32;
-		if (depthSampleCount && colorSampleCount) {
-			return vk::SampleCountFlagBits::e32;
-		}
-		depthSampleCount = depthSampleCount || physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk::SampleCountFlagBits::e16;
-		colorSampleCount = colorSampleCount || physicalDeviceProperties.limits.framebufferColorSampleCounts & vk::SampleCountFlagBits::e16;
-		if (depthSampleCount && colorSampleCount) {
-			return vk::SampleCountFlagBits::e16;
-		}
-		depthSampleCount = depthSampleCount || physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk::SampleCountFlagBits::e8;
-		colorSampleCount = colorSampleCount || physicalDeviceProperties.limits.framebufferColorSampleCounts & vk::SampleCountFlagBits::e8;
-		if (depthSampleCount && colorSampleCount) {
-			return vk::SampleCountFlagBits::e8;
-		}
-		depthSampleCount = depthSampleCount || physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk::SampleCountFlagBits::e4;
-		colorSampleCount = colorSampleCount || physicalDeviceProperties.limits.framebufferColorSampleCounts & vk::SampleCountFlagBits::e4;
-		if (depthSampleCount && colorSampleCount) {
-			return vk::SampleCountFlagBits::e4;
-		}
-		depthSampleCount = depthSampleCount || physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk::SampleCountFlagBits::e2;
-		colorSampleCount = colorSampleCount || physicalDeviceProperties.limits.framebufferColorSampleCounts & vk::SampleCountFlagBits::e2;
-		if (depthSampleCount && colorSampleCount) {
-			return vk::SampleCountFlagBits::e2;
-		}
-		//vk::SampleCountFlags counts = std::min(physicalDeviceProperties.limits.framebufferColorSampleCounts, physicalDeviceProperties.limits.framebufferDepthSampleCounts);
-		//if (counts & vk::SampleCountFlagBits::e64 ) { return vk::_SAMPLE_COUNT_64_BIT; }
-		//if (counts & vk::SampleCountFlagBits::e32) { return vk::_SAMPLE_COUNT_32_BIT; }
-		//if (counts & vk::SampleCountFlagBits::e16) { return vk::_SAMPLE_COUNT_16_BIT; }
-		//if (counts & vk::SampleCountFlagBits::e8) { return vk::_SAMPLE_COUNT_8_BIT; }
-		//if (counts & vk::SampleCountFlagBits::e4) { return vk::_SAMPLE_COUNT_4_BIT; }
-		//if (counts & vk::SampleCountFlagBits::e2) { return vk::_SAMPLE_COUNT_2_BIT; }
-
-		return vk::SampleCountFlagBits::e1;
-	}
-
 	// attachments for framebuffer (color image to render to before resolve, depth image)
 
 	void createDepthResources() {
 		vk::Format depthFormat = findDepthFormat();
 
-		depthImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, msaaSamples, depthFormat,
+		depthImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, vkContext::instance().msaaSamples, depthFormat,
 			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth);
 		depthImage->transition_image_layout(depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, 1);
 
@@ -756,7 +399,7 @@ private:
 	vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) {
 		for (vk::Format format : candidates) {
 			vk::FormatProperties props;
-			physicalDevice.getFormatProperties(format, &props);
+			vkContext::instance().physicalDevice.getFormatProperties(format, &props);
 
 			if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
 				return format;
@@ -772,7 +415,7 @@ private:
 	void createColorResources() {
 		vk::Format colorFormat = imagePresenter->get_swap_chain_image_format();
 
-		colorImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, msaaSamples, colorFormat, 
+		colorImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, vkContext::instance().msaaSamples, colorFormat,
 			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 		colorImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
 	}

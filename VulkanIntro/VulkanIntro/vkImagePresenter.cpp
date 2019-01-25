@@ -88,16 +88,6 @@ void vkImagePresenter::present_image(std::vector<vk::Semaphore> waitSemaphores) 
 
 // swap chain create functions
 
-SwapChainSupportDetails vkImagePresenter::querySwapChainSupport(vk::PhysicalDevice device) {
-	SwapChainSupportDetails details;
-
-	details.capabilities = device.getSurfaceCapabilitiesKHR(mSurface);
-	details.formats = device.getSurfaceFormatsKHR(mSurface);
-	details.presentModes = device.getSurfacePresentModesKHR(mSurface);
-
-	return details;
-}
-
 vk::SurfaceFormatKHR vkImagePresenter::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
 	if (availableFormats.size() == 1 && availableFormats[0].format == vk::Format::eUndefined) {
 		return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
@@ -150,7 +140,7 @@ vk::Extent2D vkImagePresenter::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR
 }
 
 void vkImagePresenter::createSwapChain() {
-	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(vkContext::instance().physicalDevice);
+	SwapChainSupportDetails swapChainSupport = vkContext::instance().querySwapChainSupport();
 
 	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	vk::PresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);

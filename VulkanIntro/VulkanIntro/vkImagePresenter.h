@@ -4,12 +4,6 @@
 #include <vector>
 #include <memory>
 
-struct SwapChainSupportDetails {
-	vk::SurfaceCapabilitiesKHR capabilities;
-	std::vector<vk::SurfaceFormatKHR> formats;
-	std::vector<vk::PresentModeKHR> presentModes;
-};
-
 class vkImagePresenter
 {
 public:
@@ -43,7 +37,6 @@ private:
 	QueueFamilyIndices mQueueFamilyIndices;
 
 
-	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device);
 	vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 	vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> availablePresentModes);
 	vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR & capabilities);
