@@ -16,6 +16,9 @@
     <Filter Include="Shader">
       <UniqueIdentifier>{72a691b8-3149-474a-9a8b-df7948517a1c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tobii">
+      <UniqueIdentifier>{f81fc684-e1bf-4a91-b4bc-9868b4e7938c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="vkRenderObject.cpp">
@@ -72,10 +75,23 @@
     <ClCompile Include="vulkan_framebuffer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="eyetracking_interface.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\triangle.vert">
       <Filter>Shader</Filter>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Tobii\SDK-License_zh.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="Tobii\SDK-License_en.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="Tobii\API-Reference.pdf">
+      <Filter>Tobii</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -127,5 +143,16 @@
     <ClInclude Include="vulkan_framebuffer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="eyetracking_interface.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="VulkanIntro.rc">
+      <Filter>Ressourcendateien</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

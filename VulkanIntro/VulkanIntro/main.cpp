@@ -16,8 +16,12 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-#include <chrono>
+#include <tobii/tobii.h>
+#include <tobii/tobii_streams.h>
 
+#include <stdio.h>
+#include <assert.h>
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 #include <functional>
@@ -38,6 +42,8 @@
 #include "VkRenderer.h"
 #include "vulkan_pipeline.h"
 #include "vulkan_framebuffer.h"
+
+#include "eyetracking_interface.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -81,6 +87,8 @@ private:
 	std::shared_ptr<vulkan_pipeline> mVulkanPipeline;
 	std::shared_ptr<vulkan_framebuffer> mVulkanFramebuffer;
 
+	eyetracking_interface eyeInf;
+
 public:
 	void run() {
 		initWindow();
@@ -91,14 +99,6 @@ public:
 
 private:
 	void initVulkan() {
-
-		//createInstance();
-		//setupDebugCallback();
-		//createSurface();
-		//pickPhysicalDevice();
-		//createLogicalDevice();
-		//vkContext::instance().physicalDevice = physicalDevice;
-		//vkContext::instance().device = device;
 		vkContext::instance().initVulkan(window);
 
 		createCommandPools();
@@ -144,9 +144,30 @@ private:
 	}
 
 	void mainLoop() {
+		float t = float(glfwGetTime());
+		float dt = 0.0f;
+		float sum_t = 0.0f;
+
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
+
+			auto eyeData = eyeInf.get_eyetracking_data();
+
 			drawFrame();
+
+			dt = t;
+			t = float(glfwGetTime());
+			dt = t - dt;
+			sum_t += dt;
+
+			if (sum_t >= 1.0f) {
+				glfwSetWindowTitle(window, std::to_string(1.0f / dt).c_str());
+				sum_t -= 1.0f;
+
+				printf("Gaze point: %f, %f\n",
+					eyeData.positionX,
+					eyeData.positionY);
+			}
 		}
 
 		// wait for all commands to complete
