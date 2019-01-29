@@ -18,21 +18,23 @@ eyetracking_interface::eyetracking_interface() : exit_thread(false)
 
 eyetracking_interface::~eyetracking_interface()
 {
-	// Cleanup subscriptions and resources
-	auto error = tobii_gaze_point_unsubscribe(device);
-	if (error != TOBII_ERROR_NO_ERROR)
-		std::cerr << "Failed to unsubscribe from gaze stream." << std::endl;
+	if (mInited) {
+		// Cleanup subscriptions and resources
+		auto error = tobii_gaze_point_unsubscribe(mDevice);
+		if (error != TOBII_ERROR_NO_ERROR)
+			std::cerr << "Failed to unsubscribe from gaze stream." << std::endl;
 
-	exit_thread = true;
-	thread.join();
+		exit_thread = true;
+		thread.join();
 
-	error = tobii_device_destroy(device);
-	if (error != TOBII_ERROR_NO_ERROR)
-		std::cerr << "Failed to destroy device." << std::endl;
+		error = tobii_device_destroy(mDevice);
+		if (error != TOBII_ERROR_NO_ERROR)
+			std::cerr << "Failed to destroy device." << std::endl;
 
-	error = tobii_api_destroy(api);
-	if (error != TOBII_ERROR_NO_ERROR)
-		std::cerr << "Failed to destroy API." << std::endl;
+		error = tobii_api_destroy(mApi);
+		if (error != TOBII_ERROR_NO_ERROR)
+			std::cerr << "Failed to destroy API." << std::endl;
+	}
 }
 
 void eyetracking_interface::init_eyetracking()
@@ -41,26 +43,27 @@ void eyetracking_interface::init_eyetracking()
 	std::mutex log_mutex;
 	tobii_custom_log_t custom_log{ &log_mutex, log };
 
-	auto error = tobii_api_create(&api, nullptr, &custom_log);
+	auto error = tobii_api_create(&mApi, nullptr, &custom_log);
 	if (error != TOBII_ERROR_NO_ERROR)
 	{
 		throw std::runtime_error("Failed to initialize the Tobii Stream Engine API.");
 	}
 
-	auto devices = list_devices(api);
+	auto devices = list_devices(mApi);
 	if (devices.size() == 0)
 	{
-		tobii_api_destroy(api);
-		throw std::runtime_error("No stream engine compatible device(s) found.");
+		tobii_api_destroy(mApi);
+		std::cerr << "No stream engine compatible device(s) found." << std::endl;
+		return;
 	}
 	// Select the first device, usually there is only one in the research tests
 	auto selected_device = devices[0];
 	std::cout << "Connecting to " << selected_device << "." << std::endl;
 
-	error = tobii_device_create(api, selected_device.c_str(), &device);
+	error = tobii_device_create(mApi, selected_device.c_str(), &mDevice);
 	if (error != TOBII_ERROR_NO_ERROR)
 	{
-		tobii_api_destroy(api);
+		tobii_api_destroy(mApi);
 		throw std::runtime_error("Failed to initialize the device with url.");
 
 	}
@@ -72,14 +75,14 @@ void eyetracking_interface::init_eyetracking()
 		while (!exit_thread)
 		{
 			// Do a timed blocking wait for new gaze data, will time out after some hundred milliseconds
-			auto error = tobii_wait_for_callbacks(NULL, 1, &device);
+			auto error = tobii_wait_for_callbacks(NULL, 1, &mDevice);
 
 			if (error == TOBII_ERROR_TIMED_OUT) continue; // If timed out, redo the wait for callbacks call
 
 			if (error == TOBII_ERROR_CONNECTION_FAILED)
 			{
 				// Block here while attempting reconnect, if it fails, exit the thread
-				error = reconnect(device);
+				error = reconnect(mDevice);
 				if (error != TOBII_ERROR_NO_ERROR)
 				{
 					std::cerr << "Connection was lost and reconnection failed." << std::endl;
@@ -93,12 +96,12 @@ void eyetracking_interface::init_eyetracking()
 				return;
 			}
 			// Calling this function will execute the subscription callback functions
-			error = tobii_device_process_callbacks(device);
+			error = tobii_device_process_callbacks(mDevice);
 
 			if (error == TOBII_ERROR_CONNECTION_FAILED)
 			{
 				// Block here while attempting reconnect, if it fails, exit the thread
-				error = reconnect(device);
+				error = reconnect(mDevice);
 				if (error != TOBII_ERROR_NO_ERROR)
 				{
 					std::cerr << "Connection was lost and reconnection failed." << std::endl;
@@ -115,7 +118,7 @@ void eyetracking_interface::init_eyetracking()
 	});
 
 	// Start subscribing to gaze and supply lambda callback function to handle the gaze point data
-	error = tobii_gaze_point_subscribe(device,
+	error = tobii_gaze_point_subscribe(mDevice,
 		[](tobii_gaze_point_t const* gaze_point, void* user_data)
 	{
 		(void)user_data; // Unused parameter
@@ -138,10 +141,11 @@ void eyetracking_interface::init_eyetracking()
 	{
 		exit_thread = true;
 		thread.join();
-		tobii_device_destroy(device);
-		tobii_api_destroy(api);
+		tobii_device_destroy(mDevice);
+		tobii_api_destroy(mApi);
 		throw std::runtime_error("Failed to subscribe to gaze stream.");
 	}
+	mInited = true;
 }
 
 std::vector<std::string> eyetracking_interface::list_devices(tobii_api_t* api)
