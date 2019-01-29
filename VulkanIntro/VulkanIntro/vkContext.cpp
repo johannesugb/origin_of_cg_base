@@ -57,6 +57,9 @@ vkContext::~vkContext()
 
 
 void vkContext::initVulkan(GLFWwindow * window) {
+
+	shadingRateImageSupported = std::find(deviceExtensions.begin(), deviceExtensions.end(), VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME) != deviceExtensions.end();
+
 	createInstance();
 	setupDebugCallback();
 	createSurface(window);
@@ -142,6 +145,7 @@ std::vector<const char*> vkContext::getRequiredExtensions() {
 
 	if (enableValidationLayers) {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 	}
 
 	return extensions;
@@ -205,10 +209,17 @@ bool vkContext::isDeviceSuitable(vk::PhysicalDevice device) {
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
-	vk::PhysicalDeviceFeatures supportedFeatures;
-	device.getFeatures(&supportedFeatures);
+	vk::PhysicalDeviceFeatures2 supportedExtFeatures;
 
-	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+	vk::PhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatureNV = {};
+	if (shadingRateImageSupported) {
+		supportedExtFeatures.pNext = &shadingRateImageFeatureNV;
+	}
+	device.getFeatures2(&supportedExtFeatures);
+	shadingRateImageSupported = shadingRateImageFeatureNV.shadingRateImage && shadingRateImageFeatureNV.shadingRateCoarseSampleOrder;
+
+
+	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedExtFeatures.features.samplerAnisotropy;
 }
 
 bool vkContext::checkDeviceExtensionSupport(vk::PhysicalDevice device) {
@@ -272,15 +283,17 @@ void vkContext::createLogicalDevice() {
 
 
 	// IMPORTANT! add them to the isDeviceSuitable function
-	vk::PhysicalDeviceFeatures deviceFeatures = {};
-	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	vk::PhysicalDeviceFeatures2 deviceFeatures = {};
+	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+	vk::PhysicalDeviceFeatures deviceFeatures1 = {};
+	deviceFeatures1.samplerAnisotropy = VK_TRUE;
 
 	vk::DeviceCreateInfo createInfo = {};
 
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-	createInfo.pEnabledFeatures = &deviceFeatures;
+	//createInfo.pEnabledFeatures = &deviceFeatures1;
 	createInfo.enabledExtensionCount = 0;
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
@@ -293,6 +306,14 @@ void vkContext::createLogicalDevice() {
 	else {
 		createInfo.enabledLayerCount = 0;
 	}
+
+	vk::PhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatureNV = {};
+	deviceFeatures.pNext = &shadingRateImageFeatureNV;
+	if (shadingRateImageSupported) {
+		shadingRateImageFeatureNV.shadingRateImage = VK_TRUE;
+		shadingRateImageFeatureNV.shadingRateCoarseSampleOrder = VK_TRUE;
+	}
+	createInfo.pNext = &deviceFeatures;
 
 	if (physicalDevice.createDevice(&createInfo, nullptr, &device) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to create logical device!");

@@ -2,6 +2,20 @@
 
 #include "vulkan_framebuffer.h"
 
+VKAPI_ATTR void VKAPI_CALL vkCmdBindShadingRateImageNV(
+	VkCommandBuffer                             commandBuffer,
+	VkImageView                                 imageView,
+	VkImageLayout                               imageLayout) {
+	auto func = (PFN_vkCmdBindShadingRateImageNV)vkContext::instance().vkInstance.getProcAddr("vkCmdBindShadingRateImageNV");
+	if (func != nullptr) {
+		return func(commandBuffer, VK_NULL_HANDLE, imageLayout);
+	}
+	//else {
+	//	return VK_ERROR_EXTENSION_NOT_PRESENT;
+	//}
+}
+
+
 vkDrawer::vkDrawer(vkCommandBufferManager* commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline) : mCommandBufferManager(commandBufferManager), mPipeline(pipeline)
 {
 }
@@ -39,8 +53,9 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 		commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
 		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
-
-		//renderObject->updateUniformBuffer(frameIndex, 0, swapChainExtent);
+		vk::ImageView imageView = {};
+		commandBuffer.bindShadingRateImageNV(imageView, vk::ImageLayout::eUndefined);
+		//vkCmdBindShadingRateImageNV(static_cast<VkCommandBuffer>(commandBuffer), static_cast<VkImageView>(imageView), static_cast<VkImageLayout>(vk::ImageLayout::eUndefined));
 
 		commandBuffer.pushConstants(
 			mPipeline->get_pipeline_layout(),

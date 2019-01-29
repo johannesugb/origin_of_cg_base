@@ -55,6 +55,8 @@ public:
 	// updated per frame/pass
 	int currentFrame;
 
+	bool shadingRateImageSupported;
+
 	static vkContext& instance()
 	{
 		static vkContext _instance;
