@@ -22,9 +22,10 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
+	std::optional<uint32_t> computeFamily;
 
 	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value();
+		return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value();
 	}
 };
 
@@ -45,6 +46,7 @@ public:
 	vk::Device device;
 	vk::Queue graphicsQueue; // automatically created and destroyed with logical device, "device"
 	vk::Queue presentQueue; // automatically created and destroyed with logical device, "device"
+	vk::Queue computeQueue; // automatically created and destroyed with logical device, "device"
 	vk::SurfaceKHR surface;
 	vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
 

@@ -13,6 +13,8 @@ public:
 	vk::RenderPass get_render_pass() { return renderPass; }
 	vk::Framebuffer get_swapchain_framebuffer() { return swapChainFramebuffers[vkContext::instance().currentFrame]; }
 
+	vk::Extent2D get_framebuffer_extent() { return imagePresenter->get_swap_chain_extent(); }
+
 private:
 	vk::RenderPass renderPass;
 	std::vector<vk::Framebuffer> swapChainFramebuffers;

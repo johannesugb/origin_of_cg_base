@@ -54,7 +54,7 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 
 		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
 		vk::ImageView imageView = {};
-		commandBuffer.bindShadingRateImageNV(imageView, vk::ImageLayout::eUndefined);
+		//commandBuffer.bindShadingRateImageNV(imageView, vk::ImageLayout::eUndefined);
 		//vkCmdBindShadingRateImageNV(static_cast<VkCommandBuffer>(commandBuffer), static_cast<VkImageView>(imageView), static_cast<VkImageLayout>(vk::ImageLayout::eUndefined));
 
 		commandBuffer.pushConstants(

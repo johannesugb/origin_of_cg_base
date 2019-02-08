@@ -73,7 +73,7 @@ void vkContext::createInstance() {
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "No Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_1;
 
 	vk::InstanceCreateInfo createInfo = {};
 	createInfo.pApplicationInfo = &appInfo;
@@ -254,6 +254,10 @@ QueueFamilyIndices vkContext::findQueueFamilies(vk::PhysicalDevice device) {
 			indices.presentFamily = i;
 		}
 
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eCompute) {
+			indices.computeFamily = i;
+		}
+
 		if (indices.isComplete()) {
 			break;
 		}
@@ -270,7 +274,7 @@ void vkContext::createLogicalDevice() {
 	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value(), indices.computeFamily.value() };
 
 	float queuePriority = 1.0f;
 	for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -321,6 +325,7 @@ void vkContext::createLogicalDevice() {
 
 	device.getQueue(indices.graphicsFamily.value(), 0, &graphicsQueue);
 	device.getQueue(indices.presentFamily.value(), 0, &presentQueue);
+	device.getQueue(indices.computeFamily.value(), 0, &computeQueue);
 }
 
 SwapChainSupportDetails vkContext::querySwapChainSupport(vk::PhysicalDevice device) {

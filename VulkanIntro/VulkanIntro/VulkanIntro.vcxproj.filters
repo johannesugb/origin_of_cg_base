@@ -93,6 +93,15 @@
     <None Include="Tobii\API-Reference.pdf">
       <Filter>Tobii</Filter>
     </None>
+    <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="Shader\triangle.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="Shader\vrs_img.comp">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vkRenderObject.h">
