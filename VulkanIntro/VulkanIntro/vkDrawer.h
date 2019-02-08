@@ -15,7 +15,7 @@ public:
 	vkDrawer(vkCommandBufferManager* commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline);
 	virtual ~vkDrawer();
 
-	void draw(std::vector<vkRenderObject*> renderObjects);
+	virtual void draw(std::vector<vkRenderObject*> renderObjects);
 private:
 	vkCommandBufferManager * mCommandBufferManager;
 

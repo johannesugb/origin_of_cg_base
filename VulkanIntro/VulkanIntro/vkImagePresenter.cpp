@@ -10,8 +10,8 @@ vkImagePresenter::vkImagePresenter(vk::Queue &presentQueue, vk::SurfaceKHR surfa
 	mPresentQueue(presentQueue), mSurface(surface), mQueueFamilyIndices(queueFamilyIndices)
 {
 	mSwapChainRecreated = false;
-	createSwapChain();
-	createImageViews();
+	create_swap_chain();
+	create_image_views();
 }
 
 
@@ -39,8 +39,8 @@ void vkImagePresenter::recreate_swapchain() {
 	vkDeviceWaitIdle(vkContext::instance().device);
 
 	cleanup();
-	createSwapChain();
-	createImageViews();
+	create_swap_chain();
+	create_image_views();
 }
 
 void vkImagePresenter::fetch_next_swapchain_image(vk::Fence inFlightFence, vk::Semaphore signalSemaphore) {
@@ -88,7 +88,7 @@ void vkImagePresenter::present_image(std::vector<vk::Semaphore> waitSemaphores) 
 
 // swap chain create functions
 
-vk::SurfaceFormatKHR vkImagePresenter::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
+vk::SurfaceFormatKHR vkImagePresenter::choose_swap_surface_format(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
 	if (availableFormats.size() == 1 && availableFormats[0].format == vk::Format::eUndefined) {
 		return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
 	}
@@ -102,7 +102,7 @@ vk::SurfaceFormatKHR vkImagePresenter::chooseSwapSurfaceFormat(const std::vector
 	return availableFormats[0];
 }
 
-vk::PresentModeKHR vkImagePresenter::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> availablePresentModes) {
+vk::PresentModeKHR vkImagePresenter::choose_swap_present_mode(const std::vector<vk::PresentModeKHR> availablePresentModes) {
 	vk::PresentModeKHR bestMode = vk::PresentModeKHR::eFifo;
 
 	for (const auto& availablePresentMode : availablePresentModes) {
@@ -117,7 +117,7 @@ vk::PresentModeKHR vkImagePresenter::chooseSwapPresentMode(const std::vector<vk:
 	return bestMode;
 }
 
-vk::Extent2D vkImagePresenter::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities) {
+vk::Extent2D vkImagePresenter::choose_swap_extent(const vk::SurfaceCapabilitiesKHR& capabilities) {
 	// if window manager (GLFW) is flexible with the resolution, the extends of the capabilities are std::numeric_limits<uint32_t>::max()
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
@@ -139,12 +139,12 @@ vk::Extent2D vkImagePresenter::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR
 	}
 }
 
-void vkImagePresenter::createSwapChain() {
+void vkImagePresenter::create_swap_chain() {
 	SwapChainSupportDetails swapChainSupport = vkContext::instance().querySwapChainSupport();
 
-	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-	vk::PresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-	vk::Extent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+	vk::SurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats);
+	vk::PresentModeKHR presentMode = choose_swap_present_mode(swapChainSupport.presentModes);
+	vk::Extent2D extent = choose_swap_extent(swapChainSupport.capabilities);
 
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
@@ -192,16 +192,16 @@ void vkImagePresenter::createSwapChain() {
 	mSwapChainExtent = extent;
 }
 
-void vkImagePresenter::createImageViews() {
+void vkImagePresenter::create_image_views() {
 	mSwapChainImageViews.resize(mSwapChainImages.size());
 
 	for (uint32_t i = 0; i < mSwapChainImages.size(); i++) {
-		mSwapChainImageViews[i] = createImageView(mSwapChainImages[i], mSwapChainImageFormat, vk::ImageAspectFlagBits::eColor, 1);
+		mSwapChainImageViews[i] = create_image_view(mSwapChainImages[i], mSwapChainImageFormat, vk::ImageAspectFlagBits::eColor, 1);
 	}
 }
 
 // TODO optional, move to image or utility class
-vk::ImageView vkImagePresenter::createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) {
+vk::ImageView vkImagePresenter::create_image_view(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) {
 	vk::ImageViewCreateInfo viewInfo = {};
 	viewInfo.image = image;
 	viewInfo.viewType = vk::ImageViewType::e2D;

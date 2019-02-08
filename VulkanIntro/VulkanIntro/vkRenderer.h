@@ -39,6 +39,8 @@ private:
 	std::vector<vk::Semaphore> mCurrentImageAvailableSemaphores;
 
 	bool mSubmitted;
+	static vk::CommandBuffer mPrimCmdBuffer;
 
 	void create_sync_objects();
+	void recordPrimaryCommandBuffer();
 };

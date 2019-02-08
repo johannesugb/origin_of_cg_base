@@ -37,14 +37,14 @@ private:
 	QueueFamilyIndices mQueueFamilyIndices;
 
 
-	vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
-	vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> availablePresentModes);
-	vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR & capabilities);
+	vk::SurfaceFormatKHR choose_swap_surface_format(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
+	vk::PresentModeKHR choose_swap_present_mode(const std::vector<vk::PresentModeKHR> availablePresentModes);
+	vk::Extent2D choose_swap_extent(const vk::SurfaceCapabilitiesKHR & capabilities);
 
 	void cleanup();
-	void createSwapChain();
-	void createImageViews();
+	void create_swap_chain();
+	void create_image_views();
 
-	vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
+	vk::ImageView create_image_view(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 };
 

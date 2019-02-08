@@ -179,7 +179,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Shader\triangle.frag" />
     <None Include="Shader\triangle.vert" />
+    <None Include="Shader\vrs_img.comp" />
     <None Include="Tobii\API-Reference.pdf" />
     <None Include="Tobii\SDK-License_en.pdf" />
     <None Include="Tobii\SDK-License_zh.pdf" />
