@@ -13,7 +13,7 @@ const bool enableValidationLayers = true;
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	//, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME // core functionality with vulcan 1.1, not needed anymore
-	, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME // variable rate shading extension
+	//, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME // variable rate shading extension
 };
 
 // TODO maybe define as paramter for context
@@ -335,8 +335,15 @@ SwapChainSupportDetails vkContext::querySwapChainSupport(vk::PhysicalDevice devi
 
 // MSAA
 vk::SampleCountFlagBits vkContext::getMaxUsableSampleCount() {
-	vk::PhysicalDeviceProperties physicalDeviceProperties;
-	physicalDevice.getProperties(&physicalDeviceProperties);
+
+	vk::PhysicalDeviceProperties2 physicalDeviceProperties2;
+
+	vk::PhysicalDeviceShadingRateImagePropertiesNV shadingRateImagePropertiesNV;
+	physicalDeviceProperties2.pNext = &shadingRateImagePropertiesNV;
+	physicalDevice.getProperties2(&physicalDeviceProperties2);
+	vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDeviceProperties2.properties;
+
+	shadingRateImageProperties = shadingRateImagePropertiesNV;
 
 	auto depthSampleCount = false;
 	auto colorSampleCount = false;

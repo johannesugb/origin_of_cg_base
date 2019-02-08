@@ -56,6 +56,7 @@ public:
 	int currentFrame;
 
 	bool shadingRateImageSupported;
+	VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateImageProperties;
 
 	static vkContext& instance()
 	{
