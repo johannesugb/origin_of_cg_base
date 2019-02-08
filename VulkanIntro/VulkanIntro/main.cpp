@@ -42,6 +42,7 @@
 #include "VkRenderer.h"
 #include "vulkan_pipeline.h"
 #include "vulkan_framebuffer.h"
+#include "vrs_image_compute_drawer.h"
 
 #include "eyetracking_interface.h"
 
@@ -57,11 +58,14 @@ private:
 	
 
 	vk::DescriptorSetLayout descriptorSetLayout;
+	vk::DescriptorPool descriptorPool;
+
+	vk::DescriptorSetLayout vrsComputeDescriptorSetLayout;
+	vk::DescriptorPool vrsComputeDescriptorPool;	
+	std::vector<vk::DescriptorSet> mVrsComputeDescriptorSets;
 
 	vk::CommandPool commandPool;
 	vk::CommandPool transferCommandPool;
-
-	vk::DescriptorPool descriptorPool;
 
 	bool framebufferResized = false;
 
@@ -77,6 +81,7 @@ private:
 	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager;
 	vkCommandBufferManager* transferCommandBufferManager;
 	std::unique_ptr<vkDrawer> drawer;
+	std::unique_ptr<vrs_image_compute_drawer> vrsImageComputeDrawer;
 
 	// render target needed for MSAA
 	std::shared_ptr<vkCgbImage> colorImage;
@@ -85,7 +90,8 @@ private:
 	std::shared_ptr<vkImagePresenter> imagePresenter;
 	std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
 	std::unique_ptr<vkRenderer> mRenderer;
-	std::shared_ptr<vulkan_pipeline> mVulkanPipeline;
+	std::shared_ptr<vulkan_pipeline> mRenderVulkanPipeline;
+	std::shared_ptr<vulkan_pipeline> mComputeVulkanPipeline;
 	std::shared_ptr<vulkan_framebuffer> mVulkanFramebuffer;
 
 	eyetracking_interface eyeInf;
@@ -117,6 +123,7 @@ private:
 
 		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(vkContext::instance().msaaSamples, colorImage, depthImage, imagePresenter);
 		createDescriptorSetLayout();
+		createVrsComputeDescriptorSetLayout();
 
 		vk::Viewport viewport = {};
 		viewport.x = 0.0f;
@@ -130,13 +137,20 @@ private:
 		scissor.offset = { 0, 0 };
 		scissor.extent = imagePresenter->get_swap_chain_extent();
 
-		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
-		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager.get(), mVulkanPipeline);
+		// Render Drawer and Pipeline
+		mRenderVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
+		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager, mRenderVulkanPipeline);
 		drawer->set_vrs_image(vrsImage);
+
+		// Compute Drawer and Pipeline
+		mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(glm::vec2));
+		vrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mRenderVulkanPipeline);
 
 		createTexture();
 
 		createDescriptorPool();
+		createVrsComputeDescriptorPool();
+		createVrsDescriptorSets();
 
 		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
 		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
@@ -183,6 +197,8 @@ private:
 
 		vkContext::instance().device.destroyDescriptorPool(descriptorPool);
 		vkContext::instance().device.destroyDescriptorSetLayout(descriptorSetLayout);
+		vkContext::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
+		vkContext::instance().device.destroyDescriptorSetLayout(vrsComputeDescriptorSetLayout);
 
 		delete renderObject;
 		delete renderObject2;
@@ -217,7 +233,9 @@ private:
 		depthImage.reset();
 
 		drawer.reset();
-		mVulkanPipeline.reset();
+		mRenderVulkanPipeline.reset();
+		vrsImageComputeDrawer.reset();
+		mComputeVulkanPipeline.reset();
 		mVulkanFramebuffer.reset();
 
 		imagePresenter.reset();
@@ -253,8 +271,8 @@ private:
 		scissor.offset = { 0, 0 };
 		scissor.extent = imagePresenter->get_swap_chain_extent();
 
-		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
-		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager.get(), mVulkanPipeline);
+		mRenderVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
+		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager, mRenderVulkanPipeline);
 	}
 
 	void createCommandPools() {
@@ -341,6 +359,70 @@ private:
 		}
 	}
 
+	void createVrsComputeDescriptorSetLayout() {
+		vk::DescriptorSetLayoutBinding storageImageLayoutBinding = {};
+		storageImageLayoutBinding.binding = 0;
+		storageImageLayoutBinding.descriptorCount = 1;
+		storageImageLayoutBinding.descriptorType = vk::DescriptorType::eStorageImage;
+		storageImageLayoutBinding.pImmutableSamplers = nullptr;
+		storageImageLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+		vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
+		std::array<vk::DescriptorSetLayoutBinding, 1> bindings = { storageImageLayoutBinding };
+		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		layoutInfo.pBindings = bindings.data();
+
+
+		if (vkContext::instance().device.createDescriptorSetLayout(&layoutInfo, nullptr, &vrsComputeDescriptorSetLayout) != vk::Result::eSuccess) {
+			throw std::runtime_error("failed to create vrs compute descriptor set layout!");
+		}
+	}
+
+	void createVrsComputeDescriptorPool() {
+		std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
+		poolSizes[0].type = vk::DescriptorType::eStorageImage;
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count());
+
+		vk::DescriptorPoolCreateInfo poolInfo = {};
+		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolInfo.pPoolSizes = poolSizes.data();
+		poolInfo.maxSets = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count());
+
+		if (vkContext::instance().device.createDescriptorPool(&poolInfo, nullptr, &vrsComputeDescriptorPool) != vk::Result::eSuccess) {
+			throw std::runtime_error("failed to create vrs compute descriptor pool!");
+		}
+	}
+
+	void createVrsDescriptorSets() {
+		std::vector<vk::DescriptorSetLayout> layouts(imagePresenter->get_swap_chain_images_count(), vrsComputeDescriptorSetLayout);
+		vk::DescriptorSetAllocateInfo allocInfo = {};
+		allocInfo.descriptorPool = vrsComputeDescriptorPool;
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count());
+		allocInfo.pSetLayouts = layouts.data();
+
+		mVrsComputeDescriptorSets.resize(imagePresenter->get_swap_chain_images_count());
+		if (vkContext::instance().device.allocateDescriptorSets(&allocInfo, mVrsComputeDescriptorSets.data()) != vk::Result::eSuccess) {
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+
+		for (size_t i = 0; i < imagePresenter->get_swap_chain_images_count(); i++) {
+			vk::DescriptorImageInfo imageInfo = {};
+			imageInfo.imageLayout = vk::ImageLayout::eGeneral;
+			imageInfo.imageView = vrsImage->get_image_view();
+
+			std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
+
+			descriptorWrites[0].dstSet = mVrsComputeDescriptorSets[i];
+			descriptorWrites[0].dstBinding = 0;
+			descriptorWrites[0].dstArrayElement = 0;
+			descriptorWrites[0].descriptorType = vk::DescriptorType::eStorageImage;
+			descriptorWrites[0].descriptorCount = 1;
+			descriptorWrites[0].pImageInfo = &imageInfo;
+
+			vkContext::instance().device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		}
+	}
+
 	// image / texture
 
 	void createTexture() {
@@ -401,6 +483,7 @@ private:
 
 		renderObject = new vkRenderObject((uint32_t)imagePresenter->get_swap_chain_images_count(), vertices, indices, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
 	}
+
 
 	// attachments for framebuffer (color image to render to before resolve, depth image)
 

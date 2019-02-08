@@ -217,8 +217,7 @@ bool vkContext::isDeviceSuitable(vk::PhysicalDevice device) {
 	device.getFeatures2(&supportedExtFeatures);
 	shadingRateImageSupported = shadingRateImageFeatureNV.shadingRateImage && shadingRateImageFeatureNV.shadingRateCoarseSampleOrder;
 
-
-	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedExtFeatures.features.samplerAnisotropy;
+	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedExtFeatures.features.samplerAnisotropy && supportedExtFeatures.features.shaderStorageImageExtendedFormats;
 }
 
 bool vkContext::checkDeviceExtensionSupport(vk::PhysicalDevice device) {
@@ -288,8 +287,7 @@ void vkContext::createLogicalDevice() {
 	// IMPORTANT! add them to the isDeviceSuitable function
 	vk::PhysicalDeviceFeatures2 deviceFeatures = {};
 	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
-	vk::PhysicalDeviceFeatures deviceFeatures1 = {};
-	deviceFeatures1.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.features.shaderStorageImageExtendedFormats = VK_TRUE;
 
 	vk::DeviceCreateInfo createInfo = {};
 

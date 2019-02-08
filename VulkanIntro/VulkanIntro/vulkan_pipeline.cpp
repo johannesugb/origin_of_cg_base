@@ -28,10 +28,14 @@ vulkan_pipeline::vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewpor
 	create_graphics_pipeline(viewport, scissor, msaaSamples, descriptorSetLayout);
 }
 
+vulkan_pipeline::vulkan_pipeline(const std::string & filename, std::vector<vk::DescriptorSetLayout> descriptorSetLayouts, size_t pushConstantsSize)
+{
+	create_compute_pipeline(filename, descriptorSetLayouts, pushConstantsSize);
+}
 
 vulkan_pipeline::~vulkan_pipeline()
 {
-	vkContext::instance().device.destroyPipeline(mGraphicsPipeline, nullptr);
+	vkContext::instance().device.destroyPipeline(mPipeline, nullptr);
 	vkContext::instance().device.destroyPipelineLayout(mPipelineLayout, nullptr);
 }
 
@@ -209,12 +213,57 @@ void vulkan_pipeline::create_graphics_pipeline(vk::Viewport viewport, vk::Rect2D
 
 	pipelineInfo.pDepthStencilState = &depthStencil;
 
-	if (vkContext::instance().device.createGraphicsPipelines(nullptr, 1, &pipelineInfo, nullptr, &mGraphicsPipeline) != vk::Result::eSuccess) {
+	if (vkContext::instance().device.createGraphicsPipelines(nullptr, 1, &pipelineInfo, nullptr, &mPipeline) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 
 	vkContext::instance().device.destroyShaderModule(fragShaderModule, nullptr);
 	vkContext::instance().device.destroyShaderModule(vertShaderModule, nullptr);
+}
+
+void vulkan_pipeline::create_compute_pipeline(const std::string& filename, std::vector<vk::DescriptorSetLayout> descriptorSetLayouts, size_t pushConstantsSize)
+{
+	// shaders
+	auto compShaderCode = readFile(filename);
+
+	vk::ShaderModule compShaderModule;
+
+	compShaderModule = create_shader_module(compShaderCode);
+
+	vk::PipelineShaderStageCreateInfo compShaderStageInfo = {};
+	compShaderStageInfo.stage = vk::ShaderStageFlagBits::eCompute;
+	compShaderStageInfo.module = compShaderModule;
+	compShaderStageInfo.pName = "main";
+
+	// TODO replace with ressource
+	vk::PushConstantRange pushConstantRange = {};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = pushConstantsSize;
+	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size(); // Optional
+	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data(); // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
+	pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange; // Optional
+
+	if (vkContext::instance().device.createPipelineLayout(&pipelineLayoutInfo, nullptr, &mPipelineLayout) != vk::Result::eSuccess) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
+
+	// finally create compute pipeline
+	vk::ComputePipelineCreateInfo pipelineInfo = {};
+	pipelineInfo.stage = compShaderStageInfo;
+	pipelineInfo.layout = mPipelineLayout;
+
+	pipelineInfo.basePipelineHandle = nullptr; // Optional
+	pipelineInfo.basePipelineIndex = -1; // Optional
+
+	if (vkContext::instance().device.createComputePipelines(nullptr, 1, &pipelineInfo, nullptr, &mPipeline) != vk::Result::eSuccess) {
+		throw std::runtime_error("failed to create graphics pipeline!");
+	}
+
+	vkContext::instance().device.destroyShaderModule(compShaderModule, nullptr);
 }
 
 vk::ShaderModule vulkan_pipeline::create_shader_module(const std::vector<char>& code) {

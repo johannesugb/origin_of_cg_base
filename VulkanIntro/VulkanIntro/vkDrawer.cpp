@@ -16,7 +16,7 @@ void vkCmdBindShadingRateImageNV(
 }
 
 
-vkDrawer::vkDrawer(vkCommandBufferManager* commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline) : mCommandBufferManager(commandBufferManager), mPipeline(pipeline)
+vkDrawer::vkDrawer(std::shared_ptr<vkCommandBufferManager> commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline) : mCommandBufferManager(commandBufferManager), mPipeline(pipeline)
 {
 }
 
@@ -45,7 +45,7 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 
 	for (vkRenderObject* renderObject : renderObjects) {
 		// bind pipeline for this draw command
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_graphics_pipeline());
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline());
 
 		vk::Buffer vertexBuffers[] = { renderObject->get_vertex_buffer() , renderObject->get_vertex_buffer() };
 		vk::DeviceSize offsets[] = { 0, 0 };

@@ -78,6 +78,9 @@
     <ClCompile Include="eyetracking_interface.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="vrs_image_compute_drawer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\triangle.vert">
@@ -102,6 +105,9 @@
     <None Include="Shader\vrs_img.comp">
       <Filter>Shader</Filter>
     </None>
+    <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vkRenderObject.h">
@@ -156,6 +162,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="eyetracking_interface.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="vrs_image_compute_drawer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
