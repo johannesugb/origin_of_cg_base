@@ -76,14 +76,37 @@ void vulkan_pipeline::create_graphics_pipeline(vk::Viewport viewport, vk::Rect2D
 	inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+	uint32_t viewportCount = 1;
 	vk::PipelineViewportStateCreateInfo viewportState = {};
-	viewportState.viewportCount = 1;
+	viewportState.viewportCount = viewportCount;
 	viewportState.pViewports = &viewport;
 	viewportState.scissorCount = 1;
 	viewportState.pScissors = &scissor;
 
-	//vk::PipelineViewportShadingRateImageStateCreateInfoNV shadingRateImage = {};
-	//viewportState.pNext = &shadingRateImage;
+	vk::PipelineViewportShadingRateImageStateCreateInfoNV shadingRateImage = {};
+	shadingRateImage.shadingRateImageEnable = VK_TRUE;
+	shadingRateImage.viewportCount = viewportCount;
+
+	std::vector<vk::ShadingRatePaletteEntryNV>  shadingRatePaletteEntries;
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X4Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X2Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer1X2Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X1Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e2InvocationsPerPixel);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e4InvocationsPerPixel);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e8InvocationsPerPixel);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e16InvocationsPerPixel);
+	vk::ShadingRatePaletteNV shadingRatePalette = {};
+	shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntries.size();
+	shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntries.data();
+
+	shadingRateImage.pShadingRatePalettes = &shadingRatePalette;
+
+	viewportState.pNext = &shadingRateImage;
 
 	vk::PipelineRasterizationStateCreateInfo rasterizer = {};
 	rasterizer.depthClampEnable = VK_FALSE;

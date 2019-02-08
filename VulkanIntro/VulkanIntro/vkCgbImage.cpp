@@ -131,8 +131,23 @@ void vkCgbImage::transition_image_layout(vk::Format format, vk::ImageLayout oldL
 	else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
 		barrier.srcAccessMask = {};
 		barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
+
 		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
 		destinationStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eGeneral) {
+		barrier.srcAccessMask = {};
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShadingRateImageReadNV;
+
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		destinationStage = vk::PipelineStageFlagBits::eComputeShader | vk::PipelineStageFlagBits::eShadingRateImageNV;
+	}
+	else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eShadingRateOptimalNV) {
+		barrier.srcAccessMask = {};
+		barrier.dstAccessMask = vk::AccessFlagBits::eShadingRateImageReadNV;
+
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		destinationStage = vk::PipelineStageFlagBits::eShadingRateImageNV;
 	}
 	else {
 		throw std::invalid_argument("unsupported layout transition!");

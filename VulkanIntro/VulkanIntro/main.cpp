@@ -81,6 +81,7 @@ private:
 	// render target needed for MSAA
 	std::shared_ptr<vkCgbImage> colorImage;
 	std::shared_ptr<vkCgbImage> depthImage;
+	std::shared_ptr<vkCgbImage> vrsImage;
 	std::shared_ptr<vkImagePresenter> imagePresenter;
 	std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
 	std::unique_ptr<vkRenderer> mRenderer;
@@ -112,7 +113,7 @@ private:
 
 		createColorResources();
 		createDepthResources();
-		//createVRSImageResources();
+		createVRSImageResources();
 
 		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(vkContext::instance().msaaSamples, colorImage, depthImage, imagePresenter);
 		createDescriptorSetLayout();
@@ -131,6 +132,7 @@ private:
 
 		mVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
 		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager.get(), mVulkanPipeline);
+		drawer->set_vrs_image(vrsImage);
 
 		createTexture();
 
@@ -445,11 +447,12 @@ private:
 
 	void createVRSImageResources() {
 		vk::Format colorFormat = vk::Format::eR8Uint;
-		//vkContext::instance()
+		auto width = imagePresenter->get_swap_chain_extent().width / vkContext::instance().shadingRateImageProperties.shadingRateTexelSize.width;
+		auto height = imagePresenter->get_swap_chain_extent().height / vkContext::instance().shadingRateImageProperties.shadingRateTexelSize.height;
 
-		colorImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, imagePresenter->get_swap_chain_extent().width, imagePresenter->get_swap_chain_extent().height, 1, vk::SampleCountFlagBits::e1, colorFormat,
-			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-		colorImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+		vrsImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormat,
+			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+		vrsImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eShadingRateOptimalNV, 1);
 	}
 	
 };
