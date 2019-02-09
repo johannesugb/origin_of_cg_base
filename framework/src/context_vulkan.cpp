@@ -18,7 +18,7 @@ namespace cgb
 			[](auto name) {
 				auto supported = is_validation_layer_supported(name);
 				if (!supported) {
-					LOG_WARNING(fmt::format("Validation layer '{}' is not supported by this Vulkan instance and will not be activated."));
+					LOG_WARNING(fmt::format("Validation layer '{}' is not supported by this Vulkan instance and will not be activated.", name));
 				}
 				return supported;
 			});

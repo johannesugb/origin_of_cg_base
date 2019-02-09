@@ -1,4 +1,5 @@
-﻿using System;
+﻿using clone_vs_project.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,6 +23,7 @@ namespace clone_vs_project
     {
         public MainWindow()
         {
+			DataContext = new MainViewModel();
             InitializeComponent();
         }
     }

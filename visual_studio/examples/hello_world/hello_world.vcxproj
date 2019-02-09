@@ -19,16 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\examples\hello_world\source\hello_world.cpp" />
-    <ClCompile Include="..\..\..\..\examples\hello_world\source\temp.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_world\source\hello_world.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_world\source\temp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\cg_base\cg_base.vcxproj">
+    <ProjectReference Include="..\..\cg_base\cg_base.vcxproj">
       <Project>{602f842f-50c1-466d-8696-1707937d8ab9}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\examples\hello_world\source\temp.h" />
+    <ClInclude Include="..\..\..\examples\hello_world\source\temp.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -71,48 +71,48 @@
   <ImportGroup Label="Shared" />
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\props\solution_directories.props" />
-    <Import Project="..\..\..\props\linked_libs_debug.props" />
-    <Import Project="..\..\..\props\rendering_api_vulkan.props" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_debug.props" />
+    <Import Project="..\..\props\rendering_api_vulkan.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\props\solution_directories.props" />
-    <Import Project="..\..\..\props\linked_libs_debug.props" />
-    <Import Project="..\..\..\props\rendering_api_opengl46.props" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_debug.props" />
+    <Import Project="..\..\props\rendering_api_opengl46.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\props\solution_directories.props" />
-    <Import Project="..\..\..\props\linked_libs_release.props" />
-    <Import Project="..\..\..\props\rendering_api_opengl46.props" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_release.props" />
+    <Import Project="..\..\props\rendering_api_opengl46.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\props\solution_directories.props" />
-    <Import Project="..\..\..\props\linked_libs_release.props" />
-    <Import Project="..\..\..\props\rendering_api_vulkan.props" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_release.props" />
+    <Import Project="..\..\props\rendering_api_vulkan.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(ProjectDir)..\bin\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
     <ClCompile>

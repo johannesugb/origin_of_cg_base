@@ -1,13 +1,12 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2047
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28531.58
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cg_base", "cg_base\cg_base.vcxproj", "{602F842F-50C1-466D-8696-1707937D8AB9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{42ECE233-FCB5-4525-BBC9-024CE075FC38}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_world", "examples\hello_world\hello_world\hello_world.vcxproj", "{AAAC1485-846C-4F30-8824-125E8584D038}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_world", "examples\hello_world\hello_world.vcxproj", "{AAAC1485-846C-4F30-8824-125E8584D038}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9739A4A1-6D55-4F8F-A7F2-9E92E1BF3070}"
 EndProject
@@ -20,6 +19,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_ui.shared", "examples\hello_ui\hello_ui.shared\hello_ui.shared.vcxitems", "{C005ECE1-D657-437B-8D07-4EE158A17FD7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_ui.windows", "examples\hello_ui\hello_ui.windows\hello_ui.windows.vcxproj", "{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_vrs", "examples\hello_vrs\hello_vrs.vcxproj", "{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hello_vrs", "hello_vrs", "{604C8217-4E20-46BD-9E0B-E93ED2FFABCF}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -65,6 +68,14 @@ Global
 		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_GL46|x64.Build.0 = Release_GL46|x64
 		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
 		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7}.Release_Vulkan|x64.Build.0 = Release_Vulkan|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Debug_GL46|x64.ActiveCfg = Debug_GL46|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Release_GL46|x64.Build.0 = Release_GL46|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74}.Release_Vulkan|x64.Build.0 = Release_Vulkan|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -76,6 +87,8 @@ Global
 		{0257968D-C7A2-410D-874A-3739A9C2055D} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
 		{C005ECE1-D657-437B-8D07-4EE158A17FD7} = {0257968D-C7A2-410D-874A-3739A9C2055D}
 		{B687FDC8-08B3-4FDF-A81E-F8912058D1C7} = {0257968D-C7A2-410D-874A-3739A9C2055D}
+		{E3A2864B-E1DE-4B21-A214-C735D8BF4E74} = {604C8217-4E20-46BD-9E0B-E93ED2FFABCF}
+		{604C8217-4E20-46BD-9E0B-E93ED2FFABCF} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A8961D43-F08D-46E3-B3BB-29BA8AA39C3E}
