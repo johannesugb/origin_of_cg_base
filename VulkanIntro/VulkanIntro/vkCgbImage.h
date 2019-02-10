@@ -26,6 +26,9 @@ public:
 	vk::ImageAspectFlags get_aspects() { return mAspects; }
 
 	void transition_image_layout(vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, uint32_t mipLevels);
+
+	int get_width() { return mTexWidth; }
+	int get_height() { return mTexHeight; }
 private:
 	vk::Image mImage;
 	vkCgbMemory mImageMemory;

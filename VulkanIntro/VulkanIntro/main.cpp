@@ -81,7 +81,7 @@ private:
 	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager;
 	vkCommandBufferManager* transferCommandBufferManager;
 	std::unique_ptr<vkDrawer> drawer;
-	std::unique_ptr<vrs_image_compute_drawer> vrsImageComputeDrawer;
+	std::unique_ptr<vrs_image_compute_drawer> mVrsImageComputeDrawer;
 
 	// render target needed for MSAA
 	std::shared_ptr<vkCgbImage> colorImage;
@@ -90,6 +90,7 @@ private:
 	std::shared_ptr<vkImagePresenter> imagePresenter;
 	std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
 	std::unique_ptr<vkRenderer> mRenderer;
+	std::shared_ptr<vkRenderer> mVrsRenderer;
 	std::shared_ptr<vulkan_pipeline> mRenderVulkanPipeline;
 	std::shared_ptr<vulkan_pipeline> mComputeVulkanPipeline;
 	std::shared_ptr<vulkan_framebuffer> mVulkanFramebuffer;
@@ -115,7 +116,8 @@ private:
 		imagePresenter = std::make_shared<vkImagePresenter>(vkContext::instance().presentQueue, vkContext::instance().surface, vkContext::instance().findQueueFamilies());
 		drawCommandBufferManager = std::make_shared<vkCommandBufferManager>(imagePresenter->get_swap_chain_images_count(), commandPool, vkContext::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<vulkan_render_queue>(vkContext::instance().graphicsQueue);
-		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
+		mVrsRenderer = std::make_shared<vkRenderer>(nullptr, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>>{}, true);
+		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>>{ mVrsRenderer });
 
 		createColorResources();
 		createDepthResources();
@@ -144,13 +146,15 @@ private:
 
 		// Compute Drawer and Pipeline
 		mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(glm::vec2));
-		vrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mRenderVulkanPipeline);
+		mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline);
 
 		createTexture();
 
 		createDescriptorPool();
 		createVrsComputeDescriptorPool();
 		createVrsDescriptorSets();
+		mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
+		mVrsImageComputeDrawer->set_width_height(vrsImage->get_width(), vrsImage->get_height());
 
 		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
 		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
@@ -234,11 +238,12 @@ private:
 
 		drawer.reset();
 		mRenderVulkanPipeline.reset();
-		vrsImageComputeDrawer.reset();
+		mVrsImageComputeDrawer.reset();
 		mComputeVulkanPipeline.reset();
 		mVulkanFramebuffer.reset();
 
 		imagePresenter.reset();
+		mVrsRenderer.reset();
 		mRenderer.reset();
 	}
 
@@ -307,6 +312,8 @@ private:
 
 		// start drawing, record draw commands, etc.
 		vkContext::instance().vulkanFramebuffer = mVulkanFramebuffer;
+
+		mVrsRenderer->render(std::vector<vkRenderObject*>{}, mVrsImageComputeDrawer.get());
 
 		std::vector<vkRenderObject*> renderObjects;
 		renderObjects.push_back(renderObject);
@@ -535,7 +542,7 @@ private:
 
 		vrsImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormat,
 			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-		vrsImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eShadingRateOptimalNV, 1);
+		vrsImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral, 1); // vk::ImageLayout::eShadingRateOptimalNV
 	}
 	
 };

@@ -14,7 +14,7 @@ class vkRenderer
 {
 public:
 	vkRenderer(std::shared_ptr<vkImagePresenter> imagePresenter, std::shared_ptr<vulkan_render_queue> vulkanRenderQueue,
-		std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>> predecessors = {});
+		std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>> predecessors = {}, bool isCompute = false);
 	virtual ~vkRenderer();
 
 	void start_frame();
@@ -43,4 +43,7 @@ private:
 
 	void create_sync_objects();
 	void recordPrimaryCommandBuffer();
+
+	// no render pass if this is a pure compute renderer (TODO maybe better solution required)
+	bool mIsCompute;
 };

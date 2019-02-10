@@ -7,9 +7,9 @@ vk::CommandBuffer vkRenderer::mPrimCmdBuffer = nullptr;
 
 // TODO Renderer Predecessors and their signal semaphores
 vkRenderer::vkRenderer(std::shared_ptr<vkImagePresenter> imagePresenter, std::shared_ptr<vulkan_render_queue> vulkanRenderQueue,
-	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>> predecessors) :
+	std::shared_ptr<vkCommandBufferManager> drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>> predecessors, bool isCompute) :
 	mImagePresenter(imagePresenter), mVulkanRenderQueue(vulkanRenderQueue), mDrawCommandBufferManager(drawCommandBufferManager),
-	mPredecessors(predecessors)
+	mPredecessors(predecessors), mIsCompute(isCompute)
 {
 	mCurrentInFlightFence = nullptr;
 	mSubmitted = false;
@@ -103,25 +103,30 @@ void vkRenderer::recordPrimaryCommandBuffer() {
 	if (!mSubmitted) {
 		std::vector<vk::CommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->get_recorded_command_buffers(vk::CommandBufferLevel::eSecondary);
 
-		vk::RenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.renderPass = vkContext::instance().vulkanFramebuffer->get_render_pass();
-		renderPassInfo.framebuffer = vkContext::instance().vulkanFramebuffer->get_swapchain_framebuffer();
+		// no render pass if this is a pure compute renderer (maybe better solution required)
+		if (!mIsCompute) {
+			vk::RenderPassBeginInfo renderPassInfo = {};
+			renderPassInfo.renderPass = vkContext::instance().vulkanFramebuffer->get_render_pass();
+			renderPassInfo.framebuffer = vkContext::instance().vulkanFramebuffer->get_swapchain_framebuffer();
 
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = vkContext::instance().vulkanFramebuffer->get_framebuffer_extent();
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = vkContext::instance().vulkanFramebuffer->get_framebuffer_extent();
 
-		std::array<vk::ClearValue, 2> clearValues = {};
-		clearValues[0].color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
-		clearValues[1].depthStencil = { 1.0f, 0 };
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
+			std::array<vk::ClearValue, 2> clearValues = {};
+			clearValues[0].color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
+			clearValues[1].depthStencil = { 1.0f, 0 };
+			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+			renderPassInfo.pClearValues = clearValues.data();
 
-		mPrimCmdBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eSecondaryCommandBuffers);
+			mPrimCmdBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eSecondaryCommandBuffers);
+		}
 
 		// submit secondary command buffers
 		mPrimCmdBuffer.executeCommands(secondaryCommandBuffers.size(), secondaryCommandBuffers.data());
 
-		mPrimCmdBuffer.endRenderPass();
+		if (!mIsCompute) {
+			mPrimCmdBuffer.endRenderPass();
+		}
 
 		mSubmitted = true;
 	}

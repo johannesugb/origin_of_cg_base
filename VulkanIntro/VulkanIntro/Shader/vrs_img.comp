@@ -14,5 +14,5 @@ layout(binding = 0, r8ui) uniform uimage2D targetImage;
 
 void main() {
 	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
-	imageStore(targetImage, uv, uvec4(0,0,0,0));
+	imageStore(targetImage, uv, uvec4(2,0,0,0));
 }
