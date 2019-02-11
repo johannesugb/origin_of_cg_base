@@ -40,9 +40,6 @@
     <ClCompile Include="..\..\framework\src\shader.cpp">
       <Filter>Source Files\pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\cg_stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\context.cpp">
       <Filter>Source Files\context</Filter>
     </ClCompile>
@@ -81,6 +78,9 @@
     </ClCompile>
     <ClCompile Include="..\..\framework\src\quake_camera.cpp">
       <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\precompiled_headers\src\cg_stdafx.cpp">
+      <Filter>Source Files\precompiled_headers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -132,12 +132,6 @@
     <ClInclude Include="..\..\framework\include\sequential_executor.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\cg_targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\cg_stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\cg_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -185,6 +179,12 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\quake_camera.h">
       <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\precompiled_headers\include\cg_stdafx.h">
+      <Filter>Header Files\precompiled_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\precompiled_headers\include\cg_targetver.h">
+      <Filter>Header Files\precompiled_headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -280,6 +280,12 @@
     </Filter>
     <Filter Include="Source Files\scene">
       <UniqueIdentifier>{7e028abe-dc0a-4bc4-a113-c1f9c61d73b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\precompiled_headers">
+      <UniqueIdentifier>{7ec27cee-9cd5-4218-838d-24f9822158b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\precompiled_headers">
+      <UniqueIdentifier>{c7da7861-4954-4b1c-8251-2760621ea559}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

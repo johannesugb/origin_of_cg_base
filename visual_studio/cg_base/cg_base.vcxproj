@@ -57,7 +57,7 @@
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp" />
     <ClCompile Include="..\..\framework\src\window.cpp" />
-    <ClCompile Include="..\src\cg_stdafx.cpp">
+    <ClCompile Include="..\precompiled_headers\src\cg_stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">Create</PrecompiledHeader>
@@ -109,8 +109,8 @@
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_only_timer.h" />
     <ClInclude Include="..\..\framework\include\window.h" />
-    <ClInclude Include="..\include\cg_stdafx.h" />
-    <ClInclude Include="..\include\cg_targetver.h" />
+    <ClInclude Include="..\precompiled_headers\include\cg_stdafx.h" />
+    <ClInclude Include="..\precompiled_headers\include\cg_targetver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -180,28 +180,28 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FrameworkRoot)include;$(IncludePath)</IncludePath>
     <OutDir>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>cg_base</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">
@@ -213,7 +213,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeaderFile>cg_stdafx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(SolutionDir)precompiled_headers\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>cg_stdafx.h</ForcedIncludeFiles>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -238,7 +238,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeaderFile>cg_stdafx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(SolutionDir)precompiled_headers\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>cg_stdafx.h</ForcedIncludeFiles>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -265,7 +265,7 @@
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeaderFile>cg_stdafx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(SolutionDir)precompiled_headers\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>cg_stdafx.h</ForcedIncludeFiles>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -294,7 +294,7 @@
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeaderFile>cg_stdafx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalRoot)include;$(SolutionDir)precompiled_headers\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ForcedIncludeFiles>cg_stdafx.h</ForcedIncludeFiles>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
