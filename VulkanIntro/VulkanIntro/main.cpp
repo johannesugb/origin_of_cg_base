@@ -87,6 +87,8 @@ private:
 	std::shared_ptr<vkCgbImage> colorImage;
 	std::shared_ptr<vkCgbImage> depthImage;
 	std::shared_ptr<vkCgbImage> vrsImage;
+	std::shared_ptr<vkCgbImage> vrsDebugImage;
+	std::shared_ptr <vkTexture> vrsDebugTextureImage;
 	std::shared_ptr<vkImagePresenter> imagePresenter;
 	std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
 	std::unique_ptr<vkRenderer> mRenderer;
@@ -114,6 +116,7 @@ private:
 		transferCommandBufferManager = new vkCommandBufferManager(transferCommandPool, vkContext::instance().graphicsQueue);
 
 		imagePresenter = std::make_shared<vkImagePresenter>(vkContext::instance().presentQueue, vkContext::instance().surface, vkContext::instance().findQueueFamilies());
+		vkContext::instance().dynamicRessourceCount = imagePresenter->get_swap_chain_images_count();
 		drawCommandBufferManager = std::make_shared<vkCommandBufferManager>(imagePresenter->get_swap_chain_images_count(), commandPool, vkContext::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<vulkan_render_queue>(vkContext::instance().graphicsQueue);
 		mVrsRenderer = std::make_shared<vkRenderer>(nullptr, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>>{}, true);
@@ -146,7 +149,7 @@ private:
 
 		// Compute Drawer and Pipeline
 		mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(glm::vec2));
-		mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline);
+		mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImage);
 
 		createTexture();
 
@@ -156,8 +159,8 @@ private:
 		mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 		mVrsImageComputeDrawer->set_width_height(vrsImage->get_width(), vrsImage->get_height());
 
-		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
-		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
+		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
+		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
 
 		renderObject2->update_uniform_buffer(0, 0, imagePresenter->get_swap_chain_extent());
 		renderObject2->update_uniform_buffer(1, 0, imagePresenter->get_swap_chain_extent());
@@ -338,8 +341,15 @@ private:
 		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
+		vk::DescriptorSetLayoutBinding samplerDebugLayoutBinding = {};
+		samplerDebugLayoutBinding.binding = 2;
+		samplerDebugLayoutBinding.descriptorCount = 1;
+		samplerDebugLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		samplerDebugLayoutBinding.pImmutableSamplers = nullptr;
+		samplerDebugLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
 		vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
-		std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+		std::array<vk::DescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding,samplerDebugLayoutBinding };
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		layoutInfo.pBindings = bindings.data();
 
@@ -350,11 +360,13 @@ private:
 	}
 
 	void createDescriptorPool() {
-		std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
+		std::array<vk::DescriptorPoolSize, 3> poolSizes = {};
 		poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
 		poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
+		poolSizes[2].type = vk::DescriptorType::eCombinedImageSampler;
+		poolSizes[2].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
 
 		vk::DescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -488,7 +500,7 @@ private:
 			}
 		}
 
-		renderObject = new vkRenderObject((uint32_t)imagePresenter->get_swap_chain_images_count(), vertices, indices, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager);
+		renderObject = new vkRenderObject((uint32_t)imagePresenter->get_swap_chain_images_count(), vertices, indices, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
 	}
 
 
@@ -543,6 +555,15 @@ private:
 		vrsImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormat,
 			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 		vrsImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral, 1); // vk::ImageLayout::eShadingRateOptimalNV
+
+		// Debug image
+		colorFormat = imagePresenter->get_swap_chain_image_format();
+
+		vrsDebugImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormat,
+			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+		vrsDebugImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral, 1);
+
+		vrsDebugTextureImage = std::make_shared <vkTexture>(vrsDebugImage.get());
 	}
 	
 };

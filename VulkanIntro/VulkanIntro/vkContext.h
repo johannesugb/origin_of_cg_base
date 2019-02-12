@@ -56,6 +56,7 @@ public:
 
 	// updated per frame/pass
 	int currentFrame;
+	int dynamicRessourceCount;
 
 	bool shadingRateImageSupported;
 	VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateImageProperties;

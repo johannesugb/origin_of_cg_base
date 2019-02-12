@@ -10,9 +10,13 @@ layout(push_constant) uniform PushUniforms
     vec2 eyePoint;
 } pushConst;
 
-layout(binding = 0, r8ui) uniform uimage2D targetImage;
+layout(set = 0, binding = 0, r8ui) uniform uimage2D targetImage;
+layout(set = 1, binding = 1, rgba8) uniform image2D debugImage;
 
 void main() {
 	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
-	imageStore(targetImage, uv, uvec4(2,0,0,0));
+	uint shadingRate = 2;
+	float shadingRateF = shadingRate/12.0;
+	imageStore(targetImage, uv, uvec4(shadingRate,0,0,0));
+	imageStore(debugImage, uv, vec4(shadingRateF));
 }

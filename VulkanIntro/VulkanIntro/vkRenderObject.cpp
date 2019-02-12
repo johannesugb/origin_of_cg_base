@@ -4,13 +4,13 @@
 
 vkRenderObject::vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
 	vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
-	vkTexture* texture, vkCommandBufferManager* commandBufferManager)
+	vkTexture* texture, vkCommandBufferManager* commandBufferManager, vkTexture* debugTexture)
 	: mImageCount(imageCount), mVertices(vertices), mIndices(indices),
 	mVertexBuffer(sizeof(mVertices[0]) * mVertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mVertices.data()),
 	mIndexBuffer(sizeof(mIndices[0]) * mIndices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mIndices.data())
 {
 	create_uniform_buffer(commandBufferManager);
-	create_descriptor_sets(descriptorSetLayout, descriptorPool, texture);
+	create_descriptor_sets(descriptorSetLayout, descriptorPool, texture, debugTexture);
 }
 
 
@@ -31,7 +31,7 @@ void vkRenderObject::create_uniform_buffer(vkCommandBufferManager* commandBuffer
 	}
 }
 
-void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, vkTexture* texture) {
+void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, vkTexture* texture, vkTexture* debugTexture) {
 	std::vector<vk::DescriptorSetLayout> layouts(mImageCount, descriptorSetLayout);
 	vk::DescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.descriptorPool = descriptorPool;
@@ -54,7 +54,12 @@ void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorS
 		imageInfo.imageView = texture->getTextureImageView();
 		imageInfo.sampler = texture->getTextureSampler();
 
-		std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {};
+		vk::DescriptorImageInfo imageDebugInfo = {};
+		imageDebugInfo.imageLayout = vk::ImageLayout::eGeneral;
+		imageDebugInfo.imageView = debugTexture->getTextureImageView();
+		imageDebugInfo.sampler = debugTexture->getTextureSampler();
+
+		std::array<vk::WriteDescriptorSet, 3> descriptorWrites = {};
 
 		descriptorWrites[0].dstSet = mDescriptorSets[i];
 		descriptorWrites[0].dstBinding = 0;
@@ -69,6 +74,13 @@ void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorS
 		descriptorWrites[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
 		descriptorWrites[1].descriptorCount = 1;
 		descriptorWrites[1].pImageInfo = &imageInfo;
+
+		descriptorWrites[2].dstSet = mDescriptorSets[i];
+		descriptorWrites[2].dstBinding = 2;
+		descriptorWrites[2].dstArrayElement = 0;
+		descriptorWrites[2].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrites[2].descriptorCount = 1;
+		descriptorWrites[2].pImageInfo = &imageDebugInfo;
 
 		vkContext::instance().device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
