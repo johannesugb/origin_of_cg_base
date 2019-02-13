@@ -44,5 +44,6 @@ namespace cgb_overseer.Model
 		public string VcxprojPath { get; set; }
 		public string FiltersPath { get; set; }
 		public string OutputPath { get; set; }
+		public string ExecutablePath { get; set; }
 	}
 }

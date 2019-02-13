@@ -23,6 +23,20 @@ namespace cgb_overseer.View
 		public MessageControl()
 		{
 			InitializeComponent();
+			this.MouseEnter += MessageControl_MouseEnter;
+			this.MouseLeave += MessageControl_MouseLeave;
+		}
+
+		private void MessageControl_MouseEnter(object sender, MouseEventArgs e)
+		{
+			theBorder.Opacity = 1.0;
+			e.Handled = false;
+		}
+
+		private void MessageControl_MouseLeave(object sender, MouseEventArgs e)
+		{
+			theBorder.Opacity = 0.8;
+			e.Handled = false;
 		}
 	}
 }

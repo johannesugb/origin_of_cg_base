@@ -20,7 +20,8 @@
 		<Border Grid.ColumnSpan="2" Grid.RowSpan="2" Margin="1"
 				HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
 				BorderBrush="White" BorderThickness="1" CornerRadius="4" 
-				Background="{Binding MessageColor, FallbackValue=LightCoral}" Opacity="0.9">
+				Background="{Binding MessageColor, FallbackValue=LightCoral}" Opacity="0.8"
+				x:Name="theBorder">
 		</Border>
 
 		<TextBlock Grid.Row="0" Grid.Column="0" Margin="4,0,4,-2"

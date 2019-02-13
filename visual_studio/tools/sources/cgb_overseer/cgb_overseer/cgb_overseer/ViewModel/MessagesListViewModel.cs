@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace cgb_overseer.ViewModel
 {
 	class MessagesListViewModel : BindableBase
-	{
+	{   
 		public ObservableCollection<MessageViewModel> Items { get; } = new ObservableCollection<MessageViewModel>();
 	}
 }

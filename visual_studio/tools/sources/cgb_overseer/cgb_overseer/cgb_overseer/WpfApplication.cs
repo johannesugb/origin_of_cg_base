@@ -11,6 +11,7 @@ using cgb_overseer.Utils;
 using System.Text.RegularExpressions;
 using cgb_overseer.View;
 using cgb_overseer.ViewModel;
+using System.Windows.Threading;
 
 namespace cgb_overseer
 {
@@ -18,7 +19,7 @@ namespace cgb_overseer
 	/// The only instance of our application which SingleApplicationInstance interfaces with
 	/// in order to start new actions, instruct file watches, etc.
 	/// </summary>
-	class WpfApplication : Application
+	class WpfApplication : Application, IMessageListLifetimeHandler
 	{
 		static readonly Regex RegexFilterEntry = new Regex(@"<Object\s+.*?Include\s*?\=\s*?\""(.*?)\""\s*?\>.*?\<Filter\s*?.*?\>(.*?)\<\/Filter\>.*?\<\/Object\>", 
 			RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
@@ -27,15 +28,70 @@ namespace cgb_overseer
 		/// Single instance of our TaskbarIcon
 		/// </summary>
 		private TaskbarIcon _taskbarIcon;
+		private DateTime _messageListAliveUntil;
+		private static readonly TimeSpan MessageListCloseDelay = TimeSpan.FromSeconds(2.0);
+		private readonly MessagesListViewModel _messagesListVM = new MessagesListViewModel();
+		private readonly MessagesList _messagesListView;
+
+		/// <summary>
+		/// This one is important: 
+		/// It stores all asset files associated with one build target. Upon HandleNewInvocation, the 
+		/// file list is updated and those assets which HAVE CHANGED (based on a file-hash) are copied 
+		/// to their respective target paths.
+		/// 
+		/// The keys of this dictionary are target paths to built executables.
+		/// 
+		/// The Overseer will listen for process starts of those files, referenced in the keys. 
+		/// In case, a process' full path name matches one of those keys, the file watcher for all its 
+		/// child files will be launched.
+		/// </summary>
+		private readonly Dictionary<string, List<AssetFile>> _assetFilesPerTarget;
 
 		public WpfApplication()
 		{
+			 _messagesListView = new MessagesList()
+			 {
+				 LifetimeHandler = this,
+				 DataContext = _messagesListVM
+			 };
+
 			Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon.ico")).Stream;
 			_taskbarIcon = new TaskbarIcon()
 			{
 				Icon = new System.Drawing.Icon(iconStream),
 				ToolTipText = "Hello Tray"
 			};
+		}
+
+		private void DispatcherInvokeLater(TimeSpan delay, Action action)
+		{
+			var timer = new DispatcherTimer { Interval = delay };
+			timer.Start();
+			timer.Tick += (sender, args) =>
+			{
+				timer.Stop();
+				action();
+			};
+		}
+
+		private void CloseMessagesListLater(bool setAliveTime)
+		{
+			if (setAliveTime)
+			{
+				_messageListAliveUntil = DateTime.Now + MessageListCloseDelay;
+			}
+
+			DispatcherInvokeLater(MessageListCloseDelay, () =>
+			{
+				if (_messageListAliveUntil <= DateTime.Now)
+				{
+					_taskbarIcon.CloseBalloon();
+				}
+				else if (_messageListAliveUntil != DateTime.MaxValue)
+				{
+					CloseMessagesListLater(false);
+				}
+			});
 		}
 
 		protected override void OnStartup(StartupEventArgs e)
@@ -58,27 +114,56 @@ namespace cgb_overseer
 		/// <param name="p">All the parameters passed by that invocation/post build step</param>
 		public void HandleNewInvocation(InvocationParams p)
 		{
+			// See, if we're already handling that executable!
+			List<AssetFile> newAssetsList;
+			List<AssetFile> assetsListToUpdate;
+			if (_assetFilesPerTarget.ContainsKey(p.ExecutablePath))
+			{
+				assetsListToUpdate = _assetFilesPerTarget[p.ExecutablePath];
+				newAssetsList = null;
+			}
+			else // executable path not included in the dictionary
+			{
+				assetsListToUpdate = null;
+				newAssetsList = new List<AssetFile>();
+			}
+
+			// TODO: PRoceed here (files durchgehen und so, extension methods in die CgbUtils klasse usw.)
+
 			// 1. Parse the .filters file for asset files and shader files
+			{ 
+				var filtersContent = File.ReadAllText(p.FiltersPath);
+				var filters = RegexFilterEntry.Matches(filtersContent);
+				foreach (Match match in filters)
+				{
+					var fileInQuestion = new AssetFile
+					{
+						
+					};
+				}
+			}
 
 			// 2. Determine dependencies of those files
 
 			// 3. Deploy all the original files and their dependencies
 			// 3.1 If we have to, compile them to spir-v
 		}
-		
-		public void ShowBalloonMessage(MessageViewModel mvm)
+
+		public void AddToAndShowMessagesList(MessageViewModel mvm)
 		{
-			var vm = new MessagesListViewModel();
-			vm.Items.Add(mvm);
-			vm.Items.Add(MessageViewModel.CreateInfo("a"));
-			vm.Items.Add(MessageViewModel.CreateWarning("c"));
-			vm.Items.Add(MessageViewModel.CreateSuccess("d"));
-			vm.Items.Add(MessageViewModel.CreateError("e"));
-			var view = new MessagesList()
-			{
-				DataContext = vm
-			};
-			_taskbarIcon.ShowCustomBalloon(view, System.Windows.Controls.Primitives.PopupAnimation.Fade, 4000);
+			_messagesListVM.Items.Add(mvm);
+			_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
+			CloseMessagesListLater(true);
+		}
+
+		public void KeepAlivePermanently()
+		{
+			_messageListAliveUntil = DateTime.MaxValue;
+		}
+
+		public void FadeOutOrBasicallyDoWhatYouWantIDontCareAnymore()
+		{
+			CloseMessagesListLater(true);
 		}
 	}
 }

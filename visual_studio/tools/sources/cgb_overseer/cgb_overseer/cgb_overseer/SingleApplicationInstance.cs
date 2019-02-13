@@ -49,10 +49,9 @@ namespace cgb_overseer
 					}
 					catch (Exception ex)
 					{
-						_wpfApp.ShowBalloonMessage(MessageViewModel.CreateError(ex.Message));
+						_wpfApp.AddToAndShowMessagesList(MessageViewModel.CreateError(ex.Message));
 					}
 				}
-				_wpfApp.ShowBalloonMessage(MessageViewModel.CreateInfo("Seas"));
 			});
 			_wpfApp.Run();
 			return false;
@@ -71,8 +70,15 @@ namespace cgb_overseer
 		{
 			if (e.CommandLine.Count > 0)
 			{
-				var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
-				_wpfApp.HandleNewInvocation(instanceParams);
+				try
+				{
+					var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
+					_wpfApp.HandleNewInvocation(instanceParams);
+				}
+				catch (Exception ex)
+				{
+					_wpfApp.AddToAndShowMessagesList(MessageViewModel.CreateError(ex.Message));
+				}
 			}
 		}
 		

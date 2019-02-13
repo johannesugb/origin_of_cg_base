@@ -1,4 +1,5 @@
-﻿using System;
+﻿using cgb_overseer.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,9 +21,36 @@ namespace cgb_overseer.View
 	/// </summary>
 	public partial class MessagesList : UserControl
 	{
+		private IMessageListLifetimeHandler _lifetimeHandler;
+
+		public IMessageListLifetimeHandler LifetimeHandler
+		{
+			get => _lifetimeHandler;
+			set
+			{
+				this.MouseEnter -= MessagesList_MouseEnter;
+				this.MouseLeave -= MessagesList_MouseLeave;
+				_lifetimeHandler = value;
+				this.MouseEnter += MessagesList_MouseEnter;
+				this.MouseLeave += MessagesList_MouseLeave;
+			}
+		}
+
+		private void MessagesList_MouseEnter(object sender, MouseEventArgs e)
+		{
+			_lifetimeHandler.KeepAlivePermanently();
+		}
+
+		private void MessagesList_MouseLeave(object sender, MouseEventArgs e)
+		{
+			_lifetimeHandler.FadeOutOrBasicallyDoWhatYouWantIDontCareAnymore();
+		}
+
+
 		public MessagesList()
 		{
 			InitializeComponent();
+			
 		}
 	}
 }

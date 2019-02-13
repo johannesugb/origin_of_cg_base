@@ -71,7 +71,8 @@ namespace cgb_overseer.Utils
 						   : throw new ArgumentException("Target platform does not seem to be 'x64'."),
 				VcxprojPath = ExtractValueForNamedArgument("-vcxproj", args),
 				FiltersPath = ExtractValueForNamedArgument("-filters", args),
-				OutputPath = ExtractValueForNamedArgument("-output", args)
+				OutputPath = ExtractValueForNamedArgument("-output", args),
+				ExecutablePath = ExtractValueForNamedArgument("-executable", args)
 			};
 			return p;
 		}
