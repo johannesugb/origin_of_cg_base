@@ -12,18 +12,30 @@ namespace clone_vs_project.ViewModel
 {
     class MainViewModel : BindableBase
     {
-		static readonly Regex RegexNonAlphaNumChars = new Regex(@"[^a-zA-Z0-9]", RegexOptions.Compiled);
-		static readonly Regex RegexFindAllItemGroups = new Regex(@"\<ItemGroup.+?\<\/ItemGroup\>", RegexOptions.Singleline | RegexOptions.Compiled);
-		static readonly Regex RegexClCompile = new Regex(@"\<ClCompile.+\>", RegexOptions.Compiled);
-		static readonly Regex RegexClInclude = new Regex(@"\<ClInclude.+\>", RegexOptions.Compiled);
-		static readonly Regex RegexProjectGuid = new Regex(@"\<ProjectGuid\>\{(.+)\}\<\/ProjectGuid\>", RegexOptions.Compiled);
-		static readonly Regex RegexProjectReference = new Regex(@"\<ProjectReference.+Include=\""([^\$].*)\"".*\>", RegexOptions.Compiled);
-		static readonly Regex RegexRootNamespace = new Regex(@"\<RootNamespace\>(.+)\<\/RootNamespace\>", RegexOptions.Compiled);
-		static readonly Regex RegexProjectName = new Regex(@"\<ProjectName\>(.+)\<\/ProjectName\>", RegexOptions.Compiled);
-		static readonly Regex RegexImportProject = new Regex(@"\<Import.+Project=\""([^\$].*)\"".*\>", RegexOptions.Compiled);
-		static readonly Regex RegexSlnProject = new Regex(@"\s*Project\(.+?\)\s*\=\s*\""(.+?)""\s*\,\s*\""(.+?)\""\s*\,\s*\""\{(.+?)\}\""\s*EndProject", RegexOptions.Singleline | RegexOptions.Compiled);
-		static readonly Regex RegexSlnGlobalSectionPost = new Regex(@"GlobalSection\s*\(\s*ProjectConfigurationPlatforms\s*\)\s*\=\s*postSolution(.*?\n|\r|\r\n)\s*EndGlobalSection", RegexOptions.Singleline | RegexOptions.Compiled);
-		static readonly Regex RegexSlnProjectConfigEntry = new Regex(@"^\s*\{(.+?)\}.*$", RegexOptions.Multiline | RegexOptions.Compiled); // If RegexOptions.Multiline is not set, ^ and $ will match beginning and the end* of the string, not the line like intended.
+		static readonly Regex RegexNonAlphaNumChars = new Regex(@"[^a-zA-Z0-9]", 
+			RegexOptions.Compiled);
+		static readonly Regex RegexFindAllItemGroups = new Regex(@"\<ItemGroup.+?\<\/ItemGroup\>",
+			RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+		static readonly Regex RegexClCompile = new Regex(@"\<ClCompile.+\>", 
+			RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexClInclude = new Regex(@"\<ClInclude.+\>", 
+			RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexProjectGuid = new Regex(@"\<ProjectGuid\>\{(.+)\}\<\/ProjectGuid\>", 
+			RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexProjectReference = new Regex(@"\<ProjectReference.+Include=\""([^\$].*)\"".*\>", 
+			RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexRootNamespace = new Regex(@"\<RootNamespace\>(.+)\<\/RootNamespace\>", 
+			RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexProjectName = new Regex(@"\<ProjectName\>(.+)\<\/ProjectName\>", 
+			RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexImportProject = new Regex(@"\<Import.+Project=\""([^\$].*)\"".*\>", 
+			RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexSlnProject = new Regex(@"\s*Project\(.+?\)\s*\=\s*\""(.+?)""\s*\,\s*\""(.+?)\""\s*\,\s*\""\{(.+?)\}\""\s*EndProject",
+			RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+		static readonly Regex RegexSlnGlobalSectionPost = new Regex(@"GlobalSection\s*\(\s*ProjectConfigurationPlatforms\s*\)\s*\=\s*postSolution(.*?\n|\r|\r\n)\s*EndGlobalSection",
+			RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+		static readonly Regex RegexSlnProjectConfigEntry = new Regex(@"^\s*\{(.+?)\}.*$",
+			RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase); // If RegexOptions.Multiline is not set, ^ and $ will match beginning and the end* of the string, not the line like intended.
 
 		public MainViewModel()
 		{

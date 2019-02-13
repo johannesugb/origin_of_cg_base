@@ -6,5 +6,39 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\examples\hello_world\source\temp.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="assets">
+      <UniqueIdentifier>{24240a51-8fdb-478f-8c1c-27cbca7adc3f}</UniqueIdentifier>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="assets\models">
+      <UniqueIdentifier>{3ad32f98-ce57-43e2-b017-34636d188768}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\models2">
+      <UniqueIdentifier>{b38cd61a-a6a9-4d65-b11f-8f1b2a17a82d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\models2\models2.1">
+      <UniqueIdentifier>{0d6a5ef0-86f6-4226-bac4-ccf8cd0dd1f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="not_in_assets">
+      <UniqueIdentifier>{9d7223c5-0df3-4ec8-b27b-c0aedf946030}</UniqueIdentifier>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="hello_world.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="..\..\..\..\..\ARTR\repo\engine\assets\models\sponza\sponza_structure.obj">
+      <Filter>assets\models</Filter>
+    </Object>
+    <Object Include="..\..\..\..\..\ARTR\repo\engine\assets\models\cube.obj">
+      <Filter>assets\models2\models2.1</Filter>
+    </Object>
+    <Object Include="..\..\..\..\..\ARTR\repo\engine\assets\models\parallelepiped.obj">
+      <Filter>not_in_assets</Filter>
+    </Object>
   </ItemGroup>
 </Project>
