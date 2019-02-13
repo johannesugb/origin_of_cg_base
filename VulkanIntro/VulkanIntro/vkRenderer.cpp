@@ -103,7 +103,7 @@ void vkRenderer::recordPrimaryCommandBuffer() {
 	if (!mSubmitted) {
 		std::vector<vk::CommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->get_recorded_command_buffers(vk::CommandBufferLevel::eSecondary);
 
-		// no render pass if this is a pure compute renderer (maybe better solution required)
+		// no render pass if this is a pure compute renderer (maybe better solution required) 
 		if (!mIsCompute) {
 			vk::RenderPassBeginInfo renderPassInfo = {};
 			renderPassInfo.renderPass = vkContext::instance().vulkanFramebuffer->get_render_pass();

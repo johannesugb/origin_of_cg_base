@@ -112,8 +112,11 @@ void vulkan_pipeline::fill_compute_structures(vk::PipelineLayoutCreateInfo& pipe
 
 void vulkan_pipeline::create_graphics_pipeline(vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout) {
 	// shaders
-	auto vertShaderCode = readFile("Shader/vert.spv");
-	auto fragShaderCode = readFile("Shader/frag.spv");
+	//auto vertShaderCode = readFile("Shader/vert.spv");
+	//auto fragShaderCode = readFile("Shader/frag.spv");
+
+	auto vertShaderCode = readFile("Shader/triangle.vert.spv");
+	auto fragShaderCode = readFile("Shader/triangle.frag.spv");
 
 	vk::ShaderModule vertShaderModule;
 	vk::ShaderModule fragShaderModule;
@@ -162,19 +165,46 @@ void vulkan_pipeline::create_graphics_pipeline(vk::Viewport viewport, vk::Rect2D
 	shadingRateImage.shadingRateImageEnable = VK_TRUE;
 	shadingRateImage.viewportCount = viewportCount;
 
+	std::vector<vk::ShadingRatePaletteEntryNV>  shadingRatePaletteEntriesAll;
+	//shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X4Pixels);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X2Pixels);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer1X2Pixels);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X1Pixels);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e2InvocationsPerPixel);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e4InvocationsPerPixel);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e8InvocationsPerPixel);
+	shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e16InvocationsPerPixel);
+
 	std::vector<vk::ShadingRatePaletteEntryNV>  shadingRatePaletteEntries;
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
 	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X4Pixels);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X2Pixels);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels);
 	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer1X2Pixels);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X1Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
+	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
 	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e2InvocationsPerPixel);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e4InvocationsPerPixel);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e8InvocationsPerPixel);
-	shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e16InvocationsPerPixel);
+
+
 	vk::ShadingRatePaletteNV shadingRatePalette = {};
 	shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntries.size();
 	shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntries.data();

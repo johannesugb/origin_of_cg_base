@@ -75,6 +75,17 @@ const std::vector<uint32_t> indicesQuad = {
 	4, 5, 6, 6, 7, 4
 };
 
+const std::vector<Vertex> verticesScreenQuad = {
+	{ { -1.0f, -1.0f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f } },
+{ { 1.0f, -1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } },
+{ { 1.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 0.0f, 1.0f } },
+{ { -1.0f, 1.0f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 1.0f, 1.0f } }
+};
+
+const std::vector<uint32_t> indicesScreenQuad = {
+	0, 1, 2, 2, 3, 0
+};
+
 namespace std {
 	template<> struct hash<Vertex> {
 		size_t operator()(Vertex const& vertex) const {
@@ -119,7 +130,7 @@ public:
 	vk::DescriptorSet& get_descriptor_set() { return mDescriptorSets[vkContext::instance().currentFrame]; }
 	PushUniforms get_push_uniforms() { return mPushUniforms; }
 
-	void update_uniform_buffer(uint32_t currentImage, float time, vk::Extent2D swapChainExtent);
+	void update_uniform_buffer(uint32_t currentImage, UniformBufferObject ubo);
 
 private:
 	uint32_t mImageCount;

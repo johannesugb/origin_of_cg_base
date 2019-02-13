@@ -46,8 +46,8 @@
 
 #include "eyetracking_interface.h"
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1920;
+const int HEIGHT = 1080;
 
 const std::string MODEL_PATH = "models/chalet.obj/chalet.obj";
 const std::string TEXTURE_PATH = "textures/chalet.jpg";
@@ -97,10 +97,11 @@ private:
 	std::shared_ptr<vulkan_pipeline> mComputeVulkanPipeline;
 	std::shared_ptr<vulkan_framebuffer> mVulkanFramebuffer;
 
-	eyetracking_interface eyeInf;
+	std::shared_ptr<eyetracking_interface> eyeInf;
 
 public:
 	void run() {
+		eyeInf = std::make_shared<eyetracking_interface>();
 		initWindow();
 		initVulkan();
 		mainLoop();
@@ -148,7 +149,7 @@ private:
 		drawer->set_vrs_image(vrsImage);
 
 		// Compute Drawer and Pipeline
-		mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(glm::vec2));
+		mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.comp.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(vrs_eye_comp_data));
 		mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImage);
 
 		createTexture();
@@ -158,13 +159,21 @@ private:
 		createVrsDescriptorSets();
 		mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 		mVrsImageComputeDrawer->set_width_height(vrsImage->get_width(), vrsImage->get_height());
+		mVrsImageComputeDrawer->set_eye_inf(eyeInf);
 
 		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
-		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
+		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesScreenQuad, indicesScreenQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
 
-		renderObject2->update_uniform_buffer(0, 0, imagePresenter->get_swap_chain_extent());
-		renderObject2->update_uniform_buffer(1, 0, imagePresenter->get_swap_chain_extent());
-		renderObject2->update_uniform_buffer(2, 0, imagePresenter->get_swap_chain_extent());
+
+		// TODO transfer code to camera
+		UniformBufferObject ubo = {};
+		ubo.model = glm::mat4(1.0f);
+		//ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.model[1][1] *= -1;
+		ubo.mvp = ubo.model;
+		renderObject2->update_uniform_buffer(0, ubo);
+		renderObject2->update_uniform_buffer(1, ubo);
+		renderObject2->update_uniform_buffer(2, ubo);
 		//loadModel();
 	}
 
@@ -176,7 +185,7 @@ private:
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
 
-			auto eyeData = eyeInf.get_eyetracking_data();
+			auto eyeData = eyeInf->get_eyetracking_data();
 
 			drawFrame();
 
@@ -311,7 +320,13 @@ private:
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		renderObject->update_uniform_buffer(vkContext::instance().currentFrame, time, imagePresenter->get_swap_chain_extent());
+		UniformBufferObject ubo = {};
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), imagePresenter->get_swap_chain_extent().width / (float)imagePresenter->get_swap_chain_extent().height, 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
+		ubo.mvp = ubo.proj * ubo.view * ubo.model;
+		renderObject->update_uniform_buffer(vkContext::instance().currentFrame, ubo);
 
 		// start drawing, record draw commands, etc.
 		vkContext::instance().vulkanFramebuffer = mVulkanFramebuffer;
@@ -319,8 +334,11 @@ private:
 		mVrsRenderer->render(std::vector<vkRenderObject*>{}, mVrsImageComputeDrawer.get());
 
 		std::vector<vkRenderObject*> renderObjects;
-		renderObjects.push_back(renderObject);
+		//renderObjects.push_back(renderObject);
 		renderObjects.push_back(renderObject2);
+		//for (int i = 0; i < 1000; i++) {
+		//	renderObjects.push_back(renderObject2);
+		//}
 
 		mRenderer->render(renderObjects, drawer.get());
 		mRenderer->end_frame();

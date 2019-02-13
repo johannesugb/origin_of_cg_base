@@ -114,6 +114,16 @@
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.1.92.1\Lib;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>for %%f in (Shader\*.vert Shader\*.tesc Shader\*.tese Shader\*.geom Shader\*.frag Shader\*.comp) do %VK_SDK_PATH%\Bin\glslangValidator.exe -V -o %%f.spv %%f</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>test.spv;%(Outputs)</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -155,6 +165,16 @@
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.1.92.1\Lib;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>for %%f in (Shader\*.vert Shader\*.tesc Shader\*.tese Shader\*.geom Shader\*.frag Shader\*.comp) do %VK_SDK_PATH%\Bin\glslangValidator.exe -V -o %%f.spv %%f</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>test.spv;%(Outputs)</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="eyetracking_interface.cpp" />
@@ -180,7 +200,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Shader\triangle.frag" />
+    <None Include="Shader\triangle.frag">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator -V -o %(Identity).spv %(Identity)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compile GLSL to SPIR-V Shader</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Identity).spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator -V -o %(Identity).spv %(Identity)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compile GLSL to SPIR-V Shader</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Identity).spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </None>
     <None Include="Shader\triangle.vert" />
     <None Include="Shader\vrs_img.comp" />
     <None Include="Tobii\API-Reference.pdf" />

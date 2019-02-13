@@ -13,6 +13,13 @@ static void log(void* log_context, tobii_log_level_t level, char const* text)
 
 eyetracking_interface::eyetracking_interface() : exit_thread(false)
 {
+	auto tmpData = eyetracking_data();
+	tmpData.positionX = 0;
+	tmpData.positionY = 0;
+	tmpData.timestamp_us = 0;
+
+	mEyetrackingData.store(tmpData);
+
 	init_eyetracking();
 }
 
@@ -121,7 +128,6 @@ void eyetracking_interface::init_eyetracking()
 	error = tobii_gaze_point_subscribe(mDevice,
 		[](tobii_gaze_point_t const* gaze_point, void* user_data)
 	{
-		(void)user_data; // Unused parameter
 		if (gaze_point->validity == TOBII_VALIDITY_VALID) {
 			auto tmpData = eyetracking_data();
 			tmpData.positionX = gaze_point->position_xy[0];
@@ -134,8 +140,8 @@ void eyetracking_interface::init_eyetracking()
 			//std::cout << "Gaze point: " << gaze_point->timestamp_us << " " << gaze_point->position_xy[0]
 			//	<< ", " << gaze_point->position_xy[1] << std::endl;
 		}
-		else
-			std::cout << "Gaze point: " << gaze_point->timestamp_us << " INVALID" << std::endl;
+		//else
+			//std::cout << "Gaze point: " << gaze_point->timestamp_us << " INVALID" << std::endl;
 	}, &mEyetrackingData);
 	if (error != TOBII_ERROR_NO_ERROR)
 	{
