@@ -15,6 +15,7 @@ public:
 
 	virtual ~vkCgbImage();
 
+	vk::Image get_image() { return mImage; }
 	vk::ImageView get_image_view() { return mImageView; }
 	uint32_t get_mip_levels() { return mMipLevels; }
 

@@ -86,9 +86,9 @@ private:
 	// render target needed for MSAA
 	std::shared_ptr<vkCgbImage> colorImage;
 	std::shared_ptr<vkCgbImage> depthImage;
-	std::shared_ptr<vkCgbImage> vrsImage;
-	std::shared_ptr<vkCgbImage> vrsDebugImage;
-	std::shared_ptr <vkTexture> vrsDebugTextureImage;
+	std::vector<std::shared_ptr<vkCgbImage>> vrsImages;
+	std::vector < std::shared_ptr<vkCgbImage>> vrsDebugImages;
+	std::vector < std::shared_ptr <vkTexture>> vrsDebugTextureImages;
 	std::shared_ptr<vkImagePresenter> imagePresenter;
 	std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
 	std::unique_ptr<vkRenderer> mRenderer;
@@ -146,11 +146,13 @@ private:
 		// Render Drawer and Pipeline
 		mRenderVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
 		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager, mRenderVulkanPipeline);
-		drawer->set_vrs_image(vrsImage);
+		drawer->set_vrs_images(vrsImages);
 
 		// Compute Drawer and Pipeline
 		mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.comp.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(vrs_eye_comp_data));
-		mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImage);
+		mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
+		mVrsImageComputeDrawer->set_vrs_images(vrsImages);
+
 
 		createTexture();
 
@@ -158,11 +160,11 @@ private:
 		createVrsComputeDescriptorPool();
 		createVrsDescriptorSets();
 		mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
-		mVrsImageComputeDrawer->set_width_height(vrsImage->get_width(), vrsImage->get_height());
+		mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 		mVrsImageComputeDrawer->set_eye_inf(eyeInf);
 
-		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
-		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesScreenQuad, indicesScreenQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
+		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImages);
+		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesScreenQuad, indicesScreenQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImages);
 
 
 		// TODO transfer code to camera
@@ -445,7 +447,7 @@ private:
 		for (size_t i = 0; i < imagePresenter->get_swap_chain_images_count(); i++) {
 			vk::DescriptorImageInfo imageInfo = {};
 			imageInfo.imageLayout = vk::ImageLayout::eGeneral;
-			imageInfo.imageView = vrsImage->get_image_view();
+			imageInfo.imageView = vrsImages[i]->get_image_view();
 
 			std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
 
@@ -518,7 +520,7 @@ private:
 			}
 		}
 
-		renderObject = new vkRenderObject((uint32_t)imagePresenter->get_swap_chain_images_count(), vertices, indices, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImage.get());
+		renderObject = new vkRenderObject((uint32_t)imagePresenter->get_swap_chain_images_count(), vertices, indices, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImages);
 	}
 
 
@@ -570,18 +572,23 @@ private:
 		auto width = imagePresenter->get_swap_chain_extent().width / vkContext::instance().shadingRateImageProperties.shadingRateTexelSize.width;
 		auto height = imagePresenter->get_swap_chain_extent().height / vkContext::instance().shadingRateImageProperties.shadingRateTexelSize.height;
 
-		vrsImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormat,
-			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-		vrsImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral, 1); // vk::ImageLayout::eShadingRateOptimalNV
+		vk::Format colorFormatDebug = imagePresenter->get_swap_chain_image_format();
+		
+		vrsImages.resize(vkContext::instance().vkContext::instance().dynamicRessourceCount);
+		vrsDebugImages.resize(vkContext::instance().vkContext::instance().dynamicRessourceCount);
+		vrsDebugTextureImages.resize(vkContext::instance().vkContext::instance().dynamicRessourceCount);
+		for (int i = 0; i < vkContext::instance().vkContext::instance().dynamicRessourceCount; i++) {
+			vrsImages[i] = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormat,
+				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			vrsImages[i]->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eShadingRateOptimalNV, 1); // vk::ImageLayout::eShadingRateOptimalNV
 
-		// Debug image
-		colorFormat = imagePresenter->get_swap_chain_image_format();
+			// Debug image
+			vrsDebugImages[i] = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormatDebug,
+				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			vrsDebugImages[i]->transition_image_layout(colorFormatDebug, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 1);
 
-		vrsDebugImage = std::make_shared<vkCgbImage>(transferCommandBufferManager, width, height, 1, vk::SampleCountFlagBits::e1, colorFormat,
-			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-		vrsDebugImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral, 1);
-
-		vrsDebugTextureImage = std::make_shared <vkTexture>(vrsDebugImage.get());
+			vrsDebugTextureImages[i] = std::make_shared <vkTexture>(vrsDebugImages[i].get());
+		}
 	}
 	
 };

@@ -115,7 +115,7 @@ class vkRenderObject
 public:
 	vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
 		vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
-		vkTexture* texture, vkCommandBufferManager* commandBufferManager, vkTexture* debugTexture);
+		vkTexture* texture, vkCommandBufferManager* commandBufferManager, std::vector<std::shared_ptr<vkTexture>> debugTextures);
 	virtual ~vkRenderObject();
 
 	std::vector<Vertex> get_vertices() { return mVertices; }
@@ -153,6 +153,6 @@ private:
 
 	void create_uniform_buffer(vkCommandBufferManager* commandBufferManager);
 	void create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
-		vkTexture* texture, vkTexture* debugTexture);
+		vkTexture* texture, std::vector<std::shared_ptr<vkTexture>> debugTextures);
 };
 

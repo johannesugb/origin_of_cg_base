@@ -4,13 +4,13 @@
 
 vkRenderObject::vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
 	vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
-	vkTexture* texture, vkCommandBufferManager* commandBufferManager, vkTexture* debugTexture)
+	vkTexture* texture, vkCommandBufferManager* commandBufferManager, std::vector<std::shared_ptr<vkTexture>> debugTextures)
 	: mImageCount(imageCount), mVertices(vertices), mIndices(indices),
 	mVertexBuffer(sizeof(mVertices[0]) * mVertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mVertices.data()),
 	mIndexBuffer(sizeof(mIndices[0]) * mIndices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mIndices.data())
 {
 	create_uniform_buffer(commandBufferManager);
-	create_descriptor_sets(descriptorSetLayout, descriptorPool, texture, debugTexture);
+	create_descriptor_sets(descriptorSetLayout, descriptorPool, texture, debugTextures);
 }
 
 
@@ -31,7 +31,7 @@ void vkRenderObject::create_uniform_buffer(vkCommandBufferManager* commandBuffer
 	}
 }
 
-void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, vkTexture* texture, vkTexture* debugTexture) {
+void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, vkTexture* texture, std::vector<std::shared_ptr<vkTexture>> debugTextures) {
 	std::vector<vk::DescriptorSetLayout> layouts(mImageCount, descriptorSetLayout);
 	vk::DescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.descriptorPool = descriptorPool;
@@ -55,9 +55,9 @@ void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorS
 		imageInfo.sampler = texture->getTextureSampler();
 
 		vk::DescriptorImageInfo imageDebugInfo = {};
-		imageDebugInfo.imageLayout = vk::ImageLayout::eGeneral;
-		imageDebugInfo.imageView = debugTexture->getTextureImageView();
-		imageDebugInfo.sampler = debugTexture->getTextureSampler();
+		imageDebugInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		imageDebugInfo.imageView = debugTextures[i]->getTextureImageView();
+		imageDebugInfo.sampler = debugTextures[i]->getTextureSampler();
 
 		std::array<vk::WriteDescriptorSet, 3> descriptorWrites = {};
 

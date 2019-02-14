@@ -18,10 +18,10 @@ public:
 
 	virtual void draw(std::vector<vkRenderObject*> renderObjects);
 
-	void set_vrs_image(std::shared_ptr<vkCgbImage> vrsImage) { mVrsImage = vrsImage; }
+	void set_vrs_images(std::vector<std::shared_ptr<vkCgbImage>> vrsImages) { mVrsImages = vrsImages; }
 protected:
 	std::shared_ptr<vkCommandBufferManager> mCommandBufferManager;
-	std::shared_ptr<vkCgbImage> mVrsImage;
+	std::vector<std::shared_ptr<vkCgbImage>> mVrsImages;
 
 	std::shared_ptr<vulkan_pipeline> mPipeline;
 

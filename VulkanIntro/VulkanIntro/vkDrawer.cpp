@@ -44,7 +44,7 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 	vk::CommandBuffer commandBuffer = mCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
 	// bind pipeline for this draw command
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline());		
-	commandBuffer.bindShadingRateImageNV(mVrsImage->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV);
+	commandBuffer.bindShadingRateImageNV(mVrsImages[vkContext::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV);
 
 
 	for (vkRenderObject* renderObject : renderObjects) {
@@ -55,7 +55,6 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 		commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
 		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, 1, &(renderObject->get_descriptor_set()), 0, nullptr);
-		//vkCmdBindShadingRateImageNV(static_cast<VkCommandBuffer>(commandBuffer), static_cast<VkImageView>(imageView), static_cast<VkImageLayout>(vk::ImageLayout::eUndefined));
 
 		commandBuffer.pushConstants(
 			mPipeline->get_pipeline_layout(),
