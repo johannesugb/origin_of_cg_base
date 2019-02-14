@@ -2,19 +2,6 @@
 
 #include "vulkan_framebuffer.h"
 
-void vkCmdBindShadingRateImageNV(
-	VkCommandBuffer                             commandBuffer,
-	VkImageView                                 imageView,
-	VkImageLayout                               imageLayout) {
-	auto func = (PFN_vkCmdBindShadingRateImageNV)vkContext::instance().vkInstance.getProcAddr("vkCmdBindShadingRateImageNV");
-	if (func != nullptr) {
-		func(commandBuffer, imageView, imageLayout);
-	}
-	//else {
-	//	return VK_ERROR_EXTENSION_NOT_PRESENT;
-	//}
-}
-
 
 vkDrawer::vkDrawer(std::shared_ptr<vkCommandBufferManager> commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline) : mCommandBufferManager(commandBufferManager), mPipeline(pipeline)
 {
@@ -44,7 +31,7 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 	vk::CommandBuffer commandBuffer = mCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
 	// bind pipeline for this draw command
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline());		
-	commandBuffer.bindShadingRateImageNV(mVrsImages[vkContext::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV);
+	commandBuffer.bindShadingRateImageNV(mVrsImages[vkContext::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vkContext::instance().dynamicDispatchInstanceDevice);
 
 
 	for (vkRenderObject* renderObject : renderObjects) {

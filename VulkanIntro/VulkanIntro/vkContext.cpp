@@ -20,24 +20,6 @@ const std::vector<const char*> validationLayers = {
 	"VK_LAYER_LUNARG_standard_validation"
 };
 
-VkResult CreateDebugUtilsMessengerEXT(vk::Instance instance, const vk::DebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback) {
-	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)instance.getProcAddr("vkCreateDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		const VkDebugUtilsMessengerCreateInfoEXT tmp(*pCreateInfo);
-		return func(instance, &tmp, pAllocator, pCallback);
-	}
-	else {
-		return VK_ERROR_EXTENSION_NOT_PRESENT;
-	}
-}
-
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator) {
-	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		func(instance, callback, pAllocator);
-	}
-}
-
 vkContext::vkContext()
 {
 }
@@ -48,7 +30,7 @@ vkContext::~vkContext()
 	vulkanFramebuffer.reset();
 	vkContext::instance().device.destroy();
 	if (enableValidationLayers) {
-		DestroyDebugUtilsMessengerEXT(vkInstance, callback, nullptr);
+		vkInstance.destroyDebugUtilsMessengerEXT(callback, nullptr, dynamicDispatchInstance);
 	}
 	vkInstance.destroySurfaceKHR(surface, nullptr);
 	vkInstance.destroy();
@@ -112,6 +94,7 @@ void vkContext::createInstance() {
 	if (vk::createInstance(&createInfo, nullptr, &vkInstance) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to create instance!");
 	}
+	dynamicDispatchInstance = vk::DispatchLoaderDynamic(vkInstance);
 }
 
 bool vkContext::checkValidationLayerSupport() {
@@ -159,7 +142,7 @@ void vkContext::setupDebugCallback() {
 	createInfo.pfnUserCallback = debugCallback;
 	createInfo.pUserData = nullptr; // Optional
 
-	if (CreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
+	if (vkInstance.createDebugUtilsMessengerEXT(&createInfo, nullptr, &callback, dynamicDispatchInstance) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to set up debug callback!");
 	}
 }
@@ -323,6 +306,7 @@ void vkContext::createLogicalDevice() {
 	device.getQueue(indices.graphicsFamily.value(), 0, &graphicsQueue);
 	device.getQueue(indices.presentFamily.value(), 0, &presentQueue);
 	device.getQueue(indices.computeFamily.value(), 0, &computeQueue);
+	dynamicDispatchInstanceDevice = vk::DispatchLoaderDynamic(vkInstance, device);
 }
 
 SwapChainSupportDetails vkContext::querySwapChainSupport(vk::PhysicalDevice device) {

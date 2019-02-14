@@ -41,7 +41,7 @@ public:
 	SwapChainSupportDetails querySwapChainSupport() { return querySwapChainSupport(physicalDevice); }
 
 	vk::Instance vkInstance;
-	VkDebugUtilsMessengerEXT callback;
+	vk::DebugUtilsMessengerEXT callback;
 	vk::PhysicalDevice physicalDevice = nullptr; // will be distroyed automatically on destruction of vk::Instance "instance"
 	vk::Device device;
 	vk::Queue graphicsQueue; // automatically created and destroyed with logical device, "device"
@@ -60,6 +60,9 @@ public:
 
 	bool shadingRateImageSupported;
 	VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateImageProperties;
+
+	vk::DispatchLoaderDynamic dynamicDispatchInstance;
+	vk::DispatchLoaderDynamic dynamicDispatchInstanceDevice;
 
 	static vkContext& instance()
 	{
