@@ -30,7 +30,7 @@ public:
 	VkBuffer Buffer = VK_NULL_HANDLE;
 	VkDeviceMemory Memory = VK_NULL_HANDLE;
 	VkDeviceSize Size = 0;
-
+	
 public:
 	~BufferResource();
 

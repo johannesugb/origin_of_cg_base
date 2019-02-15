@@ -140,6 +140,9 @@ namespace cgb_overseer
 					{
 						
 					};
+					// TODO: use this method (which is still to be implemented):
+					newAssetsList?.AddOrReplaceAssetFile(match.Groups[1].Value, match.Groups[2].Value);
+					assetsListToUpdate?.AddOrReplaceAssetFile(match.Groups[1].Value, match.Groups[2].Value);
 				}
 			}
 

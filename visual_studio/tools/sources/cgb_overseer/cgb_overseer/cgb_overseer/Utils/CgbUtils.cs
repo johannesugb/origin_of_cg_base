@@ -4,11 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace cgb_overseer.Utils
 {
 	static class CgbUtils
 	{
+		static readonly Regex RegexIsInAssets = new Regex(@"assets([\\\/].+)*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex RegexIsInShaders = new Regex(@"shaders([\\\/].+)*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
 		/// <summary>
 		/// Helper function for extracting a value for a named argument out of the command line arguments.
 		/// Names and values always come in pairs of the form: "-paramName C:\parameter_value"
@@ -75,6 +80,18 @@ namespace cgb_overseer.Utils
 				ExecutablePath = ExtractValueForNamedArgument("-executable", args)
 			};
 			return p;
+		}
+
+		public static void AddOrReplaceAssetFile(this List<AssetFile> list, string filePath, string filterPath)
+		{
+			// There are two special filter paths: "assets" and "shaders".
+			// Files under both filter paths are copied to the output directory, but
+			// only those under "shaders" are possibly compiled to SPIR-V (in case
+			// of building against Vulkan) or their GLSL code might be modified (in
+			// case of building against OpenGL)
+
+			var fileInfo = new FileInfo(filePath);
+			// TODO: Proceed here with handling one specific file (Analyze filter, file type, etc.)
 		}
 	}
 }

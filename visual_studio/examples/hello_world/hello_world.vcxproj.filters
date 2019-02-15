@@ -6,7 +6,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\examples\hello_world\source\temp.h" />
-    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="assets">
@@ -25,20 +24,38 @@
     <Filter Include="not_in_assets">
       <UniqueIdentifier>{9d7223c5-0df3-4ec8-b27b-c0aedf946030}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
+      <Extensions>asdf</Extensions>
+    </Filter>
+    <Filter Include="dll_dependencies">
+      <UniqueIdentifier>{949d850f-63ce-428b-b60c-d0de549feb1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll_dependencies\debug_dlls">
+      <UniqueIdentifier>{afdaacbc-fcd5-4989-b677-e76db911827f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dll_dependencies\release_dlls">
+      <UniqueIdentifier>{b1221175-76a0-42d8-afd4-6b7af5f027df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{1d345cf5-0451-42e0-83a8-6a3f5a7203ca}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="hello_world.rc" />
+    <None Include="..\..\..\..\..\ARTR\repo\engine\assets\models\cube.obj">
+      <Filter>assets\models2\models2.1</Filter>
+    </None>
+    <None Include="..\..\..\..\..\ARTR\repo\engine\assets\models\parallelepiped.obj">
+      <Filter>not_in_assets</Filter>
+    </None>
+    <None Include="..\..\..\..\..\ARTR\repo\engine\assets\models\sponza\sponza_structure.obj">
+      <Filter>assets\models</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Object Include="..\..\..\..\..\ARTR\repo\engine\assets\models\sponza\sponza_structure.obj">
-      <Filter>assets\models</Filter>
-    </Object>
-    <Object Include="..\..\..\..\..\ARTR\repo\engine\assets\models\cube.obj">
-      <Filter>assets\models2\models2.1</Filter>
-    </Object>
-    <Object Include="..\..\..\..\..\ARTR\repo\engine\assets\models\parallelepiped.obj">
-      <Filter>not_in_assets</Filter>
-    </Object>
+    <CopyFileToFolders Include="..\..\..\external\bin\x64\release\assimp-vc140-mt.dll">
+      <Filter>dll_dependencies\release_dlls</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\..\..\external\bin\x64\debug\assimp-vc140-mt.dll">
+      <Filter>dll_dependencies\debug_dlls</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>
