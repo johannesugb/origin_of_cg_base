@@ -21,7 +21,7 @@ namespace cgb_overseer
 	/// </summary>
 	class WpfApplication : Application, IMessageListLifetimeHandler
 	{
-		static readonly Regex RegexFilterEntry = new Regex(@"<(None|Object)\s+.*?Include\s*?\=\s*?\""(.*?)\""\s*?\>.*?\<Filter\s*?.*?\>(.*?)\<\/Filter\>.*?\<\/\1\>", 
+		static readonly Regex RegexFilterEntry = new Regex(@"<(None|Object|Image)\s+.*?Include\s*?\=\s*?\""(.*?)\""\s*?\>.*?\<Filter\s*?.*?\>(.*?)\<\/Filter\>.*?\<\/\1\>", 
 			RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
 		/// <summary>

@@ -91,7 +91,7 @@ namespace cgb_overseer.Utils
 	{
 		private static readonly string VulkanSdkPath = Environment.GetEnvironmentVariable("VULKAN_SDK");
 		private static readonly string GlslangValidatorPath = Path.Combine(VulkanSdkPath, @"Bin\glslangValidator.exe");
-		private static readonly string GlslangValidatorCommand = GlslangValidatorPath + " -V -o \"{0}\" \"{1}\"";
+		private static readonly string GlslangValidatorParams = " -V -o \"{1}\" \"{0}\"";
 
 		public override List<MessageViewModel> StatusMessages => _statusMessages;
 
@@ -101,13 +101,24 @@ namespace cgb_overseer.Utils
 		{
 			var outFile = new FileInfo(_outputFilePath + ".spv");
 			Directory.CreateDirectory(outFile.DirectoryName);
-			// Call the other process:
-			var spvCompileCommand = string.Format(GlslangValidatorCommand, _inputFile.FullName, outFile.FullName);
-			var proc = Diag.Process.Start(spvCompileCommand);
+			var cmdLineParams = string.Format(GlslangValidatorParams, _inputFile.FullName, outFile.FullName);
 			var sb = new StringBuilder();
-			while (!proc.StandardOutput.EndOfStream)
+
+			// Call the other process:
+			using (Diag.Process proc = new Diag.Process()
 			{
-				sb.Append(proc.StandardOutput.ReadLine());
+				StartInfo = new Diag.ProcessStartInfo(GlslangValidatorPath, cmdLineParams)
+				{
+					UseShellExecute = false,
+					RedirectStandardOutput = true
+				}
+			})
+			{
+				proc.Start();
+				while (!proc.StandardOutput.EndOfStream)
+				{
+					sb.Append(proc.StandardOutput.ReadLine());
+				}
 			}
 
 			var assetFile = PrepareNewAssetFile(null);

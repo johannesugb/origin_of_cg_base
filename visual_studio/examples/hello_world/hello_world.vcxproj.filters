@@ -12,53 +12,61 @@
       <UniqueIdentifier>{24240a51-8fdb-478f-8c1c-27cbca7adc3f}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
-    <Filter Include="assets\models">
-      <UniqueIdentifier>{3ad32f98-ce57-43e2-b017-34636d188768}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="assets\models2">
-      <UniqueIdentifier>{b38cd61a-a6a9-4d65-b11f-8f1b2a17a82d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="assets\models2\models2.1">
-      <UniqueIdentifier>{0d6a5ef0-86f6-4226-bac4-ccf8cd0dd1f1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="not_in_assets">
-      <UniqueIdentifier>{9d7223c5-0df3-4ec8-b27b-c0aedf946030}</UniqueIdentifier>
-      <SourceControlFiles>False</SourceControlFiles>
-      <Extensions>asdf</Extensions>
-    </Filter>
-    <Filter Include="dll_dependencies">
-      <UniqueIdentifier>{949d850f-63ce-428b-b60c-d0de549feb1b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dll_dependencies\debug_dlls">
-      <UniqueIdentifier>{afdaacbc-fcd5-4989-b677-e76db911827f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dll_dependencies\release_dlls">
-      <UniqueIdentifier>{b1221175-76a0-42d8-afd4-6b7af5f027df}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{1d345cf5-0451-42e0-83a8-6a3f5a7203ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dlls">
+      <UniqueIdentifier>{949d850f-63ce-428b-b60c-d0de549feb1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dlls\debug_dlls">
+      <UniqueIdentifier>{afdaacbc-fcd5-4989-b677-e76db911827f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dlls\release_dlls">
+      <UniqueIdentifier>{b1221175-76a0-42d8-afd4-6b7af5f027df}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\..\..\external\bin\x64\release\assimp-vc140-mt.dll">
-      <Filter>dll_dependencies\release_dlls</Filter>
+      <Filter>dlls\release_dlls</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="..\..\..\external\bin\x64\debug\assimp-vc140-mt.dll">
-      <Filter>dll_dependencies\debug_dlls</Filter>
+      <Filter>dlls\debug_dlls</Filter>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\cube01.obj">
-      <Filter>assets\models2\models2.1</Filter>
+    <None Include="..\..\..\framework\shader\shader.vert">
+      <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\textures\altitudes.png">
+    <None Include="..\..\..\framework\shader\rt_09_first.rchit">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\framework\shader\rt_09_first.rgen">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\framework\shader\rt_09_first.rmiss">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\framework\shader\rt_09_secondary.rchit">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\framework\shader\rt_09_secondary.rmiss">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\framework\shader\shader.frag">
+      <Filter>shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="..\..\..\framework\assets\chalet\chalet.obj">
       <Filter>assets</Filter>
-    </None>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\parallelepiped.obj">
-      <Filter>not_in_assets</Filter>
-    </None>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\sponza\sponza_structure.obj">
-      <Filter>assets\models</Filter>
-    </None>
+    </Object>
+    <Object Include="..\..\..\framework\assets\sphere.obj">
+      <Filter>assets</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\framework\assets\chalet\chalet.jpg">
+      <Filter>assets</Filter>
+    </Image>
   </ItemGroup>
 </Project>
