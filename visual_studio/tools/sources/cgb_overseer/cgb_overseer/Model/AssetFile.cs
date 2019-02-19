@@ -24,12 +24,6 @@ namespace cgb_overseer.Model
 		Generic3dModel,
 
 		/// <summary>
-		/// A 3D model file of the .obj type. They require special treatment
-		/// insofar as they can have materials file that lies outside of the 
-		/// original .obj and has to be tracked separately for changes.
-		/// </summary>
-		Obj3dModel,
-		/// <summary>
 		/// A materials file, which can only exist under a parent Obj3dModel
 		/// type file.
 		/// </summary>

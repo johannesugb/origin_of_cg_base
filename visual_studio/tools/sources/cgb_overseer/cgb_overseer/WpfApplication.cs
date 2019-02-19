@@ -21,7 +21,7 @@ namespace cgb_overseer
 	/// </summary>
 	class WpfApplication : Application, IMessageListLifetimeHandler
 	{
-		static readonly Regex RegexFilterEntry = new Regex(@"<Object\s+.*?Include\s*?\=\s*?\""(.*?)\""\s*?\>.*?\<Filter\s*?.*?\>(.*?)\<\/Filter\>.*?\<\/Object\>", 
+		static readonly Regex RegexFilterEntry = new Regex(@"<(None|Object)\s+.*?Include\s*?\=\s*?\""(.*?)\""\s*?\>.*?\<Filter\s*?.*?\>(.*?)\<\/Filter\>.*?\<\/\1\>", 
 			RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
 		/// <summary>
@@ -39,13 +39,11 @@ namespace cgb_overseer
 		/// file list is updated and those assets which HAVE CHANGED (based on a file-hash) are copied 
 		/// to their respective target paths.
 		/// 
-		/// The keys of this dictionary are target paths to built executables.
-		/// 
 		/// The Overseer will listen for process starts of those files, referenced in the keys. 
 		/// In case, a process' full path name matches one of those keys, the file watcher for all its 
 		/// child files will be launched.
 		/// </summary>
-		private readonly Dictionary<string, List<AssetFile>> _assetFilesPerTarget;
+		private readonly List<InstanceData> _instances = new List<InstanceData>();
 
 		public WpfApplication()
 		{
@@ -115,46 +113,58 @@ namespace cgb_overseer
 		public void HandleNewInvocation(InvocationParams p)
 		{
 			// See, if we're already handling that executable!
-			List<AssetFile> newAssetsList;
-			List<AssetFile> assetsListToUpdate;
-			if (_assetFilesPerTarget.ContainsKey(p.ExecutablePath))
+			var inst = _instances.GetInstance(p.ExecutablePath);
+			var prevAssetsList = inst?.Files; // null if there is no previous instance
+
+			// Create new or update config/invocation params:
+			if (null == inst)
 			{
-				assetsListToUpdate = _assetFilesPerTarget[p.ExecutablePath];
-				newAssetsList = null;
+				inst = new InstanceData
+				{
+					Config = p,
+					Files = new List<AssetFile>()
+				};
+				_instances.Add(inst);
 			}
-			else // executable path not included in the dictionary
+			else
 			{
-				assetsListToUpdate = null;
-				newAssetsList = new List<AssetFile>();
+				inst.Config = p;
+				// Proceed with an empty list because files could have changed:
+				inst.Files = new List<AssetFile>();
 			}
 
-			// TODO: PRoceed here (files durchgehen und so, extension methods in die CgbUtils klasse usw.)
-
-			// 1. Parse the .filters file for asset files and shader files
+			// Parse the .filters file for asset files and shader files
 			{ 
-				var filtersContent = File.ReadAllText(p.FiltersPath);
+				var filtersFile = new FileInfo(p.FiltersPath);
+				var filtersContent = File.ReadAllText(filtersFile.FullName);
 				var filters = RegexFilterEntry.Matches(filtersContent);
 				foreach (Match match in filters)
 				{
-					var fileInQuestion = new AssetFile
-					{
-						
-					};
-					// TODO: use this method (which is still to be implemented):
-					newAssetsList?.AddOrReplaceAssetFile(match.Groups[1].Value, match.Groups[2].Value);
-					assetsListToUpdate?.AddOrReplaceAssetFile(match.Groups[1].Value, match.Groups[2].Value);
+					var filePath = Path.Combine(filtersFile.DirectoryName, match.Groups[2].Value);
+					var filterPath = match.Groups[3].Value;
+					inst.DeployFile(
+						prevAssetsList, 
+						filePath, filterPath, 
+						out var deployedFiles, 
+						out var errorSuccessMessages);
+
+					inst.Files.AddRange(deployedFiles);
+					AddToAndShowMessagesList(errorSuccessMessages);
 				}
 			}
-
-			// 2. Determine dependencies of those files
-
-			// 3. Deploy all the original files and their dependencies
-			// 3.1 If we have to, compile them to spir-v
 		}
 
 		public void AddToAndShowMessagesList(MessageViewModel mvm)
 		{
-			_messagesListVM.Items.Add(mvm);
+			AddToAndShowMessagesList(new MessageViewModel[] { mvm });
+		}
+
+		public void AddToAndShowMessagesList(IEnumerable<MessageViewModel> mvms)
+		{
+			foreach (var mvm in mvms)
+			{
+				_messagesListVM.Items.Add(mvm);
+			}
 			_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
 			CloseMessagesListLater(true);
 		}

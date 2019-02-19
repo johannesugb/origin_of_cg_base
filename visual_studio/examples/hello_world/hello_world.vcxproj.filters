@@ -40,22 +40,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\ARTR\repo\engine\assets\models\cube.obj">
-      <Filter>assets\models2\models2.1</Filter>
-    </None>
-    <None Include="..\..\..\..\..\ARTR\repo\engine\assets\models\parallelepiped.obj">
-      <Filter>not_in_assets</Filter>
-    </None>
-    <None Include="..\..\..\..\..\ARTR\repo\engine\assets\models\sponza\sponza_structure.obj">
-      <Filter>assets\models</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="..\..\..\external\bin\x64\release\assimp-vc140-mt.dll">
       <Filter>dll_dependencies\release_dlls</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="..\..\..\external\bin\x64\debug\assimp-vc140-mt.dll">
       <Filter>dll_dependencies\debug_dlls</Filter>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\cube01.obj">
+      <Filter>assets\models2\models2.1</Filter>
+    </None>
+    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\textures\altitudes.png">
+      <Filter>assets</Filter>
+    </None>
+    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\parallelepiped.obj">
+      <Filter>not_in_assets</Filter>
+    </None>
+    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\sponza\sponza_structure.obj">
+      <Filter>assets\models</Filter>
+    </None>
   </ItemGroup>
 </Project>

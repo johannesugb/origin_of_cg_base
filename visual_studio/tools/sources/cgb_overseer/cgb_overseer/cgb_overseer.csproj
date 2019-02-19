@@ -64,11 +64,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Model\AssetFile.cs" />
+    <Compile Include="Model\InstanceData.cs" />
     <Compile Include="Model\InvocationParams.cs" />
     <Compile Include="SingleApplicationInstance.cs" />
     <Compile Include="Utils\BindableBase.cs" />
     <Compile Include="Utils\CgbUtils.cs" />
     <Compile Include="Utils\DelegateCommand.cs" />
+    <Compile Include="Utils\IFileDeployment.cs" />
     <Compile Include="Utils\IRaiseCanExecuteChanged.cs" />
     <Compile Include="ViewModel\IMessageListLifetimeHandler.cs" />
     <Compile Include="ViewModel\MessagesListViewModel.cs" />
