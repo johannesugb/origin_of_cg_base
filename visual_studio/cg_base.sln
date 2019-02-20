@@ -14,6 +14,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "context_completeness", "tes
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hello_world", "hello_world", "{08A10CAA-9B1B-41DB-9EB5-8547AC3077EA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_rtx", "examples\hello_rtx\hello_rtx.vcxproj", "{D0209D5C-18C2-4858-9174-313D252BDBC7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hello_rtx", "hello_rtx", "{F1107676-C46E-4071-94D7-A9C800FD92C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_GL46|x64 = Debug_GL46|x64
@@ -46,6 +50,14 @@ Global
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Release_GL46|x64.Build.0 = Release_GL46|x64
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Release_Vulkan|x64.Build.0 = Release_Vulkan|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Debug_GL46|x64.ActiveCfg = Debug_GL46|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Release_GL46|x64.Build.0 = Release_GL46|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Release_Vulkan|x64.Build.0 = Release_Vulkan|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +66,8 @@ Global
 		{AAAC1485-846C-4F30-8824-125E8584D038} = {08A10CAA-9B1B-41DB-9EB5-8547AC3077EA}
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49} = {9739A4A1-6D55-4F8F-A7F2-9E92E1BF3070}
 		{08A10CAA-9B1B-41DB-9EB5-8547AC3077EA} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
+		{D0209D5C-18C2-4858-9174-313D252BDBC7} = {F1107676-C46E-4071-94D7-A9C800FD92C2}
+		{F1107676-C46E-4071-94D7-A9C800FD92C2} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A8961D43-F08D-46E3-B3BB-29BA8AA39C3E}

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_GL46|x64">
@@ -19,12 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\examples\hello_world\source\hello_world.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_rtx\source\hello_rtx.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_rtx\source\temp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\cg_base\cg_base.vcxproj">
       <Project>{602f842f-50c1-466d-8696-1707937d8ab9}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\examples\hello_rtx\source\temp.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\..\..\external\bin\x64\debug\assimp-vc140-mt.dll">
@@ -66,11 +70,11 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{AAAC1485-846C-4F30-8824-125E8584D038}</ProjectGuid>
+    <ProjectGuid>{d0209d5c-18c2-4858-9174-313d252bdbc7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>helloworld</RootNamespace>
+    <RootNamespace>hellortx</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>hello_world</ProjectName>
+    <ProjectName>hello_rtx</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'" Label="Configuration">
