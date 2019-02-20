@@ -15,9 +15,9 @@ namespace cgb_overseer.Utils
 {
 	static class CgbUtils
 	{
-		private static readonly Regex RegexIsInAssets = new Regex(@"assets([\\\/].+)*$", 
+		private static readonly Regex RegexIsInAssets = new Regex(@"^assets([\\\/].+)*$", 
 			RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		private static readonly Regex RegexIsInShaders = new Regex(@"shaders([\\\/].+)*$", 
+		private static readonly Regex RegexIsInShaders = new Regex(@"^shaders([\\\/].+)*$", 
 			RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		private static readonly MD5 Md5Implementation = MD5.Create();
