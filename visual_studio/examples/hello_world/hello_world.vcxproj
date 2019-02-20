@@ -47,22 +47,26 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\sponza\sponza_structure.obj">
+    <None Include="..\..\..\framework\assets\chalet\chalet.jpg" />
+    <None Include="..\..\..\framework\shader\rt_09_first.rchit" />
+    <None Include="..\..\..\framework\shader\rt_09_first.rgen" />
+    <None Include="..\..\..\framework\shader\rt_09_first.rmiss" />
+    <None Include="..\..\..\framework\shader\rt_09_secondary.rchit" />
+    <None Include="..\..\..\framework\shader\rt_09_secondary.rmiss" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\framework\assets\chalet\chalet.obj">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\cube01.obj">
-      <FileType>Document</FileType>
-    </None>
+    <None Include="..\..\..\framework\shader\shader.frag" />
+    <None Include="..\..\..\framework\shader\shader.vert" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\models\parallelepiped.obj">
+    <None Include="..\..\..\framework\assets\sphere.obj">
       <FileType>Document</FileType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\..\..\..\artr2018\repo\engine\assets\textures\altitudes.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -181,7 +185,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\sources\cgb_overseer\bin\Debug\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -214,7 +218,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\sources\cgb_overseer\bin\Debug\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -243,7 +247,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\sources\cgb_overseer\bin\Debug\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -272,7 +276,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\sources\cgb_overseer\bin\Debug\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cgb_overseer.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>

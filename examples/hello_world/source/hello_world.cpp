@@ -596,8 +596,8 @@ public:
 		{
 			create_descriptor_set_layout();
 
-			auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.vert.spv"));
-			auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/shader.frag.spv"));
+			auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/shader.vert.spv"));
+			auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/shader.frag.spv"));
 			// PROBLEME:
 			// - shader_handle* sollte kein Pointer sein!
 			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
@@ -623,11 +623,11 @@ public:
 		{
 			create_rt_descriptor_set_layout();
 
-			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rgen.spv"));
-			auto rchit = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rchit.spv"));
-			auto rmiss = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt.rmiss.spv"));
-			auto rchit2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt_scnd.rchit.spv"));
-			auto rmiss2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shader/hello_rt_scnd.rmiss.spv"));
+			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rgen.spv"));
+			auto rchit = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rchit.spv"));
+			auto rmiss = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rmiss.spv"));
+			auto rchit2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rchit.spv"));
+			auto rmiss2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rmiss.spv"));
 			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit));
