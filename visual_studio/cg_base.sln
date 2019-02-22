@@ -22,6 +22,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_GL46|x64 = Debug_GL46|x64
 		Debug_Vulkan|x64 = Debug_Vulkan|x64
+		Publish_GL46|x64 = Publish_GL46|x64
+		Publish_Vulkan|x64 = Publish_Vulkan|x64
 		Release_GL46|x64 = Release_GL46|x64
 		Release_Vulkan|x64 = Release_Vulkan|x64
 	EndGlobalSection
@@ -30,6 +32,10 @@ Global
 		{602F842F-50C1-466D-8696-1707937D8AB9}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
 		{602F842F-50C1-466D-8696-1707937D8AB9}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
 		{602F842F-50C1-466D-8696-1707937D8AB9}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{602F842F-50C1-466D-8696-1707937D8AB9}.Publish_GL46|x64.ActiveCfg = Publish_GL46|x64
+		{602F842F-50C1-466D-8696-1707937D8AB9}.Publish_GL46|x64.Build.0 = Publish_GL46|x64
+		{602F842F-50C1-466D-8696-1707937D8AB9}.Publish_Vulkan|x64.ActiveCfg = Publish_Vulkan|x64
+		{602F842F-50C1-466D-8696-1707937D8AB9}.Publish_Vulkan|x64.Build.0 = Publish_Vulkan|x64
 		{602F842F-50C1-466D-8696-1707937D8AB9}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
 		{602F842F-50C1-466D-8696-1707937D8AB9}.Release_GL46|x64.Build.0 = Release_GL46|x64
 		{602F842F-50C1-466D-8696-1707937D8AB9}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
@@ -38,6 +44,10 @@ Global
 		{AAAC1485-846C-4F30-8824-125E8584D038}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
 		{AAAC1485-846C-4F30-8824-125E8584D038}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
 		{AAAC1485-846C-4F30-8824-125E8584D038}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{AAAC1485-846C-4F30-8824-125E8584D038}.Publish_GL46|x64.ActiveCfg = Publish_GL46|x64
+		{AAAC1485-846C-4F30-8824-125E8584D038}.Publish_GL46|x64.Build.0 = Publish_GL46|x64
+		{AAAC1485-846C-4F30-8824-125E8584D038}.Publish_Vulkan|x64.ActiveCfg = Publish_Vulkan|x64
+		{AAAC1485-846C-4F30-8824-125E8584D038}.Publish_Vulkan|x64.Build.0 = Publish_Vulkan|x64
 		{AAAC1485-846C-4F30-8824-125E8584D038}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
 		{AAAC1485-846C-4F30-8824-125E8584D038}.Release_GL46|x64.Build.0 = Release_GL46|x64
 		{AAAC1485-846C-4F30-8824-125E8584D038}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
@@ -46,6 +56,10 @@ Global
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Publish_GL46|x64.ActiveCfg = Publish_GL46|x64
+		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Publish_GL46|x64.Build.0 = Publish_GL46|x64
+		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Publish_Vulkan|x64.ActiveCfg = Publish_Vulkan|x64
+		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Publish_Vulkan|x64.Build.0 = Publish_Vulkan|x64
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Release_GL46|x64.Build.0 = Release_GL46|x64
 		{50BE62BA-8D0E-4A8A-88A4-27CD8ECFBA49}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
@@ -54,6 +68,10 @@ Global
 		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
 		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
 		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Publish_GL46|x64.ActiveCfg = Publish_GL46|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Publish_GL46|x64.Build.0 = Publish_GL46|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Publish_Vulkan|x64.ActiveCfg = Publish_Vulkan|x64
+		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Publish_Vulkan|x64.Build.0 = Publish_Vulkan|x64
 		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
 		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Release_GL46|x64.Build.0 = Release_GL46|x64
 		{D0209D5C-18C2-4858-9174-313D252BDBC7}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64

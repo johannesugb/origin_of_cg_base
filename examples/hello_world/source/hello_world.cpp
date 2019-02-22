@@ -1,7 +1,6 @@
 // hello_world.cpp : Defines the entry point for the console application.
 //
 #include "cg_base.h"
-#include "temp.h"
 using namespace std;
 
 class hello_behavior : public cgb::cg_element
