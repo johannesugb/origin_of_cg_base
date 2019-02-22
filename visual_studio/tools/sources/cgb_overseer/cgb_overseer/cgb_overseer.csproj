@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Model\AssetFile.cs" />
+    <Compile Include="Model\ContextMenuActions.cs" />
     <Compile Include="Model\InstanceData.cs" />
     <Compile Include="Model\InvocationParams.cs" />
     <Compile Include="SingleApplicationInstance.cs" />
@@ -86,6 +87,10 @@
       <DependentUpon>MessagesList.xaml</DependentUpon>
     </Compile>
     <Compile Include="WpfApplication.cs" />
+    <Page Include="ContextMenuResources.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

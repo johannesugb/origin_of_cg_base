@@ -38,9 +38,9 @@ namespace cgb_overseer
 			{
 				ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown
 			};
-			_wpfApp.Dispatcher.Invoke(() => 
+			if (e.CommandLine.Count > 0)
 			{
-				if (e.CommandLine.Count > 0)
+				_wpfApp.Dispatcher.Invoke(() => 
 				{
 					try
 					{
@@ -51,8 +51,8 @@ namespace cgb_overseer
 					{
 						_wpfApp.AddToAndShowMessagesList(MessageViewModel.CreateError(ex.Message));
 					}
-				}
-			});
+				});
+			}
 			_wpfApp.Run();
 			return false;
 		}
@@ -70,15 +70,18 @@ namespace cgb_overseer
 		{
 			if (e.CommandLine.Count > 0)
 			{
-				try
+				_wpfApp.Dispatcher.Invoke(() =>
 				{
-					var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
-					_wpfApp.HandleNewInvocation(instanceParams);
-				}
-				catch (Exception ex)
-				{
-					_wpfApp.AddToAndShowMessagesList(MessageViewModel.CreateError(ex.Message));
-				}
+					try
+					{
+						var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
+						_wpfApp.HandleNewInvocation(instanceParams);
+					}
+					catch (Exception ex)
+					{
+						_wpfApp.AddToAndShowMessagesList(MessageViewModel.CreateError(ex.Message));
+					}
+				});
 			}
 		}
 		

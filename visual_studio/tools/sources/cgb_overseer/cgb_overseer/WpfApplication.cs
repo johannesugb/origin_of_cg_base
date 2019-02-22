@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using cgb_overseer.View;
 using cgb_overseer.ViewModel;
 using System.Windows.Threading;
+using System.Windows.Controls;
 
 namespace cgb_overseer
 {
@@ -47,18 +48,26 @@ namespace cgb_overseer
 
 		public WpfApplication()
 		{
-			 _messagesListView = new MessagesList()
-			 {
+			_messagesListView = new MessagesList()
+			{
 				 LifetimeHandler = this,
 				 DataContext = _messagesListVM
-			 };
+			};
 
 			Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon.ico")).Stream;
+			
+			var rd = new ResourceDictionary()
+			{
+				Source = new Uri(";component/ContextMenuResources.xaml", UriKind.RelativeOrAbsolute)
+			};
+
 			_taskbarIcon = new TaskbarIcon()
 			{
 				Icon = new System.Drawing.Icon(iconStream),
-				ToolTipText = "Hello Tray"
+				ToolTipText = "CGB Post Build Helper",
+				ContextMenu = (ContextMenu)rd["SysTrayMenu"]
 			};
+			_taskbarIcon.ContextMenu.DataContext = new ContextMenuActions();
 		}
 
 		private void DispatcherInvokeLater(TimeSpan delay, Action action)
