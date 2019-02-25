@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\external\src\FileWatcher\FileWatcherWin32.cpp">
-      <Filter>external\FileWatcher</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\composition_interface.cpp">
       <Filter>Source Files\general</Filter>
     </ClCompile>
@@ -12,21 +9,6 @@
     </ClCompile>
     <ClCompile Include="..\..\framework\src\log.cpp">
       <Filter>Source Files\utils</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\src\glad.cpp">
-      <Filter>Source Files\external</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\src\imgui.cpp">
-      <Filter>Source Files\external</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\src\imgui_demo.cpp">
-      <Filter>Source Files\external</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\src\imgui_draw.cpp">
-      <Filter>Source Files\external</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\src\FileWatcher\FileWatcher.cpp">
-      <Filter>Source Files\external\FileWatcher</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp">
       <Filter>Source Files\timer</Filter>
@@ -42,9 +24,6 @@
     </ClCompile>
     <ClCompile Include="..\..\framework\src\context.cpp">
       <Filter>Source Files\context</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\src\format.cc">
-      <Filter>external\fmt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\context_opengl46.cpp">
       <Filter>Source Files\context\opengl46</Filter>
@@ -81,6 +60,24 @@
     </ClCompile>
     <ClCompile Include="..\precompiled_headers\src\cg_stdafx.cpp">
       <Filter>Source Files\precompiled_headers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_draw.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_demo.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\format.cc">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\FileWatcher\FileWatcherWin32.cpp">
+      <Filter>Source Files\external\FileWatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\FileWatcher\FileWatcher.cpp">
+      <Filter>Source Files\external\FileWatcher</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -188,12 +185,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="external">
-      <UniqueIdentifier>{06b7bd72-6a77-441e-9462-71003d5da70f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\FileWatcher">
-      <UniqueIdentifier>{d417ac24-c154-4371-babe-37a3ba324d22}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{f0debc15-831c-4ce5-8aa8-b45e296d9848}</UniqueIdentifier>
     </Filter>
@@ -241,9 +232,6 @@
     </Filter>
     <Filter Include="Source Files\input">
       <UniqueIdentifier>{6d1f1374-07cc-43fd-909b-d1666ae073dc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\fmt">
-      <UniqueIdentifier>{b7ee0645-b8f3-43ad-ac4c-25c4d5ae61f2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\context\glfw">
       <UniqueIdentifier>{7a48d805-d55d-43b4-871b-c3ca8f382c38}</UniqueIdentifier>

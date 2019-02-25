@@ -3,11 +3,21 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <FrameworkRoot>$(SolutionDir)..\framework\</FrameworkRoot>
-	<ExternalRoot>$(SolutionDir)..\external\</ExternalRoot>
-	<ExamplesRoot>$(SolutionDir)..\examples\</ExamplesRoot>
+    <ExternalRoot>$(SolutionDir)..\external\</ExternalRoot>
+    <ExamplesRoot>$(SolutionDir)..\examples\</ExamplesRoot>
   </PropertyGroup>
-  <PropertyGroup />
-  <ItemDefinitionGroup />
+  <PropertyGroup>
+    <_PropertySheetDisplayName>cg_base_config</_PropertySheetDisplayName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>assimp-vc140-mt.lib;glfw3.lib;stb.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(FrameworkRoot)include\;$(ExternalRoot)universal\include\;$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="FrameworkRoot">
       <Value>$(FrameworkRoot)</Value>

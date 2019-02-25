@@ -31,8 +31,6 @@ namespace cgb
 			GL_RGBA8,
 			GL_BGR,
 			GL_BGRA,
-			GL_BGRA8_EXT,
-			GL_ABGR_EXT,
 			GL_SRGB,
 			GL_SRGB8,
 			GL_COMPRESSED_SRGB,

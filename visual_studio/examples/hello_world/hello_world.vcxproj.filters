@@ -22,11 +22,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\..\..\external\bin\x64\release\assimp-vc140-mt.dll">
-      <Filter>dlls\release_dlls</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\..\..\external\bin\x64\debug\assimp-vc140-mt.dll">
+    <CopyFileToFolders Include="..\..\..\external\debug\bin\x64\assimp-vc140-mt.dll">
       <Filter>dlls\debug_dlls</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="..\..\..\external\release\bin\x64\assimp-vc140-mt.dll">
+      <Filter>dlls\release_dlls</Filter>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>

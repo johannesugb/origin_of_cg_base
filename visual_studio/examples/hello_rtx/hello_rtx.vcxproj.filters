@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CopyFileToFolders Include="..\..\..\external\bin\x64\debug\assimp-vc140-mt.dll">
+    <CopyFileToFolders Include="..\..\..\external\release\bin\x64\assimp-vc140-mt.dll">
       <Filter>dlls\debug_dlls</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="..\..\..\external\bin\x64\release\assimp-vc140-mt.dll">
+    <CopyFileToFolders Include="..\..\..\external\debug\bin\x64\assimp-vc140-mt.dll">
       <Filter>dlls\release_dlls</Filter>
     </CopyFileToFolders>
   </ItemGroup>

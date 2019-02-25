@@ -9,6 +9,9 @@
     <ClCompile>
       <PreprocessorDefinitions>USE_OPENGL46_CONTEXT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="RenderingApi">

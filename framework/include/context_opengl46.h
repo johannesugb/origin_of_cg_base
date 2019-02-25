@@ -37,6 +37,18 @@ namespace cgb
 
 		}
 
+		/** Used to signal the context about the beginning of a composition */
+		void begin_composition();
+
+		/** Used to signal the context about the end of a composition */
+		void end_composition();
+
+		/** Used to signal the context about the beginning of a new frame */
+		void begin_frame();
+
+		/** Used to signal the context about the end of a frame */
+		void end_frame();
+
 		/** Completes all pending work on the device, blocks the current thread until then. */
 		void finish_pending_work();
 	};

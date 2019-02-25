@@ -72,4 +72,26 @@ namespace cgb
 	{
 
 	}
+
+	void opengl46::begin_composition()
+	{
+
+	}
+
+	void opengl46::end_composition()
+	{
+
+	}
+
+	void opengl46::begin_frame()
+	{
+
+	}
+
+	void opengl46::end_frame()
+	{
+
+	}
+
+
 }
