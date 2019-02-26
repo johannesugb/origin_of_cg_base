@@ -15,7 +15,7 @@
       <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(FrameworkRoot)include\;$(ExternalRoot)universal\include\;$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(FrameworkRoot)include_stst\;$(FrameworkRoot)include\;$(ExternalRoot)universal\include\;$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

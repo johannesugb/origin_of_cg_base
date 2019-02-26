@@ -158,8 +158,9 @@ namespace cgb
 	{
 		if (mInitialized)
 		{
+			mWindows.clear();
 			glfwTerminate();
-			// context has been desroyed by glfwTerminate
+			// context has been destroyed by glfwTerminate
 			mInitialized = false;
 		}
 	}

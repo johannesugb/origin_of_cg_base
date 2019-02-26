@@ -79,6 +79,51 @@
     <ClCompile Include="..\..\external\universal\src\FileWatcher\FileWatcher.cpp">
       <Filter>Source Files\external\FileWatcher</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkCgbBuffer.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkCgbImage.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkCgbMemory.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkCommandBufferManager.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkContext.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkDrawer.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkImagePresenter.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkMemoryManager.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkPresenter.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkRenderer.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkRenderObject.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkTexture.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_framebuffer.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_pipeline.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_render_queue.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -183,6 +228,51 @@
     <ClInclude Include="..\precompiled_headers\include\cg_targetver.h">
       <Filter>Header Files\precompiled_headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkCgbBuffer.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkCgbImage.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkCgbMemory.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkCommandBufferManager.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkContext.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkDrawer.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkImagePresenter.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkMemoryManager.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkPresenter.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkRenderer.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkRenderObject.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkTexture.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_framebuffer.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_pipeline.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_render_queue.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -274,6 +364,12 @@
     </Filter>
     <Filter Include="Source Files\precompiled_headers">
       <UniqueIdentifier>{c7da7861-4954-4b1c-8251-2760621ea559}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\stst">
+      <UniqueIdentifier>{d4589d3e-20ea-4eac-bf77-e2efc4d55183}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\stst">
+      <UniqueIdentifier>{8e06662e-f796-42ca-b1e9-7fb5710b099d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

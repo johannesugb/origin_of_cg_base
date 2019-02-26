@@ -79,8 +79,8 @@ namespace CreateNewProject.ViewModel
 				{ 
 
 					// 1. See if there is a .vcxproj-file in the original folder; if not => exit!
-					var origDir = new DirectoryInfo("");
 					var origProjFile = new FileInfo(OriginalVsProjFile);
+					var origDir = origProjFile.Directory;
 					var origUserFile = new FileInfo(OriginalVsProjFile + ".user");
 					
 					// 2. Copy AND rename 2 files to the target folder: The .vcxproj file and the .vcxproj.user file

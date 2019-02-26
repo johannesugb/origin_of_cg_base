@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{be49ce2a-a44b-4fed-b3c7-933944d59bbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tobii">
+      <UniqueIdentifier>{6ef1a03e-9819-4edc-85d0-40d033a6b736}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{bb9c2164-6c10-461f-a9f8-c113d160de93}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_img.comp">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="Tobii\SDK-License_zh.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="Tobii\SDK-License_en.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="Tobii\API-Reference.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="packages.config" />
+    <None Include="@(NativeLibs)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\framework\assets\chalet\chalet.jpg">
+      <Filter>assets</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

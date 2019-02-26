@@ -5,6 +5,7 @@
 #include <array>
 #include <string>
 #include <exception>
+#include <stdexcept>
 #include <unordered_map>
 #include <map>
 #include <functional>
@@ -20,8 +21,10 @@
 #include <typeinfo>
 #include <atomic>
 #include <mutex>
+#include <cstdlib>
 
 #include <stdio.h>
+#include <assert.h>
 
 // ----------------------- externals -----------------------
 #include <fmt/format.h>

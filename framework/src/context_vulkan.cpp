@@ -68,7 +68,7 @@ namespace cgb
 		mSurfSwap.clear();
 
 		// Destroy the semaphores
-		cleanup_sync_objects();
+		//cleanup_sync_objects(); <-- TODO
 
 		// Destroy logical device
 		mLogicalDevice.destroy();
@@ -101,9 +101,12 @@ namespace cgb
 		// Wait for the prev-prev frame (fence-ping-pong)
 		// TODO: We should only wait for fences if some were submitted 
 		//       ...during the last RENDER-call!!!
-		auto& fence = fence_current_frame();
-		mLogicalDevice.waitForFences(1u, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
-		mLogicalDevice.resetFences(1u, &fence);
+		
+		// TODO: auskommentiert während StSt-Meeting
+
+		//auto& fence = fence_current_frame();
+		//mLogicalDevice.waitForFences(1u, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		//mLogicalDevice.resetFences(1u, &fence);
 	}
 
 	void vulkan::end_frame()
@@ -143,14 +146,18 @@ namespace cgb
 			create_and_assign_logical_device(surface);
 			// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
 			sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
-			create_sync_objects();
+			//create_sync_objects(); // <-- TODO
 		}
 		// Continue tuple creation
-		auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
+		//auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
 
 		// Insert at the back
-		auto& back = mSurfSwap.emplace_back(std::make_unique<swap_chain_data>(std::move(swapChain)));
-		return back->mWindow;
+		//auto& back = mSurfSwap.emplace_back(std::make_unique<swap_chain_data>(std::move(swapChain)));
+		//return back->mWindow;
+
+		mTmpMainWindow = wnd;
+		mTmpSurface = surface;
+		return mTmpMainWindow;
 	}
 
 	void vulkan::create_instance()
@@ -387,6 +394,21 @@ namespace cgb
 		return combined;
 	}
 
+	bool vulkan::supports_shading_rate_image(const vk::PhysicalDevice& device)
+	{
+		vk::PhysicalDeviceFeatures2 supportedExtFeatures;
+		auto shadingRateImageFeatureNV = vk::PhysicalDeviceShadingRateImageFeaturesNV();
+		supportedExtFeatures.pNext = &shadingRateImageFeatureNV;
+		device.getFeatures2(&supportedExtFeatures);
+		return shadingRateImageFeatureNV.shadingRateImage && shadingRateImageFeatureNV.shadingRateCoarseSampleOrder && supportedExtFeatures.features.shaderStorageImageExtendedFormats;
+	}
+
+	bool vulkan::shading_rate_image_extension_requested()
+	{
+		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
+		return std::find(std::begin(allRequiredDeviceExtensions), std::end(allRequiredDeviceExtensions), VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME) != std::end(allRequiredDeviceExtensions);
+	}
+
 	bool vulkan::supports_all_required_extensions(const vk::PhysicalDevice& device)
 	{
 		bool allExtensionsSupported = true;
@@ -406,6 +428,9 @@ namespace cgb
 				}
 			}
 		}
+
+		allExtensionsSupported = allExtensionsSupported && shading_rate_image_extension_requested() && supports_shading_rate_image(device);
+
 		return allExtensionsSupported;
 	}
 
@@ -598,14 +623,25 @@ namespace cgb
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		
-		auto deviceFeatures = vk::PhysicalDeviceFeatures()
-			.setSamplerAnisotropy(VK_TRUE)
-			.setVertexPipelineStoresAndAtomics(VK_TRUE);
+		// Always prepare the shading rate image features descriptor, but only use it if the extension has been requested
+		auto shadingRateImageFeatureNV = vk::PhysicalDeviceShadingRateImageFeaturesNV()
+			.setShadingRateImage(VK_TRUE)
+			.setShadingRateCoarseSampleOrder(VK_TRUE);
+		auto activateShadingRateImage = shading_rate_image_extension_requested() && supports_shading_rate_image(mPhysicalDevice);
+
+		// Enable certain device features:
+		auto deviceFeatures = vk::PhysicalDeviceFeatures2()
+			.setFeatures(vk::PhysicalDeviceFeatures()
+						 .setSamplerAnisotropy(VK_TRUE)
+						 .setVertexPipelineStoresAndAtomics(VK_TRUE)
+						 .setShaderStorageImageExtendedFormats(VK_TRUE))
+			.setPNext(activateShadingRateImage ? &shadingRateImageFeatureNV : nullptr);
+
 		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
 		auto deviceCreateInfo = vk::DeviceCreateInfo()
 			.setQueueCreateInfoCount(static_cast<uint32_t>(queueCreateInfos.size()))
 			.setPQueueCreateInfos(queueCreateInfos.data())
-			.setPEnabledFeatures(&deviceFeatures)
+			.setPNext(&deviceFeatures) // instead of :setPEnabledFeatures(&deviceFeatures) because we are using vk::PhysicalDeviceFeatures2
 			// Whether the device supports these extensions has already been checked during device selection in @ref pick_physical_device
 			// TODO: Are these the correct extensions to set here?
 			.setEnabledExtensionCount(static_cast<uint32_t>(allRequiredDeviceExtensions.size()))

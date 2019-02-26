@@ -12,6 +12,7 @@
 #include <glm/mat4x4.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform2.hpp>
+#include <glm/gtx/hash.hpp>
 
 namespace cgb
 {

@@ -68,6 +68,81 @@
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp" />
     <ClCompile Include="..\..\framework\src\window.cpp" />
+    <ClCompile Include="..\..\framework\src_stst\vkCgbBuffer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkCgbImage.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkCgbMemory.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkCommandBufferManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkContext.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkDrawer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkImagePresenter.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkMemoryManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkPresenter.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkRenderer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkRenderObject.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vkTexture.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_framebuffer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_pipeline.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_render_queue.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\precompiled_headers\src\cg_stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">Create</PrecompiledHeader>
@@ -126,6 +201,81 @@
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_only_timer.h" />
     <ClInclude Include="..\..\framework\include\window.h" />
+    <ClInclude Include="..\..\framework\include_stst\vkCgbBuffer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkCgbImage.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkCgbMemory.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkCommandBufferManager.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkContext.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkDrawer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkImagePresenter.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkMemoryManager.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkPresenter.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkRenderer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkRenderObject.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vkTexture.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_framebuffer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_pipeline.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_render_queue.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\precompiled_headers\include\cg_stdafx.h" />
     <ClInclude Include="..\precompiled_headers\include\cg_targetver.h" />
   </ItemGroup>

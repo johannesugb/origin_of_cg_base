@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_GL46|x64">
+      <Configuration>Debug_GL46</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Vulkan|x64">
+      <Configuration>Debug_Vulkan</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Publish_GL46|x64">
+      <Configuration>Publish_GL46</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Publish_Vulkan|x64">
+      <Configuration>Publish_Vulkan</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_GL46|x64">
+      <Configuration>Release_GL46</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Vulkan|x64">
+      <Configuration>Release_Vulkan</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\cg_base\cg_base.vcxproj">
+      <Project>{602f842f-50c1-466d-8696-1707937d8ab9}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_img.comp" />
+    <None Include="packages.config" />
+    <None Include="Tobii\API-Reference.pdf" />
+    <None Include="Tobii\SDK-License_en.pdf" />
+    <None Include="Tobii\SDK-License_zh.pdf" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\framework\assets\chalet\chalet.jpg" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{e177242b-2397-4ad3-8501-2b3426d95736}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>hellovrs</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>hello_vrs</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_debug.props" />
+    <Import Project="..\..\props\rendering_api_vulkan.props" />
+    <Import Project="..\..\props\cg_base_universal.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_debug.props" />
+    <Import Project="..\..\props\rendering_api_opengl46.props" />
+    <Import Project="..\..\props\cg_base_universal.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_release.props" />
+    <Import Project="..\..\props\rendering_api_opengl46.props" />
+    <Import Project="..\..\props\cg_base_universal.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_release.props" />
+    <Import Project="..\..\props\rendering_api_opengl46.props" />
+    <Import Project="..\..\props\cg_base_universal.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_release.props" />
+    <Import Project="..\..\props\rendering_api_vulkan.props" />
+    <Import Project="..\..\props\cg_base_universal.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\props\solution_directories.props" />
+    <Import Project="..\..\props\linked_libs_release.props" />
+    <Import Project="..\..\props\rendering_api_vulkan.props" />
+    <Import Project="..\..\props\cg_base_universal.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)temp\intermediate\$(Configuration)_$(Platform)\</IntDir>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>cg_base.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuild>
+      <Command>cmd
+echo %(FullPath)
+echo  %(Filename).c</Command>
+    </CustomBuild>
+    <CustomBuildStep>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>cg_base.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuild>
+      <Command>cmd
+echo %(FullPath)
+echo  %(Filename).c</Command>
+    </CustomBuild>
+    <CustomBuildStep>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>cg_base.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuild>
+      <Command>cmd
+echo %(FullPath)
+echo  %(Filename).c</Command>
+    </CustomBuild>
+    <CustomBuildStep>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>cg_base.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuild>
+      <Command>cmd
+echo %(FullPath)
+echo  %(Filename).c</Command>
+    </CustomBuild>
+    <CustomBuildStep>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>cg_base.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuild>
+      <Command>cmd
+echo %(FullPath)
+echo  %(Filename).c</Command>
+    </CustomBuild>
+    <CustomBuildStep>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ExternalRoot)$(LibraryConfigurationType)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>cg_base.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(FrameworkRoot)lib\$(Configuration)_$(Platform)\;$(ExternalRoot)$(LibraryConfigurationType)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuild>
+      <Command>cmd
+echo %(FullPath)
+echo  %(Filename).c</Command>
+    </CustomBuild>
+    <CustomBuildStep>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets" Condition="Exists('..\..\packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets'))" />
+  </Target>
+</Project>
