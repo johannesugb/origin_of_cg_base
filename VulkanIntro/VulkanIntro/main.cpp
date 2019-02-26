@@ -120,16 +120,25 @@ private:
 		vkContext::instance().dynamicRessourceCount = imagePresenter->get_swap_chain_images_count();
 		drawCommandBufferManager = std::make_shared<vkCommandBufferManager>(imagePresenter->get_swap_chain_images_count(), commandPool, vkContext::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<vulkan_render_queue>(vkContext::instance().graphicsQueue);
-		mVrsRenderer = std::make_shared<vkRenderer>(nullptr, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>>{}, true);
-		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>>{ mVrsRenderer });
+
+		std::vector<std::shared_ptr<vkRenderer>> dependentRenderers = {};
+		if (vkContext::instance().shadingRateImageSupported) {
+			mVrsRenderer = std::make_shared<vkRenderer>(nullptr, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<vkRenderer>>{}, true);
+			dependentRenderers.push_back(mVrsRenderer);
+		}
+		mRenderer = std::make_unique<vkRenderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager, dependentRenderers);
 
 		createColorResources();
 		createDepthResources();
-		createVRSImageResources();
+		if (vkContext::instance().shadingRateImageSupported) {
+			createVRSImageResources();
+		}
 
 		mVulkanFramebuffer = std::make_shared<vulkan_framebuffer>(vkContext::instance().msaaSamples, colorImage, depthImage, imagePresenter);
 		createDescriptorSetLayout();
-		createVrsComputeDescriptorSetLayout();
+		if (vkContext::instance().shadingRateImageSupported) {
+			createVrsComputeDescriptorSetLayout();
+		}
 
 		vk::Viewport viewport = {};
 		viewport.x = 0.0f;
@@ -146,22 +155,28 @@ private:
 		// Render Drawer and Pipeline
 		mRenderVulkanPipeline = std::make_shared<vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, vkContext::instance().msaaSamples, descriptorSetLayout);
 		drawer = std::make_unique<vkDrawer>(drawCommandBufferManager, mRenderVulkanPipeline);
-		drawer->set_vrs_images(vrsImages);
 
-		// Compute Drawer and Pipeline
-		mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.comp.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(vrs_eye_comp_data));
-		mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
-		mVrsImageComputeDrawer->set_vrs_images(vrsImages);
+		if (vkContext::instance().shadingRateImageSupported) {
+			drawer->set_vrs_images(vrsImages);
+
+			// Compute Drawer and Pipeline
+			mComputeVulkanPipeline = std::make_shared<vulkan_pipeline>("Shader/vrs_img.comp.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(vrs_eye_comp_data));
+			mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
+			mVrsImageComputeDrawer->set_vrs_images(vrsImages);
+		}
 
 
 		createTexture();
 
 		createDescriptorPool();
-		createVrsComputeDescriptorPool();
-		createVrsDescriptorSets();
-		mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
-		mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
-		mVrsImageComputeDrawer->set_eye_inf(eyeInf);
+
+		if (vkContext::instance().shadingRateImageSupported) {
+			createVrsComputeDescriptorPool();
+			createVrsDescriptorSets();
+			mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
+			mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
+			mVrsImageComputeDrawer->set_eye_inf(eyeInf);
+		}
 
 		renderObject = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImages);
 		renderObject2 = new vkRenderObject(imagePresenter->get_swap_chain_images_count(), verticesScreenQuad, indicesScreenQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImages);
@@ -252,12 +267,16 @@ private:
 
 		drawer.reset();
 		mRenderVulkanPipeline.reset();
-		mVrsImageComputeDrawer.reset();
+		if (vkContext::instance().shadingRateImageSupported) {
+			mVrsImageComputeDrawer.reset();
+		}
 		mComputeVulkanPipeline.reset();
 		mVulkanFramebuffer.reset();
 
 		imagePresenter.reset();
-		mVrsRenderer.reset();
+		if (vkContext::instance().shadingRateImageSupported) {
+			mVrsRenderer.reset();
+		}
 		mRenderer.reset();
 	}
 
@@ -333,7 +352,9 @@ private:
 		// start drawing, record draw commands, etc.
 		vkContext::instance().vulkanFramebuffer = mVulkanFramebuffer;
 
-		mVrsRenderer->render(std::vector<vkRenderObject*>{}, mVrsImageComputeDrawer.get());
+		if (vkContext::instance().shadingRateImageSupported) {
+			mVrsRenderer->render(std::vector<vkRenderObject*>{}, mVrsImageComputeDrawer.get());
+		}
 
 		std::vector<vkRenderObject*> renderObjects;
 		//renderObjects.push_back(renderObject);
@@ -361,15 +382,19 @@ private:
 		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-		vk::DescriptorSetLayoutBinding samplerDebugLayoutBinding = {};
-		samplerDebugLayoutBinding.binding = 2;
-		samplerDebugLayoutBinding.descriptorCount = 1;
-		samplerDebugLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		samplerDebugLayoutBinding.pImmutableSamplers = nullptr;
-		samplerDebugLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		std::vector<vk::DescriptorSetLayoutBinding> bindings = { uboLayoutBinding, samplerLayoutBinding };
+		if (vkContext::instance().shadingRateImageSupported) {
+			vk::DescriptorSetLayoutBinding samplerDebugLayoutBinding = {};
+			samplerDebugLayoutBinding.binding = 2;
+			samplerDebugLayoutBinding.descriptorCount = 1;
+			samplerDebugLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+			samplerDebugLayoutBinding.pImmutableSamplers = nullptr;
+			samplerDebugLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+			bindings.push_back(samplerDebugLayoutBinding);
+		}
 
 		vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
-		std::array<vk::DescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding,samplerDebugLayoutBinding };
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		layoutInfo.pBindings = bindings.data();
 
@@ -380,13 +405,16 @@ private:
 	}
 
 	void createDescriptorPool() {
-		std::array<vk::DescriptorPoolSize, 3> poolSizes = {};
+		std::vector<vk::DescriptorPoolSize> poolSizes(2);
 		poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
 		poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
-		poolSizes[2].type = vk::DescriptorType::eCombinedImageSampler;
-		poolSizes[2].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
+		if (vkContext::instance().shadingRateImageSupported) {
+			poolSizes.resize(3);
+			poolSizes[2].type = vk::DescriptorType::eCombinedImageSampler;
+			poolSizes[2].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
+		}
 
 		vk::DescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());

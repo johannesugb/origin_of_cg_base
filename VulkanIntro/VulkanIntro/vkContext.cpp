@@ -12,7 +12,7 @@ const bool enableValidationLayers = true;
 // TODO maybe define as paramter for context
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME // variable rate shading extension
+	//, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME // variable rate shading extension
 };
 
 // TODO maybe define as paramter for context
@@ -128,7 +128,9 @@ std::vector<const char*> vkContext::getRequiredExtensions() {
 	if (enableValidationLayers) {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
-	extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+	if (shadingRateImageSupported) {
+		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+	}
 
 	return extensions;
 }

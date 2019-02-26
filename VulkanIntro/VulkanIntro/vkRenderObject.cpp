@@ -54,12 +54,21 @@ void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorS
 		imageInfo.imageView = texture->getTextureImageView();
 		imageInfo.sampler = texture->getTextureSampler();
 
-		vk::DescriptorImageInfo imageDebugInfo = {};
-		imageDebugInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		imageDebugInfo.imageView = debugTextures[i]->getTextureImageView();
-		imageDebugInfo.sampler = debugTextures[i]->getTextureSampler();
+		std::vector<vk::WriteDescriptorSet> descriptorWrites(2);
+		if (vkContext::instance().shadingRateImageSupported) {
+			vk::DescriptorImageInfo imageDebugInfo = {};
+			imageDebugInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			imageDebugInfo.imageView = debugTextures[i]->getTextureImageView();
+			imageDebugInfo.sampler = debugTextures[i]->getTextureSampler();
 
-		std::array<vk::WriteDescriptorSet, 3> descriptorWrites = {};
+			descriptorWrites.resize(3);
+			descriptorWrites[2].dstSet = mDescriptorSets[i];
+			descriptorWrites[2].dstBinding = 2;
+			descriptorWrites[2].dstArrayElement = 0;
+			descriptorWrites[2].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+			descriptorWrites[2].descriptorCount = 1;
+			descriptorWrites[2].pImageInfo = &imageDebugInfo;
+		}
 
 		descriptorWrites[0].dstSet = mDescriptorSets[i];
 		descriptorWrites[0].dstBinding = 0;
@@ -74,13 +83,6 @@ void vkRenderObject::create_descriptor_sets(vk::DescriptorSetLayout &descriptorS
 		descriptorWrites[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
 		descriptorWrites[1].descriptorCount = 1;
 		descriptorWrites[1].pImageInfo = &imageInfo;
-
-		descriptorWrites[2].dstSet = mDescriptorSets[i];
-		descriptorWrites[2].dstBinding = 2;
-		descriptorWrites[2].dstArrayElement = 0;
-		descriptorWrites[2].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		descriptorWrites[2].descriptorCount = 1;
-		descriptorWrites[2].pImageInfo = &imageDebugInfo;
 
 		vkContext::instance().device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}

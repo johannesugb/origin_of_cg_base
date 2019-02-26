@@ -30,9 +30,11 @@ void vkDrawer::record_secondary_command_buffer(std::vector<vkRenderObject*> rend
 
 	vk::CommandBuffer commandBuffer = mCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
 	// bind pipeline for this draw command
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline());		
-	commandBuffer.bindShadingRateImageNV(mVrsImages[vkContext::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vkContext::instance().dynamicDispatchInstanceDevice);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline());	
 
+	if (vkContext::instance().shadingRateImageSupported) {
+		commandBuffer.bindShadingRateImageNV(mVrsImages[vkContext::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vkContext::instance().dynamicDispatchInstanceDevice);
+	}
 
 	for (vkRenderObject* renderObject : renderObjects) {
 
