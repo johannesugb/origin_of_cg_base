@@ -31,7 +31,7 @@ namespace CgbPostBuildHelper
 		private TaskbarIcon _taskbarIcon;
 		private DateTime _messageListAliveUntil;
 		private static readonly TimeSpan MessageListCloseDelay = TimeSpan.FromSeconds(2.0);
-		private readonly MessagesListViewModel _messagesListVM = new MessagesListViewModel();
+		private readonly MessagesListVM _messagesListVM = new MessagesListVM();
 		private readonly MessagesList _messagesListView;
 
 		/// <summary>
@@ -44,7 +44,7 @@ namespace CgbPostBuildHelper
 		/// In case, a process' full path name matches one of those keys, the file watcher for all its 
 		/// child files will be launched.
 		/// </summary>
-		private readonly List<InstanceData> _instances = new List<InstanceData>();
+		private readonly List<CgbAppInstance> _instances = new List<CgbAppInstance>();
 
 		public WpfApplication()
 		{
@@ -128,10 +128,9 @@ namespace CgbPostBuildHelper
 			// Create new or update config/invocation params:
 			if (null == inst)
 			{
-				inst = new InstanceData
+				inst = new CgbAppInstance
 				{
-					Config = p,
-					Files = new List<AssetFile>()
+					Config = p
 				};
 				_instances.Add(inst);
 			}
@@ -139,7 +138,7 @@ namespace CgbPostBuildHelper
 			{
 				inst.Config = p;
 				// Proceed with an empty list because files could have changed:
-				inst.Files = new List<AssetFile>();
+				inst.Files.Clear();
 			}
 
 			// Parse the .filters file for asset files and shader files
@@ -147,28 +146,126 @@ namespace CgbPostBuildHelper
 				var filtersFile = new FileInfo(p.FiltersPath);
 				var filtersContent = File.ReadAllText(filtersFile.FullName);
 				var filters = RegexFilterEntry.Matches(filtersContent);
+
+				var hasErrors = false;
+				var hasWarnings = false;
+				var nFilesDeployed = 0;
+				var mustShowMessages = false;
+
+				// -> Store the whole event (but a little bit later)
+				var cgbEvent = new CgbEventVM(CgbEventType.Build);
+				
+				// -> Parse the .filters file and deploy each and every file
 				foreach (Match match in filters)
 				{
 					var filePath = Path.Combine(filtersFile.DirectoryName, match.Groups[2].Value);
 					var filterPath = match.Groups[3].Value;
-					inst.DeployFile(
-						prevAssetsList, 
-						filePath, filterPath, 
-						out var deployedFiles, 
-						out var errorSuccessMessages);
 
-					inst.Files.AddRange(deployedFiles);
-					AddToAndShowMessagesList(errorSuccessMessages);
+					try
+					{
+						inst.DeployFile(
+							prevAssetsList, 
+							filePath, filterPath, 
+							out var deployedFiles);
+
+						foreach (var deployedFile in deployedFiles)
+						{
+							// For the current files list:
+							inst.Files.Add(deployedFile);
+
+							hasErrors = hasErrors || deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
+							hasWarnings = hasWarnings || deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
+
+							// For the event:
+							cgbEvent.Files.Add(deployedFile);
+						}
+						nFilesDeployed += deployedFiles.Count;
+					}
+					catch (Exception ex)
+					{
+						AddToMessagesList(MessageVM.CreateError(inst, ex.Message, null)); // TODO: perform some action
+						mustShowMessages = true;
+						continue;
+					}
+				}
+
+				// Now, store the event
+				inst.AllEvents.Add(cgbEvent);
+
+				// Analyze the outcome, create a message and possibly show it, if there could be a problem (files with warnings or errors)
+				if (hasErrors || hasWarnings)
+				{
+					if (hasWarnings && hasErrors)
+						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} with ERRORS and WARNINGS.", new DelegateCommand(_ =>
+						{
+							Window window = new Window
+							{
+								Title = "Build-Event Details including ERRORS and WARNINGS",
+								Content = new EventFilesView()
+								{
+									DataContext = cgbEvent
+								}
+							};
+							window.ShowDialog();
+						})));
+					else if (hasWarnings)
+						AddToMessagesList(MessageVM.CreateWarning(inst, $"Deployed {nFilesDeployed} with WARNINGS.", new DelegateCommand(_ =>
+						{
+							Window window = new Window
+							{
+								Title = "Build-Event Details including WARNINGS",
+								Content = new EventFilesView()
+								{
+									DataContext = cgbEvent
+								}
+							};
+							window.ShowDialog();
+						})));
+					else
+						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} with ERRORS.", new DelegateCommand(_ =>
+						{
+							Window window = new Window
+							{
+								Title = "Build-Event Details including ERRORS",
+								Content = new EventFilesView()
+								{
+									DataContext = cgbEvent
+								}
+							};
+							window.ShowDialog();
+						})));
+					mustShowMessages = true;
+				}
+				else
+				{
+					AddToMessagesList(MessageVM.CreateInfo(inst, $"Deployed {nFilesDeployed} with ERRORS.", new DelegateCommand(_ =>
+					{
+						Window window = new Window
+						{
+							Title = "Build-Event Details",
+							Content = new EventFilesView()
+							{
+								DataContext = cgbEvent
+							}
+						};
+						window.ShowDialog();
+					})));
+				}
+
+				if (mustShowMessages)
+				{
+					ShowMessagesList();
 				}
 			}
 		}
 
-		public void AddToAndShowMessagesList(MessageViewModel mvm)
+		public void AddToMessagesList(MessageVM mvm)
 		{
-			AddToAndShowMessagesList(new MessageViewModel[] { mvm });
+			_messagesListVM.Items.Add(mvm);
+			ShowMessagesList();
 		}
 
-		public void AddToAndShowMessagesList(IEnumerable<MessageViewModel> mvms)
+		public void AddToMessagesList(IEnumerable<MessageVM> mvms)
 		{
 			foreach (var mvm in mvms)
 			{

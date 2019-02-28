@@ -82,27 +82,52 @@ namespace CreateNewProject.ViewModel
 					var origProjFile = new FileInfo(OriginalVsProjFile);
 					var origDir = origProjFile.Directory;
 					var origUserFile = new FileInfo(OriginalVsProjFile + ".user");
-					
-					// 2. Copy AND rename 2 files to the target folder: The .vcxproj file and the .vcxproj.user file
+					var origFiltersFile = new FileInfo(OriginalVsProjFile + ".filters");
+
+					// 2. Copy to AND rename the 3 files in the target folder: .vcxproj, .vcxproj.user, .vcxproj.filters
 					var targetDir = new DirectoryInfo(TargetCopyProjFolder);
 					if (targetDir.GetFiles().Count() > 0 || targetDir.GetDirectories().Count() > 0)
 					{
 						Messages.Add(MessageViewModel.CreateWarning("Target directory '" + targetDir.FullName + "' is not empty"));
 					}
+
 					FileInfo targetProjFile;
-					FileInfo targetUserFile;
+					
 					{
 						var targetProjFilePath = Path.Combine(targetDir.FullName, newProjName + ".vcxproj");
 						var targetUserFilePath = Path.Combine(targetDir.FullName, newProjName + ".vcxproj.user");
+						var targetFiltersFilePath = Path.Combine(targetDir.FullName, newProjName + ".vcxproj.filters");
+
+						// The .vcxproj must always exist
 						File.Copy(origProjFile.FullName, targetProjFilePath);
-						File.Copy(origUserFile.FullName, targetUserFilePath);
 						targetProjFile = new FileInfo(targetProjFilePath);
-						targetUserFile = new FileInfo(targetUserFilePath);
-						Messages.Add(MessageViewModel.CreateSuccess($"Created '{newProjName}.vcxproj' file in '{targetDir.FullName}'."));
-						Messages.Add(MessageViewModel.CreateSuccess($"Created '{newProjName}.vcxproj.user' file in '{targetDir.FullName}'."));
+						Messages.Add(MessageViewModel.CreateSuccess($"Created '{targetProjFile.Name}' file in '{targetDir.FullName}'."));
+
+						// ...but not so the other two
+						if (origUserFile.Exists)
+						{
+							File.Copy(origUserFile.FullName, targetUserFilePath);
+							var targetUserFile = new FileInfo(targetUserFilePath);
+							Messages.Add(MessageViewModel.CreateSuccess($"Created '{targetUserFile.Name}' file in '{targetDir.FullName}'."));
+						}
+						else
+						{
+							Messages.Add(MessageViewModel.CreateWarning($"There is no '{origUserFile.Name}' file in '{origDir.FullName}'."));
+						}
+
+						if (origFiltersFile.Exists)
+						{
+							File.Copy(origFiltersFile.FullName, targetFiltersFilePath);
+							var targetFiltersFile = new FileInfo(targetFiltersFilePath);
+							Messages.Add(MessageViewModel.CreateSuccess($"Created '{targetFiltersFile.Name}' file in '{targetDir.FullName}'."));
+						}
+						else
+						{
+							Messages.Add(MessageViewModel.CreateWarning($"There is no '{origFiltersFile.Name}' file in '{origDir.FullName}'."));
+						}
 					}
 
-					// 3. Parse target .vcproj-file and modify it...
+					// 3. Parse target .vcxproj-file and modify it...
 					var targetProjFileContents = File.ReadAllText(targetProjFile.FullName);
 					var itemGroups = RegexFindAllItemGroups.Matches(targetProjFileContents);
 					var sb = new StringBuilder();

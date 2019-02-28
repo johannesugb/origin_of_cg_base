@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace CgbPostBuildHelper.ViewModel
 {
-	class MessagesListViewModel : BindableBase
+	class MessagesListVM : BindableBase
 	{   
-		public ObservableCollection<MessageViewModel> Items { get; } = new ObservableCollection<MessageViewModel>();
+		public ObservableCollection<MessageVM> Items { get; } = new ObservableCollection<MessageVM>();
 	}
 }

@@ -49,7 +49,8 @@ namespace CgbPostBuildHelper
 					}
 					catch (Exception ex)
 					{
-						_wpfApp.AddToAndShowMessagesList(MessageViewModel.CreateError(ex.Message));
+						_wpfApp.AddToMessagesList(MessageVM.CreateError(null, ex.Message, null)); // TODO: Window with more info?
+						_wpfApp.ShowMessagesList();
 					}
 				});
 			}
@@ -79,7 +80,8 @@ namespace CgbPostBuildHelper
 					}
 					catch (Exception ex)
 					{
-						_wpfApp.AddToAndShowMessagesList(MessageViewModel.CreateError(ex.Message));
+						_wpfApp.AddToMessagesList(MessageVM.CreateError(null, ex.Message, null)); // TODO: Window with more info?
+						_wpfApp.ShowMessagesList();
 					}
 				});
 			}

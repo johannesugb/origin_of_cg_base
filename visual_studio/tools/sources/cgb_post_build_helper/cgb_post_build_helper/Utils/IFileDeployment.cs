@@ -10,30 +10,62 @@ using Diag = System.Diagnostics;
 using System.Security.Cryptography;
 using CgbPostBuildHelper.ViewModel;
 using Assimp;
+using System.Runtime.InteropServices;
 
 namespace CgbPostBuildHelper.Utils
 {
 	interface IFileDeployment
 	{
-		void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath);
+		void SetInputParameters(CgbAppInstance inst, string filterPath, FileInfo inputFile, string outputFilePath);
 		void Deploy();
-		List<MessageViewModel> StatusMessages { get; }
-		List<AssetFile> FilesDeployed { get; }
+		List<FileDeploymentData> FilesDeployed { get; }
 	}
 
 	abstract class DeploymentBase : IFileDeployment
 	{
-		public void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath)
+		public enum SymbolicLink
 		{
-			_config = config;
+			File = 0,
+			Directory = 1
+		}
+
+		[DllImport("kernel32.dll")]
+		public static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
+
+		public List<FileDeploymentData> FilesDeployed => _filesDeployed;
+
+		/// <summary>
+		/// Deploys the file by copying it from source to target
+		/// </summary>
+		protected static void CopyFile(FileDeploymentData deploymentData)
+		{
+			File.Copy(deploymentData.InputFilePath, deploymentData.OutputFilePath, true);
+			deploymentData.DeploymentType = DeploymentType.Copy;
+		}
+
+		/// <summary>
+		/// Deploys the file by creating a symlink at target, which points to source
+		/// </summary>
+		protected static void SymlinkFile(FileDeploymentData deploymentData)
+		{
+			var outputFile = new FileInfo(deploymentData.OutputFilePath);
+			if (outputFile.Exists)
+			{
+				File.Delete(outputFile.FullName);
+			}
+			CreateSymbolicLink(deploymentData.OutputFilePath, deploymentData.InputFilePath, DeploymentBase.SymbolicLink.File);
+			deploymentData.DeploymentType = DeploymentType.Symlink;
+		}
+
+		public void SetInputParameters(CgbAppInstance inst, string filterPath, FileInfo inputFile, string outputFilePath)
+		{
+			_instance = inst;
 			_filterPath = filterPath;
 			_inputFile = inputFile;
 			_outputFilePath = outputFilePath;
 		}
 
 		public abstract void Deploy();
-		public abstract List<MessageViewModel> StatusMessages { get; }
-		public abstract List<AssetFile> FilesDeployed { get; }
 
 		public byte[] InputFileHash
 		{
@@ -47,9 +79,9 @@ namespace CgbPostBuildHelper.Utils
 			}
 		}
 
-		protected AssetFile PrepareNewAssetFile(AssetFile parent)
+		protected FileDeploymentData PrepareNewAssetFile(FileDeploymentData parent)
 		{
-			return new AssetFile
+			return new FileDeploymentData
 			{
 				FilterPath = _filterPath,
 				InputFilePath = _inputFile.FullName,
@@ -58,33 +90,38 @@ namespace CgbPostBuildHelper.Utils
 			};
 		}
 
-		protected InvocationParams _config;
+		protected CgbAppInstance _instance;
 		protected string _filterPath;
 		protected FileInfo _inputFile;
 		protected string _outputFilePath;
 		protected byte[] _hash;
+		protected readonly List<FileDeploymentData> _filesDeployed = new List<FileDeploymentData>();
 	}
 
 	class CopyFileDeployment : DeploymentBase
 	{
-		public override List<MessageViewModel> StatusMessages => _statusMessages;
-
-		public override List<AssetFile> FilesDeployed => _filesDeployed;
-
 		public override void Deploy()
 		{
 			var outPath = new FileInfo(_outputFilePath);
 			Directory.CreateDirectory(outPath.DirectoryName);
 
 			var assetFileModel = PrepareNewAssetFile(null);
-			assetFileModel.AssetType = AssetType.Generic;
+			assetFileModel.FileType = FileType.Generic;
 			assetFileModel.OutputFilePath = outPath.FullName;
-			File.Copy(assetFileModel.InputFilePath, assetFileModel.OutputFilePath, true);
+
+			// Now, are we going to copy or are we going to symlink?
+			if (_instance.Config.Configuration == BuildConfiguration.Publish)
+			{
+				CopyFile(assetFileModel);
+			}
+			else
+			{
+				SymlinkFile(assetFileModel);
+			}
+			
 			FilesDeployed.Add(assetFileModel);
 		}
 
-		protected readonly List<MessageViewModel> _statusMessages = new List<MessageViewModel>();
-		protected readonly List<AssetFile> _filesDeployed = new List<AssetFile>();
 	}
 
 	class VkShaderDeployment : DeploymentBase
@@ -93,16 +130,14 @@ namespace CgbPostBuildHelper.Utils
 		private static readonly string GlslangValidatorPath = Path.Combine(VulkanSdkPath, @"Bin\glslangValidator.exe");
 		private static readonly string GlslangValidatorParams = " -V -o \"{1}\" \"{0}\"";
 
-		public override List<MessageViewModel> StatusMessages => _statusMessages;
-
-		public override List<AssetFile> FilesDeployed => _filesDeployed;
-
 		public override void Deploy()
 		{
 			var outFile = new FileInfo(_outputFilePath + ".spv");
 			Directory.CreateDirectory(outFile.DirectoryName);
+
 			var cmdLineParams = string.Format(GlslangValidatorParams, _inputFile.FullName, outFile.FullName);
-			var sb = new StringBuilder();
+			var sbOut = new StringBuilder();
+			var sbErr = new StringBuilder();
 
 			// Call the other process:
 			using (Diag.Process proc = new Diag.Process()
@@ -110,27 +145,35 @@ namespace CgbPostBuildHelper.Utils
 				StartInfo = new Diag.ProcessStartInfo(GlslangValidatorPath, cmdLineParams)
 				{
 					UseShellExecute = false,
-					RedirectStandardOutput = true
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					CreateNoWindow = true,
+					WindowStyle = Diag.ProcessWindowStyle.Hidden,
 				}
 			})
 			{
 				proc.Start();
 				while (!proc.StandardOutput.EndOfStream)
 				{
-					sb.Append(proc.StandardOutput.ReadLine());
+					sbOut.Append(proc.StandardOutput.ReadLine());
+				}
+				while (!proc.StandardError.EndOfStream)
+				{
+					sbErr.Append(proc.StandardError.ReadLine());
 				}
 			}
 
 			var assetFile = PrepareNewAssetFile(null);
-			assetFile.AssetType = AssetType.GlslShaderForVk;
+			assetFile.FileType = FileType.GlslShaderForVk;
 			assetFile.OutputFilePath = outFile.FullName;
-			FilesDeployed.Add(assetFile);
+			assetFile.DeploymentType = DeploymentType.MorphedCopy;
 
-			StatusMessages.Add(MessageViewModel.CreateSuccess(sb.ToString()));
+			assetFile.Messages.Add(MessageVM.CreateSuccess(_instance, sbOut.ToString(), null)); // TODO: open a window or so?
+			assetFile.Messages.Add(MessageVM.CreateError(_instance, sbErr.ToString(), null)); // TODO: open a window or so?
+
+			FilesDeployed.Add(assetFile);
 		}
 
-		protected readonly List<MessageViewModel> _statusMessages = new List<MessageViewModel>();
-		protected readonly List<AssetFile> _filesDeployed = new List<AssetFile>();
 	}
 
 	class GlShaderDeployment : DeploymentBase
@@ -144,10 +187,6 @@ namespace CgbPostBuildHelper.Utils
 			RegexOptions.Compiled);
 		private static readonly Regex RegexGlslLayoutSetBinding2 = new Regex(@"(layout\s*\(.*)(binding\s*\=\s*\d\s*+)(\,\s*set\s*\=\s*\d+)(.*\))",
 			RegexOptions.Compiled);
-
-		public override List<MessageViewModel> StatusMessages => _statusMessages;
-
-		public override List<AssetFile> FilesDeployed => _filesDeployed;
 
 		public static string MorphVkGlslIntoGlGlsl(string vkGlsl)
 		{
@@ -168,24 +207,20 @@ namespace CgbPostBuildHelper.Utils
 			File.WriteAllText(_outputFile.FullName, MorphVkGlslIntoGlGlsl(glslCode));
 
 			var assetFile = PrepareNewAssetFile(null);
-			assetFile.AssetType = AssetType.GlslShaderForGl;
+			assetFile.FileType = FileType.GlslShaderForGl;
 			assetFile.OutputFilePath = _outputFile.FullName;
-			FilesDeployed.Add(assetFile);
+			assetFile.DeploymentType = DeploymentType.MorphedCopy;
 
-			StatusMessages.Add(MessageViewModel.CreateSuccess($"Copied (Vk->Gl morphed) GLSL file to '{outFile.FullName}'"));
+			assetFile.Messages.Add(MessageVM.CreateSuccess(_instance, $"Copied (Vk->Gl morphed) GLSL file to '{outFile.FullName}'", null)); // TODO: open a window or so?
+
+			FilesDeployed.Add(assetFile);
 		}
 
 		protected FileInfo _outputFile = null;
-		protected readonly List<MessageViewModel> _statusMessages = new List<MessageViewModel>();
-		protected readonly List<AssetFile> _filesDeployed = new List<AssetFile>();
 	}
 
 	class ModelDeployment : DeploymentBase
 	{
-		public override List<MessageViewModel> StatusMessages => _statusMessages;
-
-		public override List<AssetFile> FilesDeployed => _filesDeployed;
-
 		public void SetTextures(IEnumerable<string> textures)
 		{
 			_texturePaths.AddRange(textures);
@@ -197,9 +232,9 @@ namespace CgbPostBuildHelper.Utils
 			Directory.CreateDirectory(modelOutPath.DirectoryName);
 			
 			var assetFileModel = PrepareNewAssetFile(null);
-			assetFileModel.AssetType = AssetType.Generic3dModel;
+			assetFileModel.FileType = FileType.Generic3dModel;
 			assetFileModel.OutputFilePath = modelOutPath.FullName;
-			File.Copy(assetFileModel.InputFilePath, assetFileModel.OutputFilePath, true);
+			CopyFile(assetFileModel);
 			FilesDeployed.Add(assetFileModel);
 
 			foreach (var tp in _texturePaths)
@@ -211,18 +246,16 @@ namespace CgbPostBuildHelper.Utils
 				var assetFileTex = PrepareNewAssetFile(assetFileModel);
 				// Alter input path:
 				assetFileTex.InputFilePath = Path.Combine(_inputFile.DirectoryName, tp);
-				assetFileTex.AssetType = AssetType.Generic;
+				assetFileTex.FileType = FileType.Generic;
 				assetFileTex.OutputFilePath = texOutPath.FullName;
-				File.Copy(assetFileTex.InputFilePath, assetFileTex.OutputFilePath, true);
+				CopyFile(assetFileModel);
 				FilesDeployed.Add(assetFileTex);
 			}
 
-			StatusMessages.Add(MessageViewModel.CreateSuccess($"Copied model '{assetFileModel.OutputFilePath}', and {_texturePaths.Count} dependent material textures."));
+			assetFileModel.Messages.Add(MessageVM.CreateSuccess(_instance, $"Copied model '{assetFileModel.OutputFilePath}', and {_texturePaths.Count} dependent material textures.", null)); // TODO: open a window or so?
 		}
 
 		protected readonly List<string> _texturePaths = new List<string>();
-		protected readonly List<MessageViewModel> _statusMessages = new List<MessageViewModel>();
-		protected readonly List<AssetFile> _filesDeployed = new List<AssetFile>();
 	}
 
 	class ObjModelDeployment : ModelDeployment
@@ -252,17 +285,18 @@ namespace CgbPostBuildHelper.Utils
 				var matOutPath = new FileInfo(actualMatPath);
 				Directory.CreateDirectory(matOutPath.DirectoryName);
 
-				Diag.Debug.Assert(FilesDeployed[0].AssetType == AssetType.Generic3dModel);
+				Diag.Debug.Assert(FilesDeployed[0].FileType == FileType.Generic3dModel);
 				Diag.Debug.Assert(FilesDeployed[0].Parent == null);
 				var assetFileMat = PrepareNewAssetFile(FilesDeployed[0]);
 				// Alter input path:
 				assetFileMat.InputFilePath = Path.Combine(_inputFile.DirectoryName, matFile);
-				assetFileMat.AssetType = AssetType.ObjMaterials;
+				assetFileMat.FileType = FileType.ObjMaterials;
 				assetFileMat.OutputFilePath = matOutPath.FullName;
-				File.Copy(assetFileMat.InputFilePath, assetFileMat.OutputFilePath, true);
-				FilesDeployed.Add(assetFileMat);
+				CopyFile(assetFileMat);
 
-				StatusMessages.Add(MessageViewModel.CreateSuccess($"Added materials file '{assetFileMat.OutputFilePath}', of .obj model '{FilesDeployed[0].OutputFilePath}'"));
+				assetFileMat.Messages.Add(MessageVM.CreateSuccess(_instance, $"Added materials file '{assetFileMat.OutputFilePath}', of .obj model '{FilesDeployed[0].OutputFilePath}'", null)); // TODO: open a window or so?
+
+				FilesDeployed.Add(assetFileMat);
 			}
 		}
 	}

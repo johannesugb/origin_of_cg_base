@@ -67,9 +67,9 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Model\AssetFile.cs" />
+    <Compile Include="Model\FileDeploymentData.cs" />
     <Compile Include="Model\ContextMenuActions.cs" />
-    <Compile Include="Model\InstanceData.cs" />
+    <Compile Include="Model\CgbAppInstance.cs" />
     <Compile Include="Model\InvocationParams.cs" />
     <Compile Include="SingleApplicationInstance.cs" />
     <Compile Include="Utils\BindableBase.cs" />
@@ -77,9 +77,14 @@
     <Compile Include="Utils\DelegateCommand.cs" />
     <Compile Include="Utils\IFileDeployment.cs" />
     <Compile Include="Utils\IRaiseCanExecuteChanged.cs" />
+    <Compile Include="ViewModel\CgbEventVM.cs" />
     <Compile Include="ViewModel\IMessageListLifetimeHandler.cs" />
-    <Compile Include="ViewModel\MessagesListViewModel.cs" />
-    <Compile Include="ViewModel\MessageViewModel.cs" />
+    <Compile Include="ViewModel\MessagesListVM.cs" />
+    <Compile Include="ViewModel\MessageVM.cs" />
+    <Compile Include="View\Constants.cs" />
+    <Compile Include="View\EventFilesView.xaml.cs">
+      <DependentUpon>EventFilesView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\MessageControl.xaml.cs">
       <DependentUpon>MessageControl.xaml</DependentUpon>
     </Compile>
@@ -99,6 +104,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="View\EventFilesView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="View\MessageControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using CgbPostBuildHelper.ViewModel;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +12,7 @@ namespace CgbPostBuildHelper.Model
 	/// In order to identify some file types which need special treatment.
 	/// If a file does not need special treatment, it's just set to 'Generic'.
 	/// </summary>
-	enum AssetType
+	enum FileType
 	{
 		/// <summary>
 		/// Just a generic asset of any type, except for the following...
@@ -46,9 +48,34 @@ namespace CgbPostBuildHelper.Model
 	}
 
 	/// <summary>
+	/// Indicates how a file has been deployed from a filesystem-point-of-view
+	/// </summary>
+	enum DeploymentType
+	{
+		/// <summary>
+		/// The file has been copied to the destination, i.e. an exact copy of
+		/// the file's source exists in the destination 
+		/// </summary>
+		Copy,
+
+		/// <summary>
+		/// A new file has been established in the destination, but it does not
+		/// (neccessarily) have the same contents as the source file because it
+		/// has been morphed/transformed/altered/compiled/changed w.r.t. the original. 
+		/// </summary>
+		MorphedCopy,
+
+		/// <summary>
+		/// A symlink has been established in the destination, which points to
+		/// the original source file.
+		/// </summary>
+		Symlink,
+	}
+
+	/// <summary>
 	/// Data about exactly one specific asset file.
 	/// </summary>
-	class AssetFile
+	class FileDeploymentData
 	{
 		/// <summary>
 		/// The path to the original file
@@ -72,9 +99,14 @@ namespace CgbPostBuildHelper.Model
 		public string FilterPath { get; set; }
 
 		/// <summary>
-		/// Which kind of asset is it
+		/// Which kind of file are we dealing with?
 		/// </summary>
-		public AssetType AssetType { get; set; }
+		public FileType FileType { get; set; }
+
+		/// <summary>
+		/// HOW has the file been deployed?
+		/// </summary>
+		public DeploymentType DeploymentType { get; set; }
 
 		/// <summary>
 		/// (Optional) Reference to a parent AssetFile entry.
@@ -84,7 +116,13 @@ namespace CgbPostBuildHelper.Model
 		/// Whenever the parent asset changes, also its child assets
 		/// have to be updated. This is done via those references.
 		/// </summary>
-		public AssetFile Parent { get; set; }
+		public FileDeploymentData Parent { get; set; }
+
+		/// <summary>
+		/// Messages which occured during file deployment or during file update
+		/// </summary>
+		public ObservableCollection<MessageVM> Messages { get; } = new ObservableCollection<MessageVM>();
+
 	}
 
 }
