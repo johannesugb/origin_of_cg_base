@@ -33,7 +33,7 @@ namespace CgbPostBuildHelper.Model
 		/// <summary>
 		/// A list of all build/update events that ever happened for this instance
 		/// </summary>
-		public ObservableCollection<CgbEventVM> AllEvents { get; } = new ObservableCollection<CgbEventVM>();
+		public ObservableCollection<CgbEventVM> AllEventsEver { get; } = new ObservableCollection<CgbEventVM>();
 
 		/// <summary>
 		/// List of all files which are CURRENTLY being watched/monitored by a filesystem-watcher for changes.
@@ -42,27 +42,5 @@ namespace CgbPostBuildHelper.Model
 		/// </summary>
 		public ObservableCollection<string> CurrentlyWatchedFiles { get; } = new ObservableCollection<string>();
 		
-		/// <summary>
-		/// Assigns this instance all the data of the other instance.
-		/// The current values are completely destroyed by this. The instance might even change
-		/// its "key" (the Path-property) since also that is overwritten by the data of the other.
-		/// </summary>
-		/// <param name="other">The instance to copy from</param>
-		public void AssignData(CgbAppInstance other)
-		{
-			Config = other.Config;
-
-			Files.Clear();
-			foreach (var f in other.Files)
-			{
-				Files.Add(f);
-			}
-
-			AllEvents.Clear();
-			foreach (var e in other.AllEvents)
-			{
-				AllEvents.Add(e);
-			}
-		}
 	}
 }

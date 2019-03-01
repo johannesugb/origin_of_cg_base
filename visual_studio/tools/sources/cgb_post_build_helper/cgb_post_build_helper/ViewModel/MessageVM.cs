@@ -26,10 +26,11 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			return new MessageVM(appInstance)
 			{
-				_messageColor = Brushes.DarkSeaGreen,
-				_accentColor = Brushes.LightSeaGreen,
+				_messageColor = View.Constants.SuccessBrushLight,
+				_accentColor = View.Constants.SuccessBrushDark,
 				_messageType = MessageType.Success,
-				_messageText = text
+				_messageText = text,
+				_additionalInfoCmd = additionalInfoCommand
 			};
 		}
 
@@ -37,10 +38,11 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			return new MessageVM(appInstance)
 			{
-				_messageColor = Brushes.LightSlateGray,
-				_accentColor = Brushes.DimGray,
+				_messageColor = View.Constants.InfoBrushLight,
+				_accentColor = View.Constants.InfoBrushDark,
 				_messageType = MessageType.Information,
-				_messageText = text
+				_messageText = text,
+				_additionalInfoCmd = additionalInfoCommand
 			};
 		}
 
@@ -48,10 +50,11 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			return new MessageVM(appInstance)
 			{
-				_messageColor = Brushes.Orange,
-				_accentColor = Brushes.DarkOrange,
+				_messageColor = View.Constants.WarningBrushLight,
+				_accentColor = View.Constants.WarningBrushDark,
 				_messageType = MessageType.Warning,
-				_messageText = text
+				_messageText = text,
+				_additionalInfoCmd = additionalInfoCommand
 			};
 		}
 
@@ -59,10 +62,11 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			return new MessageVM(appInstance)
 			{
-				_messageColor = Brushes.LightCoral,
-				_accentColor = Brushes.IndianRed,
+				_messageColor = View.Constants.ErrorBrushLight,
+				_accentColor = View.Constants.ErrorBrushDark,
 				_messageType = MessageType.Error,
-				_messageText = text
+				_messageText = text,
+				_additionalInfoCmd = additionalInfoCommand
 			};
 		}
 		#endregion

@@ -23,38 +23,59 @@ namespace CgbPostBuildHelper.Utils
 
 	abstract class DeploymentBase : IFileDeployment
 	{
-		public enum SymbolicLink
-		{
-			File = 0,
-			Directory = 1
-		}
+		[DllImport("kernel32.dll", EntryPoint = "CreateSymbolicLinkW", CharSet = CharSet.Unicode, SetLastError = true)]
+		private static extern bool CreateSymbolicLink([In] string lpSymlinkFileName, [In] string lpTargetFileName, [In] int dwFlags);
 
-		[DllImport("kernel32.dll")]
-		public static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
+		[DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
+		private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
+
+		private const int CREATION_DISPOSITION_OPEN_EXISTING = 3;
+		private const int FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+		private const int SYMBOLIC_LINK_FLAG_FILE = 0x0;
+		private const int SYMBOLIC_LINK_FLAG_DIRECTORY = 0x1;
+		private const int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
+
 
 		public List<FileDeploymentData> FilesDeployed => _filesDeployed;
 
 		/// <summary>
-		/// Deploys the file by copying it from source to target
+		/// Deploys the file by copying it from source to target, OR
+		/// deploys the file by creating a symlink at target, which points to source
 		/// </summary>
-		protected static void CopyFile(FileDeploymentData deploymentData)
+		protected void CopyFile(FileDeploymentData deploymentData)
 		{
-			File.Copy(deploymentData.InputFilePath, deploymentData.OutputFilePath, true);
-			deploymentData.DeploymentType = DeploymentType.Copy;
-		}
-
-		/// <summary>
-		/// Deploys the file by creating a symlink at target, which points to source
-		/// </summary>
-		protected static void SymlinkFile(FileDeploymentData deploymentData)
-		{
-			var outputFile = new FileInfo(deploymentData.OutputFilePath);
-			if (outputFile.Exists)
+			void doCopy()
 			{
-				File.Delete(outputFile.FullName);
+				File.Copy(deploymentData.InputFilePath, deploymentData.OutputFilePath, true);
+				deploymentData.DeploymentType = DeploymentType.Copy;
 			}
-			CreateSymbolicLink(deploymentData.OutputFilePath, deploymentData.InputFilePath, DeploymentBase.SymbolicLink.File);
-			deploymentData.DeploymentType = DeploymentType.Symlink;
+
+			if (_instance.Config.Configuration == BuildConfiguration.Publish)
+			{
+				doCopy();
+			}
+			else
+			{
+				var outputFile = new FileInfo(deploymentData.OutputFilePath);
+				if (outputFile.Exists)
+				{
+					File.Delete(outputFile.FullName);
+				}
+
+				CreateSymbolicLink(@"\\?\" + deploymentData.OutputFilePath,
+								   @"\\?\" + deploymentData.InputFilePath, SYMBOLIC_LINK_FLAG_FILE | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE);
+
+				// Sadly, it is not guaranteed that this will work
+				if (File.Exists(outputFile.FullName)) // Attention: do not use outputfile.Exists since that is cached!
+				{
+					// symlink worked
+					deploymentData.DeploymentType = DeploymentType.Symlink;
+				}
+				else
+				{
+					doCopy();
+				}
+			}
 		}
 
 		public void SetInputParameters(CgbAppInstance inst, string filterPath, FileInfo inputFile, string outputFilePath)
@@ -110,14 +131,7 @@ namespace CgbPostBuildHelper.Utils
 			assetFileModel.OutputFilePath = outPath.FullName;
 
 			// Now, are we going to copy or are we going to symlink?
-			if (_instance.Config.Configuration == BuildConfiguration.Publish)
-			{
-				CopyFile(assetFileModel);
-			}
-			else
-			{
-				SymlinkFile(assetFileModel);
-			}
+			CopyFile(assetFileModel);
 			
 			FilesDeployed.Add(assetFileModel);
 		}
@@ -136,8 +150,32 @@ namespace CgbPostBuildHelper.Utils
 			Directory.CreateDirectory(outFile.DirectoryName);
 
 			var cmdLineParams = string.Format(GlslangValidatorParams, _inputFile.FullName, outFile.FullName);
-			var sbOut = new StringBuilder();
-			var sbErr = new StringBuilder();
+			var sb = new StringBuilder();
+
+			int numErrors = 0;
+			int numWarnings = 0;
+
+			var assetFile = PrepareNewAssetFile(null);
+			assetFile.FileType = FileType.GlslShaderForVk;
+			assetFile.OutputFilePath = outFile.FullName;
+			assetFile.DeploymentType = DeploymentType.MorphedCopy;
+
+			void processLine(string line)
+			{
+				sb.AppendLine(line);
+				// check for error:
+				if (line.TrimStart().StartsWith("error", StringComparison.InvariantCultureIgnoreCase))
+				{
+					assetFile.Messages.Add(MessageVM.CreateError(_instance, line, null)); // TODO: open a window or so?
+					numErrors += 1;
+				}
+				// check for warning:
+				else if (line.TrimStart().StartsWith("warn", StringComparison.InvariantCultureIgnoreCase))
+				{
+					assetFile.Messages.Add(MessageVM.CreateWarning(_instance, line, null)); // TODO: open a window or so?
+					numWarnings += 1;
+				}
+			}
 
 			// Call the other process:
 			using (Diag.Process proc = new Diag.Process()
@@ -155,21 +193,27 @@ namespace CgbPostBuildHelper.Utils
 				proc.Start();
 				while (!proc.StandardOutput.EndOfStream)
 				{
-					sbOut.Append(proc.StandardOutput.ReadLine());
+					processLine(proc.StandardOutput.ReadLine());
 				}
 				while (!proc.StandardError.EndOfStream)
 				{
-					sbErr.Append(proc.StandardError.ReadLine());
+					processLine(proc.StandardOutput.ReadLine());
 				}
 			}
 
-			var assetFile = PrepareNewAssetFile(null);
-			assetFile.FileType = FileType.GlslShaderForVk;
-			assetFile.OutputFilePath = outFile.FullName;
-			assetFile.DeploymentType = DeploymentType.MorphedCopy;
-
-			assetFile.Messages.Add(MessageVM.CreateSuccess(_instance, sbOut.ToString(), null)); // TODO: open a window or so?
-			assetFile.Messages.Add(MessageVM.CreateError(_instance, sbErr.ToString(), null)); // TODO: open a window or so?
+			if (numErrors > 0 || numWarnings > 0) 
+			{
+				if (numErrors > 0 && numWarnings > 0)
+					assetFile.Messages.Add(MessageVM.CreateInfo(_instance, $"Compiling shader for Vulkan resulted in {numErrors} errors and {numWarnings} warnings:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null));
+				else if(numWarnings > 0)
+					assetFile.Messages.Add(MessageVM.CreateInfo(_instance, $"Compiling shader for Vulkan resulted in {numWarnings} warnings:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null));
+				else
+					assetFile.Messages.Add(MessageVM.CreateInfo(_instance, $"Compiling shader for Vulkan resulted in {numErrors} errors:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null));
+			}
+			else
+			{
+				assetFile.Messages.Add(MessageVM.CreateSuccess(_instance, $"Compiling shader for Vulkan succeeded:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null));
+			}
 
 			FilesDeployed.Add(assetFile);
 		}

@@ -4,10 +4,92 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:CgbPostBuildHelper.View"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"  FontSize="12"
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-		<Label Content="TODO: Show info about that event and, most importantly, its files!" HorizontalAlignment="Left" Margin="333,198,0,0" VerticalAlignment="Top"/>
+    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+		<ScrollViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+			<ItemsControl ItemsSource="{Binding AllEventsEver}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<StackPanel Name="EventContainer">
+							
+							<TextBlock FontSize="12" FontWeight="Bold" Margin="4,10,4,0"
+								Text="{Binding Path=CreationTime, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
+							
+							<TextBlock FontSize="20" FontWeight="Bold" Margin="4,0,4,2"
+								Text="{Binding Path=TypeDescription}" />
 
+							<TextBlock FontSize="12" Margin="24,2,4,0" Text="Files:" VerticalAlignment="Stretch" Padding="4" Background="LightGray" FontWeight="Bold" />
+
+							<ItemsControl ItemsSource="{Binding Files}" AlternationCount="2" Margin="24,0,4,10">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+
+										<StackPanel Name="FileContainer">
+											<Grid Margin="4">
+												<Grid.RowDefinitions>
+													<RowDefinition />
+													<RowDefinition />
+													<RowDefinition />
+													<RowDefinition />
+													<RowDefinition />
+													<RowDefinition />
+												</Grid.RowDefinitions>
+												<Grid.ColumnDefinitions>
+													<ColumnDefinition Width="Auto"/>
+													<ColumnDefinition Width="Auto"/>
+												</Grid.ColumnDefinitions>
+
+												<TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+														   FontSize="16" FontWeight="Bold"
+														   Text="{Binding FilterPathPlusFileName}" />
+												<TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="File type:" Foreground="DimGray" Margin="0,0,4,0" />
+												<TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Text="{Binding FileTypeDescription}" />
+												<TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="Deployed as:" Foreground="DimGray" Margin="0,0,4,0" />
+												<TextBlock Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Text="{Binding DeploymentTypeDescription}" />
+												<TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="Source:" Foreground="DimGray" Margin="0,0,4,0" />
+												<StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+													<Button Margin="0,1,3,1" Padding="2,1" Content="-> File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding InputFilePath}" />
+													<Button Margin="0,1,3,1" Padding="2,1" Content="-> Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding InputFilePath}" />
+													<TextBox IsReadOnly="True" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Text="{Binding InputFilePath}" />
+												</StackPanel>
+												<TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="Destination:" Foreground="DimGray" Margin="0,0,4,0" />
+												<StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
+													<Button Margin="0,1,3,1" Padding="2,1" Content="-> File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding OutputFilePath}" />
+													<Button Margin="0,1,3,1" Padding="2,1" Content="-> Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding OutputFilePath}" />
+													<TextBox IsReadOnly="True" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Text="{Binding OutputFilePath}" />
+												</StackPanel>
+												<StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,1,0,0"
+															Orientation="Horizontal">
+													<TextBlock FontSize="14" VerticalAlignment="Center" Text="{Binding MessagesErrorInfo}" Foreground="{Binding MessagesErrorInfoColor}" />
+													<TextBlock FontSize="13" VerticalAlignment="Center" Margin="4,0" Text="|" Foreground="Gray" />
+													<TextBlock FontSize="14" VerticalAlignment="Center" Text="{Binding MessagesWarningInfo}" Foreground="{Binding MessagesWarningInfoColor}" />
+													<TextBlock FontSize="13" VerticalAlignment="Center" Margin="4,0" Text="|" Foreground="Gray" />
+													<TextBlock FontSize="14" VerticalAlignment="Center" Text="{Binding MessagesInformationInfo}" Foreground="{Binding MessagesInformationInfoColor}" />
+													<TextBlock FontSize="13" VerticalAlignment="Center" Margin="4,0" Text="|" Foreground="Gray" />
+													<TextBlock FontSize="14" VerticalAlignment="Center" Text="{Binding MessagesSuccessInfo}" Foreground="{Binding MessagesSuccessInfoColor}" />
+													<Button Margin="10,0,0,0" VerticalAlignment="Center" Content="Show details..." Command="{Binding ShowFileMessagesCommand}" />
+												</StackPanel>
+
+											</Grid>
+										</StackPanel>
+
+										<DataTemplate.Triggers>
+											<Trigger Property="ItemsControl.AlternationIndex" Value="0">
+												<Setter Property="Background" Value="#FFEFEFEF" TargetName="FileContainer"/>
+											</Trigger>
+											<Trigger Property="ItemsControl.AlternationIndex" Value="1">
+												<Setter Property="Background" Value="#FFF8F8F8" TargetName="FileContainer"/>
+											</Trigger>
+										</DataTemplate.Triggers>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+							
+						</StackPanel>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
 	</Grid>
 </UserControl>

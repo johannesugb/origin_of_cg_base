@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:CgbPostBuildHelper.View"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Background="#99ffffff">
+    <Grid Background="#bbffffff">
 		<ItemsControl ItemsSource="{Binding Items}">
 			<ItemsControl.ItemsPanel>
 				<ItemsPanelTemplate>
