@@ -126,26 +126,6 @@ namespace CgbPostBuildHelper.Utils
 		/// <returns>An instance with matching key or null</returns>
 		public static CgbAppInstance GetInstance(this List<CgbAppInstance> list, string path) => (from x in list where string.Compare(x.Path, path, true) == 0 select x).FirstOrDefault();	
 
-		/// <summary>
-		/// Adds a new inststance to the collection or updates existing instance data
-		/// </summary>
-		/// <param name="list">Search space</param>
-		/// <param name="data">Data to be added or updated</param>
-		/// <returns>The newly added or the updated instance</returns>
-		public static CgbAppInstance AddOrUpdateInstance(this List<CgbAppInstance> list, CgbAppInstance data)
-		{
-			var instance = GetInstance(list, data.Path);
-			if (null == instance)
-			{
-				list.Add(data);
-				return list.Last();
-			}
-			else
-			{
-				instance.AssignData(data);
-				return instance;
-			}
-		}
 
 		public static void DeployFile(this CgbAppInstance inst, IList<FileDeploymentData> oldList, string filePath, string filterPath, out List<FileDeploymentData> outDeployedFiles)
 		{
@@ -262,6 +242,11 @@ namespace CgbPostBuildHelper.Utils
 		public static bool ContainsMessagesOfType(this IList<MessageVM> list, MessageType type)
 		{
 			return (from x in list where x.MessageType == type select x).Any();
+		}
+
+		public static int NumberOfMessagesOfType(this IList<MessageVM> list, MessageType type)
+		{
+			return (from x in list where x.MessageType == type select x).Count();
 		}
 	}
 }

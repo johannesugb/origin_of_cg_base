@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:CgbPostBuildHelper.View"
              mc:Ignorable="d" Width="440" Margin="3"
-			 FontSize="14"
+			 FontSize="16"
              d:DesignWidth="440">
 	
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -17,46 +17,46 @@
 
 		<Border Grid.ColumnSpan="3" Grid.RowSpan="2" Margin="1"
 				HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-				BorderBrush="Black" BorderThickness="1" CornerRadius="2" 
-				Background="{Binding MessageColor, FallbackValue=LightCoral}" Opacity="0.8"
+				BorderBrush="Black" BorderThickness="2" CornerRadius="2" 
+				Background="{Binding MessageColor, FallbackValue=#ffccdd}"
 				x:Name="theBorder">
 		</Border>
 
 		<StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical">
-			<TextBlock  Margin="4,0,4,-2"
+			<TextBlock  Margin="8,2,8,-2"
 					   Text="CGB" 
 					   FontSize="20" HorizontalAlignment="Center"
-					   Foreground="{Binding AccentColor, FallbackValue=IndianRed}" FontWeight="Bold" />
+					   Foreground="{Binding AccentColor, FallbackValue=#ff1a66}" FontWeight="Bold" />
 
-			<TextBlock Grid.Row="1" Grid.Column="0" Margin="4,-2,4,2"
+			<TextBlock Grid.Row="1" Grid.Column="0" Margin="8,-2,8,4"
 					   Text="{Binding MessageTypeShortDescription, FallbackValue=ERROR}" 
 					   FontSize="12" HorizontalAlignment="Center"
-					   Foreground="{Binding AccentColor, FallbackValue=IndianRed}" FontWeight="Normal" />
+					   Foreground="{Binding AccentColor, FallbackValue=#ff1a66}" FontWeight="Normal" />
 		</StackPanel>
 
 		<StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical">
 			<StackPanel Orientation="Horizontal">
-				<TextBlock FontSize="10" FontWeight="Bold" Margin="4,2,0,0" Foreground="{Binding AccentColor, FallbackValue=IndianRed}"
+				<TextBlock FontSize="12" FontWeight="Bold" Margin="4,6,0,0" Foreground="{Binding AccentColor, FallbackValue=#ff1a66}"
 						   Text="{Binding Path=CreationTime, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
-				<TextBlock FontSize="10" FontWeight="Bold" Margin="4,2,4,0" Foreground="{Binding AccentColor, FallbackValue=IndianRed}"
+				<TextBlock FontSize="11" FontWeight="Bold" Margin="4,6,4,0" Foreground="{Binding AccentColor, FallbackValue=#ff1a66}"
 						   Text="|" />
-				<TextBlock FontSize="10" FontWeight="Bold" Margin="0,2,0,0" 
-						   Foreground="{Binding AccentColor, FallbackValue=IndianRed}" TextDecorations="Underline"
+				<TextBlock FontSize="12" FontWeight="Bold" Margin="0,6,0,0" 
+						   Foreground="{Binding AccentColor, FallbackValue=#ff1a66}" TextDecorations="Underline"
 						   Text="{Binding ExecutableName, FallbackValue=MyApp.exe}" >
 					<Hyperlink />
 				</TextBlock>
 			</StackPanel>
-			
-			<TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Margin="4,0,4,2" 
+
+			<TextBox IsReadOnly="True" Background="Transparent" BorderThickness="0" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Margin="4,0,4,8" 
 					   Text="{Binding MessageText, FallbackValue=Message message Message message message lorem ipsum!}" 
 					   TextWrapping="Wrap"
 					   Foreground="Black" HorizontalAlignment="Left" />
 		</StackPanel>
 
-		<Button Grid.Row="1" Grid.Column="2" Grid.RowSpan="2" 
-				Margin="0,0,5,5" Width="25" Height="25" 
+		<Button Grid.Row="1" Grid.Column="2" Grid.RowSpan="2"
+				Margin="0,0,5,5" Width="28" Height="28" FontSize="10"
 				HorizontalAlignment="Center" VerticalAlignment="Bottom"
-				Content="🛈" />
+				Content="INFO" Command="{Binding AdditionalInfoCmd}" />
 
 	</Grid>
 </UserControl>

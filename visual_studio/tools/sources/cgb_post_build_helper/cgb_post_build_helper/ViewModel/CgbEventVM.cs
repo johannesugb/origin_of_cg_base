@@ -31,6 +31,7 @@ namespace CgbPostBuildHelper.ViewModel
 	/// </summary>
 	class CgbEventVM : BindableBase
 	{
+		private readonly DateTime _createDate = DateTime.Now;
 		private readonly CgbEventType _eventType;
 
 		public CgbEventVM(CgbEventType type)
@@ -38,7 +39,24 @@ namespace CgbPostBuildHelper.ViewModel
 			_eventType = type;
 		}
 
+		public DateTime CreateDate => _createDate;
+
 		public CgbEventType Type => _eventType;
+
+		public string TypeDescription
+		{
+			get
+			{
+				switch(_eventType)
+				{
+					case CgbEventType.Build:
+						return "Buid-Event";
+					case CgbEventType.Update:
+						return "Update-Event";
+				}
+				return "?Unknown-Event?";
+			}
+		}
 
 		public ObservableCollection<FileDeploymentData> Files { get; } = new ObservableCollection<FileDeploymentData>();
 	}

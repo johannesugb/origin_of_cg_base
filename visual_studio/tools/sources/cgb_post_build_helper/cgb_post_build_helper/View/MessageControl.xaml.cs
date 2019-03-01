@@ -29,13 +29,13 @@ namespace CgbPostBuildHelper.View
 
 		private void MessageControl_MouseEnter(object sender, MouseEventArgs e)
 		{
-			theBorder.Opacity = 1.0;
+			theBorder.BorderThickness = new Thickness(3.0);
 			e.Handled = false;
 		}
 
 		private void MessageControl_MouseLeave(object sender, MouseEventArgs e)
 		{
-			theBorder.Opacity = 0.8;
+			theBorder.BorderThickness = new Thickness(2.0);
 			e.Handled = false;
 		}
 	}

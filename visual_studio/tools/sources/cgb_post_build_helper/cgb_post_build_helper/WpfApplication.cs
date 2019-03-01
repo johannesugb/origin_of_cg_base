@@ -68,6 +68,7 @@ namespace CgbPostBuildHelper
 				ContextMenu = (ContextMenu)rd["SysTrayMenu"]
 			};
 			_taskbarIcon.ContextMenu.DataContext = new ContextMenuActions(this);
+			_taskbarIcon.LeftClickCommand = new DelegateCommand(_ => ShowMessagesList());
 		}
 
 		private void DispatcherInvokeLater(TimeSpan delay, Action action)
@@ -189,66 +190,75 @@ namespace CgbPostBuildHelper
 					}
 				}
 
-				// Now, store the event
-				inst.AllEvents.Add(cgbEvent);
+				// Now, store the event (...AT THE FRONT)
+				inst.AllEventsEver.Insert(0, cgbEvent);
+					
+				AddToMessagesList(MessageVM.CreateError(inst, "Lorem ipsum dolor sit amet", null));
+				AddToMessagesList(MessageVM.CreateWarning(inst, "Lorem ipsum dolor sit amet", null));
+				AddToMessagesList(MessageVM.CreateInfo(inst, "Lorem ipsum dolor sit amet", null));
+				AddToMessagesList(MessageVM.CreateSuccess(inst, "Lorem ipsum dolor sit amet", null));
 
 				// Analyze the outcome, create a message and possibly show it, if there could be a problem (files with warnings or errors)
 				if (hasErrors || hasWarnings)
 				{
 					if (hasWarnings && hasErrors)
-						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} with ERRORS and WARNINGS.", new DelegateCommand(_ =>
+						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} files with ERRORS and WARNINGS.", new DelegateCommand(_ =>
 						{
 							Window window = new Window
 							{
+								Width = 800, Height = 600,
 								Title = "Build-Event Details including ERRORS and WARNINGS",
 								Content = new EventFilesView()
 								{
-									DataContext = cgbEvent
+									DataContext = inst
 								}
 							};
-							window.ShowDialog();
+							window.Show();
 						})));
 					else if (hasWarnings)
-						AddToMessagesList(MessageVM.CreateWarning(inst, $"Deployed {nFilesDeployed} with WARNINGS.", new DelegateCommand(_ =>
+						AddToMessagesList(MessageVM.CreateWarning(inst, $"Deployed {nFilesDeployed} files with WARNINGS.", new DelegateCommand(_ =>
 						{
 							Window window = new Window
 							{
+								Width = 800, Height = 600,
 								Title = "Build-Event Details including WARNINGS",
 								Content = new EventFilesView()
 								{
-									DataContext = cgbEvent
+									DataContext = inst
 								}
 							};
-							window.ShowDialog();
+							window.Show();
 						})));
 					else
-						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} with ERRORS.", new DelegateCommand(_ =>
+						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} files with ERRORS.", new DelegateCommand(_ =>
 						{
 							Window window = new Window
 							{
+								Width = 800, Height = 600,
 								Title = "Build-Event Details including ERRORS",
 								Content = new EventFilesView()
 								{
-									DataContext = cgbEvent
+									DataContext = inst
 								}
 							};
-							window.ShowDialog();
+							window.Show();
 						})));
 					mustShowMessages = true;
 				}
 				else
 				{
-					AddToMessagesList(MessageVM.CreateInfo(inst, $"Deployed {nFilesDeployed} with ERRORS.", new DelegateCommand(_ =>
+					AddToMessagesList(MessageVM.CreateInfo(inst, $"Deployed {nFilesDeployed} files.", new DelegateCommand(_ =>
 					{
 						Window window = new Window
 						{
+							Width = 800, Height = 600,
 							Title = "Build-Event Details",
 							Content = new EventFilesView()
 							{
-								DataContext = cgbEvent
+								DataContext = inst
 							}
 						};
-						window.ShowDialog();
+						window.Show();
 					})));
 				}
 
@@ -276,6 +286,7 @@ namespace CgbPostBuildHelper
 
 		public void ShowMessagesList()
 		{
+			Console.WriteLine("Show Messages list NOW " + DateTime.Now);
 			_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
 			CloseMessagesListLater(true);
 		}
