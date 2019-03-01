@@ -8,9 +8,9 @@
 
 #include <array>
 
-#include "vkContext.h"
-#include "vkCgbBuffer.h"
-#include "vkTexture.h"
+#include "vulkan_context.h"
+#include "vulkan_buffer.h"
+#include "vulkan_texture.h"
 
 struct Vertex {
 	glm::vec3 pos;
@@ -110,49 +110,52 @@ struct PushUniforms {
 	glm::mat4 mvp;
 };
 
-class vkRenderObject
-{
-public:
-	vkRenderObject(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
-		vkTexture* texture, vkCommandBufferManager* commandBufferManager, std::vector<std::shared_ptr<vkTexture>> debugTextures);
-	virtual ~vkRenderObject();
+namespace cgb {
 
-	std::vector<Vertex> get_vertices() { return mVertices; }
-	std::vector<uint32_t> get_indices() { return mIndices; }
+	class vulkan_render_object
+	{
+	public:
+		vulkan_render_object(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
+			vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
+			vulkan_texture* texture, vulkan_command_buffer_manager* commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
+		virtual ~vulkan_render_object();
 
-	vk::Buffer get_vertex_buffer() { return mVertexBuffer.get_vkk_buffer(); }
-	//void setVertexBuffer(vk::Buffer vertexBuffer) { _vertexBuffer = vertexBuffer; }
-	vk::Buffer get_index_buffer() { return mIndexBuffer.get_vkk_buffer(); }
-	//void setIndexBuffer(vk::Buffer indexBuffer) { _indexBuffer = indexBuffer; }
+		std::vector<Vertex> get_vertices() { return mVertices; }
+		std::vector<uint32_t> get_indices() { return mIndices; }
 
-	std::vector<vk::DescriptorSet> get_descriptor_sets() { return mDescriptorSets; }
-	vk::DescriptorSet& get_descriptor_set() { return mDescriptorSets[vkContext::instance().currentFrame]; }
-	PushUniforms get_push_uniforms() { return mPushUniforms; }
+		vk::Buffer get_vertex_buffer() { return mVertexBuffer.get_vkk_buffer(); }
+		//void setVertexBuffer(vk::Buffer vertexBuffer) { _vertexBuffer = vertexBuffer; }
+		vk::Buffer get_index_buffer() { return mIndexBuffer.get_vkk_buffer(); }
+		//void setIndexBuffer(vk::Buffer indexBuffer) { _indexBuffer = indexBuffer; }
 
-	void update_uniform_buffer(uint32_t currentImage, UniformBufferObject ubo);
+		std::vector<vk::DescriptorSet> get_descriptor_sets() { return mDescriptorSets; }
+		vk::DescriptorSet& get_descriptor_set() { return mDescriptorSets[vulkan_context::instance().currentFrame]; }
+		PushUniforms get_push_uniforms() { return mPushUniforms; }
 
-private:
-	uint32_t mImageCount;
+		void update_uniform_buffer(uint32_t currentImage, UniformBufferObject ubo);
 
-	std::vector<Vertex> mVertices;
-	std::vector<uint32_t> mIndices;
+	private:
+		uint32_t mImageCount;
 
-	vkCgbBuffer mVertexBuffer;
-	vkCgbBuffer mIndexBuffer;
+		std::vector<Vertex> mVertices;
+		std::vector<uint32_t> mIndices;
 
-	std::vector<vkCgbBuffer*> mUniformBuffers;
+		vulkan_buffer mVertexBuffer;
+		vulkan_buffer mIndexBuffer;
 
-	PushUniforms mPushUniforms;
-	// TODO PERFORMANCE use multiple descriptor sets / per render pass, e.g. shadow pass does not use textures
-	// or like suggested for AMD Hardware, use one large descriptor set for everything and index into Texture arrays and uniforms
-	// suggestion: use an array of descriptor sets, the drawer then can decide, which descriptor set to use, 
-	// additionally allow global/per drawer descriptor sets
-	// this offers the most flexibility for the user of the framework, while still being easy to use
-	std::vector<vk::DescriptorSet> mDescriptorSets;
+		std::vector<vulkan_buffer*> mUniformBuffers;
 
-	void create_uniform_buffer(vkCommandBufferManager* commandBufferManager);
-	void create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, 
-		vkTexture* texture, std::vector<std::shared_ptr<vkTexture>> debugTextures);
-};
+		PushUniforms mPushUniforms;
+		// TODO PERFORMANCE use multiple descriptor sets / per render pass, e.g. shadow pass does not use textures
+		// or like suggested for AMD Hardware, use one large descriptor set for everything and index into Texture arrays and uniforms
+		// suggestion: use an array of descriptor sets, the drawer then can decide, which descriptor set to use, 
+		// additionally allow global/per drawer descriptor sets
+		// this offers the most flexibility for the user of the framework, while still being easy to use
+		std::vector<vk::DescriptorSet> mDescriptorSets;
 
+		void create_uniform_buffer(vulkan_command_buffer_manager* commandBufferManager);
+		void create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
+			vulkan_texture* texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
+	};
+
+}
