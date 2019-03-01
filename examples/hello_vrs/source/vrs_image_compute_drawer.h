@@ -1,5 +1,5 @@
 #pragma once
-#include "vkDrawer.h"
+#include "vulkan_drawer.h"
 
 #include "eyetracking_interface.h"
 
@@ -8,36 +8,39 @@ struct vrs_eye_comp_data {
 	glm::vec2 imgSize;
 };
 
-class vrs_image_compute_drawer :
-	public vkDrawer
-{
-public:
-	vrs_image_compute_drawer(std::shared_ptr<vkCommandBufferManager> commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline,
-		std::vector<std::shared_ptr<vkCgbImage>> vrsDebugImages);
-	virtual ~vrs_image_compute_drawer();
+namespace cgb {
 
-	virtual void draw(std::vector<vkRenderObject*> renderObjects);
+	class vrs_image_compute_drawer :
+		public vulkan_drawer
+	{
+	public:
+		vrs_image_compute_drawer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline,
+			std::vector<std::shared_ptr<vulkan_image>> vrsDebugImages);
+		virtual ~vrs_image_compute_drawer();
 
-	void set_descriptor_sets(std::vector<vk::DescriptorSet> descriptorSets) { mDescriptorSets = descriptorSets; }
-	void set_width_height(int width, int height) { mWidth = width; mHeight = height; }
-	void set_eye_inf(std::shared_ptr<eyetracking_interface> eyeInf) { mEyeInf = eyeInf; }
+		virtual void draw(std::vector<vulkan_render_object*> renderObjects);
 
-private:
-	std::vector<vk::DescriptorSet> mDescriptorSets;
-	std::vector <std::shared_ptr<vkCgbImage>> mVrsDebugImages;
-	std::shared_ptr<eyetracking_interface> mEyeInf;
+		void set_descriptor_sets(std::vector<vk::DescriptorSet> descriptorSets) { mDescriptorSets = descriptorSets; }
+		void set_width_height(int width, int height) { mWidth = width; mHeight = height; }
+		void set_eye_inf(std::shared_ptr<eyetracking_interface> eyeInf) { mEyeInf = eyeInf; }
 
-	int mWidth;
-	int mHeight;
+	private:
+		std::vector<vk::DescriptorSet> mDescriptorSets;
+		std::vector <std::shared_ptr<vulkan_image>> mVrsDebugImages;
+		std::shared_ptr<eyetracking_interface> mEyeInf;
 
-	static const int WORKGROUP_SIZE = 16;
+		int mWidth;
+		int mHeight;
 
-	vk::DescriptorSetLayout vrsComputeDebugDescriptorSetLayout;
-	vk::DescriptorPool vrsComputeDebugDescriptorPool;
-	std::vector<vk::DescriptorSet> mVrsComputeDebugDescriptorSets;
+		static const int WORKGROUP_SIZE = 16;
 
-	void createVrsComputeDescriptorSetLayout();
-	void createVrsComputeDescriptorPool();
-	void createVrsDescriptorSets();
-};
+		vk::DescriptorSetLayout vrsComputeDebugDescriptorSetLayout;
+		vk::DescriptorPool vrsComputeDebugDescriptorPool;
+		std::vector<vk::DescriptorSet> mVrsComputeDebugDescriptorSets;
 
+		void createVrsComputeDescriptorSetLayout();
+		void createVrsComputeDescriptorPool();
+		void createVrsDescriptorSets();
+	};
+
+}

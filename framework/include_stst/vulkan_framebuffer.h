@@ -1,30 +1,33 @@
 #pragma once
-#include "vkContext.h"
-#include "vkCgbImage.h"
-#include "vkImagePresenter.h"
+#include "vulkan_context.h"
+#include "vulkan_image.h"
+#include "vulkan_image_presenter.h"
 
-class vulkan_framebuffer
-{
-public:
-	vulkan_framebuffer(vk::SampleCountFlagBits msaaSamples, std::shared_ptr<vkCgbImage> colorImage, 
-		std::shared_ptr<vkCgbImage> depthImage, std::shared_ptr<vkImagePresenter> imagePresenter);
-	~vulkan_framebuffer();
+namespace cgb {
 
-	vk::RenderPass get_render_pass() { return renderPass; }
-	vk::Framebuffer get_swapchain_framebuffer() { return swapChainFramebuffers[vkContext::instance().currentFrame]; }
+	class vulkan_framebuffer
+	{
+	public:
+		vulkan_framebuffer(vk::SampleCountFlagBits msaaSamples, std::shared_ptr<vulkan_image> colorImage,
+			std::shared_ptr<vulkan_image> depthImage, std::shared_ptr<vulkan_image_presenter> imagePresenter);
+		~vulkan_framebuffer();
 
-	vk::Extent2D get_framebuffer_extent() { return imagePresenter->get_swap_chain_extent(); }
+		vk::RenderPass get_render_pass() { return renderPass; }
+		vk::Framebuffer get_swapchain_framebuffer() { return swapChainFramebuffers[vulkan_context::instance().currentFrame]; }
 
-private:
-	vk::RenderPass renderPass;
-	std::vector<vk::Framebuffer> swapChainFramebuffers;
+		vk::Extent2D get_framebuffer_extent() { return imagePresenter->get_swap_chain_extent(); }
 
-	vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
-	std::shared_ptr<vkCgbImage> colorImage;
-	std::shared_ptr<vkCgbImage> depthImage;
-	std::shared_ptr<vkImagePresenter> imagePresenter;
+	private:
+		vk::RenderPass renderPass;
+		std::vector<vk::Framebuffer> swapChainFramebuffers;
 
-	void createRenderPass();
-	void createFramebuffers();
-};
+		vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
+		std::shared_ptr<vulkan_image> colorImage;
+		std::shared_ptr<vulkan_image> depthImage;
+		std::shared_ptr<vulkan_image_presenter> imagePresenter;
 
+		void createRenderPass();
+		void createFramebuffers();
+	};
+
+}

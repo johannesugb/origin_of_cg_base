@@ -74,7 +74,9 @@ namespace cgb
 	void window::set_title(std::string pTitle)
 	{
 		mTitle = pTitle;
-		// TODO: set the title to the *real* window
+		if (mHandle.has_value()) {
+			glfwSetWindowTitle(mHandle->mHandle, pTitle.c_str());
+		}
 	}
 
 	void window::change_monitor(std::optional<monitor_handle> pMonitor)

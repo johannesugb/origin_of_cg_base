@@ -1,42 +1,45 @@
 #pragma once
 
-#include "vkContext.h"
+#include "vulkan_context.h"
 
-class vulkan_pipeline
-{
-public:
-	vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout);
+namespace cgb {
 
-	vulkan_pipeline(const std::string& filename, std::vector<vk::DescriptorSetLayout> descriptorSetLayouts, size_t pushConstantsSize);
-	virtual ~vulkan_pipeline();
+	class vulkan_pipeline
+	{
+	public:
+		vulkan_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout);
 
-	vk::Pipeline  get_pipeline() { return mPipeline; }
-	vk::PipelineLayout get_pipeline_layout() { return mPipelineLayout; }
+		vulkan_pipeline(const std::string& filename, std::vector<vk::DescriptorSetLayout> descriptorSetLayouts, size_t pushConstantsSize);
+		virtual ~vulkan_pipeline();
 
-	std::vector<vk::DescriptorSetLayout> get_descriptor_set_layouts() { return mDescriptorSetLayouts; }
-	void set_descriptor_set_layouts(std::vector<vk::DescriptorSetLayout> descriptorSetLayouts) { mDescriptorSetLayouts = descriptorSetLayouts; }
+		vk::Pipeline  get_pipeline() { return mPipeline; }
+		vk::PipelineLayout get_pipeline_layout() { return mPipelineLayout; }
 
-	void recreate_compute();
-	void recreate_compute(vk::PipelineLayoutCreateInfo pipelineLayoutInfo, vk::ComputePipelineCreateInfo pipelineInfo);
-	void fill_compute_structures(vk::PipelineLayoutCreateInfo& pipelineLayoutInfo, vk::ComputePipelineCreateInfo& pipelineInfo);
+		std::vector<vk::DescriptorSetLayout> get_descriptor_set_layouts() { return mDescriptorSetLayouts; }
+		void set_descriptor_set_layouts(std::vector<vk::DescriptorSetLayout> descriptorSetLayouts) { mDescriptorSetLayouts = descriptorSetLayouts; }
 
-private:
-	vk::Pipeline mPipeline;
-	vk::PipelineLayout mPipelineLayout;
+		void recreate_compute();
+		void recreate_compute(vk::PipelineLayoutCreateInfo pipelineLayoutInfo, vk::ComputePipelineCreateInfo pipelineInfo);
+		void fill_compute_structures(vk::PipelineLayoutCreateInfo& pipelineLayoutInfo, vk::ComputePipelineCreateInfo& pipelineInfo);
 
-	vk::RenderPass mRenderPass;
+	private:
+		vk::Pipeline mPipeline;
+		vk::PipelineLayout mPipelineLayout;
 
-	void create_graphics_pipeline(vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout);
+		vk::RenderPass mRenderPass;
 
-	vk::ShaderModule create_shader_module(const std::vector<char>& code);
+		void create_graphics_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout);
 
-	// pipeline config
-	std::string mComputeFilename; 
-	std::vector<vk::DescriptorSetLayout> mDescriptorSetLayouts; 
-	std::vector<vk::PushConstantRange> mPushConstantRanges;
-	size_t mPushConstantsSize;
+		vk::ShaderModule create_shader_module(const std::vector<char>& code);
 
-	bool initialized = false;
-	void cleanup();
-};
+		// pipeline config
+		std::string mComputeFilename;
+		std::vector<vk::DescriptorSetLayout> mDescriptorSetLayouts;
+		std::vector<vk::PushConstantRange> mPushConstantRanges;
+		size_t mPushConstantsSize;
+
+		bool initialized = false;
+		void cleanup();
+	};
+}
 
