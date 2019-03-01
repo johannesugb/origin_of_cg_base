@@ -7,14 +7,14 @@
 #include "vulkan_memory_manager.h"
 
 namespace cgb {
-	vulkan_image::vulkan_image(vulkan_command_buffer_manager* commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels) :
+	vulkan_image::vulkan_image(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels) :
 		mCommandBufferManager(commandBufferManager), mTexWidth(texWidth), mTexHeight(texHeight), mTtexChannels(texChannels)
 	{
 		create_texture_image(pixels, texWidth, texHeight, texChannels);
 		create_texture_image_view();
 	}
 
-	vulkan_image::vulkan_image(vulkan_command_buffer_manager* commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+	vulkan_image::vulkan_image(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
 		vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects) : mCommandBufferManager(commandBufferManager), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels),
 		mNumSamples(numSamples), mFormat(format), mTiling(tiling), mUsage(usage), mMemoryProperties(properties), mAspects(aspects)
 	{
@@ -196,7 +196,7 @@ namespace cgb {
 		};
 
 		commandBuffer.copyBufferToImage(
-			buffer.get_vkk_buffer(),
+			buffer.get_vk_buffer(),
 			image,
 			vk::ImageLayout::eTransferDstOptimal,
 			1,

@@ -6,12 +6,22 @@
 
 namespace cgb {
 
-	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vulkan_command_buffer_manager* commandBufferManager) :
+	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, void* data) : 
+		vulkan_buffer(size, usage, vk::MemoryPropertyFlagBits::eDeviceLocal, vulkan_context::instance().transferCommandBufferManager, data) {
+
+	}
+
+	vulkan_buffer::vulkan_buffer(vk::Buffer buffer, vulkan_memory bufferMemory) :
+	mBuffer(buffer), mBufferMemory(bufferMemory) {
+		mCommandBufferManager = vulkan_context::instance().transferCommandBufferManager;
+	}
+
+	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
 		mCommandBufferManager(commandBufferManager) {
 		createBuffer(size, usage, properties, mBuffer, mBufferMemory);
 	}
 
-	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vulkan_command_buffer_manager* commandBufferManager = vulkan_context::instance().transferCommandBufferManager.get(), void* bufferData = nullptr) :
+	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, void* bufferData) :
 		mCommandBufferManager(commandBufferManager) {
 		vk::Buffer stagingBuffer;
 		vulkan_memory stagingBufferMemory;

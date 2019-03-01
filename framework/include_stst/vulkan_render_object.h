@@ -115,17 +115,22 @@ namespace cgb {
 	class vulkan_render_object
 	{
 	public:
+		// simple standard constructor
+		vulkan_render_object(std::vector<std::shared_ptr<vulkan_buffer>> vertexBuffers, std::shared_ptr<vulkan_buffer> indexBuffer, size_t indexCount); // TODO resourceBundles/DescriptorSets for Uniforms and Textures
+
+
 		vulkan_render_object(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
 			vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
-			vulkan_texture* texture, vulkan_command_buffer_manager* commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
+			vulkan_texture* texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
 		virtual ~vulkan_render_object();
 
+		size_t get_index_count() { return mIndexCount; }
 		std::vector<Vertex> get_vertices() { return mVertices; }
 		std::vector<uint32_t> get_indices() { return mIndices; }
 
-		vk::Buffer get_vertex_buffer() { return mVertexBuffer.get_vkk_buffer(); }
+		vk::Buffer get_vertex_buffer(int i) { return mVertexBuffers[i]->get_vk_buffer(); }
 		//void setVertexBuffer(vk::Buffer vertexBuffer) { _vertexBuffer = vertexBuffer; }
-		vk::Buffer get_index_buffer() { return mIndexBuffer.get_vkk_buffer(); }
+		vk::Buffer get_index_buffer() { return mIndexBuffer->get_vk_buffer(); }
 		//void setIndexBuffer(vk::Buffer indexBuffer) { _indexBuffer = indexBuffer; }
 
 		std::vector<vk::DescriptorSet> get_descriptor_sets() { return mDescriptorSets; }
@@ -140,8 +145,9 @@ namespace cgb {
 		std::vector<Vertex> mVertices;
 		std::vector<uint32_t> mIndices;
 
-		vulkan_buffer mVertexBuffer;
-		vulkan_buffer mIndexBuffer;
+		std::vector<std::shared_ptr<vulkan_buffer>> mVertexBuffers;
+		std::shared_ptr<vulkan_buffer> mIndexBuffer; 
+		size_t mIndexCount;
 
 		std::vector<vulkan_buffer*> mUniformBuffers;
 
@@ -153,7 +159,7 @@ namespace cgb {
 		// this offers the most flexibility for the user of the framework, while still being easy to use
 		std::vector<vk::DescriptorSet> mDescriptorSets;
 
-		void create_uniform_buffer(vulkan_command_buffer_manager* commandBufferManager);
+		void create_uniform_buffer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager);
 		void create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
 			vulkan_texture* texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
 	};

@@ -9,9 +9,9 @@ namespace cgb {
 	class vulkan_image
 	{
 	public:
-		vulkan_image(vulkan_command_buffer_manager* commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels);
+		vulkan_image(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels);
 
-		vulkan_image(vulkan_command_buffer_manager * commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
+		vulkan_image(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
 			vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects);
 
 		virtual ~vulkan_image();
@@ -49,7 +49,7 @@ namespace cgb {
 		vk::ImageAspectFlags mAspects;
 
 
-		vulkan_command_buffer_manager* mCommandBufferManager;
+		std::shared_ptr<vulkan_command_buffer_manager> mCommandBufferManager;
 
 		void create_texture_image(void * pixels, int texWidth, int texHeight, int texChannels);
 		void create_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,

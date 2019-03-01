@@ -2,13 +2,22 @@
 
 namespace cgb {
 
+	vulkan_render_object::vulkan_render_object(std::vector<std::shared_ptr<vulkan_buffer>> vertexBuffers, std::shared_ptr<vulkan_buffer> indexBuffer, size_t indexCount) :
+	mVertexBuffers(vertexBuffers), mIndexBuffer(indexBuffer), mIndexCount(indexCount) {
+
+	}
+
 	vulkan_render_object::vulkan_render_object(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
 		vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
-		vulkan_texture* texture, vulkan_command_buffer_manager* commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures)
-		: mImageCount(imageCount), mVertices(vertices), mIndices(indices),
-		mVertexBuffer(sizeof(mVertices[0]) * mVertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mVertices.data()),
-		mIndexBuffer(sizeof(mIndices[0]) * mIndices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mIndices.data())
+		vulkan_texture* texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures)
+		: mImageCount(imageCount), mVertices(vertices), mIndices(indices), mIndexCount(indices.size())
 	{
+		auto vertexBuffer = std::make_shared<vulkan_buffer>(sizeof(mVertices[0]) * mVertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mVertices.data());
+		mVertexBuffers.push_back(vertexBuffer);
+
+		mIndexBuffer = std::make_shared<vulkan_buffer>(sizeof(mIndices[0]) * mIndices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mIndices.data());
+
+
 		create_uniform_buffer(commandBufferManager);
 		create_descriptor_sets(descriptorSetLayout, descriptorPool, texture, debugTextures);
 	}
@@ -21,7 +30,7 @@ namespace cgb {
 		}
 	}
 
-	void vulkan_render_object::create_uniform_buffer(vulkan_command_buffer_manager* commandBufferManager) {
+	void vulkan_render_object::create_uniform_buffer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) {
 		vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
 
 		mUniformBuffers.resize(mImageCount);
@@ -45,7 +54,7 @@ namespace cgb {
 
 		for (size_t i = 0; i < mImageCount; i++) {
 			vk::DescriptorBufferInfo bufferInfo = {};
-			bufferInfo.buffer = mUniformBuffers[i]->get_vkk_buffer();
+			bufferInfo.buffer = mUniformBuffers[i]->get_vk_buffer();
 			bufferInfo.offset = 0;
 			bufferInfo.range = sizeof(UniformBufferObject);
 

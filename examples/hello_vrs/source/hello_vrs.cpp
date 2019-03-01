@@ -52,7 +52,7 @@ private:
 	cgb::vulkan_texture* texture;
 	cgb::vulkan_image* textureImage;
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> drawCommandBufferManager;
-	cgb::vulkan_command_buffer_manager* transferCommandBufferManager;
+	std::shared_ptr<cgb::vulkan_command_buffer_manager> transferCommandBufferManager;
 	std::unique_ptr<cgb::vulkan_drawer> drawer;
 	std::unique_ptr<cgb::vrs_image_compute_drawer> mVrsImageComputeDrawer;
 
@@ -124,7 +124,9 @@ private:
 
 		createCommandPools();
 
-		transferCommandBufferManager = new cgb::vulkan_command_buffer_manager(transferCommandPool, cgb::vulkan_context::instance().graphicsQueue);
+		transferCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(transferCommandPool, cgb::vulkan_context::instance().graphicsQueue);
+		cgb::vulkan_context::instance().transferCommandBufferManager = transferCommandBufferManager;
+
 
 		imagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
 		cgb::vulkan_context::instance().dynamicRessourceCount = imagePresenter->get_swap_chain_images_count();
@@ -202,9 +204,7 @@ private:
 		renderObject2->update_uniform_buffer(1, ubo);
 		renderObject2->update_uniform_buffer(2, ubo);
 
-		cgb::vulkan_buffer modelVertices;
-		cgb::vulkan_buffer modelIndices;
-		load_model("assets/models/sponza/sponza_structure.obj", glm::scale(glm::vec3(0.01f)), cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace, mModel, modelVertices, modelIndices);
+		load_model("assets/models/sponza/sponza_structure.obj", glm::scale(glm::vec3(0.01f)), cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace, mModel);
 	}
 
 	void cleanup()
@@ -220,7 +220,7 @@ private:
 		delete renderObject2;
 		delete texture;
 		delete textureImage;
-		delete transferCommandBufferManager;
+		transferCommandBufferManager.reset();
 		mVulkanRenderQueue.reset();
 		drawCommandBufferManager.reset();
 
@@ -569,15 +569,17 @@ private:
 		}
 	}
 
-	void load_model(std::string inPath, glm::mat4 transform, const unsigned int model_loader_flags, std::unique_ptr<cgb::Model>& outModel, cgb::vulkan_buffer& outVertexBuffer, cgb::vulkan_buffer& outIndexBuffer)
+	void load_model(std::string inPath, glm::mat4 transform, const unsigned int model_loader_flags, std::unique_ptr<cgb::Model>& outModel)
 	{
 		outModel = cgb::Model::LoadFromFile(inPath, transform, model_loader_flags);
 		auto& mesh = outModel->mesh_at(0);
 
-		//outVertexBuffer = cgb::vulkan_buffer(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(), 
-		//	vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mesh.m_vertex_data.data());
-		//outIndexBuffer = cgb::vulkan_buffer(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(), 
-		//	vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mesh.m_indices.data());
+		auto outVertexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(),
+			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, mesh.m_vertex_data.data());
+		auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
+			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
+
+		auto testObj = cgb::vulkan_render_object({outVertexBuffer}, outIndexBuffer, mesh.m_indices.size());
 	}
 };
 

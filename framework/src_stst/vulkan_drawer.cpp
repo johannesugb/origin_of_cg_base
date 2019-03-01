@@ -38,7 +38,7 @@ namespace cgb {
 
 		for (vulkan_render_object* renderObject : renderObjects) {
 
-			vk::Buffer vertexBuffers[] = { renderObject->get_vertex_buffer() , renderObject->get_vertex_buffer() };
+			vk::Buffer vertexBuffers[] = { renderObject->get_vertex_buffer(0) , renderObject->get_vertex_buffer(0) };
 			vk::DeviceSize offsets[] = { 0, 0 };
 			commandBuffer.bindVertexBuffers(1, 2, vertexBuffers, offsets);
 			commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
@@ -52,7 +52,7 @@ namespace cgb {
 				sizeof(PushUniforms),
 				&(renderObject->get_push_uniforms()));
 
-			commandBuffer.drawIndexed(static_cast<uint32_t>(renderObject->get_indices().size()), 1, 0, 0, 0);
+			commandBuffer.drawIndexed(static_cast<uint32_t>(renderObject->get_index_count()), 1, 0, 0, 0);
 		}
 	}
 }
