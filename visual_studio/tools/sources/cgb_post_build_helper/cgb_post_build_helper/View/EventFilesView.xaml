@@ -14,7 +14,7 @@
 						<StackPanel Name="EventContainer">
 							
 							<TextBlock FontSize="12" FontWeight="Bold" Margin="4,10,4,0"
-								Text="{Binding Path=CreationTime, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
+								Text="{Binding Path=CreateDate, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
 							
 							<TextBlock FontSize="20" FontWeight="Bold" Margin="4,0,4,2"
 								Text="{Binding Path=TypeDescription}" />

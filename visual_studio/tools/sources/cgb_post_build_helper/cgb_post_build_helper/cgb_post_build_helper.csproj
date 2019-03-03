@@ -76,20 +76,27 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Model\FileDeploymentData.cs" />
-    <Compile Include="Model\ContextMenuActions.cs" />
-    <Compile Include="Model\CgbAppInstance.cs" />
+    <Compile Include="Deployers\CopyFileDeployment.cs" />
+    <Compile Include="Deployers\DeploymentBase.cs" />
+    <Compile Include="Deployers\GlShaderDeployment.cs" />
+    <Compile Include="Deployers\ModelDeployment.cs" />
+    <Compile Include="Deployers\ObjModelDeployment.cs" />
+    <Compile Include="Deployers\VkShaderDeployment.cs" />
+    <Compile Include="ViewModel\FileDeploymentData.cs" />
+    <Compile Include="ViewModel\ContextMenuActions.cs" />
+    <Compile Include="ViewModel\CgbAppInstance.cs" />
     <Compile Include="Model\InvocationParams.cs" />
     <Compile Include="SingleApplicationInstance.cs" />
     <Compile Include="Utils\BindableBase.cs" />
     <Compile Include="Utils\CgbUtils.cs" />
     <Compile Include="Utils\DelegateCommand.cs" />
-    <Compile Include="Utils\IFileDeployment.cs" />
+    <Compile Include="Deployers\IFileDeployment.cs" />
     <Compile Include="Utils\IRaiseCanExecuteChanged.cs" />
     <Compile Include="ViewModel\CgbEventVM.cs" />
     <Compile Include="ViewModel\IMessageListLifetimeHandler.cs" />
     <Compile Include="ViewModel\MessagesListVM.cs" />
     <Compile Include="ViewModel\MessageVM.cs" />
+    <Compile Include="ViewModel\SettingsVM.cs" />
     <Compile Include="View\Constants.cs" />
     <Compile Include="View\EventFilesView.xaml.cs">
       <DependentUpon>EventFilesView.xaml</DependentUpon>
@@ -99,6 +106,9 @@
     </Compile>
     <Compile Include="View\MessagesList.xaml.cs">
       <DependentUpon>MessagesList.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\SettingsView.xaml.cs">
+      <DependentUpon>SettingsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="WpfApplication.cs" />
     <Page Include="ContextMenuResources.xaml">
@@ -122,6 +132,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\MessagesList.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\SettingsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

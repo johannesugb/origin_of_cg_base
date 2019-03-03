@@ -22,7 +22,8 @@ namespace CgbPostBuildHelper
 	/// </summary>
 	class WpfApplication : Application, IMessageListLifetimeHandler
 	{
-		static readonly Regex RegexFilterEntry = new Regex(@"<(None|Object|Image)\s+.*?Include\s*?\=\s*?\""(.*?)\""\s*?\>.*?\<Filter\s*?.*?\>(.*?)\<\/Filter\>.*?\<\/\1\>", 
+		//static readonly Regex RegexFilterEntry = new Regex(@"<(None|Object|Image)\s+.*?Include\s*?\=\s*?\""(.*?)\""\s*?\>.*?\<Filter\s*?.*?\>(.*?)\<\/Filter\>.*?\<\/\1\>", 
+		static readonly Regex RegexFilterEntry = new Regex(@"<(None|Object|Image)\s+[^\""]*?Include\s*?\=\s*?\""([^\""]*?)\""\s*?\>\s*?\<Filter\s*?\>([^\<]*?)\<\/Filter\>\s*?\<\/\1\>", 
 			RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
 		/// <summary>
@@ -148,8 +149,8 @@ namespace CgbPostBuildHelper
 				var filtersContent = File.ReadAllText(filtersFile.FullName);
 				var filters = RegexFilterEntry.Matches(filtersContent);
 
-				var hasErrors = false;
-				var hasWarnings = false;
+				var eventHasErrors = false;
+				var eventHasWarnings = false;
 				var nFilesDeployed = 0;
 				var mustShowMessages = false;
 
@@ -157,30 +158,74 @@ namespace CgbPostBuildHelper
 				var cgbEvent = new CgbEventVM(CgbEventType.Build);
 				
 				// -> Parse the .filters file and deploy each and every file
-				foreach (Match match in filters)
+				int n = filters.Count;
+				for (int i=0; i < n; ++i)
 				{
-					var filePath = Path.Combine(filtersFile.DirectoryName, match.Groups[2].Value);
-					var filterPath = match.Groups[3].Value;
+					Match match = filters[i];
+
+					string filePath;
+					string filterPath;
+					try
+					{
+						filePath = Path.Combine(filtersFile.DirectoryName, match.Groups[2].Value);
+						filterPath = match.Groups[3].Value;
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Skipping file, because: " + ex.Message);
+						continue;
+					}
 
 					try
 					{
-						inst.DeployFile(
+						inst.PrepareDeployment(
 							prevAssetsList, 
 							filePath, filterPath, 
-							out var deployedFiles);
+							out var deployment);
 
-						foreach (var deployedFile in deployedFiles)
+						// It can be null, if it is not an asset/shader that should be deployed
+						if (null == deployment)
+						{
+							continue;
+						}
+
+						// Do it!
+						deployment.Deploy();
+
+						foreach (var deployedFile in deployment.FilesDeployed)
 						{
 							// For the current files list:
 							inst.Files.Add(deployedFile);
 
-							hasErrors = hasErrors || deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
-							hasWarnings = hasWarnings || deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
+							var deploymentHasErrors = deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
+							var deploymentHasWarnings = deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
+							eventHasErrors = eventHasErrors || deploymentHasErrors;
+							eventHasWarnings = eventHasWarnings || deploymentHasWarnings;
+
+							// Show errors/warnings in window immediately IF this behavior has been opted-in via our settings
+							if (deploymentHasWarnings || deploymentHasErrors)
+							{
+								if (   (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForVkShaderDeployment && deployment is Deployers.VkShaderDeployment)
+									|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForGlShaderDeployment && deployment is Deployers.GlShaderDeployment)
+									|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForModelDeployment && deployment is Deployers.ModelDeployment))
+								{
+									Window window = new Window
+									{
+										Width = 480, Height = 320,
+										Title = "Messages for file " + filePath,
+										Content = new MessagesList()
+										{
+											DataContext = new { Items = deployedFile.Messages }
+										}
+									};
+									window.Show();
+								}
+							}
 
 							// For the event:
 							cgbEvent.Files.Add(deployedFile);
 						}
-						nFilesDeployed += deployedFiles.Count;
+						nFilesDeployed += deployment.FilesDeployed.Count;
 					}
 					catch (Exception ex)
 					{
@@ -193,21 +238,17 @@ namespace CgbPostBuildHelper
 				// Now, store the event (...AT THE FRONT)
 				inst.AllEventsEver.Insert(0, cgbEvent);
 					
-				AddToMessagesList(MessageVM.CreateError(inst, "Lorem ipsum dolor sit amet", null));
-				AddToMessagesList(MessageVM.CreateWarning(inst, "Lorem ipsum dolor sit amet", null));
-				AddToMessagesList(MessageVM.CreateInfo(inst, "Lorem ipsum dolor sit amet", null));
-				AddToMessagesList(MessageVM.CreateSuccess(inst, "Lorem ipsum dolor sit amet", null));
-
 				// Analyze the outcome, create a message and possibly show it, if there could be a problem (files with warnings or errors)
-				if (hasErrors || hasWarnings)
+				if (eventHasErrors || eventHasWarnings)
 				{
-					if (hasWarnings && hasErrors)
-						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} files with ERRORS and WARNINGS.", new DelegateCommand(_ =>
+					void addErrorWarningsList(string message, string title)
+					{
+						AddToMessagesList(MessageVM.CreateError(inst, message, new DelegateCommand(_ =>
 						{
 							Window window = new Window
 							{
 								Width = 800, Height = 600,
-								Title = "Build-Event Details including ERRORS and WARNINGS",
+								Title = title,
 								Content = new EventFilesView()
 								{
 									DataContext = inst
@@ -215,34 +256,20 @@ namespace CgbPostBuildHelper
 							};
 							window.Show();
 						})));
-					else if (hasWarnings)
-						AddToMessagesList(MessageVM.CreateWarning(inst, $"Deployed {nFilesDeployed} files with WARNINGS.", new DelegateCommand(_ =>
-						{
-							Window window = new Window
-							{
-								Width = 800, Height = 600,
-								Title = "Build-Event Details including WARNINGS",
-								Content = new EventFilesView()
-								{
-									DataContext = inst
-								}
-							};
-							window.Show();
-						})));
+					}
+
+					if (eventHasWarnings && eventHasErrors)
+					{
+						addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS and WARNINGS.", "Build-Event Details including ERRORS and WARNINGS");
+					}
+					else if (eventHasWarnings)
+					{
+						addErrorWarningsList($"Deployed {nFilesDeployed} files with WARNINGS.", "Build-Event Details including WARNINGS");
+					}
 					else
-						AddToMessagesList(MessageVM.CreateError(inst, $"Deployed {nFilesDeployed} files with ERRORS.", new DelegateCommand(_ =>
-						{
-							Window window = new Window
-							{
-								Width = 800, Height = 600,
-								Title = "Build-Event Details including ERRORS",
-								Content = new EventFilesView()
-								{
-									DataContext = inst
-								}
-							};
-							window.Show();
-						})));
+					{
+						addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS.", "Build-Event Details including ERRORS");
+					}
 					mustShowMessages = true;
 				}
 				else
@@ -284,11 +311,30 @@ namespace CgbPostBuildHelper
 			ShowMessagesList();
 		}
 
+		public void RemoveOldMessagesFromList()
+		{
+			var cutoffDate = DateTime.Now - TimeSpan.FromMinutes(10.0);
+			for (int i = _messagesListVM.Items.Count - 1; i >= 0; --i)
+			{
+				if (_messagesListVM.Items[i].CreateDate < cutoffDate)
+				{
+					_messagesListVM.Items.RemoveAt(i);
+				}
+			}
+		}
+
 		public void ShowMessagesList()
 		{
 			Console.WriteLine("Show Messages list NOW " + DateTime.Now);
+			RemoveOldMessagesFromList();
 			_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
 			CloseMessagesListLater(true);
+		}
+
+		public void ClearMessagesList()
+		{
+			_messagesListVM.Items.Clear();
+			_taskbarIcon.CloseBalloon();
 		}
 
 		public void KeepAlivePermanently()

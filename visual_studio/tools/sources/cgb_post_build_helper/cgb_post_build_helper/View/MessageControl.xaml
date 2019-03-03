@@ -37,12 +37,12 @@
 		<StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical">
 			<StackPanel Orientation="Horizontal">
 				<TextBlock FontSize="12" FontWeight="Bold" Margin="4,6,0,0" Foreground="{Binding AccentColor, FallbackValue=#ff1a66}"
-						   Text="{Binding Path=CreationTime, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
+						   Text="{Binding Path=CreateDate, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
 				<TextBlock FontSize="11" FontWeight="Bold" Margin="4,6,4,0" Foreground="{Binding AccentColor, FallbackValue=#ff1a66}"
 						   Text="|" />
 				<TextBlock FontSize="12" FontWeight="Bold" Margin="0,6,0,0" 
 						   Foreground="{Binding AccentColor, FallbackValue=#ff1a66}" TextDecorations="Underline"
-						   Text="{Binding ExecutableName, FallbackValue=MyApp.exe}" >
+						   Text="{Binding AppInstanceName, FallbackValue=MyApp.exe}" >
 					<Hyperlink />
 				</TextBlock>
 			</StackPanel>

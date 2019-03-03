@@ -146,7 +146,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="attribute_description_binding.cpp" />
+    <ClCompile Include="vulkan_attribute_description_binding.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\camera.h" />
@@ -269,7 +269,7 @@
     </ClInclude>
     <ClInclude Include="..\precompiled_headers\include\cg_stdafx.h" />
     <ClInclude Include="..\precompiled_headers\include\cg_targetver.h" />
-    <ClInclude Include="attribute_description_binding.h" />
+    <ClInclude Include="vulkan_attribute_description_binding.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

@@ -10,6 +10,7 @@ using Diag = System.Diagnostics;
 using System.Security.Cryptography;
 using CgbPostBuildHelper.ViewModel;
 using Assimp;
+using CgbPostBuildHelper.Deployers;
 
 namespace CgbPostBuildHelper.Utils
 {
@@ -127,9 +128,9 @@ namespace CgbPostBuildHelper.Utils
 		public static CgbAppInstance GetInstance(this List<CgbAppInstance> list, string path) => (from x in list where string.Compare(x.Path, path, true) == 0 select x).FirstOrDefault();	
 
 
-		public static void DeployFile(this CgbAppInstance inst, IList<FileDeploymentData> oldList, string filePath, string filterPath, out List<FileDeploymentData> outDeployedFiles)
+		public static void PrepareDeployment(this CgbAppInstance inst, IList<FileDeploymentData> oldList, string filePath, string filterPath, out IFileDeployment outDeployment)
 		{
-			outDeployedFiles = new List<FileDeploymentData>();
+			outDeployment = null;
 			
 			if (null == oldList)
 			{
@@ -233,10 +234,8 @@ namespace CgbPostBuildHelper.Utils
 				inputFile, 
 				Path.Combine(inst.Config.OutputPath, filterPath, inputFile.Name));
 
-			// JUST... DO IT, make your dreams come true!
-			deploy.Deploy();
-
-			outDeployedFiles.AddRange(deploy.FilesDeployed);
+			// We're done here => return the deployment-instance to the caller
+			outDeployment = deploy;
 		}
 
 		public static bool ContainsMessagesOfType(this IList<MessageVM> list, MessageType type)

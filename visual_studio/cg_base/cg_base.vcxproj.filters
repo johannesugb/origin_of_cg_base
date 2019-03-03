@@ -121,7 +121,7 @@
     <ClCompile Include="..\..\framework\src_stst\vulkan_texture.cpp">
       <Filter>Source Files\stst</Filter>
     </ClCompile>
-    <ClCompile Include="attribute_description_binding.cpp" />
+    <ClCompile Include="vulkan_attribute_description_binding.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -268,7 +268,7 @@
     <ClInclude Include="..\..\framework\include_stst\vulkan_texture.h">
       <Filter>Header Files\stst</Filter>
     </ClInclude>
-    <ClInclude Include="attribute_description_binding.h" />
+    <ClInclude Include="vulkan_attribute_description_binding.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
