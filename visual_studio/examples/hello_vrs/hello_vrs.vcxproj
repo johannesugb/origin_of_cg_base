@@ -138,7 +138,7 @@
     <ProjectGuid>{e177242b-2397-4ad3-8501-2b3426d95736}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>hellovrs</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>hello_vrs</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

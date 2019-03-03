@@ -21,7 +21,7 @@
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
 
-const std::string TEXTURE_PATH = "assets/chalet.jpg";
+const std::string TEXTURE_PATH = "assets/chalet/chalet.jpg";
 
 class vrs_behavior : public cgb::cg_element
 {
@@ -593,8 +593,8 @@ int main()
 
 		cgb::settings::gApplicationName = "Hello VRS";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
-		cgb::settings::gRequiredInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-		cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+		//cgb::settings::gRequiredInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+		//cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
 
 		// Create a window which we're going to use to render to
 		auto windowParams = cgb::window_params{

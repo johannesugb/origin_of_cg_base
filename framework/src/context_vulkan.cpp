@@ -429,7 +429,8 @@ namespace cgb
 			}
 		}
 
-		allExtensionsSupported = allExtensionsSupported && shading_rate_image_extension_requested() && supports_shading_rate_image(device);
+		auto shadingRateImageExtensionRequired = shading_rate_image_extension_requested();
+		allExtensionsSupported = allExtensionsSupported && (!shadingRateImageExtensionRequired || shadingRateImageExtensionRequired && supports_shading_rate_image(device));
 
 		return allExtensionsSupported;
 	}

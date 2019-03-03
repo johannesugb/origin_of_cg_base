@@ -53,6 +53,9 @@
     <None Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
       <Filter>assets\models\sponza</Filter>
     </None>
+    <None Include="..\..\..\framework\assets\models\sponza\sponza_debris.obj" />
+    <None Include="..\..\..\framework\assets\models\sponza\sponza_fabric.obj" />
+    <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
@@ -256,14 +259,6 @@
     <Image Include="..\..\..\framework\assets\models\sponza\textures\background.png">
       <Filter>assets\models\sponza\textures</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="..\..\..\framework\assets\models\sponza\sponza_debris.obj">
-      <Filter>assets\models\sponza</Filter>
-    </Object>
-    <Object Include="..\..\..\framework\assets\models\sponza\sponza_fabric.obj">
-      <Filter>assets\models\sponza</Filter>
-    </Object>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\framework\assets\models\sponza\license.txt">

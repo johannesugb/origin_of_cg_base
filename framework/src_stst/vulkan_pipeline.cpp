@@ -144,12 +144,12 @@ namespace cgb {
 		auto bindingDescription2 = Vertex::getBindingDescription2();
 		auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
-		vk::VertexInputBindingDescription bindings[] = { bindingDescription, bindingDescription2 };
+		std::vector<vk::VertexInputBindingDescription> bindings = { bindingDescription, bindingDescription2 };
 
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
-		vertexInputInfo.vertexBindingDescriptionCount = 2;
+		vertexInputInfo.vertexBindingDescriptionCount = bindings.size();
 		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-		vertexInputInfo.pVertexBindingDescriptions = bindings;
+		vertexInputInfo.pVertexBindingDescriptions = bindings.data();
 		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
 
 		vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};

@@ -146,6 +146,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="attribute_description_binding.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\camera.h" />
@@ -268,13 +269,14 @@
     </ClInclude>
     <ClInclude Include="..\precompiled_headers\include\cg_stdafx.h" />
     <ClInclude Include="..\precompiled_headers\include\cg_targetver.h" />
+    <ClInclude Include="attribute_description_binding.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{602F842F-50C1-466D-8696-1707937D8AB9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>cgb</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>cg_base</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
