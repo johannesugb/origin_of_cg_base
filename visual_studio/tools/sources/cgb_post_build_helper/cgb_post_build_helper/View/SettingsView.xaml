@@ -1,0 +1,59 @@
+﻿<Window x:Class="CgbPostBuildHelper.View.SettingsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CgbPostBuildHelper.View"
+        mc:Ignorable="d"
+        Title="SettingsView" Height="400" Width="400">
+    <Grid>
+		<StackPanel Orientation="Vertical" Margin="20">
+			<TextBlock FontSize="20" Margin="0">
+				<Run>cgb_post_process_helper</Run>
+				<Run FontWeight="Bold">settings</Run>
+			</TextBlock>
+			<TextBlock FontSize="10">Tick/untick to change cgb_post_process_helper's behavior!</TextBlock>
+			<TextBlock FontSize="10">Changes take effect immediately.</TextBlock>
+
+			<CheckBox Margin="0,15,0,0" IsChecked="{Binding AlwaysDeployReleaseDlls}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Text="Always deploy Release DLLs" />
+					<TextBlock FontSize="10" Text="(instead of Debug DLLs for Debug-builds)" />
+				</StackPanel>
+			</CheckBox>
+
+			<CheckBox Margin="0,15,0,0" IsChecked="{Binding CopyAssetsToOutputDirectory}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Text="Always copy assets to output directory" />
+					<TextBlock FontSize="10" Text="(never try to create Symlinks for Debug/Release builds)" />
+				</StackPanel>
+			</CheckBox>
+
+			<CheckBox Margin="0,15,0,0" IsChecked="{Binding DoNotMonitorFiles}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Text="Do not monitor files during app execution" />
+					<TextBlock FontSize="10" Text="(i.e. files might not get updated at runtime)" />
+				</StackPanel>
+			</CheckBox>
+
+			<TextBlock Margin="0,15,0,0" Text="Immediately open a window showing errors and warnings" />
+			<TextBlock Margin="0,0,0,0" Text="that happen during deployment of the following types:" />
+			<CheckBox Margin="0,0,0,0" IsChecked="{Binding ShowWindowForVulkanShaders}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Text="Shader files for Vulkan configurations" />
+				</StackPanel>
+			</CheckBox>
+			<CheckBox Margin="0,0,0,0" IsChecked="{Binding ShowWindowForGlShaders}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Text="Shader files for OpenGL configurations" />
+				</StackPanel>
+			</CheckBox>
+			<CheckBox Margin="0,0,0,0" IsChecked="{Binding ShowWindowForModels}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Text="3D Model files" />
+				</StackPanel>
+			</CheckBox>
+
+		</StackPanel>
+    </Grid>
+</Window>

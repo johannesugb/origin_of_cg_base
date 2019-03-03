@@ -13,7 +13,7 @@ using System.Windows;
 using CgbPostBuildHelper.View;
 using System.Diagnostics;
 
-namespace CgbPostBuildHelper.Model
+namespace CgbPostBuildHelper.ViewModel
 {
 	/// <summary>
 	/// In order to identify some file types which need special treatment.

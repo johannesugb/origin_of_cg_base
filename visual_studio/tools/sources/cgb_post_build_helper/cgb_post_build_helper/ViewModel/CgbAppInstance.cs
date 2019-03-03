@@ -1,4 +1,5 @@
-﻿using CgbPostBuildHelper.ViewModel;
+﻿using CgbPostBuildHelper.Model;
+using CgbPostBuildHelper.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CgbPostBuildHelper.Model
+namespace CgbPostBuildHelper.ViewModel
 {
 	/// <summary>
 	/// Contains all the data for one cgb-app-instance.

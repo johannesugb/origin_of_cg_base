@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
-namespace CgbPostBuildHelper.Model
+namespace CgbPostBuildHelper.ViewModel
 {
 	class ContextMenuActions : BindableBase
 	{
@@ -16,15 +16,29 @@ namespace CgbPostBuildHelper.Model
 		public ContextMenuActions(WpfApplication application)
 		{
 			_application = application;
-			
-			ShowWindowCommand = new DelegateCommand(_ =>
+
+			ShowInstances = new DelegateCommand(_ =>
+			{
+				
+			});
+
+			ShowMessages = new DelegateCommand(_ =>
 			{
 				_application.ShowMessagesList();
 			});
 
-			HideWindowCommand = new DelegateCommand(_ =>
+			ClearMessages = new DelegateCommand(_ =>
 			{
-				_application.CloseMessagesListLater(false);
+				_application.ShowMessagesList();
+			});
+
+			OpenSettings = new DelegateCommand(_ =>
+			{
+				var view = new View.SettingsView
+				{
+					DataContext = new ViewModel.SettingsVM()
+				};
+				view.Show();
 			});
 
 			ExitApplicationCommand = new DelegateCommand(_ =>
@@ -33,9 +47,13 @@ namespace CgbPostBuildHelper.Model
 			});
 		}
 
-		public ICommand ShowWindowCommand { get; set; }
+		public ICommand ShowInstances { get; set; }
 		
-		public ICommand HideWindowCommand { get; set; }
+		public ICommand ShowMessages { get; set; }
+
+		public ICommand ClearMessages { get; set; }
+
+		public ICommand OpenSettings { get; set; }
 
 		public ICommand ExitApplicationCommand { get; set; }
 	}
