@@ -35,7 +35,6 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_img.comp" />
-    <None Include="..\..\..\framework\assets\models\sponza\sponza.mtl" />
     <None Include="packages.config" />
     <None Include="Tobii\API-Reference.pdf" />
     <None Include="Tobii\SDK-License_en.pdf" />
@@ -52,69 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\framework\assets\chalet\chalet.jpg" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\background.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\background_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\background_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\chain_texture.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\chain_texture_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\chain_texture_mask.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\floor_gloss.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\lion.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\lion2_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\lion_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\lion_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\spnza_bricks_a_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\spnza_bricks_a_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\spnza_bricks_a_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\spnza_bricks_a_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_arch_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_arch_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_arch_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_ceiling_a_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_ceiling_a_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_a_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_a_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_a_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_a_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_b_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_b_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_b_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_b_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_c_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_c_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_c_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_column_c_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_curtain_blue_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_curtain_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_curtain_green_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_details_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_details_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_fabric_blue_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_fabric_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_fabric_green_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_fabric_purple.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_fabric_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_flagpole_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_flagpole_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_floor_a_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_floor_a_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_floor_a_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_roof_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_thorn_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_thorn_diff.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_thorn_mask.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\sponza_thorn_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_dif.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_hanging.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_plant.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_plant_mask.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_plant_spec.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_round.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_round_bump.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_round_norm.png" />
-    <Image Include="..\..\..\framework\assets\models\sponza\textures\vase_round_spec.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\framework\assets\models\sponza\sponza_debris.obj">
@@ -129,9 +65,6 @@
     <None Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
       <FileType>Document</FileType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\..\framework\assets\models\sponza\license.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
