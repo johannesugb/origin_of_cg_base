@@ -82,7 +82,7 @@ namespace CgbPostBuildHelper.ViewModel
 	/// <summary>
 	/// Data about exactly one specific asset file.
 	/// </summary>
-	class FileDeploymentData
+	class FileDeploymentDataVM
 	{
 		/// <summary>
 		/// The path to the original file
@@ -165,7 +165,7 @@ namespace CgbPostBuildHelper.ViewModel
 		/// Whenever the parent asset changes, also its child assets
 		/// have to be updated. This is done via those references.
 		/// </summary>
-		public FileDeploymentData Parent { get; set; }
+		public FileDeploymentDataVM Parent { get; set; }
 
 		/// <summary>
 		/// Messages which occured during file deployment or during file update

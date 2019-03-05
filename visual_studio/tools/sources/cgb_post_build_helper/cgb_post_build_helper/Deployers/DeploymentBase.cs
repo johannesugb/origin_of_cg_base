@@ -31,13 +31,13 @@ namespace CgbPostBuildHelper.Deployers
 		private const int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
 
 
-		public List<FileDeploymentData> FilesDeployed => _filesDeployed;
+		public List<FileDeploymentDataVM> FilesDeployed => _filesDeployed;
 
 		/// <summary>
 		/// Deploys the file by copying it from source to target, OR
 		/// deploys the file by creating a symlink at target, which points to source
 		/// </summary>
-		protected void CopyFile(FileDeploymentData deploymentData)
+		protected void CopyFile(FileDeploymentDataVM deploymentData)
 		{
 			void doCopy()
 			{
@@ -79,7 +79,7 @@ namespace CgbPostBuildHelper.Deployers
 			}
 		}
 
-		public void SetInputParameters(CgbAppInstance inst, string filterPath, FileInfo inputFile, string outputFilePath)
+		public void SetInputParameters(CgbAppInstanceVM inst, string filterPath, FileInfo inputFile, string outputFilePath)
 		{
 			_instance = inst;
 			_filterPath = filterPath;
@@ -101,9 +101,9 @@ namespace CgbPostBuildHelper.Deployers
 			}
 		}
 
-		protected FileDeploymentData PrepareNewAssetFile(FileDeploymentData parent)
+		protected FileDeploymentDataVM PrepareNewAssetFile(FileDeploymentDataVM parent)
 		{
-			return new FileDeploymentData
+			return new FileDeploymentDataVM
 			{
 				FilterPath = _filterPath,
 				InputFilePath = _inputFile.FullName,
@@ -112,12 +112,12 @@ namespace CgbPostBuildHelper.Deployers
 			};
 		}
 
-		protected CgbAppInstance _instance;
+		protected CgbAppInstanceVM _instance;
 		protected string _filterPath;
 		protected FileInfo _inputFile;
 		protected string _outputFilePath;
 		protected byte[] _hash;
-		protected readonly List<FileDeploymentData> _filesDeployed = new List<FileDeploymentData>();
+		protected readonly List<FileDeploymentDataVM> _filesDeployed = new List<FileDeploymentDataVM>();
 	}
 
 }

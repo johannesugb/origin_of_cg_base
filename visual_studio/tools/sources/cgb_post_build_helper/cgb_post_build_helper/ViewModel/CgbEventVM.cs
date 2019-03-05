@@ -58,6 +58,6 @@ namespace CgbPostBuildHelper.ViewModel
 			}
 		}
 
-		public ObservableCollection<FileDeploymentData> Files { get; } = new ObservableCollection<FileDeploymentData>();
+		public ObservableCollection<FileDeploymentDataVM> Files { get; } = new ObservableCollection<FileDeploymentDataVM>();
 	}
 }

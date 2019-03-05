@@ -45,7 +45,9 @@ namespace CgbPostBuildHelper
 		/// In case, a process' full path name matches one of those keys, the file watcher for all its 
 		/// child files will be launched.
 		/// </summary>
-		private readonly List<CgbAppInstance> _instances = new List<CgbAppInstance>();
+		private readonly List<CgbAppInstanceVM> _instances = new List<CgbAppInstanceVM>();
+
+		public List<CgbAppInstanceVM> AllInstances => _instances;
 
 		public WpfApplication()
 		{
@@ -68,7 +70,7 @@ namespace CgbPostBuildHelper
 				ToolTipText = "CGB Post Build Helper",
 				ContextMenu = (ContextMenu)rd["SysTrayMenu"]
 			};
-			_taskbarIcon.ContextMenu.DataContext = new ContextMenuActions(this);
+			_taskbarIcon.ContextMenu.DataContext = new ContextMenuActionsVM(this);
 			_taskbarIcon.LeftClickCommand = new DelegateCommand(_ => ShowMessagesList());
 		}
 
@@ -130,7 +132,7 @@ namespace CgbPostBuildHelper
 			// Create new or update config/invocation params:
 			if (null == inst)
 			{
-				inst = new CgbAppInstance
+				inst = new CgbAppInstanceVM
 				{
 					Config = p
 				};
@@ -299,6 +301,7 @@ namespace CgbPostBuildHelper
 		public void AddToMessagesList(MessageVM mvm)
 		{
 			_messagesListVM.Items.Add(mvm);
+			RemoveOldMessagesFromList();
 			ShowMessagesList();
 		}
 
@@ -308,6 +311,7 @@ namespace CgbPostBuildHelper
 			{
 				_messagesListVM.Items.Add(mvm);
 			}
+			RemoveOldMessagesFromList();
 			ShowMessagesList();
 		}
 
@@ -326,7 +330,6 @@ namespace CgbPostBuildHelper
 		public void ShowMessagesList()
 		{
 			Console.WriteLine("Show Messages list NOW " + DateTime.Now);
-			RemoveOldMessagesFromList();
 			_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
 			CloseMessagesListLater(true);
 		}

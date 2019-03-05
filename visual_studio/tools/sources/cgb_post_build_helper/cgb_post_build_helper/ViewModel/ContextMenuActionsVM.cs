@@ -9,17 +9,21 @@ using System.Windows.Input;
 
 namespace CgbPostBuildHelper.ViewModel
 {
-	class ContextMenuActions : BindableBase
+	class ContextMenuActionsVM : BindableBase
 	{
 		private WpfApplication _application;
 
-		public ContextMenuActions(WpfApplication application)
+		public ContextMenuActionsVM(WpfApplication application)
 		{
 			_application = application;
 
 			ShowInstances = new DelegateCommand(_ =>
 			{
-				
+				var wnd = new View.InstancesList
+				{
+					DataContext = _application.AllInstances
+				};
+				wnd.Show();
 			});
 
 			ShowMessages = new DelegateCommand(_ =>
@@ -34,11 +38,11 @@ namespace CgbPostBuildHelper.ViewModel
 
 			OpenSettings = new DelegateCommand(_ =>
 			{
-				var view = new View.SettingsView
+				var wnd = new View.SettingsView
 				{
 					DataContext = new ViewModel.SettingsVM()
 				};
-				view.Show();
+				wnd.Show();
 			});
 
 			ExitApplicationCommand = new DelegateCommand(_ =>

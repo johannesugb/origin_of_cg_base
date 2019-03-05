@@ -22,7 +22,7 @@ namespace CgbPostBuildHelper.ViewModel
 	class MessageVM : BindableBase
 	{
 		#region static factory methods
-		public static MessageVM CreateSuccess(CgbAppInstance appInstance, string text, ICommand additionalInfoCommand)
+		public static MessageVM CreateSuccess(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
 		{
 			return new MessageVM(appInstance)
 			{
@@ -34,7 +34,7 @@ namespace CgbPostBuildHelper.ViewModel
 			};
 		}
 
-		public static MessageVM CreateInfo(CgbAppInstance appInstance, string text, ICommand additionalInfoCommand)
+		public static MessageVM CreateInfo(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
 		{
 			return new MessageVM(appInstance)
 			{
@@ -46,7 +46,7 @@ namespace CgbPostBuildHelper.ViewModel
 			};
 		}
 
-		public static MessageVM CreateWarning(CgbAppInstance appInstance, string text, ICommand additionalInfoCommand)
+		public static MessageVM CreateWarning(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
 		{
 			return new MessageVM(appInstance)
 			{
@@ -58,7 +58,7 @@ namespace CgbPostBuildHelper.ViewModel
 			};
 		}
 
-		public static MessageVM CreateError(CgbAppInstance appInstance, string text, ICommand additionalInfoCommand)
+		public static MessageVM CreateError(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
 		{
 			return new MessageVM(appInstance)
 			{
@@ -72,21 +72,21 @@ namespace CgbPostBuildHelper.ViewModel
 		#endregion
 
 		private readonly DateTime _createDate = DateTime.Now;
-		private readonly CgbAppInstance _instance;
+		private readonly CgbAppInstanceVM _instance;
 		private Brush _messageColor;
 		private Brush _accentColor;
 		private string _messageText;
 		private MessageType _messageType;
 		private ICommand _additionalInfoCmd;
 
-		public MessageVM(CgbAppInstance instance)
+		public MessageVM(CgbAppInstanceVM instance)
 		{
 			_instance = instance;
 		}
 
 		public DateTime CreateDate => _createDate;
 
-		public CgbAppInstance AppInstance => _instance;
+		public CgbAppInstanceVM AppInstance => _instance;
 
 		public string AppInstancePath => _instance.Path;
 

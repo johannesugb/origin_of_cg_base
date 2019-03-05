@@ -1,0 +1,38 @@
+﻿<Window x:Class="CgbPostBuildHelper.View.InstancesList"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CgbPostBuildHelper.View"
+        mc:Ignorable="d"
+        Title="InstancesList" Height="450" Width="800">
+    <Grid>
+		<ScrollViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+			<ItemsControl ItemsSource="{Binding}" AlternationCount="2" >
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<StackPanel Name="asdf">
+
+							<TextBlock FontSize="12" FontWeight="Bold" Margin="4,10,4,0"
+								Text="{Binding Path=CreateDate, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
+
+							<TextBlock FontSize="20" FontWeight="Bold" Margin="4,0,4,2"
+								Text="{Binding Path=TypeDescription}" />
+
+							<TextBlock FontSize="12" Margin="24,2,4,0" Text="Files:" VerticalAlignment="Stretch" Padding="4" Background="LightGray" FontWeight="Bold" />
+						</StackPanel>
+
+						<DataTemplate.Triggers>
+							<Trigger Property="ItemsControl.AlternationIndex" Value="0">
+								<Setter Property="Background" Value="#FFEFEFEF" TargetName="asdf"/>
+							</Trigger>
+							<Trigger Property="ItemsControl.AlternationIndex" Value="1">
+								<Setter Property="Background" Value="#FFF8F8F8" TargetName="asdf"/>
+							</Trigger>
+						</DataTemplate.Triggers>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</Grid>
+</Window>

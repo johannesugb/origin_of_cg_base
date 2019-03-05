@@ -125,17 +125,17 @@ namespace CgbPostBuildHelper.Utils
 		/// <param name="list">Search space</param>
 		/// <param name="path">Key</param>
 		/// <returns>An instance with matching key or null</returns>
-		public static CgbAppInstance GetInstance(this List<CgbAppInstance> list, string path) => (from x in list where string.Compare(x.Path, path, true) == 0 select x).FirstOrDefault();	
+		public static CgbAppInstanceVM GetInstance(this List<CgbAppInstanceVM> list, string path) => (from x in list where string.Compare(x.Path, path, true) == 0 select x).FirstOrDefault();	
 
 
-		public static void PrepareDeployment(this CgbAppInstance inst, IList<FileDeploymentData> oldList, string filePath, string filterPath, out IFileDeployment outDeployment)
+		public static void PrepareDeployment(this CgbAppInstanceVM inst, IList<FileDeploymentDataVM> oldList, string filePath, string filterPath, out IFileDeployment outDeployment)
 		{
 			outDeployment = null;
 			
 			if (null == oldList)
 			{
 				// Make our lifes easier
-				oldList = new List<FileDeploymentData>();
+				oldList = new List<FileDeploymentDataVM>();
 			}
 			// Prepare for what there is to come:
 			var inputFile = new FileInfo(filePath);
