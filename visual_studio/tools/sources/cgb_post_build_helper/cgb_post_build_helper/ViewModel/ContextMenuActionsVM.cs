@@ -21,7 +21,7 @@ namespace CgbPostBuildHelper.ViewModel
 			{
 				var wnd = new View.InstancesList
 				{
-					DataContext = _application.AllInstances
+					DataContext = new { Items =  _application.AllInstances }
 				};
 				wnd.Show();
 			});
@@ -33,7 +33,7 @@ namespace CgbPostBuildHelper.ViewModel
 
 			ClearMessages = new DelegateCommand(_ =>
 			{
-				_application.ShowMessagesList();
+				_application.ClearMessagesList();
 			});
 
 			OpenSettings = new DelegateCommand(_ =>

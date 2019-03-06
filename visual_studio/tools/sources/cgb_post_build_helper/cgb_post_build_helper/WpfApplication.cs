@@ -13,6 +13,7 @@ using CgbPostBuildHelper.View;
 using CgbPostBuildHelper.ViewModel;
 using System.Windows.Threading;
 using System.Windows.Controls;
+using System.Collections.ObjectModel;
 
 namespace CgbPostBuildHelper
 {
@@ -45,9 +46,9 @@ namespace CgbPostBuildHelper
 		/// In case, a process' full path name matches one of those keys, the file watcher for all its 
 		/// child files will be launched.
 		/// </summary>
-		private readonly List<CgbAppInstanceVM> _instances = new List<CgbAppInstanceVM>();
+		private readonly ObservableCollection<CgbAppInstanceVM> _instances = new ObservableCollection<CgbAppInstanceVM>();
 
-		public List<CgbAppInstanceVM> AllInstances => _instances;
+		public ObservableCollection<CgbAppInstanceVM> AllInstances => _instances;
 
 		public WpfApplication()
 		{
@@ -249,11 +250,16 @@ namespace CgbPostBuildHelper
 						{
 							Window window = new Window
 							{
-								Width = 800, Height = 600,
+								Width = 960, Height = 600,
 								Title = title,
 								Content = new EventFilesView()
 								{
-									DataContext = inst
+									DataContext = new 
+									{
+										Path = inst.Path,
+										ShortPath = inst.ShortPath,
+										AllEventsEver = new [] { cgbEvent }
+									}
 								}
 							};
 							window.Show();
@@ -280,11 +286,16 @@ namespace CgbPostBuildHelper
 					{
 						Window window = new Window
 						{
-							Width = 800, Height = 600,
+							Width = 960, Height = 600,
 							Title = "Build-Event Details",
 							Content = new EventFilesView()
 							{
-								DataContext = inst
+								DataContext = new
+								{
+									Path = inst.Path,
+									ShortPath = inst.ShortPath,
+									AllEventsEver = new[] { cgbEvent }
+								}
 							}
 						};
 						window.Show();

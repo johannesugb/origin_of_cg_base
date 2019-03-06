@@ -82,7 +82,7 @@ namespace CgbPostBuildHelper.ViewModel
 	/// <summary>
 	/// Data about exactly one specific asset file.
 	/// </summary>
-	class FileDeploymentDataVM
+	class FileDeploymentDataVM : FileVM
 	{
 		/// <summary>
 		/// The path to the original file
@@ -209,43 +209,6 @@ namespace CgbPostBuildHelper.ViewModel
 		public Brush MessagesInformationInfoColor => Messages.NumberOfMessagesOfType(MessageType.Information) > 0 ? View.Constants.InfoBrushDark : Brushes.LightGray;
 		public Brush MessagesSuccessInfoColor => Messages.NumberOfMessagesOfType(MessageType.Success) > 0 ? View.Constants.SuccessBrushDark : Brushes.LightGray;
 		public Brush MessagesWarningInfoColor => Messages.NumberOfMessagesOfType(MessageType.Warning) > 0 ? View.Constants.WarningBrushDark : Brushes.LightGray;
-
-		public ICommand OpenFileCommand
-		{
-			get => new DelegateCommand(path =>
-			{
-				var info = new FileInfo((string)path);
-				if (!info.Exists)
-				{
-					return;
-				}
-
-				Process.Start(info.FullName);
-			});
-		}
-
-		public ICommand OpenFolderCommand
-		{
-			get => new DelegateCommand(path =>
-			{
-				var info = new FileInfo((string)path);
-				if (!info.Directory.Exists)
-				{
-					return;
-				}
-
-				if (info.Exists)
-				{
-					string argument = "/select, \"" + info.FullName + "\"";
-					Process.Start("explorer.exe", argument);
-				}
-				else
-				{
-					string argument = "/select, \"" + info.DirectoryName + "\"";
-					Process.Start("explorer.exe", argument);
-				}
-			});
-		}
 
 		public ICommand ShowFileMessagesCommand
 		{

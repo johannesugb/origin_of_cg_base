@@ -76,12 +76,14 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Converter\NullToVisibilityConverter.cs" />
     <Compile Include="Deployers\CopyFileDeployment.cs" />
     <Compile Include="Deployers\DeploymentBase.cs" />
     <Compile Include="Deployers\GlShaderDeployment.cs" />
     <Compile Include="Deployers\ModelDeployment.cs" />
     <Compile Include="Deployers\ObjModelDeployment.cs" />
     <Compile Include="Deployers\VkShaderDeployment.cs" />
+    <Compile Include="ViewModel\FileVM.cs" />
     <Compile Include="ViewModel\FileDeploymentDataVM.cs" />
     <Compile Include="ViewModel\ContextMenuActionsVM.cs" />
     <Compile Include="ViewModel\CgbAppInstanceVM.cs" />
@@ -97,6 +99,7 @@
     <Compile Include="ViewModel\MessagesListVM.cs" />
     <Compile Include="ViewModel\MessageVM.cs" />
     <Compile Include="ViewModel\SettingsVM.cs" />
+    <Compile Include="ViewModel\WatchedFileVM.cs" />
     <Compile Include="View\Constants.cs" />
     <Compile Include="View\EventFilesView.xaml.cs">
       <DependentUpon>EventFilesView.xaml</DependentUpon>

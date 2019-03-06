@@ -8,6 +8,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
 
 namespace CgbPostBuildHelper.ViewModel
 {
@@ -25,6 +27,20 @@ namespace CgbPostBuildHelper.ViewModel
 			Files.CollectionChanged += Files_CollectionChanged;
 			AllEventsEver.CollectionChanged += AllEventsEver_CollectionChanged;
 			CurrentlyWatchedFiles.CollectionChanged += CurrentlyWatchedFiles_CollectionChanged;
+
+			OpenEventDetails = new DelegateCommand(_ =>
+			{
+				Window window = new Window
+				{
+					Width = 800, Height = 600,
+					Title = $"All events for {ShortPath}",
+					Content = new View.EventFilesView()
+					{
+						DataContext = this
+					}
+				};
+				window.Show();
+			});
 		}
 
 		private void CurrentlyWatchedFiles_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -57,7 +73,7 @@ namespace CgbPostBuildHelper.ViewModel
 			get
 			{
 				var fi = new FileInfo(Path);
-				return System.IO.Path.Combine(fi.Directory.Name, fi.Name);
+				return System.IO.Path.Combine(fi.Directory?.Name ?? "", fi.Name);
 			}
 		}
 
@@ -108,6 +124,8 @@ namespace CgbPostBuildHelper.ViewModel
 			}
 		}
 
+		public ICommand OpenEventDetails { get; }
+
 		/// <summary>
 		/// List of all files which are CURRENTLY being watched/monitored by a filesystem-watcher for changes.
 		/// Typically, each FileDetailsVM instance will point to one of the entries inside the Files-collection.
@@ -118,7 +136,7 @@ namespace CgbPostBuildHelper.ViewModel
 		/// <summary>
 		/// Number of files which are being watched currently
 		/// </summary>
-		public int CurrentlyWatchedFilesCount => Files.Count;
+		public int CurrentlyWatchedFilesCount => CurrentlyWatchedFiles.Count;
 
 
 	}

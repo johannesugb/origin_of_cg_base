@@ -9,7 +9,7 @@ namespace CgbPostBuildHelper.View
 {
 	static class Constants
 	{
-		public static readonly string DateTimeUiFormat = System.Threading.Thread.CurrentThread.CurrentUICulture.DateTimeFormat.LongTimePattern;
+		public static readonly string DateTimeUiFormat = System.Threading.Thread.CurrentThread.CurrentUICulture.DateTimeFormat.FullDateTimePattern;
 
 		public static readonly Brush ErrorBrushDark = (Brush)new System.Windows.Media.BrushConverter().ConvertFromInvariantString("#ff1a66");
 		public static readonly Brush ErrorBrushLight = (Brush)new System.Windows.Media.BrushConverter().ConvertFromInvariantString("#ffccdd");

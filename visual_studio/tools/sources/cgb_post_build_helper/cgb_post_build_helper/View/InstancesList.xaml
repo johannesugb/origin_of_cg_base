@@ -6,33 +6,99 @@
         xmlns:local="clr-namespace:CgbPostBuildHelper.View"
         mc:Ignorable="d"
         Title="InstancesList" Height="450" Width="800">
+
+	<Window.Resources>
+		<!--Virtualised ItemsControl-->
+		<Style x:Key="ItemsControlVirtualizedStyle" TargetType="ItemsControl">
+			<Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True"/>
+			<Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+			<Setter Property="ItemsPanel">
+				<Setter.Value>
+					<ItemsPanelTemplate>
+						<VirtualizingStackPanel />
+					</ItemsPanelTemplate>
+				</Setter.Value>
+			</Setter>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="ItemsControl">
+						<Border
+                    BorderThickness="{TemplateBinding Border.BorderThickness}"
+                    Padding="{TemplateBinding Control.Padding}"
+                    BorderBrush="{TemplateBinding Border.BorderBrush}"
+                    Background="{TemplateBinding Panel.Background}"
+                    SnapsToDevicePixels="True">
+							<ScrollViewer Padding="{TemplateBinding Control.Padding}" Focusable="False">
+								<ItemsPresenter SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}" />
+							</ScrollViewer>
+						</Border>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+	</Window.Resources>
+	
     <Grid>
-		<ScrollViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-			<ItemsControl ItemsSource="{Binding}" AlternationCount="2" >
-				<ItemsControl.ItemTemplate>
-					<DataTemplate>
-						<StackPanel Name="asdf">
+		<ItemsControl ItemsSource="{Binding Items}" Style="{StaticResource ItemsControlVirtualizedStyle}">
+			<ItemsControl.ItemTemplate>
+				<DataTemplate>
+					<Border BorderBrush="#0099cc" BorderThickness="4" Margin="8,4" Padding="4">
+						<StackPanel Orientation="Vertical">
 
-							<TextBlock FontSize="12" FontWeight="Bold" Margin="4,10,4,0"
-								Text="{Binding Path=CreateDate, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" />
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="*"/>
+									<ColumnDefinition Width="Auto"/>
+								</Grid.ColumnDefinitions>
+								<TextBlock Grid.Column="0" FontSize="20" FontWeight="Bold" Margin="0,2" Text="{Binding ShortPath}" />
+								<Button Grid.Column="1" Command="{Binding OpenEventDetails}" Content="Event Details" Padding="8,2" />
+							</Grid>
 
-							<TextBlock FontSize="20" FontWeight="Bold" Margin="4,0,4,2"
-								Text="{Binding Path=TypeDescription}" />
+							<StackPanel Orientation="Horizontal" Margin="0,2">
+								<TextBlock Text="Latest Update: " />
+								<TextBlock Text="{Binding Path=LatestUpdate, StringFormat={x:Static local:Constants.DateTimeUiFormat}, FallbackValue=14.03.2019 15:10}" 
+										   FontWeight="Bold"/>
+							</StackPanel>
 
-							<TextBlock FontSize="12" Margin="24,2,4,0" Text="Files:" VerticalAlignment="Stretch" Padding="4" Background="LightGray" FontWeight="Bold" />
+							<StackPanel Orientation="Horizontal" Margin="0,2">
+								<TextBlock Text="{Binding FilesCount}" FontWeight="Bold" />
+								<TextBlock Text=" files deployed at latest event." />
+							</StackPanel>
+
+							<StackPanel Orientation="Horizontal" Margin="0,2">
+								<TextBlock Text="{Binding CurrentlyWatchedFilesCount}" FontWeight="Bold" />
+								<TextBlock Text=" files are currently being watched for changes." />
+							</StackPanel>
+
+							<ItemsControl ItemsSource="{Binding CurrentlyWatchedFiles}" AlternationCount="2">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<StackPanel Name="FileContainer" Orientation="Vertical">
+											<TextBlock FontSize="16" FontWeight="Bold" Text="{Binding SomewhatShortPath}" />
+											<StackPanel Orientation="Horizontal">
+												<Button Margin="0,1,3,1" Padding="2,1" Content="-> File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding InputFilePath}" />
+												<Button Margin="0,1,3,1" Padding="2,1" Content="-> Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding InputFilePath}" />
+												<TextBox IsReadOnly="True" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Text="{Binding InputFilePath}" />
+											</StackPanel>
+										</StackPanel>
+
+										<DataTemplate.Triggers>
+											<Trigger Property="ItemsControl.AlternationIndex" Value="0">
+												<Setter Property="Background" Value="#FFEFEFEF" TargetName="FileContainer"/>
+											</Trigger>
+											<Trigger Property="ItemsControl.AlternationIndex" Value="1">
+												<Setter Property="Background" Value="#FFF8F8F8" TargetName="FileContainer"/>
+											</Trigger>
+										</DataTemplate.Triggers>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
 						</StackPanel>
 
-						<DataTemplate.Triggers>
-							<Trigger Property="ItemsControl.AlternationIndex" Value="0">
-								<Setter Property="Background" Value="#FFEFEFEF" TargetName="asdf"/>
-							</Trigger>
-							<Trigger Property="ItemsControl.AlternationIndex" Value="1">
-								<Setter Property="Background" Value="#FFF8F8F8" TargetName="asdf"/>
-							</Trigger>
-						</DataTemplate.Triggers>
-					</DataTemplate>
-				</ItemsControl.ItemTemplate>
-			</ItemsControl>
-		</ScrollViewer>
+					
+					</Border>
+				</DataTemplate>
+			</ItemsControl.ItemTemplate>
+		</ItemsControl>
 	</Grid>
 </Window>
