@@ -49,6 +49,13 @@ namespace CgbPostBuildHelper.Utils
 			return hash1.SequenceEqual(hash2);
 		}
 
+		public static string NormalizePath(string path)
+		{
+			return Path.GetFullPath(new Uri(path).LocalPath)
+					   .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+					   .ToUpperInvariant();
+		}
+
 		/// <summary>
 		/// Helper function for extracting a value for a named argument out of the command line arguments.
 		/// Names and values always come in pairs of the form: "-paramName C:\parameter_value"
@@ -120,13 +127,28 @@ namespace CgbPostBuildHelper.Utils
 		}
 
 		/// <summary>
+		/// Finds a specific instance in the list of watched files. An watched file is uniquely identified by a path
+		/// </summary>
+		/// <param name="list">Search space</param>
+		/// <param name="path">Key</param>
+		/// <returns>A watched file entry with matching key or null</returns>
+		public static WatchedFileVM GetFile(this IList<WatchedFileVM> list, string path) 
+		{
+			path = NormalizePath(path);
+			return (from x in list where string.Compare(NormalizePath(x.Path), path, true) == 0 select x).FirstOrDefault();	
+		}
+
+		/// <summary>
 		/// Finds a specific instance in the list of instances. An instance is uniquely identified by a path
 		/// </summary>
 		/// <param name="list">Search space</param>
 		/// <param name="path">Key</param>
 		/// <returns>An instance with matching key or null</returns>
-		public static CgbAppInstanceVM GetInstance(this IList<CgbAppInstanceVM> list, string path) => (from x in list where string.Compare(x.Path, path, true) == 0 select x).FirstOrDefault();	
-
+		public static CgbAppInstanceVM GetInstance(this IList<CgbAppInstanceVM> list, string path)
+		{
+			path = NormalizePath(path);
+			return (from x in list where string.Compare(NormalizePath(x.Path), path, true) == 0 select x).FirstOrDefault();
+		}
 
 		public static void PrepareDeployment(this CgbAppInstanceVM inst, IList<FileDeploymentDataVM> oldList, string filePath, string filterPath, out IFileDeployment outDeployment)
 		{
@@ -165,7 +187,6 @@ namespace CgbPostBuildHelper.Utils
 
 			// Ensure we have no coding errors for the following cases:
 			Diag.Debug.Assert(isAsset != isShader);
-			Diag.Debug.Assert(null == (from x in inst.Files where string.Compare(x.InputFilePath, filePath, true) == 0 select x).FirstOrDefault());
 
 			// Construct the deployment and DO IT... JUST DO IT
 			IFileDeployment deploy = null;

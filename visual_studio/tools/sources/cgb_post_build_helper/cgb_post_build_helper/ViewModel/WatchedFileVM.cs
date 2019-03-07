@@ -12,7 +12,15 @@ namespace CgbPostBuildHelper.ViewModel
 {
 	class WatchedFileVM : FileVM
 	{
-		public string Path { get; set; }
+		public WatchedFileVM(string filterPath, string filePath)
+		{
+			FilterPath = filterPath;
+			Path = filePath;
+		}
+
+		public string FilterPath { get; }
+
+		public string Path { get; }
 		
 		public string FileName
 		{

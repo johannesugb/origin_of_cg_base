@@ -131,7 +131,7 @@ namespace CgbPostBuildHelper.ViewModel
 		/// Typically, each FileDetailsVM instance will point to one of the entries inside the Files-collection.
 		/// If it doesn't, this should actually mean that there is a bug.
 		/// </summary>
-		public ObservableCollection<string> CurrentlyWatchedFiles { get; } = new ObservableCollection<string>();
+		public ObservableCollection<WatchedDirectoryVM> CurrentlyWatchedFiles { get; } = new ObservableCollection<WatchedDirectoryVM>();
 
 		/// <summary>
 		/// Number of files which are being watched currently

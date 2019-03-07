@@ -7,6 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using System.Management;
+using System.Management.Instrumentation;
+using System.IO;
+using CgbPostBuildHelper.Utils;
 
 namespace CgbPostBuildHelper
 {
@@ -20,6 +24,9 @@ namespace CgbPostBuildHelper
 		/// </summary>
 		private WpfApplication _wpfApp;
 
+		/// <summary>
+		/// Constructor
+		/// </summary>
 		public SingleApplicationInstance()
 		{
 			// Enable single instance behavior:
@@ -60,6 +67,10 @@ namespace CgbPostBuildHelper
 
 		protected override void OnShutdown()
 		{
+			foreach (var inst in _wpfApp.AllInstances)
+			{
+				_wpfApp.ClearAllFileWatchers(inst);
+			}
 			base.OnShutdown();
 		}
 

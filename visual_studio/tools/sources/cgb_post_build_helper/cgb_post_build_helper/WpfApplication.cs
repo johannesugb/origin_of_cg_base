@@ -50,6 +50,7 @@ namespace CgbPostBuildHelper
 
 		public ObservableCollection<CgbAppInstanceVM> AllInstances => _instances;
 
+
 		public WpfApplication()
 		{
 			_messagesListView = new MessagesList()
@@ -144,6 +145,8 @@ namespace CgbPostBuildHelper
 				inst.Config = p;
 				// Proceed with an empty list because files could have changed:
 				inst.Files.Clear();
+
+				ClearAllFileWatchers(inst);
 			}
 
 			// Parse the .filters file for asset files and shader files
@@ -306,6 +309,57 @@ namespace CgbPostBuildHelper
 				{
 					ShowMessagesList();
 				}
+			}
+
+			// Watch the deployed files
+			StartWatchingDeployedFiles(inst);
+		}
+
+		public void ClearAllFileWatchers(CgbAppInstanceVM inst)
+		{
+			foreach (var fw in inst.CurrentlyWatchedFiles)
+			{
+				fw.EndWatchAndDie();
+			}
+			inst.CurrentlyWatchedFiles.Clear();
+		}
+
+		public void StartWatchingDeployedFiles(CgbAppInstanceVM inst)
+		{
+			var watches = new Dictionary<string, List<WatchedFileVM>>();
+			foreach (var fw in inst.Files)
+			{
+				// Skip symlinks:
+				if (fw.DeploymentType == DeploymentType.Symlink)
+				{
+					continue;
+				}
+
+				var fi = new FileInfo(fw.InputFilePath);
+				var existingKey = (from k in watches.Keys 
+								   where CgbUtils.NormalizePath(k) == CgbUtils.NormalizePath(fi.DirectoryName)
+								   select k)
+								   .FirstOrDefault();
+
+				if (null == existingKey)
+				{
+					existingKey = fi.DirectoryName;
+					watches.Add(existingKey, new List<WatchedFileVM>());
+				}
+				watches[existingKey].Add(new WatchedFileVM(fw.FilterPath, fw.InputFilePath));
+			}
+
+			foreach (var w in watches)
+			{
+				var watchDir = new WatchedDirectoryVM(this, inst, w.Key);
+
+				foreach (var f in w.Value)
+				{
+					watchDir.Files.Add(f);
+				}
+
+				// Start to watch:
+				watchDir.NightGathersAndNowMyWatchBegins();
 			}
 		}
 
