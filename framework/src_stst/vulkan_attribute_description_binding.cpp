@@ -5,7 +5,7 @@
 vulkan_attribute_description_binding::vulkan_attribute_description_binding(uint32_t binding, uint32_t stride, vk::VertexInputRate inputRate)
 {
 	mBindingDescription = {};
-	mBindingDescription.binding = 1;
+	mBindingDescription.binding = binding;
 	mBindingDescription.stride = stride;
 	mBindingDescription.inputRate = vk::VertexInputRate::eVertex;
 }

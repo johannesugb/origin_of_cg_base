@@ -164,8 +164,21 @@ private:
 		scissor.offset = { 0, 0 };
 		scissor.extent = imagePresenter->get_swap_chain_extent();
 
+		//Atribute description bindings
+		auto bind1 = std::make_shared<vulkan_attribute_description_binding>(1, sizeof(Vertex), vk::VertexInputRate::eVertex);
+		bind1->add_attribute_description(0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos));
+		bind1->add_attribute_description(1, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color));
+		auto bind2 = std::make_shared<vulkan_attribute_description_binding>(2, sizeof(Vertex), vk::VertexInputRate::eVertex);
+		bind2->add_attribute_description(2, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
+
 		// Render Drawer and Pipeline
 		mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/triangle.vert.spv", "shaders/triangle.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, descriptorSetLayout);
+		mRenderVulkanPipeline->add_attr_desc_binding(bind1);
+		mRenderVulkanPipeline->add_attr_desc_binding(bind2);
+		mRenderVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/triangle.vert.spv");
+		mRenderVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/triangle.frag.spv");
+
+		mRenderVulkanPipeline->bake();
 		drawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mRenderVulkanPipeline);
 
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
@@ -593,8 +606,8 @@ int main()
 
 		cgb::settings::gApplicationName = "Hello VRS";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
-		//cgb::settings::gRequiredInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-		//cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+		cgb::settings::gRequiredInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+		cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
 
 		// Create a window which we're going to use to render to
 		auto windowParams = cgb::window_params{

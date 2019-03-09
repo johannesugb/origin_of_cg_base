@@ -25,10 +25,8 @@ namespace cgb {
 	}
 
 	vulkan_pipeline::vulkan_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout) :
-		mRenderPass(renderPass)
+		mVertexFilename(vertexShaderFilename) , mFragmentFilename(fragmentShaderFilename), mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mDescriptorSetLayout(descriptorSetLayout)
 	{
-		create_graphics_pipeline(vertexShaderFilename, fragmentShaderFilename, viewport, scissor, msaaSamples, descriptorSetLayout);
-		initialized = true;
 	}
 
 	vulkan_pipeline::vulkan_pipeline(const std::string & filename, std::vector<vk::DescriptorSetLayout> descriptorSetLayouts, size_t pushConstantsSize) :
@@ -47,6 +45,12 @@ namespace cgb {
 			vulkan_context::instance().device.destroyPipeline(mPipeline, nullptr);
 			vulkan_context::instance().device.destroyPipelineLayout(mPipelineLayout, nullptr);
 		}
+	}
+
+	void cgb::vulkan_pipeline::bake()
+	{
+		create_graphics_pipeline();
+		initialized = true;
 	}
 
 	void vulkan_pipeline::recreate_compute()
@@ -112,39 +116,39 @@ namespace cgb {
 	}
 
 
-	void vulkan_pipeline::create_graphics_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout) {
+	void vulkan_pipeline::create_graphics_pipeline() {
 		// shaders
 		//auto vertShaderCode = readFile("Shader/vert.spv");
 		//auto fragShaderCode = readFile("Shader/frag.spv");
 
-		auto vertShaderCode = readFile(vertexShaderFilename);
-		auto fragShaderCode = readFile(fragmentShaderFilename);
+		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages(mShaderModules.size());
+		for (int i = 0; i < mShaderModules.size(); i++) {
+			if (!mShaderModules[i].shaderModule) {
+				auto shaderCode = readFile(mShaderModules[i].shaderFilename);
+				auto shaderModule = create_shader_module(shaderCode);
 
-		vk::ShaderModule vertShaderModule;
-		vk::ShaderModule fragShaderModule;
+				vk::PipelineShaderStageCreateInfo shaderStageInfo = {};
+				shaderStageInfo.stage = static_cast<vk::ShaderStageFlagBits>(mShaderModules[i].shaderStage);
+				shaderStageInfo.module = shaderModule;
+				shaderStageInfo.pName = "main";
 
-		vertShaderModule = create_shader_module(vertShaderCode);
-		fragShaderModule = create_shader_module(fragShaderCode);
-
-		vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
-		vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-		vertShaderStageInfo.module = vertShaderModule;
-		vertShaderStageInfo.pName = "main";
-
-		vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
-		fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-		fragShaderStageInfo.module = fragShaderModule;
-		fragShaderStageInfo.pName = "main";
-
-		vk::PipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+				shaderStages[i] = shaderStageInfo;
+			}
+			else {
+				shaderStages[i] = *mShaderModules[i].shaderModule;
+			}
+		}
 
 		// fixed/configureable functions
-		// TODO extract into own vertex structure
-		auto bindingDescription = Vertex::getBindingDescription();
-		auto bindingDescription2 = Vertex::getBindingDescription2();
-		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+		auto bindings = std::vector<vk::VertexInputBindingDescription>(mAttrDescBindings.size());
+		auto tfFuncAttBind = [](std::shared_ptr<vulkan_attribute_description_binding> attrBind) { return attrBind->get_binding_description(); };
+		std::transform(mAttrDescBindings.begin(), mAttrDescBindings.end(), bindings.begin(), tfFuncAttBind);
 
-		std::vector<vk::VertexInputBindingDescription> bindings = { bindingDescription, bindingDescription2 };
+		auto attributeDescriptions = std::vector<vk::VertexInputAttributeDescription>();
+		for (auto attrDescBind : mAttrDescBindings) {
+			auto attrDescList = attrDescBind->get_attribute_descriptions();
+			attributeDescriptions.insert(attributeDescriptions.end(), attrDescList.begin(), attrDescList.end());
+		}
 
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.vertexBindingDescriptionCount = bindings.size();
@@ -159,9 +163,9 @@ namespace cgb {
 		uint32_t viewportCount = 1;
 		vk::PipelineViewportStateCreateInfo viewportState = {};
 		viewportState.viewportCount = viewportCount;
-		viewportState.pViewports = &viewport;
+		viewportState.pViewports = &mViewport;
 		viewportState.scissorCount = 1;
-		viewportState.pScissors = &scissor;
+		viewportState.pScissors = &mScissor;
 
 		vk::PipelineViewportShadingRateImageStateCreateInfoNV shadingRateImage = {};
 		shadingRateImage.shadingRateImageEnable = VK_TRUE;
@@ -232,7 +236,7 @@ namespace cgb {
 
 		vk::PipelineMultisampleStateCreateInfo multisampling = {};
 		multisampling.sampleShadingEnable = VK_FALSE;
-		multisampling.rasterizationSamples = msaaSamples;
+		multisampling.rasterizationSamples = mMsaaSamples;
 		multisampling.minSampleShading = 1.0f; // Optional
 		multisampling.pSampleMask = nullptr; // Optional
 		multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
@@ -275,7 +279,7 @@ namespace cgb {
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		pipelineLayoutInfo.setLayoutCount = 1; // Optional
-		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; // Optional
+		pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout; // Optional
 		pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange; // Optional
 
@@ -296,8 +300,8 @@ namespace cgb {
 
 								// finally create graphics pipeline
 		vk::GraphicsPipelineCreateInfo pipelineInfo = {};
-		pipelineInfo.stageCount = 2;
-		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.stageCount = shaderStages.size();
+		pipelineInfo.pStages = shaderStages.data();
 
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -322,8 +326,9 @@ namespace cgb {
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
-		vulkan_context::instance().device.destroyShaderModule(fragShaderModule, nullptr);
-		vulkan_context::instance().device.destroyShaderModule(vertShaderModule, nullptr);
+		for (auto shaderStage : shaderStages) {
+			vulkan_context::instance().device.destroyShaderModule(shaderStage.module, nullptr);
+		}
 	}
 
 	vk::ShaderModule vulkan_pipeline::create_shader_module(const std::vector<char>& code) {
@@ -339,4 +344,48 @@ namespace cgb {
 		return shaderModule;
 	}
 
+
+	void cgb::vulkan_pipeline::add_shader(ShaderStageFlagBits shaderStage, const std::string & shaderFilename)
+	{
+		shader_module mod(shaderFilename, shaderStage);
+		check_shader_stage_present(mod);
+		mShaderModules.push_back(mod);
+
+	}
+
+	void cgb::vulkan_pipeline::add_shader(ShaderStageFlagBits shaderStage, std::shared_ptr<vk::PipelineShaderStageCreateInfo> shaderModule)
+	{
+		shader_module mod(shaderModule, shaderStage);
+		check_shader_stage_present(mod);
+		mShaderModules.push_back(mod);
+	}
+
+	void cgb::vulkan_pipeline::check_shader_stage_present(shader_module mod)
+	{
+		// each module is only allowed once
+		if (std::find(mShaderModules.begin(), mShaderModules.end(), mod) != mShaderModules.end()) {
+			std::string stage = "";
+			switch (mod.shaderStage)
+			{
+			case ShaderStageFlagBits::eVertex: stage = "VK_SHADER_STAGE_VERTEX_BIT"; break;
+			case ShaderStageFlagBits::eTessellationControl: stage = "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT"; break;
+			case ShaderStageFlagBits::eTessellationEvaluation: stage = "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT"; break;
+			case ShaderStageFlagBits::eGeometry: stage = "VK_SHADER_STAGE_GEOMETRY_BIT"; break;
+			case ShaderStageFlagBits::eFragment: stage = "VK_SHADER_STAGE_FRAGMENT_BIT"; break;
+			case ShaderStageFlagBits::eCompute: stage = "VK_SHADER_STAGE_COMPUTE_BIT"; break;
+			case ShaderStageFlagBits::eAllGraphics: stage = "VK_SHADER_STAGE_ALL_GRAPHICS"; break;
+			case ShaderStageFlagBits::eAll: stage = "VK_SHADER_STAGE_ALL"; break;
+			case ShaderStageFlagBits::eRaygenNV: stage = "VK_SHADER_STAGE_RAYGEN_BIT_NV"; break;
+			case ShaderStageFlagBits::eAnyHitNV: stage = "VK_SHADER_STAGE_ANY_HIT_BIT_NV"; break;
+			case ShaderStageFlagBits::eClosestHitNV: stage = "VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV"; break;
+			case ShaderStageFlagBits::eMissNV: stage = "VK_SHADER_STAGE_MISS_BIT_NV"; break;
+			case ShaderStageFlagBits::eIntersectionNV: stage = "VK_SHADER_STAGE_INTERSECTION_BIT_NV"; break;
+			case ShaderStageFlagBits::eCallableNV: stage = "VK_SHADER_STAGE_CALLABLE_BIT_NV"; break;
+			case ShaderStageFlagBits::eTaskNV: stage = "VK_SHADER_STAGE_TASK_BIT_NV"; break;
+			case ShaderStageFlagBits::eMeshNV: stage = "VK_SHADER_STAGE_MESH_BIT_NV"; break;
+			};
+
+			throw std::runtime_error("failed to add shader module! Module with stage " + stage + " has already been added to this pipeline");
+		}
+	}
 }

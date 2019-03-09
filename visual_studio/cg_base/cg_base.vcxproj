@@ -68,6 +68,7 @@
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp" />
     <ClCompile Include="..\..\framework\src\window.cpp" />
+    <ClCompile Include="..\..\framework\src_stst\vulkan_attribute_description_binding.cpp" />
     <ClCompile Include="..\..\framework\src_stst\vulkan_buffer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -146,7 +147,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="vulkan_attribute_description_binding.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\camera.h" />
@@ -197,6 +197,7 @@
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_only_timer.h" />
     <ClInclude Include="..\..\framework\include\window.h" />
+    <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h" />
     <ClInclude Include="..\..\framework\include_stst\vulkan_buffer.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -269,7 +270,6 @@
     </ClInclude>
     <ClInclude Include="..\precompiled_headers\include\cg_stdafx.h" />
     <ClInclude Include="..\precompiled_headers\include\cg_targetver.h" />
-    <ClInclude Include="vulkan_attribute_description_binding.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
