@@ -49,7 +49,14 @@ namespace cgb {
 
 	void cgb::vulkan_pipeline::bake()
 	{
-		create_graphics_pipeline();
+		// create compute pipeline if a compute module is contained in the shader modules
+		shader_module compMod("", ShaderStageFlagBits::eCompute); // empty compute module for comparison
+		if (std::find(mShaderModules.begin(), mShaderModules.end(), compMod) != mShaderModules.end() && mShaderModules.size() == 1) {
+			recreate_compute();
+		}
+		else {
+			create_graphics_pipeline();
+		}
 		initialized = true;
 	}
 
@@ -82,17 +89,9 @@ namespace cgb {
 
 	void vulkan_pipeline::fill_compute_structures(vk::PipelineLayoutCreateInfo& pipelineLayoutInfo, vk::ComputePipelineCreateInfo& pipelineInfo)
 	{
+		assert(mShaderModules.size() == 1);
 		// shaders
-		auto compShaderCode = readFile(mComputeFilename);
-
-		vk::ShaderModule compShaderModule;
-
-		compShaderModule = create_shader_module(compShaderCode);
-
-		vk::PipelineShaderStageCreateInfo compShaderStageInfo = {};
-		compShaderStageInfo.stage = vk::ShaderStageFlagBits::eCompute;
-		compShaderStageInfo.module = compShaderModule;
-		compShaderStageInfo.pName = "main";
+		auto compShaderStageInfo = build_shader_stage_create_info(mShaderModules[0]);
 
 		// TODO replace with ressource
 		mPushConstantRanges.clear();
@@ -123,20 +122,7 @@ namespace cgb {
 
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages(mShaderModules.size());
 		for (int i = 0; i < mShaderModules.size(); i++) {
-			if (!mShaderModules[i].shaderModule) {
-				auto shaderCode = readFile(mShaderModules[i].shaderFilename);
-				auto shaderModule = create_shader_module(shaderCode);
-
-				vk::PipelineShaderStageCreateInfo shaderStageInfo = {};
-				shaderStageInfo.stage = static_cast<vk::ShaderStageFlagBits>(mShaderModules[i].shaderStage);
-				shaderStageInfo.module = shaderModule;
-				shaderStageInfo.pName = "main";
-
-				shaderStages[i] = shaderStageInfo;
-			}
-			else {
-				shaderStages[i] = *mShaderModules[i].shaderModule;
-			}
+			shaderStages[i] = build_shader_stage_create_info(mShaderModules[i]);
 		}
 
 		// fixed/configureable functions
@@ -387,5 +373,37 @@ namespace cgb {
 
 			throw std::runtime_error("failed to add shader module! Module with stage " + stage + " has already been added to this pipeline");
 		}
+
+		shader_module compMod("", ShaderStageFlagBits::eCompute); // empty compute module for comparison
+
+		// if pipeline already contains a compute module, no other modules allowed
+		if (std::find(mShaderModules.begin(), mShaderModules.end(), compMod) != mShaderModules.end()) {
+			throw std::runtime_error("failed to add shader module! The pipeline has already a compute module and is not allowed to have a compute module and another module.");
+		}
+
+		// if module to add is a compute module, no other modules allowed
+		if (mod.shaderStage == ShaderStageFlagBits::eCompute && !mShaderModules.empty()) {
+			throw std::runtime_error("failed to add shader module! The pipeline has already another module, so a compute module cannot be added.");
+		}
+	}
+
+	vk::PipelineShaderStageCreateInfo cgb::vulkan_pipeline::build_shader_stage_create_info(shader_module & mod)
+	{
+		vk::PipelineShaderStageCreateInfo shaderStage;
+		if (!mod.shaderModule) {
+			auto shaderCode = readFile(mod.shaderFilename);
+			auto shaderModule = create_shader_module(shaderCode);
+
+			vk::PipelineShaderStageCreateInfo shaderStageInfo = {};
+			shaderStageInfo.stage = static_cast<vk::ShaderStageFlagBits>(mod.shaderStage);
+			shaderStageInfo.module = shaderModule;
+			shaderStageInfo.pName = "main";
+
+			shaderStage = shaderStageInfo;
+		}
+		else {
+			shaderStage = *mod.shaderModule;
+		}
+		return shaderStage;
 	}
 }

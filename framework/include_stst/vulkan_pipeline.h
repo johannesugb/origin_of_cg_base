@@ -83,6 +83,7 @@ namespace cgb {
 		void create_graphics_pipeline();
 
 		vk::ShaderModule create_shader_module(const std::vector<char>& code);
+		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(shader_module& mod);
 
 		// pipeline config
 		std::string mComputeFilename;

@@ -11,7 +11,7 @@ namespace cgb {
 		auto descriptorSetLayouts = pipeline->get_descriptor_set_layouts();
 		descriptorSetLayouts.push_back(vrsComputeDebugDescriptorSetLayout);
 		pipeline->set_descriptor_set_layouts(descriptorSetLayouts);
-		pipeline->recreate_compute();
+		pipeline->bake();
 	}
 
 

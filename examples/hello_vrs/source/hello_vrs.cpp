@@ -186,6 +186,8 @@ private:
 
 			// Compute Drawer and Pipeline
 			mComputeVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/vrs_img.comp.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(vrs_eye_comp_data));
+			mComputeVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_img.comp.spv");
+			
 			mVrsImageComputeDrawer = std::make_unique<cgb::vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
 			mVrsImageComputeDrawer->set_vrs_images(vrsImages);
 		}
