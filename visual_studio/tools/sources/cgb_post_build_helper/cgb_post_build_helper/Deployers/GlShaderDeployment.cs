@@ -8,7 +8,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Diag = System.Diagnostics;
 using System.Security.Cryptography;
-using CgbPostBuildHelper.ViewModel;
+using CgbPostBuildHelper.Model;
 using Assimp;
 using System.Runtime.InteropServices;
 
@@ -49,7 +49,7 @@ namespace CgbPostBuildHelper.Deployers
 			assetFile.OutputFilePath = _outputFile.FullName;
 			assetFile.DeploymentType = DeploymentType.MorphedCopy;
 
-			assetFile.Messages.Add(MessageVM.CreateSuccess(_instance, $"Copied (Vk->Gl morphed) GLSL file to '{outFile.FullName}'", null)); // TODO: open a window or so?
+			assetFile.Messages.Add(Message.Create(MessageType.Success, $"Copied (Vk->Gl morphed) GLSL file to '{outFile.FullName}'", null)); // TODO: open a window or so?
 
 			FilesDeployed.Add(assetFile);
 		}

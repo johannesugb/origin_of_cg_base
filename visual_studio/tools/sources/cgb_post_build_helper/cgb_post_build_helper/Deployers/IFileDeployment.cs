@@ -16,9 +16,9 @@ namespace CgbPostBuildHelper.Deployers
 {
 	interface IFileDeployment
 	{
-		void SetInputParameters(CgbAppInstanceVM inst, string filterPath, FileInfo inputFile, string outputFilePath);
+		void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath);
 		void Deploy();
-		List<FileDeploymentDataVM> FilesDeployed { get; }
+		List<FileDeploymentData> FilesDeployed { get; }
 	}
 
 }

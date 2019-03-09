@@ -11,6 +11,7 @@ using System.Management;
 using System.Management.Instrumentation;
 using System.IO;
 using CgbPostBuildHelper.Utils;
+using CgbPostBuildHelper.Model;
 
 namespace CgbPostBuildHelper
 {
@@ -47,19 +48,16 @@ namespace CgbPostBuildHelper
 			};
 			if (e.CommandLine.Count > 0)
 			{
-				_wpfApp.Dispatcher.Invoke(() => 
+				try
 				{
-					try
-					{
-						var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
-						_wpfApp.HandleNewInvocation(instanceParams);
-					}
-					catch (Exception ex)
-					{
-						_wpfApp.AddToMessagesList(MessageVM.CreateError(null, ex.Message, null)); // TODO: Window with more info?
-						_wpfApp.ShowMessagesList();
-					}
-				});
+					var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
+					_wpfApp.HandleNewInvocation(instanceParams);
+				}
+				catch (Exception ex)
+				{
+					_wpfApp.AddToMessagesList(Message.Create(MessageType.Error, ex.Message, null)); // TODO: Window with more info?
+					_wpfApp.ShowMessagesList();
+				}
 			}
 			_wpfApp.Run();
 			return false;
@@ -82,19 +80,16 @@ namespace CgbPostBuildHelper
 		{
 			if (e.CommandLine.Count > 0)
 			{
-				_wpfApp.Dispatcher.Invoke(() =>
+				try
 				{
-					try
-					{
-						var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
-						_wpfApp.HandleNewInvocation(instanceParams);
-					}
-					catch (Exception ex)
-					{
-						_wpfApp.AddToMessagesList(MessageVM.CreateError(null, ex.Message, null)); // TODO: Window with more info?
-						_wpfApp.ShowMessagesList();
-					}
-				});
+					var instanceParams = CgbUtils.ParseCommandLineArgs(e.CommandLine.ToArray());
+					_wpfApp.HandleNewInvocation(instanceParams);
+				}
+				catch (Exception ex)
+				{
+					_wpfApp.AddToMessagesList(Message.Create(MessageType.Error, ex.Message, null)); // TODO: Window with more info?
+					_wpfApp.ShowMessagesList();
+				}
 			}
 		}
 		

@@ -47,7 +47,7 @@ namespace CgbPostBuildHelper.Deployers
 				FilesDeployed.Add(assetFileTex);
 			}
 
-			assetFileModel.Messages.Add(MessageVM.CreateSuccess(_instance, $"Copied model '{assetFileModel.OutputFilePath}', and {_texturePaths.Count} dependent material textures.", null)); // TODO: open a window or so?
+			assetFileModel.Messages.Add(Message.Create(MessageType.Success, $"Copied model '{assetFileModel.OutputFilePath}', and {_texturePaths.Count} dependent material textures.", null)); // TODO: open a window or so?
 		}
 
 		protected readonly List<string> _texturePaths = new List<string>();

@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace CgbPostBuildHelper.ViewModel
 {
@@ -20,13 +21,16 @@ namespace CgbPostBuildHelper.ViewModel
 	{
 		#region private members
 		private InvocationParams _config;
+		private readonly Dispatcher _myDispatcher;
 		#endregion
 
 		public CgbAppInstanceVM()
 		{
+			_myDispatcher = Dispatcher.CurrentDispatcher;
+
 			Files.CollectionChanged += Files_CollectionChanged;
 			AllEventsEver.CollectionChanged += AllEventsEver_CollectionChanged;
-			CurrentlyWatchedFiles.CollectionChanged += CurrentlyWatchedFiles_CollectionChanged;
+			CurrentlyWatchedDirectories.CollectionChanged += CurrentlyWatchedFiles_CollectionChanged;
 
 			OpenEventDetails = new DelegateCommand(_ =>
 			{
@@ -106,6 +110,7 @@ namespace CgbPostBuildHelper.ViewModel
 		/// </summary>
 		public ObservableCollection<CgbEventVM> AllEventsEver { get; } = new ObservableCollection<CgbEventVM>();
 
+				
 		/// <summary>
 		/// Returns the date of the latest event/update (or null if there is none)
 		/// </summary>
@@ -131,13 +136,12 @@ namespace CgbPostBuildHelper.ViewModel
 		/// Typically, each FileDetailsVM instance will point to one of the entries inside the Files-collection.
 		/// If it doesn't, this should actually mean that there is a bug.
 		/// </summary>
-		public ObservableCollection<WatchedDirectoryVM> CurrentlyWatchedFiles { get; } = new ObservableCollection<WatchedDirectoryVM>();
+		public ObservableCollection<WatchedDirectoryVM> CurrentlyWatchedDirectories { get; } = new ObservableCollection<WatchedDirectoryVM>();
 
 		/// <summary>
 		/// Number of files which are being watched currently
 		/// </summary>
-		public int CurrentlyWatchedFilesCount => CurrentlyWatchedFiles.Count;
-
+		public int CurrentlyWatchedFilesCount => CurrentlyWatchedDirectories.Count;
 
 	}
 }

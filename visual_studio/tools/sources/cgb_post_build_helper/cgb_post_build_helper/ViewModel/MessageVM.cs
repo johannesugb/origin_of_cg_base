@@ -11,80 +11,20 @@ using System.Windows.Media;
 
 namespace CgbPostBuildHelper.ViewModel
 {
-	enum MessageType
-	{
-		Success,
-		Information,
-		Warning,
-		Error,
-	}
 
 	class MessageVM : BindableBase
 	{
-		#region static factory methods
-		public static MessageVM CreateSuccess(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
-		{
-			return new MessageVM(appInstance)
-			{
-				_messageColor = View.Constants.SuccessBrushLight,
-				_accentColor = View.Constants.SuccessBrushDark,
-				_messageType = MessageType.Success,
-				_messageText = text,
-				_additionalInfoCmd = additionalInfoCommand
-			};
-		}
-
-		public static MessageVM CreateInfo(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
-		{
-			return new MessageVM(appInstance)
-			{
-				_messageColor = View.Constants.InfoBrushLight,
-				_accentColor = View.Constants.InfoBrushDark,
-				_messageType = MessageType.Information,
-				_messageText = text,
-				_additionalInfoCmd = additionalInfoCommand
-			};
-		}
-
-		public static MessageVM CreateWarning(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
-		{
-			return new MessageVM(appInstance)
-			{
-				_messageColor = View.Constants.WarningBrushLight,
-				_accentColor = View.Constants.WarningBrushDark,
-				_messageType = MessageType.Warning,
-				_messageText = text,
-				_additionalInfoCmd = additionalInfoCommand
-			};
-		}
-
-		public static MessageVM CreateError(CgbAppInstanceVM appInstance, string text, ICommand additionalInfoCommand)
-		{
-			return new MessageVM(appInstance)
-			{
-				_messageColor = View.Constants.ErrorBrushLight,
-				_accentColor = View.Constants.ErrorBrushDark,
-				_messageType = MessageType.Error,
-				_messageText = text,
-				_additionalInfoCmd = additionalInfoCommand
-			};
-		}
-		#endregion
-
-		private readonly DateTime _createDate = DateTime.Now;
 		private readonly CgbAppInstanceVM _instance;
-		private Brush _messageColor;
-		private Brush _accentColor;
-		private string _messageText;
-		private MessageType _messageType;
 		private ICommand _additionalInfoCmd;
+		private Model.Message _model;
 
-		public MessageVM(CgbAppInstanceVM instance)
+		public MessageVM(CgbAppInstanceVM instance, Model.Message model)
 		{
 			_instance = instance;
+			_model = model;
 		}
 
-		public DateTime CreateDate => _createDate;
+		public DateTime CreateDate => _model.CreateDate;
 
 		public CgbAppInstanceVM AppInstance => _instance;
 
@@ -94,28 +34,56 @@ namespace CgbPostBuildHelper.ViewModel
 
 		public Brush MessageColor
 		{
-			get => _messageColor;
-			set => SetProperty(ref _messageColor, value);
+			get
+			{
+				switch (_model.MessageType)
+				{
+					case MessageType.Success:
+						return View.Constants.SuccessBrushLight;
+					case MessageType.Information:
+						return View.Constants.InfoBrushLight;
+					case MessageType.Warning:
+						return View.Constants.WarningBrushLight;
+					case MessageType.Error:
+						return View.Constants.ErrorBrushLight;
+					default:
+						return View.Constants.InfoBrushLight;
+				}
+			}
 		}
 
 		public Brush AccentColor
 		{
-			get => _accentColor;
-			set => SetProperty(ref _accentColor, value);
+			get
+			{
+				switch (_model.MessageType)
+				{
+					case MessageType.Success:
+						return View.Constants.SuccessBrushDark;
+					case MessageType.Information:
+						return View.Constants.InfoBrushDark;
+					case MessageType.Warning:
+						return View.Constants.WarningBrushDark;
+					case MessageType.Error:
+						return View.Constants.ErrorBrushDark;
+					default:
+						return View.Constants.InfoBrushDark;
+				}
+			}
 		}
 
 		public string MessageText
 		{
-			get => _messageText;
-			set => SetProperty(ref _messageText, value);
+			get => _model.MessageText;
+			set => SetProperty(_model, m => m.MessageText, value);
 		}
 
 		public MessageType MessageType
 		{
-			get => _messageType;
+			get => _model.MessageType;
 			set 
 			{
-				SetProperty(ref _messageType, value);
+				SetProperty(_model, m => m.MessageType, value);
 				OnPropertyChanged("MessageTypeDescription");
 				OnPropertyChanged("MessageTypeShortDescription");
 			}
@@ -125,7 +93,7 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			get
 			{
-				switch (_messageType)
+				switch (_model.MessageType)
 				{
 					case MessageType.Success:
 						return "Operation Succeeded";
@@ -145,7 +113,7 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			get
 			{
-				switch (_messageType)
+				switch (_model.MessageType)
 				{
 					case MessageType.Success:
 						return "DONE";
@@ -163,8 +131,7 @@ namespace CgbPostBuildHelper.ViewModel
 
 		public ICommand AdditionalInfoCmd
 		{
-			get => _additionalInfoCmd;
-			set => SetProperty(ref _additionalInfoCmd, value);
+			get => _model.Action == null ? null : new DelegateCommand(_ => _model.Action());
 		}
 	}
 }

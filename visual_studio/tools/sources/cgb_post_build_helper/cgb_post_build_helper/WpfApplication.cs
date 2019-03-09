@@ -14,6 +14,7 @@ using CgbPostBuildHelper.ViewModel;
 using System.Windows.Threading;
 using System.Windows.Controls;
 using System.Collections.ObjectModel;
+using CgbPostBuildHelper.Deployers;
 
 namespace CgbPostBuildHelper
 {
@@ -50,17 +51,36 @@ namespace CgbPostBuildHelper
 
 		public ObservableCollection<CgbAppInstanceVM> AllInstances => _instances;
 
+		private readonly Dictionary<CgbAppInstanceVM, Dictionary<string, Tuple<string, string>>> _toBeUpdated = new Dictionary<CgbAppInstanceVM, Dictionary<string, Tuple<string, string>>>();
+		private uint _invocationWhichMayUpdate = 0;
+
+		System.Drawing.Icon[] _icons = new System.Drawing.Icon[8];
+
+		DispatcherTimer _iconAnimationTimer = null;
+		int _animationRefCount = 0;
+		int _iconAnimationIndex = 0;
+
+		readonly Dispatcher _myDispatcher;
 
 		public WpfApplication()
 		{
+			_myDispatcher = Dispatcher.CurrentDispatcher;
+
 			_messagesListView = new MessagesList()
 			{
 				 LifetimeHandler = this,
 				 DataContext = _messagesListVM
 			};
 
-			Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon.ico")).Stream;
-			
+			_icons[0] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon.ico")).Stream);
+			_icons[1] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon_dot1.ico")).Stream);
+			_icons[2] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon_dot2.ico")).Stream);
+			_icons[3] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon_dot3.ico")).Stream);
+			_icons[4] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon_dot4.ico")).Stream);
+			_icons[5] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon_dot5.ico")).Stream);
+			_icons[6] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon_dot6.ico")).Stream);
+			_icons[7] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon_dot7.ico")).Stream);
+
 			var rd = new ResourceDictionary()
 			{
 				Source = new Uri(";component/ContextMenuResources.xaml", UriKind.RelativeOrAbsolute)
@@ -68,7 +88,7 @@ namespace CgbPostBuildHelper
 
 			_taskbarIcon = new TaskbarIcon()
 			{
-				Icon = new System.Drawing.Icon(iconStream),
+				Icon = _icons[0],
 				ToolTipText = "CGB Post Build Helper",
 				ContextMenu = (ContextMenu)rd["SysTrayMenu"]
 			};
@@ -87,24 +107,87 @@ namespace CgbPostBuildHelper
 			};
 		}
 
+		public void EndAllWatchesAndExitApplication()
+		{
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				foreach (var inst in AllInstances)
+				{
+					ClearAllFileWatchers(inst);
+				}
+
+				var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.0) };
+				timer.Start();
+				timer.Tick += (sender, args) =>
+				{
+					timer.Stop();
+					Application.Current.Shutdown();
+				};
+			}));
+		}
+
+		public void StartAnimateIcon()
+		{
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				if (null != _iconAnimationTimer)
+				{
+					_animationRefCount++;
+					return;
+				}
+
+				_iconAnimationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(70.0) };
+				_iconAnimationTimer.Start();
+				_iconAnimationTimer.Tick += (sender, args) =>
+				{
+					_iconAnimationIndex = (_iconAnimationIndex + 1) % _icons.Length;
+					_taskbarIcon.Icon = _icons[_iconAnimationIndex];
+				};
+				_animationRefCount = 1;
+			}));
+		}
+
+		public void StopAnimateIcon()
+		{
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				_animationRefCount = Math.Max(_animationRefCount - 1, 0);
+				if (null == _iconAnimationTimer || _animationRefCount > 0)
+				{
+					return;
+				}
+
+				_iconAnimationTimer.Stop();
+				_iconAnimationTimer = null;
+				_iconAnimationIndex = 0;
+				_taskbarIcon.Icon = _icons[_iconAnimationIndex];
+			}));
+		}
+
 		public void CloseMessagesListLater(bool setAliveTime)
 		{
-			if (setAliveTime)
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
-				_messageListAliveUntil = DateTime.Now + MessageListCloseDelay;
-			}
+				if (setAliveTime)
+				{
+					_messageListAliveUntil = DateTime.Now + MessageListCloseDelay;
+				}
 
-			DispatcherInvokeLater(MessageListCloseDelay, () =>
-			{
-				if (_messageListAliveUntil <= DateTime.Now)
+				DispatcherInvokeLater(MessageListCloseDelay, () =>
 				{
-					_taskbarIcon.CloseBalloon();
-				}
-				else if (_messageListAliveUntil != DateTime.MaxValue)
-				{
-					CloseMessagesListLater(false);
-				}
-			});
+					if (_messageListAliveUntil <= DateTime.Now)
+					{
+						_taskbarIcon.CloseBalloon();
+					}
+					else if (_messageListAliveUntil != DateTime.MaxValue)
+					{
+						CloseMessagesListLater(false);
+					}
+				});
+			}));
 		}
 
 		protected override void OnStartup(StartupEventArgs e)
@@ -122,47 +205,221 @@ namespace CgbPostBuildHelper
 		}
 
 		/// <summary>
+		/// Handles ONE file deployment
+		/// </summary>
+		/// <param name="config">The build's config parameters</param>
+		/// <param name="filePath">Path to the input file</param>
+		/// <param name="filterPath">Associated filter path of the file</param>
+		/// <param name="modDeployments">List of deployments; this will be modified, i.e. a deployment will be added to this list in the success-case</param>
+		/// <param name="modFileDeployments">List of FILE deployments; this will be modified. A deployment can affect multiple files, which are all added to this list in the success-case.</param>
+		/// <param name="modWindowsToShowFor">List of single file deployments which an emergency-window has to be opened for; this will be modified.</param>
+		public void HandleFileToDeploy(
+			InvocationParams config, string filePath, string filterPath,
+			IList<IFileDeployment> modDeployments, IList<FileDeploymentData> modFileDeployments, IList<FileDeploymentData> modWindowsToShowFor)
+		{
+			try
+			{
+				CgbUtils.PrepareDeployment(
+					config,
+					filePath, filterPath,
+					out var deployment);
+
+				// It can be null, if it is not an asset/shader that should be deployed
+				if (null == deployment)
+				{
+					return;
+				}
+
+				// Do it!
+				deployment.Deploy();
+
+				foreach (var deployedFile in deployment.FilesDeployed)
+				{
+					// For the current files list:
+					modFileDeployments.Add(deployedFile);
+
+					var deploymentHasErrors = deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
+					var deploymentHasWarnings = deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
+
+					// Show errors/warnings in window immediately IF this behavior has been opted-in via our settings
+					if (deploymentHasWarnings || deploymentHasErrors)
+					{
+						if ((CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForVkShaderDeployment && deployment is Deployers.VkShaderDeployment)
+							|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForGlShaderDeployment && deployment is Deployers.GlShaderDeployment)
+							|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForModelDeployment && deployment is Deployers.ModelDeployment))
+						{
+							modWindowsToShowFor.Add(deployedFile);
+						}
+					}
+				}
+
+				modDeployments.Add(deployment);
+			}
+			catch (Exception ex)
+			{
+				AddToMessagesList(Message.Create(MessageType.Error, ex.Message, null), config.ExecutablePath); // TODO: Window with more info?
+				ShowMessagesList();
+			}
+		}
+
+		public void UpdateViewAfterHandledInvocationAndStartFileSystemWatchers(CgbEventType eventType, InvocationParams config, IList<IFileDeployment> deployments, IList<FileDeploymentData> fileDeployments, IList<FileDeploymentData> windowsToShowFor, bool stopAnimateIcon = true)
+		{
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				// See, if we're already handling that executable!
+				var inst = _instances.GetInstance(config.ExecutablePath);
+
+				// Create new or update config/invocation params:
+				if (null == inst)
+				{
+					inst = new CgbAppInstanceVM
+					{
+						Config = config
+					};
+					_instances.Add(inst);
+				}
+				else
+				{
+					if (CgbEventType.Build == eventType) // only update the data for "Build" events
+					{
+						// Before we move on, tear down all the previous file system watchers for this instance
+						ClearAllFileWatchers(inst);
+					
+						inst.Config = config;
+						// Proceed with an empty list because files could have changed:
+						inst.Files.Clear();
+					}
+				}
+
+				// Create an event, add all those files, and handle all those messages
+				var evnt = new CgbEventVM(eventType);
+				var eventHasErrors = false;
+				var eventHasWarnings = false;
+				foreach (var fd in fileDeployments)
+				{
+					eventHasErrors = eventHasErrors || fd.Messages.ContainsMessagesOfType(MessageType.Error);
+					eventHasWarnings = eventHasWarnings || fd.Messages.ContainsMessagesOfType(MessageType.Warning);
+					evnt.Files.Insert(0, new FileDeploymentDataVM(fd, inst));
+
+					if (CgbEventType.Build == eventType)
+					{
+						inst.Files.Add(new FileDeploymentDataVM(fd, inst));
+					}
+				}
+				inst.AllEventsEver.Add(evnt);
+
+				// Create those tray-messages
+				if (eventHasErrors || eventHasWarnings)
+				{
+					void addErrorWarningsList(MessageType msgType, string message, string title)
+					{
+						AddToMessagesList(Message.Create(msgType, message, () =>
+						{
+							Window window = new Window
+							{
+								Width = 960, Height = 600,
+								Title = title,
+								Content = new EventFilesView()
+								{
+									DataContext = new
+									{
+										Path = inst.Path,
+										ShortPath = inst.ShortPath,
+										AllEventsEver = new[] { evnt }
+									}
+								}
+							};
+							window.Show();
+						}), inst);
+					}
+
+					if (eventHasWarnings && eventHasErrors)
+					{
+						addErrorWarningsList(MessageType.Error, $"Deployed {fileDeployments.Count} files with ERRORS and WARNINGS.", "Build-Event Details including ERRORS and WARNINGS");
+					}
+					else if (eventHasWarnings)
+					{
+						addErrorWarningsList(MessageType.Warning, $"Deployed {fileDeployments.Count} files with WARNINGS.", "Build-Event Details including WARNINGS");
+					}
+					else
+					{
+						addErrorWarningsList(MessageType.Error, $"Deployed {fileDeployments.Count} files with ERRORS.", "Build-Event Details including ERRORS");
+					}
+					ShowMessagesList();
+				}
+				else
+				{
+					AddToMessagesList(Message.Create(MessageType.Information, $"Deployed {fileDeployments.Count} files.", () =>
+					{
+						Window window = new Window
+						{
+							Width = 960, Height = 600,
+							Title = "Build-Event Details",
+							Content = new EventFilesView()
+							{
+								DataContext = new
+								{
+									Path = inst.Path,
+									ShortPath = inst.ShortPath,
+									AllEventsEver = new[] { evnt }
+								}
+							}
+						};
+						window.Show();
+					}), inst);
+				}
+
+				// Show the "emergency windows"
+				foreach (var fd in windowsToShowFor)
+				{
+					var vm = new FileDeploymentDataVM(fd, inst);
+					Window window = new Window
+					{
+						Width = 480, Height = 320,
+						Title = "Messages for file " + fd.InputFilePath,
+						Content = new MessagesList()
+						{
+							DataContext = new { Items = vm.Messages }
+						}
+					};
+					window.Show();
+				}
+
+				if (CgbEventType.Build == eventType) // only mess around with file system watchers at "Build" events
+				{
+					// Finally, start watching those files
+					StartWatchingDeployedFiles(inst);
+				}
+
+				if (stopAnimateIcon)
+				{
+					StopAnimateIcon();
+				}
+			}));
+		}
+
+		/// <summary>
 		/// Handle a new invocation (usually triggerd by a post build step out of VisualStudio)
 		/// </summary>
 		/// <param name="p">All the parameters passed by that invocation/post build step</param>
-		public void HandleNewInvocation(InvocationParams p)
+		public void HandleNewInvocation(InvocationParams config)
 		{
-			// See, if we're already handling that executable!
-			var inst = _instances.GetInstance(p.ExecutablePath);
-			var prevAssetsList = inst?.Files; // null if there is no previous instance
-
-			// Create new or update config/invocation params:
-			if (null == inst)
+			StartAnimateIcon();
+			Task.Run(() =>
 			{
-				inst = new CgbAppInstanceVM
-				{
-					Config = p
-				};
-				_instances.Add(inst);
-			}
-			else
-			{
-				inst.Config = p;
-				// Proceed with an empty list because files could have changed:
-				inst.Files.Clear();
-
-				ClearAllFileWatchers(inst);
-			}
-
-			// Parse the .filters file for asset files and shader files
-			{ 
-				var filtersFile = new FileInfo(p.FiltersPath);
+				// Parse the .filters file for asset files and shader files
+				var filtersFile = new FileInfo(config.FiltersPath);
 				var filtersContent = File.ReadAllText(filtersFile.FullName);
 				var filters = RegexFilterEntry.Matches(filtersContent);
 
-				var eventHasErrors = false;
-				var eventHasWarnings = false;
-				var nFilesDeployed = 0;
-				var mustShowMessages = false;
-
 				// -> Store the whole event (but a little bit later)
 				var cgbEvent = new CgbEventVM(CgbEventType.Build);
-				
+
+				var deployments = new List<IFileDeployment>();
+				var fileDeployments = new List<FileDeploymentData>();
+				var windowsToShowFor = new List<FileDeploymentData>();
+
 				// -> Parse the .filters file and deploy each and every file
 				int n = filters.Count;
 				for (int i=0; i < n; ++i)
@@ -182,146 +439,256 @@ namespace CgbPostBuildHelper
 						continue;
 					}
 
-					try
-					{
-						inst.PrepareDeployment(
-							prevAssetsList, 
-							filePath, filterPath, 
-							out var deployment);
-
-						// It can be null, if it is not an asset/shader that should be deployed
-						if (null == deployment)
-						{
-							continue;
-						}
-
-						// Do it!
-						deployment.Deploy();
-
-						foreach (var deployedFile in deployment.FilesDeployed)
-						{
-							// For the current files list:
-							inst.Files.Add(deployedFile);
-
-							var deploymentHasErrors = deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
-							var deploymentHasWarnings = deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
-							eventHasErrors = eventHasErrors || deploymentHasErrors;
-							eventHasWarnings = eventHasWarnings || deploymentHasWarnings;
-
-							// Show errors/warnings in window immediately IF this behavior has been opted-in via our settings
-							if (deploymentHasWarnings || deploymentHasErrors)
-							{
-								if (   (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForVkShaderDeployment && deployment is Deployers.VkShaderDeployment)
-									|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForGlShaderDeployment && deployment is Deployers.GlShaderDeployment)
-									|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForModelDeployment && deployment is Deployers.ModelDeployment))
-								{
-									Window window = new Window
-									{
-										Width = 480, Height = 320,
-										Title = "Messages for file " + filePath,
-										Content = new MessagesList()
-										{
-											DataContext = new { Items = deployedFile.Messages }
-										}
-									};
-									window.Show();
-								}
-							}
-
-							// For the event:
-							cgbEvent.Files.Add(deployedFile);
-						}
-						nFilesDeployed += deployment.FilesDeployed.Count;
-					}
-					catch (Exception ex)
-					{
-						AddToMessagesList(MessageVM.CreateError(inst, ex.Message, null)); // TODO: perform some action
-						mustShowMessages = true;
-						continue;
-					}
+					HandleFileToDeploy(config, filePath, filterPath, deployments, fileDeployments, windowsToShowFor);
 				}
 
-				// Now, store the event (...AT THE FRONT)
-				inst.AllEventsEver.Insert(0, cgbEvent);
-					
-				// Analyze the outcome, create a message and possibly show it, if there could be a problem (files with warnings or errors)
-				if (eventHasErrors || eventHasWarnings)
-				{
-					void addErrorWarningsList(string message, string title)
-					{
-						AddToMessagesList(MessageVM.CreateError(inst, message, new DelegateCommand(_ =>
-						{
-							Window window = new Window
-							{
-								Width = 960, Height = 600,
-								Title = title,
-								Content = new EventFilesView()
-								{
-									DataContext = new 
-									{
-										Path = inst.Path,
-										ShortPath = inst.ShortPath,
-										AllEventsEver = new [] { cgbEvent }
-									}
-								}
-							};
-							window.Show();
-						})));
-					}
+				// Do the things which must be done on the UI thread:
+				UpdateViewAfterHandledInvocationAndStartFileSystemWatchers(CgbEventType.Build, config, deployments, fileDeployments, windowsToShowFor);
+			});
+		}
 
-					if (eventHasWarnings && eventHasErrors)
-					{
-						addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS and WARNINGS.", "Build-Event Details including ERRORS and WARNINGS");
-					}
-					else if (eventHasWarnings)
-					{
-						addErrorWarningsList($"Deployed {nFilesDeployed} files with WARNINGS.", "Build-Event Details including WARNINGS");
-					}
-					else
-					{
-						addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS.", "Build-Event Details including ERRORS");
-					}
-					mustShowMessages = true;
+		public void HandleFileEvent(string filePath, CgbAppInstanceVM inst, ObservableCollection<WatchedFileVM> files)
+		{
+			// Ignore temp-files
+			if (filePath.Contains("~"))
+			{
+				return;
+			}
+
+			// Are we even watching for this file?
+			var watchedFileEntry = files.GetFile(filePath);
+			if (null == watchedFileEntry)
+			{
+				return;
+			}
+
+			StartAnimateIcon();
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				if (!_toBeUpdated.ContainsKey(inst))
+				{
+					_toBeUpdated.Add(inst, new Dictionary<string, Tuple<string, string>>());
+				}
+
+				var nrmFilename = CgbUtils.NormalizePath(filePath);
+				if (!_toBeUpdated[inst].ContainsKey(nrmFilename))
+				{
+					// to be updated!!
+					_toBeUpdated[inst].Add(nrmFilename, Tuple.Create( filePath, watchedFileEntry.FilterPath ));
 				}
 				else
 				{
-					AddToMessagesList(MessageVM.CreateInfo(inst, $"Deployed {nFilesDeployed} files.", new DelegateCommand(_ =>
-					{
-						Window window = new Window
-						{
-							Width = 960, Height = 600,
-							Title = "Build-Event Details",
-							Content = new EventFilesView()
-							{
-								DataContext = new
-								{
-									Path = inst.Path,
-									ShortPath = inst.ShortPath,
-									AllEventsEver = new[] { cgbEvent }
-								}
-							}
-						};
-						window.Show();
-					})));
+					// nothing to do
+					StopAnimateIcon();
+					return;
 				}
 
-				if (mustShowMessages)
+				// only one can be the updater!
+				var myId = ++_invocationWhichMayUpdate;
+
+				var timer = new DispatcherTimer 
+				{ 
+					Interval = TimeSpan.FromMilliseconds(300.0) // This is somewhat of a random/magic number, but it should be fine, I guess
+				};
+				timer.Start();
+				timer.Tick += (sender, args) =>
 				{
-					ShowMessagesList();
-				}
-			}
+					timer.Stop();
+					
+					if (myId == _invocationWhichMayUpdate)
+					{
+						// I am the one!
+						var updConfig = inst.Config;
+						while (_toBeUpdated.Count > 0)
+						{
+							var nextRandomKey = _toBeUpdated.Keys.First();
+							var item = _toBeUpdated[nextRandomKey];
+							_toBeUpdated.Remove(nextRandomKey);
+							Task.Run(() =>
+							{
+								var deployments = new List<IFileDeployment>();
+								var fileDeployments = new List<FileDeploymentData>();
+								var windowsToShowFor = new List<FileDeploymentData>();
 
-			// Watch the deployed files
-			StartWatchingDeployedFiles(inst);
+								// -> Deploy each file for this update event
+								foreach (var fileInfos in item)
+								{
+									var updFilePath = fileInfos.Value.Item1;
+									var updFilterPath = fileInfos.Value.Item2;
+									HandleFileToDeploy(updConfig, updFilePath, updFilterPath, deployments, fileDeployments, windowsToShowFor);
+								}
+
+								// Do the things which must be done on the UI thread:
+								UpdateViewAfterHandledInvocationAndStartFileSystemWatchers(CgbEventType.Update, updConfig, deployments, fileDeployments, windowsToShowFor);
+
+								StopAnimateIcon(); // I think, we're calling it too often, now
+							});
+						}
+					}
+					else
+					{
+						// Someone else will update!
+						StopAnimateIcon();
+					}
+				};
+			}));
+
+			//Task.Run(() =>
+			//{
+			//	lock (_locker)
+			//	{
+			//		
+
+			//		try
+			//		{
+			//			inst.WaitForAllDispatcherOpsToComplete();
+
+			//			var watchFileEntry = files.GetFile(filePath);
+			//			if (null == watchFileEntry)
+			//			{
+			//				AddToMessagesList(MessageVM.CreateError(inst, $"Received a file system event for '{filePath}' but we aren't watching that file, actually.", null)); // TODO: perform some action?
+			//				return;
+			//			}
+
+			//			inst.PrepareDeployment(
+			//				inst.Files,
+			//				filePath, watchFileEntry.FilterPath,
+			//				out var deployment);
+
+			//			// It can be null, if it is not an asset/shader that should be deployed
+			//			if (null == deployment)
+			//			{
+			//				return;
+			//			}
+
+			//			// Do it!
+			//			deployment.Deploy();
+
+			//			bool eventHasErrors = false;
+			//			bool eventHasWarnings = false;
+			//			var nFilesDeployed = 0;
+
+			//			// -> Store the whole event (but a little bit later)
+			//			var cgbEvent = new CgbEventVM(CgbEventType.Update);
+
+			//			foreach (var deployedFile in deployment.FilesDeployed)
+			//			{
+			//				var deploymentHasErrors = deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
+			//				var deploymentHasWarnings = deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
+			//				eventHasErrors = eventHasErrors || deploymentHasErrors;
+			//				eventHasWarnings = eventHasWarnings || deploymentHasWarnings;
+
+			//				// Show errors/warnings in window immediately IF this behavior has been opted-in via our settings
+			//				if (deploymentHasWarnings || deploymentHasErrors)
+			//				{
+			//					if ((CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForVkShaderDeployment && deployment is Deployers.VkShaderDeployment)
+			//						|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForGlShaderDeployment && deployment is Deployers.GlShaderDeployment)
+			//						|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForModelDeployment && deployment is Deployers.ModelDeployment))
+			//					{
+			//						Window window = new Window
+			//						{
+			//							Width = 480, Height = 320,
+			//							Title = "Messages for file " + filePath,
+			//							Content = new MessagesList()
+			//							{
+			//								DataContext = new { Items = deployedFile.Messages }
+			//							}
+			//						};
+			//						window.Show();
+			//					}
+			//				}
+
+			//				// For the event:
+			//				cgbEvent.Files.Add(deployedFile);
+			//			}
+			//			nFilesDeployed += deployment.FilesDeployed.Count;
+
+			//			// Now, store the event (...AT THE FRONT)
+			//			inst.AddEventToTheFront(cgbEvent);
+
+			//			// Analyze the outcome, create a message and possibly show it, if there could be a problem (files with warnings or errors)
+			//			if (eventHasErrors || eventHasWarnings)
+			//			{
+			//				void addErrorWarningsList(string message, string title)
+			//				{
+			//					AddToMessagesList(MessageVM.CreateError(inst, message, new DelegateCommand(_ =>
+			//					{
+			//						Window window = new Window
+			//						{
+			//							Width = 960,
+			//							Height = 600,
+			//							Title = title,
+			//							Content = new EventFilesView()
+			//							{
+			//								DataContext = new
+			//								{
+			//									Path = inst.Path,
+			//									ShortPath = inst.ShortPath,
+			//									AllEventsEver = new[] { cgbEvent }
+			//								}
+			//							}
+			//						};
+			//						window.Show();
+			//					})));
+			//				}
+
+			//				if (eventHasWarnings && eventHasErrors)
+			//				{
+			//					addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS and WARNINGS.", "Build-Event Details including ERRORS and WARNINGS");
+			//				}
+			//				else if (eventHasWarnings)
+			//				{
+			//					addErrorWarningsList($"Deployed {nFilesDeployed} files with WARNINGS.", "Build-Event Details including WARNINGS");
+			//				}
+			//				else
+			//				{
+			//					addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS.", "Build-Event Details including ERRORS");
+			//				}
+			//			}
+			//			else
+			//			{
+			//				AddToMessagesList(MessageVM.CreateInfo(inst, $"Deployed {nFilesDeployed} files.", new DelegateCommand(_ =>
+			//				{
+			//					Window window = new Window
+			//					{
+			//						Width = 960,
+			//						Height = 600,
+			//						Title = "Build-Event Details",
+			//						Content = new EventFilesView()
+			//						{
+			//							DataContext = new
+			//							{
+			//								Path = inst.Path,
+			//								ShortPath = inst.ShortPath,
+			//								AllEventsEver = new[] { cgbEvent }
+			//							}
+			//						}
+			//					};
+			//					window.Show();
+			//				})));
+			//			}
+			//		}
+			//		catch (Exception ex)
+			//		{
+			//			AddToMessagesList(MessageVM.CreateError(inst, ex.Message, null)); // TODO: perform some action
+			//			return;
+			//		}
+
+			//		inst.WaitForAllDispatcherOpsToComplete();
+			//	}
+			//	StopAnimateIcon();
+			//});
+
 		}
 
 		public void ClearAllFileWatchers(CgbAppInstanceVM inst)
 		{
-			foreach (var fw in inst.CurrentlyWatchedFiles)
+			foreach (var fw in inst.CurrentlyWatchedDirectories)
 			{
 				fw.EndWatchAndDie();
 			}
-			inst.CurrentlyWatchedFiles.Clear();
+			inst.CurrentlyWatchedDirectories.Clear();
 		}
 
 		public void StartWatchingDeployedFiles(CgbAppInstanceVM inst)
@@ -337,9 +704,9 @@ namespace CgbPostBuildHelper
 
 				var fi = new FileInfo(fw.InputFilePath);
 				var existingKey = (from k in watches.Keys 
-								   where CgbUtils.NormalizePath(k) == CgbUtils.NormalizePath(fi.DirectoryName)
-								   select k)
-								   .FirstOrDefault();
+									where CgbUtils.NormalizePath(k) == CgbUtils.NormalizePath(fi.DirectoryName)
+									select k)
+									.FirstOrDefault();
 
 				if (null == existingKey)
 				{
@@ -359,55 +726,107 @@ namespace CgbPostBuildHelper
 				}
 
 				// Start to watch:
+				inst.CurrentlyWatchedDirectories.Add(watchDir);
 				watchDir.NightGathersAndNowMyWatchBegins();
 			}
 		}
 
-		public void AddToMessagesList(MessageVM mvm)
+		public void AddToMessagesList(Model.Message msg, string instancePath)
 		{
-			_messagesListVM.Items.Add(mvm);
-			RemoveOldMessagesFromList();
-			ShowMessagesList();
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				var inst = _instances.GetInstance(instancePath);
+				_messagesListVM.Items.Add(new MessageVM(inst, msg));
+				RemoveOldMessagesFromList();
+				ShowMessagesList();
+			}));
 		}
 
-		public void AddToMessagesList(IEnumerable<MessageVM> mvms)
+		public void AddToMessagesList(IEnumerable<Model.Message> msgs, string instancePath)
 		{
-			foreach (var mvm in mvms)
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
-				_messagesListVM.Items.Add(mvm);
-			}
-			RemoveOldMessagesFromList();
-			ShowMessagesList();
+				var inst = _instances.GetInstance(instancePath);
+				foreach (var msg in msgs)
+				{
+					_messagesListVM.Items.Add(new MessageVM(inst, msg));
+				}
+				RemoveOldMessagesFromList();
+				ShowMessagesList();
+			}));
+		}
+
+		public void AddToMessagesList(Model.Message msg, CgbAppInstanceVM inst = null)
+		{
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				_messagesListVM.Items.Add(new MessageVM(inst, msg));
+				RemoveOldMessagesFromList();
+				ShowMessagesList();
+			}));
+		}
+
+		public void AddToMessagesList(IEnumerable<Model.Message> msgs, CgbAppInstanceVM inst = null)
+		{
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				foreach (var msg in msgs)
+				{
+					_messagesListVM.Items.Add(new MessageVM(inst, msg));
+				}
+				RemoveOldMessagesFromList();
+				ShowMessagesList();
+			}));
 		}
 
 		public void RemoveOldMessagesFromList()
 		{
-			var cutoffDate = DateTime.Now - TimeSpan.FromMinutes(10.0);
-			for (int i = _messagesListVM.Items.Count - 1; i >= 0; --i)
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
-				if (_messagesListVM.Items[i].CreateDate < cutoffDate)
+				var cutoffDate = DateTime.Now - TimeSpan.FromMinutes(10.0);
+				for (int i = _messagesListVM.Items.Count - 1; i >= 0; --i)
 				{
-					_messagesListVM.Items.RemoveAt(i);
+					if (_messagesListVM.Items[i].CreateDate < cutoffDate)
+					{
+						_messagesListVM.Items.RemoveAt(i);
+					}
 				}
-			}
+			}));
 		}
 
 		public void ShowMessagesList()
 		{
-			Console.WriteLine("Show Messages list NOW " + DateTime.Now);
-			_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
-			CloseMessagesListLater(true);
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				Console.WriteLine("Show Messages list NOW " + DateTime.Now);
+				_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
+				CloseMessagesListLater(true);
+			}));
 		}
 
 		public void ClearMessagesList()
 		{
-			_messagesListVM.Items.Clear();
-			_taskbarIcon.CloseBalloon();
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				_messagesListVM.Items.Clear();
+				_taskbarIcon.CloseBalloon();
+			}));
 		}
 
 		public void KeepAlivePermanently()
 		{
-			_messageListAliveUntil = DateTime.MaxValue;
+			// Sync across threads by invoking it on the dispatcher
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				_messageListAliveUntil = DateTime.MaxValue;
+			}));
 		}
 
 		public void FadeOutOrBasicallyDoWhatYouWantIDontCareAnymore()

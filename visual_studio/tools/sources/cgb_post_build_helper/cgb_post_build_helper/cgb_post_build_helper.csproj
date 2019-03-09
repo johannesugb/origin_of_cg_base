@@ -83,6 +83,8 @@
     <Compile Include="Deployers\ModelDeployment.cs" />
     <Compile Include="Deployers\ObjModelDeployment.cs" />
     <Compile Include="Deployers\VkShaderDeployment.cs" />
+    <Compile Include="Model\FileDeploymentData.cs" />
+    <Compile Include="Model\Message.cs" />
     <Compile Include="ViewModel\FileVM.cs" />
     <Compile Include="ViewModel\FileDeploymentDataVM.cs" />
     <Compile Include="ViewModel\ContextMenuActionsVM.cs" />
@@ -186,6 +188,17 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="FodyWeavers.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="tray_icon_dot1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="tray_icon_dot2.ico" />
+    <Resource Include="tray_icon_dot3.ico" />
+    <Resource Include="tray_icon_dot4.ico" />
+    <Resource Include="tray_icon_dot5.ico" />
+    <Resource Include="tray_icon_dot6.ico" />
+    <Resource Include="tray_icon_dot7.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AssimpNet.4.1.0\build\AssimpNet.targets" Condition="Exists('..\packages\AssimpNet.4.1.0\build\AssimpNet.targets')" />

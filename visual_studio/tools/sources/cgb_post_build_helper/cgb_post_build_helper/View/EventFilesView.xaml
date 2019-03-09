@@ -18,7 +18,7 @@
 				   Text="{Binding ShortPath}" />
 
 		<ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-			<ItemsControl ItemsSource="{Binding AllEventsEver}">
+			<ItemsControl ItemsSource="{Binding AllEventsEver}" >
 				<ItemsControl.ItemTemplate>
 					<DataTemplate>
 						<Border BorderBrush="#0099cc" BorderThickness="4" Margin="8,4" Padding="4">

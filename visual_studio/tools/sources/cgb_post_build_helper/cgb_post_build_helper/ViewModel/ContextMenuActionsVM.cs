@@ -47,7 +47,7 @@ namespace CgbPostBuildHelper.ViewModel
 
 			ExitApplicationCommand = new DelegateCommand(_ =>
 			{
-				Application.Current.Shutdown();
+				_application.EndAllWatchesAndExitApplication();
 			});
 		}
 

@@ -55,169 +55,17 @@ namespace CgbPostBuildHelper.ViewModel
 			FileSystemWatcher.EnableRaisingEvents = true;
 		}
 
-		private void HandleFileEvent(string filePath)
-		{
-			if (filePath.Contains("~"))
-			{
-				return;
-			}
-
-			try
-			{
-				var watchFileEntry = Files.GetFile(filePath);
-				if (null == watchFileEntry)
-				{
-					_dispatcher.Invoke(() =>
-					{
-						_app.AddToMessagesList(MessageVM.CreateError(_inst, $"Received a file system event for '{filePath}' but couldn't we aren't watching that file, actually.", null)); // TODO: perform some action?
-					});
-					return;
-				}
-
-				_inst.PrepareDeployment(
-					_inst.Files,
-					filePath, watchFileEntry.FilterPath,
-					out var deployment);
-
-				// It can be null, if it is not an asset/shader that should be deployed
-				if (null == deployment)
-				{
-					return;
-				}
-
-				// Do it!
-				deployment.Deploy();
-
-				bool eventHasErrors = false;
-				bool eventHasWarnings = false;
-				var nFilesDeployed = 0;
-
-				// -> Store the whole event (but a little bit later)
-				var cgbEvent = new CgbEventVM(CgbEventType.Update);
-
-				foreach (var deployedFile in deployment.FilesDeployed)
-				{
-					var deploymentHasErrors = deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
-					var deploymentHasWarnings = deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
-					eventHasErrors = eventHasErrors || deploymentHasErrors;
-					eventHasWarnings = eventHasWarnings || deploymentHasWarnings;
-
-					// Show errors/warnings in window immediately IF this behavior has been opted-in via our settings
-					if (deploymentHasWarnings || deploymentHasErrors)
-					{
-						if ((CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForVkShaderDeployment && deployment is Deployers.VkShaderDeployment)
-							|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForGlShaderDeployment && deployment is Deployers.GlShaderDeployment)
-							|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForModelDeployment && deployment is Deployers.ModelDeployment))
-						{
-							Window window = new Window
-							{
-								Width = 480,
-								Height = 320,
-								Title = "Messages for file " + filePath,
-								Content = new MessagesList()
-								{
-									DataContext = new { Items = deployedFile.Messages }
-								}
-							};
-							window.Show();
-						}
-					}
-
-					// For the event:
-					cgbEvent.Files.Add(deployedFile);
-				}
-				nFilesDeployed += deployment.FilesDeployed.Count;
-
-				// Now, store the event (...AT THE FRONT)
-				_inst.AllEventsEver.Insert(0, cgbEvent);
-
-				// Analyze the outcome, create a message and possibly show it, if there could be a problem (files with warnings or errors)
-				if (eventHasErrors || eventHasWarnings)
-				{
-					void addErrorWarningsList(string message, string title)
-					{
-						_dispatcher.Invoke(() =>
-						{
-							_app.AddToMessagesList(MessageVM.CreateError(_inst, message, new DelegateCommand(_ =>
-							{
-								Window window = new Window
-								{
-									Width = 960,
-									Height = 600,
-									Title = title,
-									Content = new EventFilesView()
-									{
-										DataContext = new
-										{
-											Path = _inst.Path,
-											ShortPath = _inst.ShortPath,
-											AllEventsEver = new[] { cgbEvent }
-										}
-									}
-								};
-								window.Show();
-							})));
-						});
-					}
-
-					if (eventHasWarnings && eventHasErrors)
-					{
-						addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS and WARNINGS.", "Build-Event Details including ERRORS and WARNINGS");
-					}
-					else if (eventHasWarnings)
-					{
-						addErrorWarningsList($"Deployed {nFilesDeployed} files with WARNINGS.", "Build-Event Details including WARNINGS");
-					}
-					else
-					{
-						addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS.", "Build-Event Details including ERRORS");
-					}
-				}
-				else
-				{
-					_dispatcher.Invoke(() =>
-					{
-							_app.AddToMessagesList(MessageVM.CreateInfo(_inst, $"Deployed {nFilesDeployed} files.", new DelegateCommand(_ =>
-						{
-							Window window = new Window
-							{
-								Width = 960,
-								Height = 600,
-								Title = "Build-Event Details",
-								Content = new EventFilesView()
-								{
-									DataContext = new
-									{
-										Path = _inst.Path,
-										ShortPath = _inst.ShortPath,
-										AllEventsEver = new[] { cgbEvent }
-									}
-								}
-							};
-							window.Show();
-						})));
-					});
-				}
-			}
-			catch (Exception ex)
-			{
-				_dispatcher.Invoke(() =>
-				{
-					_app.AddToMessagesList(MessageVM.CreateError(_inst, ex.Message, null)); // TODO: perform some action
-				});
-				return;
-			}
-
-		}
+		
 
 		private void FileSystemWatcher_Created(object sender, FileSystemEventArgs e)
 		{
-			HandleFileEvent(e.FullPath);
+			_app.HandleFileEvent(e.FullPath, _inst, Files);
 		}
 
 		private void FileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
 		{
-			HandleFileEvent(e.FullPath);
+			_app.HandleFileEvent(e.FullPath, _inst, Files);
+
 		}
 
 		private void FileSystemWatcher_Deleted(object sender, FileSystemEventArgs e)
@@ -227,7 +75,8 @@ namespace CgbPostBuildHelper.ViewModel
 
 		private void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
 		{
-			HandleFileEvent(e.FullPath);
+			_app.HandleFileEvent(e.FullPath, _inst, Files);
+
 		}
 
 		public void EndWatchAndDie()

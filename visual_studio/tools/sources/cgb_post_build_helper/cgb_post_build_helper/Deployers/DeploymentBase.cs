@@ -31,13 +31,13 @@ namespace CgbPostBuildHelper.Deployers
 		private const int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
 
 
-		public List<FileDeploymentDataVM> FilesDeployed => _filesDeployed;
+		public List<FileDeploymentData> FilesDeployed => _filesDeployed;
 
 		/// <summary>
 		/// Deploys the file by copying it from source to target, OR
 		/// deploys the file by creating a symlink at target, which points to source
 		/// </summary>
-		protected void CopyFile(FileDeploymentDataVM deploymentData)
+		protected void CopyFile(FileDeploymentData deploymentData)
 		{
 			void doCopy()
 			{
@@ -51,7 +51,7 @@ namespace CgbPostBuildHelper.Deployers
 				deploymentData.DeploymentType = DeploymentType.Copy;
 			}
 
-			if (Properties.Settings.Default.AlwaysCopyNeverSymlink || _instance.Config.Configuration == BuildConfiguration.Publish)
+			if (Properties.Settings.Default.AlwaysCopyNeverSymlink || _config.Configuration == BuildConfiguration.Publish)
 			{
 				doCopy();
 			}
@@ -79,9 +79,9 @@ namespace CgbPostBuildHelper.Deployers
 			}
 		}
 
-		public void SetInputParameters(CgbAppInstanceVM inst, string filterPath, FileInfo inputFile, string outputFilePath)
+		public void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath)
 		{
-			_instance = inst;
+			_config = config;
 			_filterPath = filterPath;
 			_inputFile = inputFile;
 			_outputFilePath = outputFilePath;
@@ -101,9 +101,9 @@ namespace CgbPostBuildHelper.Deployers
 			}
 		}
 
-		protected FileDeploymentDataVM PrepareNewAssetFile(FileDeploymentDataVM parent)
+		protected FileDeploymentData PrepareNewAssetFile(FileDeploymentData parent)
 		{
-			return new FileDeploymentDataVM
+			return new FileDeploymentData
 			{
 				FilterPath = _filterPath,
 				InputFilePath = _inputFile.FullName,
@@ -112,12 +112,12 @@ namespace CgbPostBuildHelper.Deployers
 			};
 		}
 
-		protected CgbAppInstanceVM _instance;
+		protected InvocationParams _config;
 		protected string _filterPath;
 		protected FileInfo _inputFile;
 		protected string _outputFilePath;
 		protected byte[] _hash;
-		protected readonly List<FileDeploymentDataVM> _filesDeployed = new List<FileDeploymentDataVM>();
+		protected readonly List<FileDeploymentData> _filesDeployed = new List<FileDeploymentData>();
 	}
 
 }

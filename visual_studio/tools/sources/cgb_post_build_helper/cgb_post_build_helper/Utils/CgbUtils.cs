@@ -134,6 +134,10 @@ namespace CgbPostBuildHelper.Utils
 		/// <returns>A watched file entry with matching key or null</returns>
 		public static WatchedFileVM GetFile(this IList<WatchedFileVM> list, string path) 
 		{
+			if (string.IsNullOrEmpty(path))
+			{
+				return null;
+			}
 			path = NormalizePath(path);
 			return (from x in list where string.Compare(NormalizePath(x.Path), path, true) == 0 select x).FirstOrDefault();	
 		}
@@ -146,19 +150,18 @@ namespace CgbPostBuildHelper.Utils
 		/// <returns>An instance with matching key or null</returns>
 		public static CgbAppInstanceVM GetInstance(this IList<CgbAppInstanceVM> list, string path)
 		{
+			if (string.IsNullOrEmpty(path))
+			{
+				return null;
+			}
 			path = NormalizePath(path);
 			return (from x in list where string.Compare(NormalizePath(x.Path), path, true) == 0 select x).FirstOrDefault();
 		}
 
-		public static void PrepareDeployment(this CgbAppInstanceVM inst, IList<FileDeploymentDataVM> oldList, string filePath, string filterPath, out IFileDeployment outDeployment)
+		public static void PrepareDeployment(InvocationParams config, string filePath, string filterPath, out IFileDeployment outDeployment)
 		{
 			outDeployment = null;
 			
-			if (null == oldList)
-			{
-				// Make our lifes easier
-				oldList = new List<FileDeploymentDataVM>();
-			}
 			// Prepare for what there is to come:
 			var inputFile = new FileInfo(filePath);
 			if (!inputFile.Exists)
@@ -192,14 +195,14 @@ namespace CgbPostBuildHelper.Utils
 			IFileDeployment deploy = null;
 			if (isShader)
 			{
-				if (inst.Config.TargetApi == BuildTargetApi.Vulkan)
+				if (config.TargetApi == BuildTargetApi.Vulkan)
 				{
 					// It's a shader and we're building for Vulkan => Special case #1
 					deploy = new VkShaderDeployment();
 				}
 				else
 				{
-					Diag.Debug.Assert(inst.Config.TargetApi == BuildTargetApi.OpenGL);
+					Diag.Debug.Assert(config.TargetApi == BuildTargetApi.OpenGL);
 					// It's a shader and we're building for OpenGL => Special case #2
 					deploy = new GlShaderDeployment();
 				}
@@ -250,13 +253,23 @@ namespace CgbPostBuildHelper.Utils
 				}
 			}
 			deploy.SetInputParameters(
-				inst, 
+				config, 
 				filterPath, 
 				inputFile, 
-				Path.Combine(inst.Config.OutputPath, filterPath, inputFile.Name));
+				Path.Combine(config.OutputPath, filterPath, inputFile.Name));
 
 			// We're done here => return the deployment-instance to the caller
 			outDeployment = deploy;
+		}
+
+		public static bool ContainsMessagesOfType(this IList<Message> list, MessageType type)
+		{
+			return (from x in list where x.MessageType == type select x).Any();
+		}
+
+		public static int NumberOfMessagesOfType(this IList<Message> list, MessageType type)
+		{
+			return (from x in list where x.MessageType == type select x).Count();
 		}
 
 		public static bool ContainsMessagesOfType(this IList<MessageVM> list, MessageType type)

@@ -51,7 +51,7 @@ namespace CgbPostBuildHelper.Deployers
 				assetFileMat.OutputFilePath = matOutPath.FullName;
 				CopyFile(assetFileMat);
 
-				assetFileMat.Messages.Add(MessageVM.CreateSuccess(_instance, $"Added materials file '{assetFileMat.OutputFilePath}', of .obj model '{FilesDeployed[0].OutputFilePath}'", null)); // TODO: open a window or so?
+				assetFileMat.Messages.Add(Message.Create(MessageType.Success, $"Added materials file '{assetFileMat.OutputFilePath}', of .obj model '{FilesDeployed[0].OutputFilePath}'", null)); // TODO: open a window or so?
 
 				FilesDeployed.Add(assetFileMat);
 			}
