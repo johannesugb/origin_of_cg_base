@@ -5,12 +5,12 @@
 
 namespace cgb {
 
-	vulkan_texture::vulkan_texture(vulkan_image * image) : _image(image)
+	vulkan_texture::vulkan_texture(std::shared_ptr<vulkan_image> image) : _image(image)
 	{
 		createTextureSampler();
 	}
 
-	vulkan_texture::vulkan_texture(vulkan_image * image, VkSamplerCreateInfo &samplerInfo) : _image(image)
+	vulkan_texture::vulkan_texture(std::shared_ptr<vulkan_image> image, VkSamplerCreateInfo &samplerInfo) : _image(image)
 	{
 		createTextureSampler(samplerInfo);
 	}

@@ -11,14 +11,14 @@ namespace cgb {
 	class vulkan_texture
 	{
 	public:
-		vulkan_texture(vulkan_image * image);
-		vulkan_texture(vulkan_image * image, VkSamplerCreateInfo & samplerInfo);
+		vulkan_texture(std::shared_ptr<vulkan_image> image);
+		vulkan_texture(std::shared_ptr<vulkan_image> image, VkSamplerCreateInfo & samplerInfo);
 		virtual ~vulkan_texture();
 
 		VkImageView getTextureImageView() { return _image->get_image_view(); };
 		VkSampler getTextureSampler() { return _textureSampler; };
 	private:
-		vulkan_image * _image;
+		std::shared_ptr<vulkan_image> _image;
 
 		VkSampler _textureSampler;
 

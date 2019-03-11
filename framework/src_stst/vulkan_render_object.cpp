@@ -8,8 +8,8 @@ namespace cgb {
 	}
 
 	vulkan_render_object::vulkan_render_object(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
-		vulkan_texture* texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures)
+		std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
+		std::shared_ptr<vulkan_texture> texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures)
 		: mImageCount(imageCount), mVertices(vertices), mIndices(indices), mIndexCount(indices.size())
 	{
 		auto vertexBuffer = std::make_shared<vulkan_buffer>(sizeof(mVertices[0]) * mVertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal, commandBufferManager, mVertices.data());
@@ -19,15 +19,12 @@ namespace cgb {
 
 
 		create_uniform_buffer(commandBufferManager);
-		create_descriptor_sets(descriptorSetLayout, descriptorPool, texture, debugTextures);
+		create_descriptor_sets(resourceBundleLayout, resourceBundleGroup, texture, debugTextures);
 	}
 
 
 	vulkan_render_object::~vulkan_render_object()
 	{
-		for (size_t i = 0; i < mImageCount; i++) {
-			delete mUniformBuffers[i];
-		}
 	}
 
 	void vulkan_render_object::create_uniform_buffer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) {
@@ -36,64 +33,18 @@ namespace cgb {
 		mUniformBuffers.resize(mImageCount);
 
 		for (size_t i = 0; i < mImageCount; i++) {
-			mUniformBuffers[i] = new vulkan_buffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, commandBufferManager);
+			mUniformBuffers[i] = std::make_shared<vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, commandBufferManager);
 		}
 	}
 
-	void vulkan_render_object::create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool, vulkan_texture* texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures) {
-		std::vector<vk::DescriptorSetLayout> layouts(mImageCount, descriptorSetLayout);
-		vk::DescriptorSetAllocateInfo allocInfo = {};
-		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(mImageCount);
-		allocInfo.pSetLayouts = layouts.data();
+	void vulkan_render_object::create_descriptor_sets(std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup, std::shared_ptr<vulkan_texture> texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures) {
+		
+		mResourceBundle = resourceBundleGroup->create_resource_bundle(resourceBundleLayout, true);
+		mResourceBundle->add_dynamic_buffer_resource(0, mUniformBuffers, sizeof(UniformBufferObject));
+		mResourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, texture);
 
-		mDescriptorSets.resize(mImageCount);
-		if (vulkan_context::instance().device.allocateDescriptorSets(&allocInfo, mDescriptorSets.data()) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to allocate descriptor sets!");
-		}
-
-		for (size_t i = 0; i < mImageCount; i++) {
-			vk::DescriptorBufferInfo bufferInfo = {};
-			bufferInfo.buffer = mUniformBuffers[i]->get_vk_buffer();
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
-
-			vk::DescriptorImageInfo imageInfo = {};
-			imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-			imageInfo.imageView = texture->getTextureImageView();
-			imageInfo.sampler = texture->getTextureSampler();
-
-			std::vector<vk::WriteDescriptorSet> descriptorWrites(2);
-			if (vulkan_context::instance().shadingRateImageSupported) {
-				vk::DescriptorImageInfo imageDebugInfo = {};
-				imageDebugInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-				imageDebugInfo.imageView = debugTextures[i]->getTextureImageView();
-				imageDebugInfo.sampler = debugTextures[i]->getTextureSampler();
-
-				descriptorWrites.resize(3);
-				descriptorWrites[2].dstSet = mDescriptorSets[i];
-				descriptorWrites[2].dstBinding = 2;
-				descriptorWrites[2].dstArrayElement = 0;
-				descriptorWrites[2].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-				descriptorWrites[2].descriptorCount = 1;
-				descriptorWrites[2].pImageInfo = &imageDebugInfo;
-			}
-
-			descriptorWrites[0].dstSet = mDescriptorSets[i];
-			descriptorWrites[0].dstBinding = 0;
-			descriptorWrites[0].dstArrayElement = 0;
-			descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
-			descriptorWrites[0].descriptorCount = 1;
-			descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-			descriptorWrites[1].dstSet = mDescriptorSets[i];
-			descriptorWrites[1].dstBinding = 1;
-			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
-
-			vulkan_context::instance().device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		if (vulkan_context::instance().shadingRateImageSupported) {
+			mResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, debugTextures);
 		}
 	}
 

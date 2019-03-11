@@ -24,13 +24,13 @@ namespace cgb {
 		return buffer;
 	}
 
-	vulkan_pipeline::vulkan_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, vk::DescriptorSetLayout descriptorSetLayout) :
-		mVertexFilename(vertexShaderFilename) , mFragmentFilename(fragmentShaderFilename), mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mDescriptorSetLayout(descriptorSetLayout)
+	vulkan_pipeline::vulkan_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout) :
+		mVertexFilename(vertexShaderFilename) , mFragmentFilename(fragmentShaderFilename), mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mResourceBundleLayouts(resourceBundleLayout)
 	{
 	}
 
-	vulkan_pipeline::vulkan_pipeline(const std::string & filename, std::vector<vk::DescriptorSetLayout> descriptorSetLayouts, size_t pushConstantsSize) :
-		mComputeFilename(filename), mDescriptorSetLayouts(descriptorSetLayouts), mPushConstantsSize(pushConstantsSize)
+	vulkan_pipeline::vulkan_pipeline(const std::string & filename, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout, size_t pushConstantsSize) :
+		mComputeFilename(filename), mResourceBundleLayouts(resourceBundleLayout), mPushConstantsSize(pushConstantsSize)
 	{
 	}
 
@@ -101,9 +101,11 @@ namespace cgb {
 		pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
 		mPushConstantRanges.push_back(pushConstantRange);
 
+		mTempLayouts.resize(mResourceBundleLayouts.size());
+		std::transform(mResourceBundleLayouts.begin(), mResourceBundleLayouts.end(), mTempLayouts.begin(), [](auto rBLayout) { return rBLayout->get_descriptor_set_layout(); });
 		pipelineLayoutInfo = {};
-		pipelineLayoutInfo.setLayoutCount = mDescriptorSetLayouts.size(); // Optional
-		pipelineLayoutInfo.pSetLayouts = mDescriptorSetLayouts.data(); // Optional
+		pipelineLayoutInfo.setLayoutCount = mTempLayouts.size(); // Optional
+		pipelineLayoutInfo.pSetLayouts = mTempLayouts.data(); // Optional
 		pipelineLayoutInfo.pushConstantRangeCount = mPushConstantRanges.size(); // Optional
 		pipelineLayoutInfo.pPushConstantRanges = mPushConstantRanges.data(); // Optional
 
@@ -263,9 +265,12 @@ namespace cgb {
 		pushConstantRange.size = sizeof(PushUniforms);
 		pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
+		std::vector<vk::DescriptorSetLayout> layouts(mResourceBundleLayouts.size());
+		std::transform(mResourceBundleLayouts.begin(), mResourceBundleLayouts.end(), layouts.begin(), [](auto rBLayout) { return rBLayout->get_descriptor_set_layout(); });
+
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-		pipelineLayoutInfo.setLayoutCount = 1; // Optional
-		pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout; // Optional
+		pipelineLayoutInfo.setLayoutCount = layouts.size(); // Optional
+		pipelineLayoutInfo.pSetLayouts = layouts.data(); // Optional
 		pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange; // Optional
 

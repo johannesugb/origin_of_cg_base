@@ -11,6 +11,9 @@
 #include "vulkan_context.h"
 #include "vulkan_buffer.h"
 #include "vulkan_texture.h"
+#include "vulkan_resource_bundle_layout.h"
+#include "vulkan_resource_bundle_group.h"
+#include "vulkan_resource_bundle.h"
 
 struct Vertex {
 	glm::vec3 pos;
@@ -84,8 +87,8 @@ namespace cgb {
 
 
 		vulkan_render_object(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-			vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
-			vulkan_texture* texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
+			std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
+			std::shared_ptr<vulkan_texture> texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
 		virtual ~vulkan_render_object();
 
 		size_t get_index_count() { return mIndexCount; }
@@ -97,9 +100,9 @@ namespace cgb {
 		vk::Buffer get_index_buffer() { return mIndexBuffer->get_vk_buffer(); }
 		//void setIndexBuffer(vk::Buffer indexBuffer) { _indexBuffer = indexBuffer; }
 
-		std::vector<vk::DescriptorSet> get_descriptor_sets() { return mDescriptorSets; }
-		vk::DescriptorSet& get_descriptor_set() { return mDescriptorSets[vulkan_context::instance().currentFrame]; }
 		PushUniforms get_push_uniforms() { return mPushUniforms; }
+
+		std::shared_ptr<vulkan_resource_bundle> get_resource_bundle() { return mResourceBundle; }
 
 		void update_uniform_buffer(uint32_t currentImage, UniformBufferObject ubo);
 
@@ -113,7 +116,7 @@ namespace cgb {
 		std::shared_ptr<vulkan_buffer> mIndexBuffer; 
 		size_t mIndexCount;
 
-		std::vector<vulkan_buffer*> mUniformBuffers;
+		std::vector<std::shared_ptr<vulkan_buffer>> mUniformBuffers;
 
 		PushUniforms mPushUniforms;
 		// TODO PERFORMANCE use multiple descriptor sets / per render pass, e.g. shadow pass does not use textures
@@ -121,11 +124,11 @@ namespace cgb {
 		// suggestion: use an array of descriptor sets, the drawer then can decide, which descriptor set to use, 
 		// additionally allow global/per drawer descriptor sets
 		// this offers the most flexibility for the user of the framework, while still being easy to use
-		std::vector<vk::DescriptorSet> mDescriptorSets;
+		std::shared_ptr<vulkan_resource_bundle> mResourceBundle;
 
 		void create_uniform_buffer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager);
-		void create_descriptor_sets(vk::DescriptorSetLayout &descriptorSetLayout, vk::DescriptorPool &descriptorPool,
-			vulkan_texture* texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
+		void create_descriptor_sets(std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
+			std::shared_ptr<vulkan_texture> texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
 	};
 
 }

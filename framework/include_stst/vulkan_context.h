@@ -10,6 +10,27 @@
 
 namespace cgb {
 
+	// enums
+	enum class ShaderStageFlagBits // : std::underlying_type_t<vk::ShaderStageFlagBits>
+	{
+		eVertex = VK_SHADER_STAGE_VERTEX_BIT,
+		eTessellationControl = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+		eTessellationEvaluation = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+		eGeometry = VK_SHADER_STAGE_GEOMETRY_BIT,
+		eFragment = VK_SHADER_STAGE_FRAGMENT_BIT,
+		eCompute = VK_SHADER_STAGE_COMPUTE_BIT,
+		eAllGraphics = VK_SHADER_STAGE_ALL_GRAPHICS,
+		eAll = VK_SHADER_STAGE_ALL,
+		eRaygenNV = VK_SHADER_STAGE_RAYGEN_BIT_NV,
+		eAnyHitNV = VK_SHADER_STAGE_ANY_HIT_BIT_NV,
+		eClosestHitNV = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV,
+		eMissNV = VK_SHADER_STAGE_MISS_BIT_NV,
+		eIntersectionNV = VK_SHADER_STAGE_INTERSECTION_BIT_NV,
+		eCallableNV = VK_SHADER_STAGE_CALLABLE_BIT_NV,
+		eTaskNV = VK_SHADER_STAGE_TASK_BIT_NV,
+		eMeshNV = VK_SHADER_STAGE_MESH_BIT_NV
+	};
+
 	class vulkan_framebuffer;
 	class vulkan_memory_manager;
 	class vulkan_command_buffer_manager;

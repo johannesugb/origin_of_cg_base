@@ -14,6 +14,11 @@
 #include "vulkan_pipeline.h"
 #include "vulkan_framebuffer.h"
 #include "vrs_image_compute_drawer.h"
+#include "vulkan_resource_bundle_layout.h"
+#include "vulkan_resource_bundle_group.h"
+#include "vulkan_resource_bundle.h"
+
+
 #include "eyetracking_interface.h"
 
 #include "model.h"
@@ -29,8 +34,6 @@ class vrs_behavior : public cgb::cg_element
 public:
 	vrs_behavior() {}
 private:
-	vk::DescriptorSetLayout descriptorSetLayout;
-	vk::DescriptorPool descriptorPool;
 
 	vk::DescriptorSetLayout vrsComputeDescriptorSetLayout;
 	vk::DescriptorPool vrsComputeDescriptorPool;
@@ -49,8 +52,8 @@ private:
 
 	cgb::vulkan_render_object* renderObject;
 	cgb::vulkan_render_object* renderObject2;
-	cgb::vulkan_texture* texture;
-	cgb::vulkan_image* textureImage;
+	std::shared_ptr<cgb::vulkan_texture> texture;
+	std::shared_ptr<cgb::vulkan_image> textureImage;
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> drawCommandBufferManager;
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> transferCommandBufferManager;
 	std::unique_ptr<cgb::vulkan_drawer> drawer;
@@ -69,6 +72,8 @@ private:
 	std::shared_ptr<cgb::vulkan_pipeline> mRenderVulkanPipeline;
 	std::shared_ptr<cgb::vulkan_pipeline> mComputeVulkanPipeline;
 	std::shared_ptr<cgb::vulkan_framebuffer> mVulkanFramebuffer;
+	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mResourceBundleLayout;
+	std::shared_ptr<cgb::vulkan_resource_bundle_group> mResourceBundleGroup;
 
 	std::shared_ptr<eyetracking_interface> eyeInf;
 
@@ -148,6 +153,7 @@ private:
 
 		mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(cgb::vulkan_context::instance().msaaSamples, colorImage, depthImage, imagePresenter);
 		createDescriptorSetLayout();
+		mResourceBundleGroup = std::make_shared<cgb::vulkan_resource_bundle_group>();
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			createVrsComputeDescriptorSetLayout();
 		}
@@ -172,7 +178,10 @@ private:
 		bind2->add_attribute_description(2, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
 
 		// Render Drawer and Pipeline
-		mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/triangle.vert.spv", "shaders/triangle.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, descriptorSetLayout);
+		auto test = cgb::vulkan_pipeline("shaders/triangle.vert.spv", "shaders/triangle.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, { mResourceBundleLayout });
+
+		mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/triangle.vert.spv", "shaders/triangle.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
+
 		mRenderVulkanPipeline->add_attr_desc_binding(bind1);
 		mRenderVulkanPipeline->add_attr_desc_binding(bind2);
 		mRenderVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/triangle.vert.spv");
@@ -185,17 +194,18 @@ private:
 			drawer->set_vrs_images(vrsImages);
 
 			// Compute Drawer and Pipeline
-			mComputeVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/vrs_img.comp.spv", std::vector<vk::DescriptorSetLayout> { vrsComputeDescriptorSetLayout }, sizeof(vrs_eye_comp_data));
+			mComputeVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/vrs_img.comp.spv", std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> {}, sizeof(vrs_eye_comp_data));
 			mComputeVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_img.comp.spv");
-			
+
+
+			mComputeVulkanPipeline->add_resource_bundle_layout(std::make_shared<cgb::vulkan_resource_bundle_layout>(vrsComputeDescriptorSetLayout));
+
 			mVrsImageComputeDrawer = std::make_unique<cgb::vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
 			mVrsImageComputeDrawer->set_vrs_images(vrsImages);
 		}
 
 
 		createTexture();
-
-		createDescriptorPool();
 
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			createVrsComputeDescriptorPool();
@@ -205,9 +215,10 @@ private:
 			mVrsImageComputeDrawer->set_eye_inf(eyeInf);
 		}
 
-		renderObject = new cgb::vulkan_render_object(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImages);
-		renderObject2 = new cgb::vulkan_render_object(imagePresenter->get_swap_chain_images_count(), verticesScreenQuad, indicesScreenQuad, descriptorSetLayout, descriptorPool, texture, transferCommandBufferManager, vrsDebugTextureImages);
-
+		renderObject = new cgb::vulkan_render_object(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
+		renderObject2 = new cgb::vulkan_render_object(imagePresenter->get_swap_chain_images_count(), verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
+		mResourceBundleGroup->allocate_resource_bundle(renderObject->get_resource_bundle().get());
+		mResourceBundleGroup->allocate_resource_bundle(renderObject2->get_resource_bundle().get());
 
 		// TODO transfer code to camera
 		UniformBufferObject ubo = {};
@@ -226,15 +237,13 @@ private:
 	{
 		cleanupSwapChain();
 
-		cgb::vulkan_context::instance().device.destroyDescriptorPool(descriptorPool);
-		cgb::vulkan_context::instance().device.destroyDescriptorSetLayout(descriptorSetLayout);
+		mResourceBundleGroup.reset();
 		cgb::vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
-		cgb::vulkan_context::instance().device.destroyDescriptorSetLayout(vrsComputeDescriptorSetLayout);
 
 		delete renderObject;
 		delete renderObject2;
-		delete texture;
-		delete textureImage;
+		texture.reset();
+		textureImage.reset();
 		transferCommandBufferManager.reset();
 		mVulkanRenderQueue.reset();
 		drawCommandBufferManager.reset();
@@ -370,63 +379,14 @@ private:
 
 	void createDescriptorSetLayout()
 	{
-		vk::DescriptorSetLayoutBinding uboLayoutBinding = {};
-		uboLayoutBinding.binding = 0;
-		uboLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-		uboLayoutBinding.descriptorCount = 1;
-		uboLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
-		uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+		mResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
+		mResourceBundleLayout->add_binding(0, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eVertex);
+		mResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 
-		vk::DescriptorSetLayoutBinding samplerLayoutBinding = {};
-		samplerLayoutBinding.binding = 1;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-		samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-
-		std::vector<vk::DescriptorSetLayoutBinding> bindings = { uboLayoutBinding, samplerLayoutBinding };
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-			vk::DescriptorSetLayoutBinding samplerDebugLayoutBinding = {};
-			samplerDebugLayoutBinding.binding = 2;
-			samplerDebugLayoutBinding.descriptorCount = 1;
-			samplerDebugLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-			samplerDebugLayoutBinding.pImmutableSamplers = nullptr;
-			samplerDebugLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-
-			bindings.push_back(samplerDebugLayoutBinding);
+			mResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		}
-
-		vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-		layoutInfo.pBindings = bindings.data();
-
-
-		if (cgb::vulkan_context::instance().device.createDescriptorSetLayout(&layoutInfo, nullptr, &descriptorSetLayout) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
-
-	void createDescriptorPool()
-	{
-		std::vector<vk::DescriptorPoolSize> poolSizes(2);
-		poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
-		poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
-		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-			poolSizes.resize(3);
-			poolSizes[2].type = vk::DescriptorType::eCombinedImageSampler;
-			poolSizes[2].descriptorCount = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count()) * 2;
-		}
-
-		vk::DescriptorPoolCreateInfo poolInfo = {};
-		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(imagePresenter->get_swap_chain_images_count() * 2);
-
-		if (cgb::vulkan_context::instance().device.createDescriptorPool(&poolInfo, nullptr, &descriptorPool) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to create descriptor pool!");
-		}
+		mResourceBundleLayout->bake();
 	}
 
 	void createVrsComputeDescriptorSetLayout()
@@ -506,8 +466,8 @@ private:
 		if (!pixels) {
 			throw std::runtime_error("failed to load texture image!");
 		}
-		textureImage = new cgb::vulkan_image(transferCommandBufferManager, pixels, texWidth, texHeight, texChannels);
-		texture = new cgb::vulkan_texture(textureImage);
+		textureImage = std::make_shared<cgb::vulkan_image>(transferCommandBufferManager, pixels, texWidth, texHeight, texChannels);
+		texture = std::make_shared<cgb::vulkan_texture>(textureImage);
 
 		stbi_image_free(pixels);
 	}
@@ -580,7 +540,7 @@ private:
 															 vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			vrsDebugImages[i]->transition_image_layout(colorFormatDebug, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 1);
 
-			vrsDebugTextureImages[i] = std::make_shared <cgb::vulkan_texture>(vrsDebugImages[i].get());
+			vrsDebugTextureImages[i] = std::make_shared<cgb::vulkan_texture>(vrsDebugImages[i]);
 		}
 	}
 

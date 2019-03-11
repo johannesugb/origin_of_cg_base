@@ -8,9 +8,8 @@ namespace cgb {
 		createVrsComputeDescriptorSetLayout();
 		createVrsComputeDescriptorPool();
 		createVrsDescriptorSets();
-		auto descriptorSetLayouts = pipeline->get_descriptor_set_layouts();
-		descriptorSetLayouts.push_back(vrsComputeDebugDescriptorSetLayout);
-		pipeline->set_descriptor_set_layouts(descriptorSetLayouts);
+
+		pipeline->add_resource_bundle_layout(std::make_shared<cgb::vulkan_resource_bundle_layout>(vrsComputeDebugDescriptorSetLayout));
 		pipeline->bake();
 	}
 
@@ -18,7 +17,6 @@ namespace cgb {
 	vrs_image_compute_drawer::~vrs_image_compute_drawer()
 	{
 		vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDebugDescriptorPool);
-		vulkan_context::instance().device.destroyDescriptorSetLayout(vrsComputeDebugDescriptorSetLayout);
 	}
 
 	void vrs_image_compute_drawer::draw(std::vector<vulkan_render_object*> renderObjects)

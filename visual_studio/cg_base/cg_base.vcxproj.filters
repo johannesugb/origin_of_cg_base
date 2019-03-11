@@ -124,6 +124,15 @@
     <ClCompile Include="..\..\framework\src_stst\vulkan_attribute_description_binding.cpp">
       <Filter>Source Files\stst</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_group.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_layout.cpp">
+      <Filter>Source Files\stst</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -271,6 +280,15 @@
       <Filter>Header Files\stst</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_group.h">
+      <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_layout.h">
       <Filter>Header Files\stst</Filter>
     </ClInclude>
   </ItemGroup>
