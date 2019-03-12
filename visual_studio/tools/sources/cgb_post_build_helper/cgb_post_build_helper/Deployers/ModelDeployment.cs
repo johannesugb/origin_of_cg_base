@@ -15,17 +15,28 @@ using CgbPostBuildHelper.Utils;
 
 namespace CgbPostBuildHelper.Deployers
 {
+	class TextureCleanupData
+	{
+		public string FullOutputPathNormalized { get; set; }
+		public string FullInputPathNormalized { get; set; }
+		public string OriginalRelativePath { get; set; }
+	}
+
+	static class TextureCleanupDataHelpers
+	{
+		public static TextureCleanupData FindFullOutputPath(this IList<TextureCleanupData> collection, string path)
+		{
+			path = CgbUtils.NormalizePath(path);
+			var existing = (from x in collection where x.FullOutputPathNormalized == path select x).FirstOrDefault();
+			return existing;
+		}
+	}
+
 	class ModelDeployment : DeploymentBase
 	{
-		struct TextureCleanupData
-		{
-			public string FullOutputPathNormalized { get; set; }
-			public string FullInputPathNormalized { get; set; }
-			public string OriginalRelativePath { get; set; } // TODO: USE THIS STRUCT instead of Tuple<string, string>, OMG!
-		}
 
 		// Use a List, because order matters (maybe)
-		List<Tuple<string, string>> _outputToInputPathsNormalized;
+		List<TextureCleanupData> _outputToInputPathsNormalized;
 
 		private string GetInputPathForTexture(string textureRelativePath)
 		{
@@ -37,43 +48,98 @@ namespace CgbPostBuildHelper.Deployers
 			return Path.Combine(new FileInfo(_outputFilePath).DirectoryName, textureRelativePath);
 		}
 
-		public void SetTextures(IEnumerable<string> textures)
+		private void RebuildOutputToInputPathRecords()
 		{
-			_texturePaths.AddRange(textures);
-
-			_outputToInputPathsNormalized = new List<Tuple<string, string>>();
+			_outputToInputPathsNormalized = new List<TextureCleanupData>();
 			foreach (var txp in _texturePaths)
 			{
 				var outPath = GetOutputPathForTexture(txp);
 				var outPathNrm = CgbUtils.NormalizePath(outPath);
-				var existing = (from x in _outputToInputPathsNormalized where x.Item1 == outPathNrm select x).FirstOrDefault();
+				var existing = _outputToInputPathsNormalized.FindFullOutputPath(outPathNrm);
 				if (null == existing)
 				{
 					var inpPath = GetInputPathForTexture(txp);
 					var inpPathNrm = CgbUtils.NormalizePath(inpPath);
-					_outputToInputPathsNormalized.Add(Tuple.Create(outPathNrm, inpPathNrm));
+					_outputToInputPathsNormalized.Add(new TextureCleanupData
+					{
+						FullOutputPathNormalized = outPath,
+						FullInputPathNormalized = inpPath,
+						OriginalRelativePath = txp
+					});
 				}
 			}
 		}
 
+		/// <summary>
+		/// Set textures which are referenced by the model for it's materials.
+		/// Those textures are to be deployed as well.
+		/// </summary>
+		/// <param name="textures">Assigned textures which shall be deployed</param>
+		public void SetTextures(IEnumerable<string> textures)
+		{
+			_texturePaths.AddRange(textures);
+			RebuildOutputToInputPathRecords();
+		}
+
+		/// <summary>
+		/// Determines if this deployment has conflicts with an other deployment,
+		/// i.e. same output paths, but different input paths.
+		/// (If such a case is detected, the conflict should be solved before deployment)
+		/// </summary>
+		/// <param name="other">The other deployment to compare with</param>
+		/// <returns>true if there is a conflict, false otherwise</returns>
 		public override bool HasConflictWith(DeploymentBase other)
 		{
 			if (other is ModelDeployment otherModel)
 			{
 				System.Diagnostics.Debug.Assert(null != this._outputToInputPathsNormalized); // If that assert fails, SetTextures has not been invoked before
 				System.Diagnostics.Debug.Assert(null != otherModel._outputToInputPathsNormalized); // If that assert fails, SetTextures has not been invoked before
-				foreach (var pathPair in _outputToInputPathsNormalized)
+				// Process in order, to (hopefully) maintain the original order.
+				// The purpose of this shall be to have consistent behavior across multiple events.
+				foreach (var pathRecord in _outputToInputPathsNormalized)
 				{
-					var existingInOther = (from x in otherModel._outputToInputPathsNormalized where x.Item1 == pathPair.Item1 select x).FirstOrDefault();
+					var existingInOther = otherModel._outputToInputPathsNormalized.FindFullOutputPath(pathRecord.FullOutputPathNormalized);
 					if (null != existingInOther)
 					{
-						if (existingInOther.Item2 != pathPair.Item2) // found a conflict! Input paths do not match!
+						if (pathRecord.FullInputPathNormalized != existingInOther.FullInputPathNormalized) // found a conflict! Input paths do not match!
 							return true;
 					}
 				}
 			}
 			// In any case, perform the check of the base class:
 			return base.HasConflictWith(other);
+		}
+
+		/// <summary>
+		/// No use in deploying the same file multiple times!
+		/// Therefore, use this method to cleanup repeating paths across multiple models.
+		/// </summary>
+		public void KickOutAllTexturesWhichAreAvailableInOther(ModelDeployment other)
+		{
+			foreach (var pathRecord in _outputToInputPathsNormalized)
+			{
+				if (null != other._outputToInputPathsNormalized.FindFullOutputPath(pathRecord.FullOutputPathNormalized))
+				{
+					// okay, found it! => Kick it!
+					_texturePaths.Remove(pathRecord.OriginalRelativePath);
+				}
+			}
+			// List of textures possibly changed!
+			RebuildOutputToInputPathRecords();
+		}
+
+		public void ResolveConflictByMovingThisToSubfolder()
+		{
+			// Check if we haven't already!
+			var curOutput = new FileInfo(_outputFilePath);
+			if (curOutput.Name == curOutput.Directory.Name)
+			{
+				throw new Exception($"It looks like this model has already been moved into a subfolder: current output path = '{_outputFilePath}'");
+			}
+
+			// Okay, let's move!
+			_outputFilePath = Path.Combine(curOutput.Directory.FullName, curOutput.Name, curOutput.Name);
+			// That should be it. TODO: TEST!!
 		}
 
 		public override void Deploy()
