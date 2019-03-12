@@ -19,6 +19,7 @@ namespace CgbPostBuildHelper.Deployers
 		void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath);
 		void Deploy();
 		List<FileDeploymentData> FilesDeployed { get; }
+		string DesignatedOutputPath { get; }
 	}
 
 }

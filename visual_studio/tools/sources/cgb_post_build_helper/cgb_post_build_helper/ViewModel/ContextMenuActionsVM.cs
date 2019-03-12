@@ -40,7 +40,7 @@ namespace CgbPostBuildHelper.ViewModel
 			{
 				var wnd = new View.SettingsView
 				{
-					DataContext = new ViewModel.SettingsVM()
+					DataContext = new ViewModel.SettingsVM(_application)
 				};
 				wnd.Show();
 			});

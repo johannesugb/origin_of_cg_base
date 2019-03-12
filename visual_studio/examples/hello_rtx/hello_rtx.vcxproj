@@ -39,26 +39,6 @@
     <ClInclude Include="..\..\..\examples\hello_rtx\source\temp.h" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\..\..\external\debug\bin\x64\assimp-vc140-mt.dll">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\..\..\external\release\bin\x64\assimp-vc140-mt.dll">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\..\framework\assets\chalet\chalet.jpg" />
     <None Include="..\..\..\framework\shader\rt_09_first.rchit" />
     <None Include="..\..\..\framework\shader\rt_09_first.rgen" />
@@ -241,7 +221,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -274,7 +254,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -307,7 +287,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -340,7 +320,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -369,7 +349,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -398,7 +378,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>

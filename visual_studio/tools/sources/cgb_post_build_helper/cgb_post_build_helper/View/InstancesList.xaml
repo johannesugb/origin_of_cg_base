@@ -8,7 +8,7 @@
         Title="InstancesList" Height="450" Width="800">
 	
     <Grid>
-		<ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
 			<ItemsControl ItemsSource="{Binding Items}">
 				<ItemsControl.ItemTemplate>
 					<DataTemplate>
@@ -43,38 +43,34 @@
 								<ItemsControl ItemsSource="{Binding CurrentlyWatchedDirectories}" AlternationCount="2">
 									<ItemsControl.ItemTemplate>
 										<DataTemplate>
-											<StackPanel Name="DirContainer" Orientation="Vertical">
-												<TextBlock FontSize="16" FontWeight="Bold" Text="{Binding Directory}" />
+											<Grid Name="DirContainer">
+												<Grid.RowDefinitions>
+													<RowDefinition Height="Auto"/>
+													<RowDefinition Height="Auto"/>
+												</Grid.RowDefinitions>
+												
+												<StackPanel Orientation="Horizontal" Grid.Row="0">
+													<TextBlock FontSize="16" FontWeight="Bold" Text="{Binding Directory}" VerticalAlignment="Center" />
+													<Button Margin="6,2,0,0" Padding="2,1" Content="-&gt; Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding Directory}" />
+													<Button Margin="6,2,0,0" Padding="2,1" Content="End Watches" VerticalAlignment="Center" Command="{Binding EndWatch}" CommandParameter="{Binding Directory}" />
+												</StackPanel>
 
-												<ItemsControl ItemsSource="{Binding Files}" AlternationCount="2" Margin="10,0,0,0">
+												<ItemsControl Grid.Row="1" ItemsSource="{Binding Files}" Margin="10,0,0,0">
+													<ItemsControl.ItemsPanel>
+														<ItemsPanelTemplate>
+															<WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" />
+														</ItemsPanelTemplate>
+													</ItemsControl.ItemsPanel>
 													<ItemsControl.ItemTemplate>
 														<DataTemplate>
-															<StackPanel Name="FileContainer" Orientation="Vertical">
-																<TextBlock FontWeight="Bold" Text="{Binding SomewhatShortPath}" />
-																<StackPanel Orientation="Horizontal">
-																	<TextBlock Text="Filter-Path: "/>
-																	<TextBox IsReadOnly="True" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Text="{Binding FilterPath, Mode=OneWay}" />
-																</StackPanel>
-																<StackPanel Orientation="Horizontal">
-																	<Button Margin="0,1,3,1" Padding="2,1" Content="-> File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding Path}" />
-																	<Button Margin="0,1,3,1" Padding="2,1" Content="-> Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding Path}" />
-																	<TextBox IsReadOnly="True" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Text="{Binding Path, Mode=OneWay}" />
-																</StackPanel>
-															</StackPanel>
-
-															<DataTemplate.Triggers>
-																<Trigger Property="ItemsControl.AlternationIndex" Value="0">
-																	<Setter Property="Background" Value="#f2f2f2" TargetName="FileContainer"/>
-																</Trigger>
-																<Trigger Property="ItemsControl.AlternationIndex" Value="1">
-																	<Setter Property="Background" Value="#e6e6e6" TargetName="FileContainer"/>
-																</Trigger>
-															</DataTemplate.Triggers>
+															<Button Margin="3,2" Padding="1" Command="{Binding OpenFileCommand}" CommandParameter="{Binding FileName}"
+																	BorderThickness="0" Background="Transparent" HorizontalAlignment="Left">
+																<TextBlock Text="{Binding FileName}" TextDecorations="Underline" />
+															</Button>
 														</DataTemplate>
 													</ItemsControl.ItemTemplate>
 												</ItemsControl>
-
-											</StackPanel>
+											</Grid>
 
 											<DataTemplate.Triggers>
 												<Trigger Property="ItemsControl.AlternationIndex" Value="0">

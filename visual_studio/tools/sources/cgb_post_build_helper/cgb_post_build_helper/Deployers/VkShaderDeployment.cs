@@ -21,9 +21,14 @@ namespace CgbPostBuildHelper.Deployers
 		private static readonly string GlslangValidatorPath = Path.Combine(VulkanSdkPath, @"Bin\glslangValidator.exe");
 		private static readonly string GlslangValidatorParams = " -V -o \"{1}\" \"{0}\"";
 
+		public override void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath)
+		{
+			base.SetInputParameters(config, filterPath, inputFile, outputFilePath + ".spv");
+		}
+
 		public override void Deploy()
 		{
-			var outFile = new FileInfo(_outputFilePath + ".spv");
+			var outFile = new FileInfo(_outputFilePath);
 			Directory.CreateDirectory(outFile.DirectoryName);
 
 			var cmdLineParams = string.Format(GlslangValidatorParams, _inputFile.FullName, outFile.FullName);

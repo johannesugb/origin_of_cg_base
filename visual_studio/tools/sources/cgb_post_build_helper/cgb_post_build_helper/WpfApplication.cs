@@ -107,7 +107,7 @@ namespace CgbPostBuildHelper
 			};
 		}
 
-		public void EndAllWatchesAndExitApplication()
+		public void EndAllWatches()
 		{
 			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
@@ -115,7 +115,15 @@ namespace CgbPostBuildHelper
 				{
 					ClearAllFileWatchers(inst);
 				}
+			}));
+		}
 
+		public void EndAllWatchesAndExitApplication()
+		{
+			EndAllWatches();
+
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
 				var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.0) };
 				timer.Start();
 				timer.Tick += (sender, args) =>
@@ -215,7 +223,8 @@ namespace CgbPostBuildHelper
 		/// <param name="modWindowsToShowFor">List of single file deployments which an emergency-window has to be opened for; this will be modified.</param>
 		public void HandleFileToDeploy(
 			InvocationParams config, string filePath, string filterPath,
-			IList<IFileDeployment> modDeployments, IList<FileDeploymentData> modFileDeployments, IList<FileDeploymentData> modWindowsToShowFor)
+			IList<IFileDeployment> modDeployments, IList<FileDeploymentData> modFileDeployments, IList<FileDeploymentData> modWindowsToShowFor,
+			bool doNotOverwriteExisting = false)
 		{
 			try
 			{
@@ -231,6 +240,18 @@ namespace CgbPostBuildHelper
 				}
 
 				// Do it!
+				if (doNotOverwriteExisting)
+				{
+					// ...unless we shouldn't do it!
+					if (File.Exists(deployment.DesignatedOutputPath))
+					{
+						Console.WriteLine($"Not deploying file to '{deployment.DesignatedOutputPath}' because it already exists (and don't overwrite flag is set).");
+						return;
+					}
+				}
+
+
+
 				deployment.Deploy();
 
 				foreach (var deployedFile in deployment.FilesDeployed)
@@ -388,8 +409,11 @@ namespace CgbPostBuildHelper
 
 				if (CgbEventType.Build == eventType) // only mess around with file system watchers at "Build" events
 				{
-					// Finally, start watching those files
-					StartWatchingDeployedFiles(inst);
+					if (!CgbPostBuildHelper.Properties.Settings.Default.DoNotMonitorFiles)
+					{
+						// Finally, start watching those files
+						StartWatchingDeployedFiles(inst);
+					}
 				}
 
 				if (stopAnimateIcon)
@@ -441,6 +465,36 @@ namespace CgbPostBuildHelper
 
 					HandleFileToDeploy(config, filePath, filterPath, deployments, fileDeployments, windowsToShowFor);
 				}
+
+				// In addition, deploy the DLLs from the framework's external directory!
+				{
+					var pathToExtBinDlls = Path.Combine(
+						config.CgbExternalPath, 
+						CgbPostBuildHelper.Properties.Settings.Default.AlwaysDeployReleaseDlls 
+							? CgbPostBuildHelper.Properties.Settings.Default.ReleaseSubPathInExternals
+							: config.Configuration == BuildConfiguration.Debug
+								? CgbPostBuildHelper.Properties.Settings.Default.DebugSubPathInExternals
+								: CgbPostBuildHelper.Properties.Settings.Default.ReleaseSubPathInExternals,
+						"bin",
+						config.Platform.BuildPlatformToPartOfPath());
+
+					var dirInfo = new DirectoryInfo(pathToExtBinDlls);
+					if (!dirInfo.Exists)
+					{
+						AddToMessagesList(Message.Create(MessageType.Error, $"Path to framework's externals does not exist?! This one => '{dirInfo.FullName}'", () =>
+						{
+							CgbUtils.ShowDirectoryInExplorer(config.CgbExternalPath);
+						}));
+					}
+					
+					var allFiles = dirInfo.EnumerateFiles("*.*", SearchOption.AllDirectories);
+					foreach (var file in allFiles)
+					{
+						HandleFileToDeploy(config, file.FullName, ".", deployments, fileDeployments, windowsToShowFor);
+					}
+				}
+
+				// TODO: Test DLL deployment!!
 
 				// Do the things which must be done on the UI thread:
 				UpdateViewAfterHandledInvocationAndStartFileSystemWatchers(CgbEventType.Build, config, deployments, fileDeployments, windowsToShowFor);
@@ -533,153 +587,6 @@ namespace CgbPostBuildHelper
 					}
 				};
 			}));
-
-			//Task.Run(() =>
-			//{
-			//	lock (_locker)
-			//	{
-			//		
-
-			//		try
-			//		{
-			//			inst.WaitForAllDispatcherOpsToComplete();
-
-			//			var watchFileEntry = files.GetFile(filePath);
-			//			if (null == watchFileEntry)
-			//			{
-			//				AddToMessagesList(MessageVM.CreateError(inst, $"Received a file system event for '{filePath}' but we aren't watching that file, actually.", null)); // TODO: perform some action?
-			//				return;
-			//			}
-
-			//			inst.PrepareDeployment(
-			//				inst.Files,
-			//				filePath, watchFileEntry.FilterPath,
-			//				out var deployment);
-
-			//			// It can be null, if it is not an asset/shader that should be deployed
-			//			if (null == deployment)
-			//			{
-			//				return;
-			//			}
-
-			//			// Do it!
-			//			deployment.Deploy();
-
-			//			bool eventHasErrors = false;
-			//			bool eventHasWarnings = false;
-			//			var nFilesDeployed = 0;
-
-			//			// -> Store the whole event (but a little bit later)
-			//			var cgbEvent = new CgbEventVM(CgbEventType.Update);
-
-			//			foreach (var deployedFile in deployment.FilesDeployed)
-			//			{
-			//				var deploymentHasErrors = deployedFile.Messages.ContainsMessagesOfType(MessageType.Error);
-			//				var deploymentHasWarnings = deployedFile.Messages.ContainsMessagesOfType(MessageType.Warning);
-			//				eventHasErrors = eventHasErrors || deploymentHasErrors;
-			//				eventHasWarnings = eventHasWarnings || deploymentHasWarnings;
-
-			//				// Show errors/warnings in window immediately IF this behavior has been opted-in via our settings
-			//				if (deploymentHasWarnings || deploymentHasErrors)
-			//				{
-			//					if ((CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForVkShaderDeployment && deployment is Deployers.VkShaderDeployment)
-			//						|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForGlShaderDeployment && deployment is Deployers.GlShaderDeployment)
-			//						|| (CgbPostBuildHelper.Properties.Settings.Default.ShowWindowForModelDeployment && deployment is Deployers.ModelDeployment))
-			//					{
-			//						Window window = new Window
-			//						{
-			//							Width = 480, Height = 320,
-			//							Title = "Messages for file " + filePath,
-			//							Content = new MessagesList()
-			//							{
-			//								DataContext = new { Items = deployedFile.Messages }
-			//							}
-			//						};
-			//						window.Show();
-			//					}
-			//				}
-
-			//				// For the event:
-			//				cgbEvent.Files.Add(deployedFile);
-			//			}
-			//			nFilesDeployed += deployment.FilesDeployed.Count;
-
-			//			// Now, store the event (...AT THE FRONT)
-			//			inst.AddEventToTheFront(cgbEvent);
-
-			//			// Analyze the outcome, create a message and possibly show it, if there could be a problem (files with warnings or errors)
-			//			if (eventHasErrors || eventHasWarnings)
-			//			{
-			//				void addErrorWarningsList(string message, string title)
-			//				{
-			//					AddToMessagesList(MessageVM.CreateError(inst, message, new DelegateCommand(_ =>
-			//					{
-			//						Window window = new Window
-			//						{
-			//							Width = 960,
-			//							Height = 600,
-			//							Title = title,
-			//							Content = new EventFilesView()
-			//							{
-			//								DataContext = new
-			//								{
-			//									Path = inst.Path,
-			//									ShortPath = inst.ShortPath,
-			//									AllEventsEver = new[] { cgbEvent }
-			//								}
-			//							}
-			//						};
-			//						window.Show();
-			//					})));
-			//				}
-
-			//				if (eventHasWarnings && eventHasErrors)
-			//				{
-			//					addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS and WARNINGS.", "Build-Event Details including ERRORS and WARNINGS");
-			//				}
-			//				else if (eventHasWarnings)
-			//				{
-			//					addErrorWarningsList($"Deployed {nFilesDeployed} files with WARNINGS.", "Build-Event Details including WARNINGS");
-			//				}
-			//				else
-			//				{
-			//					addErrorWarningsList($"Deployed {nFilesDeployed} files with ERRORS.", "Build-Event Details including ERRORS");
-			//				}
-			//			}
-			//			else
-			//			{
-			//				AddToMessagesList(MessageVM.CreateInfo(inst, $"Deployed {nFilesDeployed} files.", new DelegateCommand(_ =>
-			//				{
-			//					Window window = new Window
-			//					{
-			//						Width = 960,
-			//						Height = 600,
-			//						Title = "Build-Event Details",
-			//						Content = new EventFilesView()
-			//						{
-			//							DataContext = new
-			//							{
-			//								Path = inst.Path,
-			//								ShortPath = inst.ShortPath,
-			//								AllEventsEver = new[] { cgbEvent }
-			//							}
-			//						}
-			//					};
-			//					window.Show();
-			//				})));
-			//			}
-			//		}
-			//		catch (Exception ex)
-			//		{
-			//			AddToMessagesList(MessageVM.CreateError(inst, ex.Message, null)); // TODO: perform some action
-			//			return;
-			//		}
-
-			//		inst.WaitForAllDispatcherOpsToComplete();
-			//	}
-			//	StopAnimateIcon();
-			//});
-
 		}
 
 		public void ClearAllFileWatchers(CgbAppInstanceVM inst)

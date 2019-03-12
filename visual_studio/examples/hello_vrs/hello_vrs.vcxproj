@@ -71,47 +71,47 @@
     <ProjectGuid>{e177242b-2397-4ad3-8501-2b3426d95736}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>hellovrs</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>hello_vrs</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -227,7 +227,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -260,7 +260,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -293,7 +293,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -326,7 +326,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -355,7 +355,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -384,7 +384,7 @@ echo %(FullPath)
 echo  %(Filename).c</Command>
     </CustomBuild>
     <CustomBuildStep>
-      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\executables\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)"</Command>
+      <Command>$(FrameworkRoot)..\visual_studio\tools\executables\cmdow.exe /RUN $(FrameworkRoot)..\visual_studio\tools\sources\cgb_post_build_helper\cgb_post_build_helper\bin\Debug\cgb_post_build_helper.exe -configuration "$(Configuration)" -framework "$(FrameworkRoot)\"  -platform "$(Platform)" -vcxproj "$(ProjectPath)" -filters "$(ProjectPath).filters" -output "$(OutputPath)\" -executable "$(TargetPath)" -external "$(ExternalRoot)\"</Command>
       <Outputs>some-non-existant-file-to-always-run-the-custom-build-step.txt;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>

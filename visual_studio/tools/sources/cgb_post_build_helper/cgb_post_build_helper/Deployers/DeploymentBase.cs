@@ -34,6 +34,21 @@ namespace CgbPostBuildHelper.Deployers
 		public List<FileDeploymentData> FilesDeployed => _filesDeployed;
 
 		/// <summary>
+		/// Determines whether or not there is a conflict with a different asset.
+		/// A conflict means: same output path, but different input paths
+		/// </summary>
+		/// <param name="other">The other deployment to compare with</param>
+		/// <returns>true if there is a conflict, false if everything is fine</returns>
+		public virtual bool HasConflictWith(DeploymentBase other)
+		{
+			if (CgbUtils.NormalizePath(this.DesignatedOutputPath) == CgbUtils.NormalizePath(other.DesignatedOutputPath))
+			{
+				return CgbUtils.NormalizePath(this._inputFile.FullName) != CgbUtils.NormalizePath(other._inputFile.FullName);
+			}
+			return false;
+		}
+
+		/// <summary>
 		/// Deploys the file by copying it from source to target, OR
 		/// deploys the file by creating a symlink at target, which points to source
 		/// </summary>
@@ -79,7 +94,7 @@ namespace CgbPostBuildHelper.Deployers
 			}
 		}
 
-		public void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath)
+		public virtual void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath)
 		{
 			_config = config;
 			_filterPath = filterPath;
@@ -100,6 +115,8 @@ namespace CgbPostBuildHelper.Deployers
 				return _hash;
 			}
 		}
+
+		public string DesignatedOutputPath => _outputFilePath;
 
 		protected FileDeploymentData PrepareNewAssetFile(FileDeploymentData parent)
 		{
