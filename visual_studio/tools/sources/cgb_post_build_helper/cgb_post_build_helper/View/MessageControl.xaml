@@ -12,6 +12,8 @@
 	<UserControl.Resources>
 		<conv:NullToVisibilityConverter x:Key="NullToCollapsedConv" 
 										CaseNull="Collapsed" CaseNonNull="Visible" />
+		<conv:NullToVisibilityConverter x:Key="NullToNotCollapsedConv" 
+										CaseNull="Visible" CaseNonNull="Collapsed" />
 	</UserControl.Resources>
 	
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -47,10 +49,19 @@
 				<TextBlock FontSize="11" FontWeight="Bold" Margin="4,6,4,0" Foreground="{Binding AccentColor, FallbackValue=#ff1a66}"
 						   Text="|" />
 				<TextBlock FontSize="12" FontWeight="Bold" Margin="0,6,0,0" 
-						   Foreground="{Binding AccentColor, FallbackValue=#ff1a66}" TextDecorations="Underline"
+						   Visibility="{Binding ShowInstanceDetailsCmd, Converter={StaticResource NullToNotCollapsedConv}}"
+						   Foreground="{Binding AccentColor, FallbackValue=#ff1a66}"
 						   Text="{Binding AppInstanceName, FallbackValue=MyApp.exe}" >
-					<Hyperlink />
 				</TextBlock>
+				<Button Visibility="{Binding ShowInstanceDetailsCmd, Converter={StaticResource NullToCollapsedConv}}"
+						Command="{Binding ShowInstanceDetailsCmd}" Background="Transparent" BorderThickness="0"
+						Margin="0,6,0,0" Padding="1,0">
+					<TextBlock FontSize="12" FontWeight="Bold" 
+							   Foreground="{Binding AccentColor, FallbackValue=#ff1a66}" TextDecorations="Underline"
+							   Text="{Binding AppInstanceName, FallbackValue=MyApp.exe}" >
+					</TextBlock>
+				</Button>
+						
 			</StackPanel>
 
 			<TextBox IsReadOnly="True" Background="Transparent" BorderThickness="0" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Margin="4,0,4,8" 

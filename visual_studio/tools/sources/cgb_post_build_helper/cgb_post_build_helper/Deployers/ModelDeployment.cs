@@ -62,8 +62,8 @@ namespace CgbPostBuildHelper.Deployers
 					var inpPathNrm = CgbUtils.NormalizePath(inpPath);
 					_outputToInputPathsNormalized.Add(new TextureCleanupData
 					{
-						FullOutputPathNormalized = outPath,
-						FullInputPathNormalized = inpPath,
+						FullOutputPathNormalized = outPathNrm,
+						FullInputPathNormalized = inpPathNrm,
 						OriginalRelativePath = txp
 					});
 				}
@@ -77,6 +77,11 @@ namespace CgbPostBuildHelper.Deployers
 		/// <param name="textures">Assigned textures which shall be deployed</param>
 		public void SetTextures(IEnumerable<string> textures)
 		{
+			if (_outputFilePath == null )
+			{
+				throw new InvalidOperationException("Call this method AFTER you have initialized the deployment via SetInputParameters!");
+			}
+
 			_texturePaths.AddRange(textures);
 			RebuildOutputToInputPathRecords();
 		}
@@ -139,7 +144,8 @@ namespace CgbPostBuildHelper.Deployers
 
 			// Okay, let's move!
 			_outputFilePath = Path.Combine(curOutput.Directory.FullName, curOutput.Name, curOutput.Name);
-			// That should be it. TODO: TEST!!
+			// Also update all the new texture target paths:
+			RebuildOutputToInputPathRecords();
 		}
 
 		public override void Deploy()
@@ -150,7 +156,7 @@ namespace CgbPostBuildHelper.Deployers
 			var assetFileModel = PrepareNewAssetFile(null);
 			assetFileModel.FileType = FileType.Generic3dModel;
 			assetFileModel.OutputFilePath = modelOutPath.FullName;
-			CopyFile(assetFileModel);
+			DeployFile(assetFileModel);
 			FilesDeployed.Add(assetFileModel);
 
 			foreach (var tp in _texturePaths)
@@ -164,7 +170,7 @@ namespace CgbPostBuildHelper.Deployers
 				assetFileTex.InputFilePath = GetInputPathForTexture(tp);
 				assetFileTex.FileType = FileType.Generic;
 				assetFileTex.OutputFilePath = texOutPath.FullName;
-				CopyFile(assetFileModel);
+				DeployFile(assetFileTex);
 				FilesDeployed.Add(assetFileTex);
 			}
 

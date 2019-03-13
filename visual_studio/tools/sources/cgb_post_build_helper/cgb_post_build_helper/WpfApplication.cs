@@ -250,7 +250,53 @@ namespace CgbPostBuildHelper
 					}
 				}
 
+				// Before deploying, check for conflicts and try to resolve them (which actually is only implemented for Models)
+				bool repeatChecks;
+				var deploymentBase = (DeploymentBase)deployment;
+				var deploymentModel = deployment as ModelDeployment;
+				var deploymentsToIssueWarningsFor = new HashSet<DeploymentBase>();
+				do
+				{
+					repeatChecks = false;
+					foreach (var otherDeployment in modDeployments)
+					{
+						var otherDeploymentBase = (DeploymentBase)otherDeployment;
+						if (deploymentBase.HasConflictWith(otherDeploymentBase))
+						{
+							if (null != deploymentModel && otherDeployment is ModelDeployment otherDeploymentModel)
+							{
+								deploymentModel.ResolveConflictByMovingThisToSubfolder();
+								repeatChecks = true;
+								break;
+							}
+							else
+							{
+								deploymentsToIssueWarningsFor.Add(otherDeploymentBase);
+							}
+						}
+					}
+				} while (repeatChecks);
 
+				// Do we have to show any warnings?
+				if (deploymentsToIssueWarningsFor.Count > 0)
+				{
+					foreach (var otherDeploymentBase in deploymentsToIssueWarningsFor)
+					{
+						AddToMessagesList(Message.Create(MessageType.Warning, $"File '{deploymentBase.InputFilePath}' has an unresolvable conflict with file '{otherDeploymentBase.InputFilePath}'.", null) /* TODO: ADD INSTANCE HERE */);
+					}
+					ShowMessagesList();
+				}
+
+				// And, before deploying, try to optimize!
+				foreach (var otherDeployment in modDeployments)
+				{
+					System.Diagnostics.Debug.Assert(deployment != otherDeployment);
+					var otherDeploymentBase = (DeploymentBase)otherDeployment;
+					if (null != deploymentModel && otherDeployment is ModelDeployment otherDeploymentModel)
+					{
+						deploymentModel.KickOutAllTexturesWhichAreAvailableInOther(otherDeploymentModel);
+					}
+				}
 
 				deployment.Deploy();
 
@@ -436,6 +482,7 @@ namespace CgbPostBuildHelper
 				var filtersFile = new FileInfo(config.FiltersPath);
 				var filtersContent = File.ReadAllText(filtersFile.FullName);
 				var filters = RegexFilterEntry.Matches(filtersContent);
+				int n = filters.Count;
 
 				// -> Store the whole event (but a little bit later)
 				var cgbEvent = new CgbEventVM(CgbEventType.Build);
@@ -444,8 +491,50 @@ namespace CgbPostBuildHelper
 				var fileDeployments = new List<FileDeploymentData>();
 				var windowsToShowFor = new List<FileDeploymentData>();
 
+				// Perform sanity check before actually evaluating the individual files:
+				try 
+				{
+					var test = CgbUtils.NormalizePartialPath("  /\\/\\asdfa/sdf/sdf/sdf\\asdf \\ asdfsdf?/\\ ");
+
+					var setOfFilters = new HashSet<string>();
+					var filesToCheck = new List<string>();
+					for (int i=0; i < n; ++i)
+					{
+						Match match = filters[i];
+						var fileName = match.Groups[2].Value;
+						var filterPath = match.Groups[3].Value;
+						setOfFilters.Add(CgbUtils.NormalizePartialPath(filterPath));
+
+						var filterPlusFile = Path.Combine(filterPath, new FileInfo(fileName).Name);
+						filesToCheck.Add(filterPlusFile);
+					}
+
+					foreach (var entry in filesToCheck)
+					{
+						if (setOfFilters.Contains(CgbUtils.NormalizePartialPath(entry)))
+						{
+							AddToMessagesList(Message.Create(MessageType.Error, 
+								$"A filter must not have the same name as one of its files => ABORTING! " +
+								$"This restriction is a neccessity for conflict handling. Please fix your filters!", 
+								() => {
+									CgbUtils.ShowDirectoryInExplorer(config.FiltersPath);
+								}), config.ExecutablePath);
+
+							StopAnimateIcon(); // <-- Never forgetti
+							return;
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					AddToMessagesList(Message.Create(MessageType.Error,
+						$"An unexpected error occured during sanity checking the .filters file. Message: '{ex.Message}'",
+						() => {
+							CgbUtils.ShowDirectoryInExplorer(config.FiltersPath);
+						}), config.ExecutablePath);
+				}
+
 				// -> Parse the .filters file and deploy each and every file
-				int n = filters.Count;
 				for (int i=0; i < n; ++i)
 				{
 					Match match = filters[i];
@@ -484,7 +573,7 @@ namespace CgbPostBuildHelper
 						AddToMessagesList(Message.Create(MessageType.Error, $"Path to framework's externals does not exist?! This one => '{dirInfo.FullName}'", () =>
 						{
 							CgbUtils.ShowDirectoryInExplorer(config.CgbExternalPath);
-						}));
+						}), config.ExecutablePath);
 					}
 					
 					var allFiles = dirInfo.EnumerateFiles("*.*", SearchOption.AllDirectories);
@@ -643,8 +732,7 @@ namespace CgbPostBuildHelper
 			// Sync across threads by invoking it on the dispatcher
 			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
-				var inst = _instances.GetInstance(instancePath);
-				_messagesListVM.Items.Add(new MessageVM(inst, msg));
+				_messagesListVM.Items.Add(new MessageVM(_instances, instancePath, msg));
 				RemoveOldMessagesFromList();
 				ShowMessagesList();
 			}));
@@ -655,10 +743,9 @@ namespace CgbPostBuildHelper
 			// Sync across threads by invoking it on the dispatcher
 			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
-				var inst = _instances.GetInstance(instancePath);
 				foreach (var msg in msgs)
 				{
-					_messagesListVM.Items.Add(new MessageVM(inst, msg));
+					_messagesListVM.Items.Add(new MessageVM(_instances, instancePath, msg));
 				}
 				RemoveOldMessagesFromList();
 				ShowMessagesList();
@@ -712,6 +799,12 @@ namespace CgbPostBuildHelper
 			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
 				Console.WriteLine("Show Messages list NOW " + DateTime.Now);
+
+				foreach (var msgVm in _messagesListVM.Items)
+				{
+					msgVm.IssueAllOnPropertyChanged();
+				}
+
 				_taskbarIcon.ShowCustomBalloon(_messagesListView, System.Windows.Controls.Primitives.PopupAnimation.None, null);
 				CloseMessagesListLater(true);
 			}));

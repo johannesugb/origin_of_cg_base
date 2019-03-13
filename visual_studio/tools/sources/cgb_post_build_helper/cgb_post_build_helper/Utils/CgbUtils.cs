@@ -50,6 +50,14 @@ namespace CgbPostBuildHelper.Utils
 			return hash1.SequenceEqual(hash2);
 		}
 
+		public static string NormalizePartialPath(string path)
+		{
+			return path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+					   .Trim()
+					   .Trim(Path.DirectorySeparatorChar)
+					   .ToUpperInvariant();
+		}
+
 		public static string NormalizePath(string path)
 		{
 			return Path.GetFullPath(new Uri(path).LocalPath)
@@ -196,6 +204,7 @@ namespace CgbPostBuildHelper.Utils
 
 			// Construct the deployment and DO IT... JUST DO IT
 			IFileDeployment deploy = null;
+			Action<IFileDeployment> additionalInitAction = null;
 			if (isShader)
 			{
 				if (config.TargetApi == BuildTargetApi.Vulkan)
@@ -241,7 +250,11 @@ namespace CgbPostBuildHelper.Utils
 						{
 							deploy = new ModelDeployment();
 						}
-						((ModelDeployment)deploy).SetTextures(allTextures);
+
+						additionalInitAction = (theDeployment) =>
+						{
+							((ModelDeployment)theDeployment).SetTextures(allTextures);
+						};
 					}
 				}
 				catch (AssimpException aex)
@@ -255,11 +268,13 @@ namespace CgbPostBuildHelper.Utils
 					deploy = new CopyFileDeployment();
 				}
 			}
+
 			deploy.SetInputParameters(
 				config, 
 				filterPath, 
 				inputFile, 
 				Path.Combine(config.OutputPath, filterPath, inputFile.Name));
+			additionalInitAction?.Invoke(deploy);
 
 			// We're done here => return the deployment-instance to the caller
 			outDeployment = deploy;
@@ -309,37 +324,44 @@ namespace CgbPostBuildHelper.Utils
 
 		public static void ShowDirectoryInExplorer(string path)
 		{
-			string dirPath;
-			string filePath = null;
-			var attr = File.GetAttributes(path);
-			if (attr.HasFlag(FileAttributes.Directory))
+			try
 			{
-				dirPath = path;
-				if (!Directory.Exists(dirPath))
+				string dirPath;
+				string filePath = null;
+				var attr = File.GetAttributes(path);
+				if (attr.HasFlag(FileAttributes.Directory))
 				{
-					return;
+					dirPath = path;
+					if (!Directory.Exists(dirPath))
+					{
+						return;
+					}
 				}
-			}
-			else
-			{
-				var info = new FileInfo(path);
-				if (!info.Directory.Exists)
+				else
 				{
-					return;
+					var info = new FileInfo(path);
+					if (!info.Directory.Exists)
+					{
+						return;
+					}
+					dirPath = info.Directory.FullName;
+					filePath = info.FullName;
 				}
-				dirPath = info.Directory.FullName;
-				filePath = info.FullName;
-			}
 
-			if (null != filePath)
-			{
-				string argument = "/select, \"" + filePath + "\"";
-				Process.Start("explorer.exe", argument);
+				if (null != filePath)
+				{
+					string argument = "/select, \"" + filePath + "\"";
+					Process.Start("explorer.exe", argument);
+				}
+				else
+				{
+					string argument = "\"" + dirPath + "\"";
+					Process.Start("explorer.exe", argument);
+				}
 			}
-			else
+			catch (Exception ex)
 			{
-				string argument = "\"" + dirPath + "\"";
-				Process.Start("explorer.exe", argument);
+				Console.WriteLine(ex.Message);
 			}
 		}
 	}

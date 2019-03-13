@@ -52,14 +52,19 @@ namespace CgbPostBuildHelper.Deployers
 		/// Deploys the file by copying it from source to target, OR
 		/// deploys the file by creating a symlink at target, which points to source
 		/// </summary>
-		protected void CopyFile(FileDeploymentData deploymentData)
+		protected void DeployFile(FileDeploymentData deploymentData)
 		{
 			void doCopy()
 			{
-				var outputFile = new FileInfo(deploymentData.OutputFilePath); // TODO: Is there a more efficient way which does not require to always delete it?
-				if (outputFile.Exists)
+				// The target could also be a directory because of conflict management!
+				if (Directory.Exists(deploymentData.OutputFilePath))
 				{
-					File.Delete(outputFile.FullName);
+					Directory.Delete(deploymentData.OutputFilePath, true);
+				}
+
+				if (File.Exists(deploymentData.OutputFilePath))
+				{
+					File.Delete(deploymentData.OutputFilePath);
 				}
 
 				File.Copy(deploymentData.InputFilePath, deploymentData.OutputFilePath, true);
@@ -128,6 +133,8 @@ namespace CgbPostBuildHelper.Deployers
 				Parent = parent
 			};
 		}
+
+		public string InputFilePath => _inputFile.FullName;
 
 		protected InvocationParams _config;
 		protected string _filterPath;

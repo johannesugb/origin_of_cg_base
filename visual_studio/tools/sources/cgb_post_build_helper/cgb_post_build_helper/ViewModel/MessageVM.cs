@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -14,23 +15,32 @@ namespace CgbPostBuildHelper.ViewModel
 
 	class MessageVM : BindableBase
 	{
-		private readonly CgbAppInstanceVM _instance;
+		private readonly Func<CgbAppInstanceVM> _instanceGetter;
+		private readonly Func<string> _fallbackInstNameGetter;
 		private ICommand _additionalInfoCmd;
 		private Model.Message _model;
 
 		public MessageVM(CgbAppInstanceVM instance, Model.Message model)
 		{
-			_instance = instance;
+			_instanceGetter = () => instance;
+			_fallbackInstNameGetter = () => instance.ShortPath;
+			_model = model;
+		}
+
+		public MessageVM(IList<CgbAppInstanceVM> listOfInstances, string instancePath, Model.Message model)
+		{
+			_instanceGetter = () => listOfInstances.GetInstance(instancePath);
+			_fallbackInstNameGetter = () => new FileInfo(instancePath).Name;
 			_model = model;
 		}
 
 		public DateTime CreateDate => _model.CreateDate;
 
-		public CgbAppInstanceVM AppInstance => _instance;
+		public CgbAppInstanceVM AppInstance => _instanceGetter();
 
-		public string AppInstancePath => _instance.Path;
+		public string AppInstancePath => _instanceGetter()?.Path ?? "";
 
-		public string AppInstanceName => new FileInfo(AppInstancePath).Name;
+		public string AppInstanceName => string.IsNullOrEmpty(AppInstancePath) ? _fallbackInstNameGetter() : new FileInfo(AppInstancePath).Name;
 
 		public Brush MessageColor
 		{
@@ -132,6 +142,31 @@ namespace CgbPostBuildHelper.ViewModel
 		public ICommand AdditionalInfoCmd
 		{
 			get => _model.Action == null ? null : new DelegateCommand(_ => _model.Action());
+		}
+
+		public ICommand ShowInstanceDetailsCmd
+		{
+			get
+			{
+				var inst = _instanceGetter();
+				if (null == inst)
+				{
+					return null;
+				}
+				return new DelegateCommand(_ =>
+				{ 
+					Window window = new Window
+					{
+						Width = 800, Height = 600,
+						Title = $"All events for {inst.ShortPath}",
+						Content = new View.EventFilesView()
+						{
+							DataContext = inst
+						}
+					};
+					window.Show();
+				});
+			}
 		}
 	}
 }

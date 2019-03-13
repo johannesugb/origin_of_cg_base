@@ -31,6 +31,12 @@
     <None Include="..\..\..\framework\assets\sphere.obj">
       <Filter>assets</Filter>
     </None>
+    <None Include="..\..\..\framework\assets\models\sponza\sponza_structure - Copy.obj">
+      <Filter>assets\sponza_structure2.obj-passt-scho</Filter>
+    </None>
+    <None Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
+      <Filter>assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="assets">
@@ -39,6 +45,9 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{25557352-4e4c-4c14-80e9-41e01d5b5f1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assets\sponza_structure2.obj-passt-scho">
+      <UniqueIdentifier>{f9816fd6-3998-4c35-86a5-f4c17a63942e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_rtx\source\hello_rtx.cpp" />
@@ -46,5 +55,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\examples\hello_rtx\source\temp.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="C:\Users\Johi\Desktop\Sponza am Desktop\sponza_fabric.obj\sponza_structure2.obj">
+      <Filter>assets</Filter>
+    </Object>
   </ItemGroup>
 </Project>
