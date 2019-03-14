@@ -92,8 +92,18 @@ namespace CgbPostBuildHelper
 				ToolTipText = "CGB Post Build Helper",
 				ContextMenu = (ContextMenu)rd["SysTrayMenu"]
 			};
-			_taskbarIcon.ContextMenu.DataContext = new ContextMenuActionsVM(this);
-			_taskbarIcon.LeftClickCommand = new DelegateCommand(_ => ShowMessagesList());
+
+			var contextMenuActions = new ContextMenuActionsVM(this);
+			_taskbarIcon.ContextMenu.DataContext = contextMenuActions;
+			_taskbarIcon.LeftClickCommand = new DelegateCommand(_ => 
+			{
+				ShowMessagesList();
+			});
+			_taskbarIcon.DoubleClickCommand = new DelegateCommand(_ =>
+			{
+				ShowMessagesList();
+				contextMenuActions.ShowInstances.Execute(null);
+			});
 		}
 
 		private void DispatcherInvokeLater(TimeSpan delay, Action action)
@@ -282,7 +292,7 @@ namespace CgbPostBuildHelper
 				{
 					foreach (var otherDeploymentBase in deploymentsToIssueWarningsFor)
 					{
-						AddToMessagesList(Message.Create(MessageType.Warning, $"File '{deploymentBase.InputFilePath}' has an unresolvable conflict with file '{otherDeploymentBase.InputFilePath}'.", null) /* TODO: ADD INSTANCE HERE */);
+						AddToMessagesList(Message.Create(MessageType.Warning, $"File '{deploymentBase.InputFilePath}' has an unresolvable conflict with file '{otherDeploymentBase.InputFilePath}'.", null, deploymentBase.InputFilePath) /* TODO: ADD INSTANCE HERE */);
 					}
 					ShowMessagesList();
 				}
@@ -374,7 +384,8 @@ namespace CgbPostBuildHelper
 						inst.Files.Add(new FileDeploymentDataVM(fd, inst));
 					}
 				}
-				inst.AllEventsEver.Add(evnt);
+				// Insert at the top
+				inst.AllEventsEver.Insert(0, evnt);
 
 				// Create those tray-messages
 				if (eventHasErrors || eventHasWarnings)
@@ -383,19 +394,14 @@ namespace CgbPostBuildHelper
 					{
 						AddToMessagesList(Message.Create(msgType, message, () =>
 						{
-							Window window = new Window
+							var window = new View.WindowToTheTop
 							{
 								Width = 960, Height = 600,
-								Title = title,
-								Content = new EventFilesView()
-								{
-									DataContext = new
-									{
-										Path = inst.Path,
-										ShortPath = inst.ShortPath,
-										AllEventsEver = new[] { evnt }
-									}
-								}
+								Title = title
+							};
+							window.InnerContent.Content = new EventFilesView()
+							{
+								DataContext = inst
 							};
 							window.Show();
 						}), inst);
@@ -419,19 +425,14 @@ namespace CgbPostBuildHelper
 				{
 					AddToMessagesList(Message.Create(MessageType.Information, $"Deployed {fileDeployments.Count} files.", () =>
 					{
-						Window window = new Window
+						var window = new View.WindowToTheTop
 						{
 							Width = 960, Height = 600,
-							Title = "Build-Event Details",
-							Content = new EventFilesView()
-							{
-								DataContext = new
-								{
-									Path = inst.Path,
-									ShortPath = inst.ShortPath,
-									AllEventsEver = new[] { evnt }
-								}
-							}
+							Title = "Build-Event Details"
+						};
+						window.InnerContent.Content = new EventFilesView()
+						{
+							DataContext = inst
 						};
 						window.Show();
 					}), inst);
@@ -441,14 +442,14 @@ namespace CgbPostBuildHelper
 				foreach (var fd in windowsToShowFor)
 				{
 					var vm = new FileDeploymentDataVM(fd, inst);
-					Window window = new Window
+					var window = new View.WindowToTheTop
 					{
 						Width = 480, Height = 320,
-						Title = "Messages for file " + fd.InputFilePath,
-						Content = new MessagesList()
-						{
-							DataContext = new { Items = vm.Messages }
-						}
+						Title = "Messages for file " + fd.InputFilePath
+					};
+					window.InnerContent.Content = new MessagesList()
+					{
+						DataContext = new { Items = vm.Messages }
 					};
 					window.Show();
 				}

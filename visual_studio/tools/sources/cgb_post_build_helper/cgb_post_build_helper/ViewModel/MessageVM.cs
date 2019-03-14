@@ -3,6 +3,7 @@ using CgbPostBuildHelper.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.VisualStudio.Shell;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +18,6 @@ namespace CgbPostBuildHelper.ViewModel
 	{
 		private readonly Func<CgbAppInstanceVM> _instanceGetter;
 		private readonly Func<string> _fallbackInstNameGetter;
-		private ICommand _additionalInfoCmd;
 		private Model.Message _model;
 
 		public MessageVM(CgbAppInstanceVM instance, Model.Message model)
@@ -144,6 +144,72 @@ namespace CgbPostBuildHelper.ViewModel
 			get => _model.Action == null ? null : new DelegateCommand(_ => _model.Action());
 		}
 
+		public ICommand OpenInVisualStudio
+		{
+			get
+			{
+				if (null != _model.FilenameForFileActions && _model.FileCanBeEditedInVisualStudio)
+				{
+					if (_model.LineNumberInFile.HasValue)
+					{
+						return new DelegateCommand(_ =>
+						{
+							// Open file and goto line
+							EnvDTE.DTE dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
+							dte.ExecuteCommand("Edit.Goto", "13");
+						});
+					}
+					else
+					{
+						return new DelegateCommand(_ =>
+						{
+							// TODO: Just open the file
+						});
+					}
+				}
+				else
+				{
+					return null;
+				}
+			}
+		}
+
+		public ICommand OpenFile
+		{
+			get
+			{
+				if (null != _model.FilenameForFileActions)
+				{
+					return new DelegateCommand(_ =>
+					{
+						CgbUtils.OpenFileWithSystemViewer(_model.FilenameForFileActions);
+					});
+				}
+				else
+				{
+					return null;
+				}
+			}
+		}
+
+		public ICommand ShowFileInDirectory
+		{
+			get
+			{
+				if (null != _model.FilenameForFileActions)
+				{
+					return new DelegateCommand(_ =>
+					{
+						CgbUtils.ShowDirectoryInExplorer(_model.FilenameForFileActions);
+					});
+				}
+				else
+				{
+					return null;
+				}
+			}
+		}
+
 		public ICommand ShowInstanceDetailsCmd
 		{
 			get
@@ -155,14 +221,14 @@ namespace CgbPostBuildHelper.ViewModel
 				}
 				return new DelegateCommand(_ =>
 				{ 
-					Window window = new Window
+					var window = new View.WindowToTheTop
 					{
 						Width = 800, Height = 600,
-						Title = $"All events for {inst.ShortPath}",
-						Content = new View.EventFilesView()
-						{
-							DataContext = inst
-						}
+						Title = $"All events for {inst.ShortPath}"
+					};
+					window.InnerContent.Content = new View.EventFilesView()
+					{
+						DataContext = inst
 					};
 					window.Show();
 				});

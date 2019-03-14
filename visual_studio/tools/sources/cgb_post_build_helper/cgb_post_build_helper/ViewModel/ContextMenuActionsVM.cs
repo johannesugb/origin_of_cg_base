@@ -45,6 +45,15 @@ namespace CgbPostBuildHelper.ViewModel
 				wnd.Show();
 			});
 
+			OpenAbout = new DelegateCommand(_ =>
+			{
+				var wnd = new View.SettingsView
+				{
+					DataContext = new ViewModel.SettingsVM(_application)
+				};
+				wnd.Show();
+			});
+
 			ExitApplicationCommand = new DelegateCommand(_ =>
 			{
 				_application.EndAllWatchesAndExitApplication();
@@ -58,6 +67,8 @@ namespace CgbPostBuildHelper.ViewModel
 		public ICommand ClearMessages { get; set; }
 
 		public ICommand OpenSettings { get; set; }
+
+		public ICommand OpenAbout { get; set; }
 
 		public ICommand ExitApplicationCommand { get; set; }
 	}

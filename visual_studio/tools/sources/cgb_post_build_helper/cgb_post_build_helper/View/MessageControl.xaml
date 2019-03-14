@@ -21,9 +21,10 @@
 			<ColumnDefinition Width="Auto" MinWidth="40" />
 			<ColumnDefinition Width="*" />
 			<ColumnDefinition Width="Auto" MinWidth="20"/>
+			<ColumnDefinition Width="Auto" />
 		</Grid.ColumnDefinitions>
 
-		<Border Grid.ColumnSpan="3" Grid.RowSpan="2" Margin="1"
+		<Border Grid.ColumnSpan="4" Margin="1"
 				HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
 				BorderBrush="Black" BorderThickness="2" CornerRadius="2" 
 				Background="{Binding MessageColor, FallbackValue=#ffccdd}"
@@ -70,11 +71,23 @@
 					   Foreground="Black" HorizontalAlignment="Left" />
 		</StackPanel>
 
-		<Button Grid.Row="1" Grid.Column="2" Grid.RowSpan="2"
-				Margin="0,0,5,5" Width="28" Height="28" FontSize="10"
-				HorizontalAlignment="Center" VerticalAlignment="Bottom"
-				Content="INFO" Visibility="{Binding AdditionalInfoCmd, Converter={StaticResource NullToCollapsedConv}}"
-				Command="{Binding AdditionalInfoCmd}" />
+		<StackPanel Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,5,5" >
+			<Button Width="28" Height="28" FontSize="10" Margin="0,0,0,3"
+					Content="🠆VS" Visibility="{Binding OpenInVisualStudio, Converter={StaticResource NullToCollapsedConv}}"
+					Command="{Binding OpenInVisualStudio}" />
+			<Button Width="28" Height="28" FontSize="10"
+					Content="INFO" Visibility="{Binding AdditionalInfoCmd, Converter={StaticResource NullToCollapsedConv}}"
+					Command="{Binding AdditionalInfoCmd}" />
+		</StackPanel>
+
+		<StackPanel Grid.Row="1" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,5,5" >
+			<Button Width="28" Height="28" FontSize="10" Margin="0,0,0,3"
+					Content="🠆File" Visibility="{Binding OpenFile, Converter={StaticResource NullToCollapsedConv}}"
+					Command="{Binding OpenFile}" />
+			<Button Width="28" Height="28" FontSize="10"
+					Content="🠆Dir" Visibility="{Binding ShowFileInDirectory, Converter={StaticResource NullToCollapsedConv}}"
+					Command="{Binding ShowFileInDirectory}" />
+		</StackPanel>
 
 	</Grid>
 </UserControl>

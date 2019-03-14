@@ -17,7 +17,7 @@
 				   Background="#ccf2ff" Foreground="#0099cc"
 				   Text="{Binding ShortPath}" />
 
-		<ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+		<ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
 			<ItemsControl ItemsSource="{Binding AllEventsEver}" >
 				<ItemsControl.ItemTemplate>
 					<DataTemplate>

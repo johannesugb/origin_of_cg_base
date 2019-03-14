@@ -9,6 +9,7 @@
 		<MenuItem Header="Clear Messages List" Command="{Binding ClearMessages}" />
 		<Separator />
 		<MenuItem Header="Open Settings" Command="{Binding OpenSettings}" />
+		<MenuItem Header="About" Command="{Binding OpenAbout}" />
 		<Separator />
 		<MenuItem Header="Exit" Command="{Binding ExitApplicationCommand}" />
 	</ContextMenu>

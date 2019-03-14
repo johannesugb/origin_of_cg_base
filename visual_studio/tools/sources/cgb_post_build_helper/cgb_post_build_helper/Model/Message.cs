@@ -20,35 +20,35 @@ namespace CgbPostBuildHelper.Model
 		{
 			return new Message()
 			{
-				_messageType = typeOfMessage,
-				_messageText = text,
-				_action = additionalInfoCommand
+				MessageType = typeOfMessage,
+				MessageText = text,
+				Action = additionalInfoCommand
 			};
 		}
 
+		public static Message Create(MessageType typeOfMessage, string text, Action additionalInfoCommand, string filename, bool canBeEditedInVisualStudio = false, uint? lineNumberInFile = null)
+		{
+			var m = Create(typeOfMessage, text, additionalInfoCommand);
+			m.FilenameForFileActions = filename;
+			m.FileCanBeEditedInVisualStudio = canBeEditedInVisualStudio;
+			m.LineNumberInFile = lineNumberInFile;
+			return m;
+		}
+
 		private readonly DateTime _createDate = DateTime.Now;
-		private string _messageText;
-		private MessageType _messageType;
-		private Action _action;
 
 		public DateTime CreateDate => _createDate;
 
-		public string MessageText 
-		{ 
-			get => _messageText;
-			set => _messageText = value;
-		}
+		public string MessageText { get; set; }
 
-		public MessageType MessageType
-		{
-			get => _messageType;
-			set => _messageType = value;
-		}
+		public MessageType MessageType { get; set; }
 
-		public Action Action
-		{
-			get => _action;
-			set => _action = value;
-		}
+		public Action Action { get; set; }
+
+		public string FilenameForFileActions { get; set; }
+
+		public bool FileCanBeEditedInVisualStudio { get; set; }
+
+		public uint? LineNumberInFile { get; set; }
 	}
 }

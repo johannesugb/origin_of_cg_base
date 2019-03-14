@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace CgbPostBuildHelper.ViewModel
 {
@@ -55,6 +56,31 @@ namespace CgbPostBuildHelper.ViewModel
 						return "Update-Event";
 				}
 				return "?Unknown-Event?";
+			}
+		}
+
+		public Brush EventColor
+		{
+			get
+			{
+				switch (_eventType)
+				{
+					case CgbEventType.Build:
+						return View.Constants.InfoBrushDark;
+					case CgbEventType.Update:
+						{
+							if ((from x in Files select x.Messages.ContainsMessagesOfType(MessageType.Error)).Any(x => x == true))
+							{
+								return View.Constants.ErrorBrushDark;
+							}
+							if ((from x in Files select x.Messages.ContainsMessagesOfType(MessageType.Warning)).Any(x => x == true))
+							{
+								return View.Constants.WarningBrushDark;
+							}
+							return View.Constants.SuccessBrushDark;
+						}
+				}
+				return View.Constants.ErrorBrushLight; // That should not happen
 			}
 		}
 
