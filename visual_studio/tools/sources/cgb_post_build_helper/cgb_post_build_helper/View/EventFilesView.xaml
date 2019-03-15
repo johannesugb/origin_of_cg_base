@@ -21,7 +21,7 @@
 			<ItemsControl ItemsSource="{Binding AllEventsEver}" >
 				<ItemsControl.ItemTemplate>
 					<DataTemplate>
-						<Border BorderBrush="#0099cc" BorderThickness="4" Margin="8,4" Padding="4">
+						<Border BorderBrush="{Binding EventColor}" BorderThickness="4" Margin="8,4" Padding="4">
 							<StackPanel Name="EventContainer">
 
 								<TextBlock FontSize="12" FontWeight="Bold" Margin="4,10,4,0"
@@ -30,9 +30,19 @@
 								<TextBlock FontSize="20" FontWeight="Bold" Margin="4,0,4,2"
 								Text="{Binding Path=TypeDescription}" />
 
-								<TextBlock FontSize="12" Margin="24,2,4,0" Text="Files:" VerticalAlignment="Stretch" Padding="4" Background="LightGray" FontWeight="Bold" />
+								<Grid Margin="24,2,4,0"  Background="LightGray">
+									<StackPanel Orientation="Horizontal">
+										<TextBlock FontSize="14"  Text="🠗 Files 🠗" VerticalAlignment="Center" Margin="4,3,10,4" FontWeight="Bold" />
+										<TextBlock Text="Filters:" Foreground="DimGray" VerticalAlignment="Center" Margin="10,2,2,2" />
+										<TextBox MinWidth="120" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterErrors}" Content="Errors" Foreground="{x:Static local:Constants.ErrorBrushDark}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterWarnings}" Content="Warnings" Foreground="{x:Static local:Constants.WarningBrushDark}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterInfos}" Content="Infos" Foreground="{x:Static local:Constants.InfoBrushDark}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterSuccesses}" Content="Successes" Foreground="{x:Static local:Constants.SuccessBrushDark}" VerticalAlignment="Center" Margin="2" />
+									</StackPanel>
+								</Grid>
 
-								<ItemsControl ItemsSource="{Binding Files}" AlternationCount="2" Margin="24,0,4,10">
+								<ItemsControl ItemsSource="{Binding FilesFiltered}" AlternationCount="2" Margin="24,0,4,10">
 									<ItemsControl.ItemTemplate>
 										<DataTemplate>
 

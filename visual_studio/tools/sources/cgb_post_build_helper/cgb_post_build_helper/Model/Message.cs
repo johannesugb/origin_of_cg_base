@@ -26,7 +26,7 @@ namespace CgbPostBuildHelper.Model
 			};
 		}
 
-		public static Message Create(MessageType typeOfMessage, string text, Action additionalInfoCommand, string filename, bool canBeEditedInVisualStudio = false, uint? lineNumberInFile = null)
+		public static Message Create(MessageType typeOfMessage, string text, Action additionalInfoCommand, string filename, bool canBeEditedInVisualStudio = false, int? lineNumberInFile = null)
 		{
 			var m = Create(typeOfMessage, text, additionalInfoCommand);
 			m.FilenameForFileActions = filename;
@@ -49,6 +49,6 @@ namespace CgbPostBuildHelper.Model
 
 		public bool FileCanBeEditedInVisualStudio { get; set; }
 
-		public uint? LineNumberInFile { get; set; }
+		public int? LineNumberInFile { get; set; }
 	}
 }

@@ -17,20 +17,23 @@ namespace CgbPostBuildHelper.ViewModel
 	class MessageVM : BindableBase
 	{
 		private readonly Func<CgbAppInstanceVM> _instanceGetter;
+		private readonly InvocationParams _config;
 		private readonly Func<string> _fallbackInstNameGetter;
 		private Model.Message _model;
 
 		public MessageVM(CgbAppInstanceVM instance, Model.Message model)
 		{
+			_config = instance.Config;
 			_instanceGetter = () => instance;
 			_fallbackInstNameGetter = () => instance.ShortPath;
 			_model = model;
 		}
 
-		public MessageVM(IList<CgbAppInstanceVM> listOfInstances, string instancePath, Model.Message model)
+		public MessageVM(IList<CgbAppInstanceVM> listOfInstances, InvocationParams config,  Model.Message model)
 		{
-			_instanceGetter = () => listOfInstances.GetInstance(instancePath);
-			_fallbackInstNameGetter = () => new FileInfo(instancePath).Name;
+			_config = config;
+			_instanceGetter = () => listOfInstances.GetInstance(_config.ExecutablePath);
+			_fallbackInstNameGetter = () => new FileInfo(_config.ExecutablePath).Name;
 			_model = model;
 		}
 
@@ -150,22 +153,24 @@ namespace CgbPostBuildHelper.ViewModel
 			{
 				if (null != _model.FilenameForFileActions && _model.FileCanBeEditedInVisualStudio)
 				{
-					if (_model.LineNumberInFile.HasValue)
+					return new DelegateCommand(_ =>
 					{
-						return new DelegateCommand(_ =>
+						// Open file and goto line
+						try
 						{
-							// Open file and goto line
-							EnvDTE.DTE dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
-							dte.ExecuteCommand("Edit.Goto", "13");
-						});
-					}
-					else
-					{
-						return new DelegateCommand(_ =>
+							if (!VsUtils.ActivateFileInRunningVisualStudioInstances(_model.FilenameForFileActions, _model.LineNumberInFile))
+							{
+								if (!VsUtils.OpenFileInSpecificVisualStudioInstance(_config.VcxprojPath, _model.FilenameForFileActions, _model.LineNumberInFile))
+								{
+									VsUtils.OpenFileInNewVisualStudioInstance(_model.FilenameForFileActions, _model.LineNumberInFile);
+								}
+							}
+						}
+						catch (Exception e)
 						{
-							// TODO: Just open the file
-						});
-					}
+							Console.Write(e.Message);
+						}
+					});
 				}
 				else
 				{

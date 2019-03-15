@@ -20,6 +20,7 @@ namespace CgbPostBuildHelper.Deployers
 		private static readonly string VulkanSdkPath = Environment.GetEnvironmentVariable("VULKAN_SDK");
 		private static readonly string GlslangValidatorPath = Path.Combine(VulkanSdkPath, @"Bin\glslangValidator.exe");
 		private static readonly string GlslangValidatorParams = " -V -o \"{1}\" \"{0}\"";
+		private static readonly Regex LineNumberRegex = new Regex(@":(\d+)", RegexOptions.Compiled);
 
 		public override void SetInputParameters(InvocationParams config, string filterPath, FileInfo inputFile, string outputFilePath)
 		{
@@ -48,13 +49,21 @@ namespace CgbPostBuildHelper.Deployers
 				// check for error:
 				if (line.TrimStart().StartsWith("error", StringComparison.InvariantCultureIgnoreCase))
 				{
-					assetFile.Messages.Add(Message.Create(MessageType.Error, line, null, _inputFile.FullName, true, 13)); // TODO: open a window or so? TODO: line number!!
+					var m = LineNumberRegex.Match(line);
+					assetFile.Messages.Add(Message.Create(
+						MessageType.Error, 
+						line, null, 
+						_inputFile.FullName, true, m.Success ? int.Parse(m.Groups[1].Value) : (int?)null));
 					numErrors += 1;
 				}
 				// check for warning:
 				else if (line.TrimStart().StartsWith("warn", StringComparison.InvariantCultureIgnoreCase))
 				{
-					assetFile.Messages.Add(Message.Create(MessageType.Warning, line, null, _inputFile.FullName, true, 13)); // TODO: open a window or so?
+					var m = LineNumberRegex.Match(line);
+					assetFile.Messages.Add(Message.Create(
+						MessageType.Warning,
+						line, null,
+						_inputFile.FullName, true, m.Success ? int.Parse(m.Groups[1].Value) : (int?)null));
 					numWarnings += 1;
 				}
 			}
@@ -86,15 +95,15 @@ namespace CgbPostBuildHelper.Deployers
 			if (numErrors > 0 || numWarnings > 0)
 			{
 				if (numErrors > 0 && numWarnings > 0)
-					assetFile.Messages.Add(Message.Create(MessageType.Information, $"Compiling shader for Vulkan resulted in {numErrors} errors and {numWarnings} warnings:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName));
+					assetFile.Messages.Add(Message.Create(MessageType.Information, $"Compiling shader for Vulkan resulted in {numErrors} errors and {numWarnings} warnings:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName, true));
 				else if (numWarnings > 0)
-					assetFile.Messages.Add(Message.Create(MessageType.Information, $"Compiling shader for Vulkan resulted in {numWarnings} warnings:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName));
+					assetFile.Messages.Add(Message.Create(MessageType.Information, $"Compiling shader for Vulkan resulted in {numWarnings} warnings:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName, true));
 				else
-					assetFile.Messages.Add(Message.Create(MessageType.Information, $"Compiling shader for Vulkan resulted in {numErrors} errors:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName));
+					assetFile.Messages.Add(Message.Create(MessageType.Information, $"Compiling shader for Vulkan resulted in {numErrors} errors:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName, true));
 			}
 			else
 			{
-				assetFile.Messages.Add(Message.Create(MessageType.Success, $"Compiling shader for Vulkan succeeded:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName));
+				assetFile.Messages.Add(Message.Create(MessageType.Success, $"Compiling shader for Vulkan succeeded:" + Environment.NewLine + Environment.NewLine + sb.ToString(), null, _inputFile.FullName, true));
 			}
 
 			FilesDeployed.Add(assetFile);

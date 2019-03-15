@@ -68,8 +68,9 @@ namespace CgbPostBuildHelper
 
 			_messagesListView = new MessagesList()
 			{
-				 LifetimeHandler = this,
-				 DataContext = _messagesListVM
+				Width = 450,
+				LifetimeHandler = this,
+				DataContext = _messagesListVM
 			};
 
 			_icons[0] = new System.Drawing.Icon(System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/tray_icon.ico")).Stream);
@@ -334,7 +335,7 @@ namespace CgbPostBuildHelper
 			}
 			catch (Exception ex)
 			{
-				AddToMessagesList(Message.Create(MessageType.Error, ex.Message, null), config.ExecutablePath); // TODO: Window with more info?
+				AddToMessagesList(Message.Create(MessageType.Error, ex.Message, null), config); // TODO: Window with more info?
 				ShowMessagesList();
 			}
 		}
@@ -519,7 +520,7 @@ namespace CgbPostBuildHelper
 								$"This restriction is a neccessity for conflict handling. Please fix your filters!", 
 								() => {
 									CgbUtils.ShowDirectoryInExplorer(config.FiltersPath);
-								}), config.ExecutablePath);
+								}), config);
 
 							StopAnimateIcon(); // <-- Never forgetti
 							return;
@@ -532,7 +533,7 @@ namespace CgbPostBuildHelper
 						$"An unexpected error occured during sanity checking the .filters file. Message: '{ex.Message}'",
 						() => {
 							CgbUtils.ShowDirectoryInExplorer(config.FiltersPath);
-						}), config.ExecutablePath);
+						}), config);
 				}
 
 				// -> Parse the .filters file and deploy each and every file
@@ -574,7 +575,7 @@ namespace CgbPostBuildHelper
 						AddToMessagesList(Message.Create(MessageType.Error, $"Path to framework's externals does not exist?! This one => '{dirInfo.FullName}'", () =>
 						{
 							CgbUtils.ShowDirectoryInExplorer(config.CgbExternalPath);
-						}), config.ExecutablePath);
+						}), config);
 					}
 					
 					var allFiles = dirInfo.EnumerateFiles("*.*", SearchOption.AllDirectories);
@@ -728,25 +729,25 @@ namespace CgbPostBuildHelper
 			}
 		}
 
-		public void AddToMessagesList(Model.Message msg, string instancePath)
+		public void AddToMessagesList(Model.Message msg, InvocationParams config)
 		{
 			// Sync across threads by invoking it on the dispatcher
 			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
-				_messagesListVM.Items.Add(new MessageVM(_instances, instancePath, msg));
+				_messagesListVM.Items.Add(new MessageVM(_instances, config, msg));
 				RemoveOldMessagesFromList();
 				ShowMessagesList();
 			}));
 		}
 
-		public void AddToMessagesList(IEnumerable<Model.Message> msgs, string instancePath)
+		public void AddToMessagesList(IEnumerable<Model.Message> msgs, InvocationParams config)
 		{
 			// Sync across threads by invoking it on the dispatcher
 			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
 			{
 				foreach (var msg in msgs)
 				{
-					_messagesListVM.Items.Add(new MessageVM(_instances, instancePath, msg));
+					_messagesListVM.Items.Add(new MessageVM(_instances, config, msg));
 				}
 				RemoveOldMessagesFromList();
 				ShowMessagesList();

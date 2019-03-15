@@ -55,7 +55,10 @@
       <HintPath>..\packages\Costura.Fody.3.3.2\lib\net40\Costura.dll</HintPath>
     </Reference>
     <Reference Include="envdte, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="envdte80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="Hardcodet.Wpf.TaskbarNotification, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hardcodet.NotifyIcon.Wpf.1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll</HintPath>
@@ -90,6 +93,7 @@
     <Compile Include="Deployers\VkShaderDeployment.cs" />
     <Compile Include="Model\FileDeploymentData.cs" />
     <Compile Include="Model\Message.cs" />
+    <Compile Include="Utils\VsUtils.cs" />
     <Compile Include="ViewModel\FileVM.cs" />
     <Compile Include="ViewModel\FileDeploymentDataVM.cs" />
     <Compile Include="ViewModel\ContextMenuActionsVM.cs" />
