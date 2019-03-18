@@ -49,7 +49,7 @@ namespace CgbPostBuildHelper.Deployers
 				assetFileMat.InputFilePath = Path.Combine(_inputFile.DirectoryName, matFile);
 				assetFileMat.FileType = FileType.ObjMaterials;
 				assetFileMat.OutputFilePath = matOutPath.FullName;
-				CopyFile(assetFileMat);
+				DeployFile(assetFileMat);
 
 				assetFileMat.Messages.Add(Message.Create(MessageType.Success, $"Added materials file '{assetFileMat.OutputFilePath}', of .obj model '{FilesDeployed[0].OutputFilePath}'", null)); // TODO: open a window or so?
 

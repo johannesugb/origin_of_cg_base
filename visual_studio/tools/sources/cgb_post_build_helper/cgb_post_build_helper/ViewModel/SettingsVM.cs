@@ -9,6 +9,13 @@ namespace CgbPostBuildHelper.ViewModel
 {
 	class SettingsVM : BindableBase
 	{
+		private readonly WpfApplication _application;
+
+		public SettingsVM(WpfApplication application)
+		{
+			_application = application;
+		}
+
 		public bool AlwaysDeployReleaseDlls
 		{
 			get
@@ -48,6 +55,11 @@ namespace CgbPostBuildHelper.ViewModel
 				Properties.Settings.Default.DoNotMonitorFiles = value;
 				Properties.Settings.Default.Save();
 				IssueOnPropertyChanged();
+
+				if (!Properties.Settings.Default.DoNotMonitorFiles)
+				{
+					_application.EndAllWatches();
+				}
 			}
 		}
 
@@ -92,6 +104,35 @@ namespace CgbPostBuildHelper.ViewModel
 				IssueOnPropertyChanged();
 			}
 		}
+
+		public string ExternalsReleaseSubPath
+		{
+			get
+			{
+				return Properties.Settings.Default.ReleaseSubPathInExternals;
+			}
+			set
+			{
+				Properties.Settings.Default.ReleaseSubPathInExternals = value;
+				Properties.Settings.Default.Save();
+				IssueOnPropertyChanged();
+			}
+		}
+
+		public string ExternalsDebugSubPath
+		{
+			get
+			{
+				return Properties.Settings.Default.DebugSubPathInExternals;
+			}
+			set
+			{
+				Properties.Settings.Default.DebugSubPathInExternals = value;
+				Properties.Settings.Default.Save();
+				IssueOnPropertyChanged();
+			}
+		}
+
 
 	}
 }

@@ -190,14 +190,14 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			get => new DelegateCommand(_ => 
 			{
-				Window window = new Window
+				var window = new View.WindowToTheTop
 				{
 					Width = 480, Height = 320,
-					Title = "Messages for file " + FilterPathPlusFileName,
-					Content = new MessagesList()
-					{
-						DataContext = new { Items = Messages }
-					}
+					Title = "Messages for file " + FilterPathPlusFileName
+				};
+				window.InnerContent.Content = new MessagesList()
+				{
+					DataContext = new { Items = Messages }
 				};
 				window.Show();
 			});

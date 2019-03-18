@@ -17,11 +17,11 @@
 				   Background="#ccf2ff" Foreground="#0099cc"
 				   Text="{Binding ShortPath}" />
 
-		<ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+		<ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
 			<ItemsControl ItemsSource="{Binding AllEventsEver}" >
 				<ItemsControl.ItemTemplate>
 					<DataTemplate>
-						<Border BorderBrush="#0099cc" BorderThickness="4" Margin="8,4" Padding="4">
+						<Border BorderBrush="{Binding EventColor}" BorderThickness="4" Margin="8,4" Padding="4">
 							<StackPanel Name="EventContainer">
 
 								<TextBlock FontSize="12" FontWeight="Bold" Margin="4,10,4,0"
@@ -30,9 +30,19 @@
 								<TextBlock FontSize="20" FontWeight="Bold" Margin="4,0,4,2"
 								Text="{Binding Path=TypeDescription}" />
 
-								<TextBlock FontSize="12" Margin="24,2,4,0" Text="Files:" VerticalAlignment="Stretch" Padding="4" Background="LightGray" FontWeight="Bold" />
+								<Grid Margin="24,2,4,0"  Background="LightGray">
+									<StackPanel Orientation="Horizontal">
+										<TextBlock FontSize="14"  Text="🠗 Files 🠗" VerticalAlignment="Center" Margin="4,3,10,4" FontWeight="Bold" />
+										<TextBlock Text="Filters:" Foreground="DimGray" VerticalAlignment="Center" Margin="10,2,2,2" />
+										<TextBox MinWidth="120" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterErrors}" Content="Errors" Foreground="{x:Static local:Constants.ErrorBrushDark}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterWarnings}" Content="Warnings" Foreground="{x:Static local:Constants.WarningBrushDark}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterInfos}" Content="Infos" Foreground="{x:Static local:Constants.InfoBrushDark}" VerticalAlignment="Center" Margin="2" />
+										<CheckBox IsChecked="{Binding FilterSuccesses}" Content="Successes" Foreground="{x:Static local:Constants.SuccessBrushDark}" VerticalAlignment="Center" Margin="2" />
+									</StackPanel>
+								</Grid>
 
-								<ItemsControl ItemsSource="{Binding Files}" AlternationCount="2" Margin="24,0,4,10">
+								<ItemsControl ItemsSource="{Binding FilesFiltered}" AlternationCount="2" Margin="24,0,4,10">
 									<ItemsControl.ItemTemplate>
 										<DataTemplate>
 
@@ -60,14 +70,14 @@
 													<TextBlock Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Text="{Binding DeploymentTypeDescription}" />
 													<TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="Source:" Foreground="DimGray" Margin="0,0,4,0" />
 													<StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
-														<Button Margin="0,1,3,1" Padding="2,1" Content="-> File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding InputFilePath}" />
-														<Button Margin="0,1,3,1" Padding="2,1" Content="-> Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding InputFilePath}" />
+														<Button Margin="0,1,3,1" Padding="2,1" Content="-&gt; File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding InputFilePath}" />
+														<Button Margin="0,1,3,1" Padding="2,1" Content="-&gt; Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding InputFilePath}" />
 														<TextBox IsReadOnly="True" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Text="{Binding InputFilePath}" />
 													</StackPanel>
 													<TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="Destination:" Foreground="DimGray" Margin="0,0,4,0" />
 													<StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
-														<Button Margin="0,1,3,1" Padding="2,1" Content="-> File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding OutputFilePath}" />
-														<Button Margin="0,1,3,1" Padding="2,1" Content="-> Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding OutputFilePath}" />
+														<Button Margin="0,1,3,1" Padding="2,1" Content="-&gt; File" VerticalAlignment="Center" Command="{Binding OpenFileCommand}" CommandParameter="{Binding OutputFilePath}" />
+														<Button Margin="0,1,3,1" Padding="2,1" Content="-&gt; Dir" VerticalAlignment="Center" Command="{Binding OpenFolderCommand}" CommandParameter="{Binding OutputFilePath}" />
 														<TextBox IsReadOnly="True" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Text="{Binding OutputFilePath}" />
 													</StackPanel>
 													<StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,1,0,0"
