@@ -204,9 +204,6 @@
     <ClInclude Include="..\..\framework\include\context_vulkan_types.h">
       <Filter>Header Files\context\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\formats.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\context_types.h">
       <Filter>Header Files\context</Filter>
     </ClInclude>

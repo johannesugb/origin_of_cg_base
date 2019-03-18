@@ -182,7 +182,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
-    <ClInclude Include="..\..\framework\include\formats.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
     <ClInclude Include="..\..\framework\include\key_code.h" />
     <ClInclude Include="..\..\framework\include\key_state.h" />
