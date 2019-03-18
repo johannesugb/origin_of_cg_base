@@ -94,6 +94,7 @@
     <Compile Include="Model\FileDeploymentData.cs" />
     <Compile Include="Model\Message.cs" />
     <Compile Include="Utils\VsUtils.cs" />
+    <Compile Include="Utils\WpfUtils.cs" />
     <Compile Include="ViewModel\FileVM.cs" />
     <Compile Include="ViewModel\FileDeploymentDataVM.cs" />
     <Compile Include="ViewModel\ContextMenuActionsVM.cs" />

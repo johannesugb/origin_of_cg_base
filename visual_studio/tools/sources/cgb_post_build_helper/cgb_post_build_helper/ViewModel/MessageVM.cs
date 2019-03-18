@@ -23,9 +23,9 @@ namespace CgbPostBuildHelper.ViewModel
 
 		public MessageVM(CgbAppInstanceVM instance, Model.Message model)
 		{
-			_config = instance.Config;
+			_config = instance?.Config;
 			_instanceGetter = () => instance;
-			_fallbackInstNameGetter = () => instance.ShortPath;
+			_fallbackInstNameGetter = () => instance?.ShortPath ?? "?";
 			_model = model;
 		}
 
@@ -162,7 +162,12 @@ namespace CgbPostBuildHelper.ViewModel
 							{
 								if (!VsUtils.OpenFileInSpecificVisualStudioInstance(_config.VcxprojPath, _model.FilenameForFileActions, _model.LineNumberInFile))
 								{
-									VsUtils.OpenFileInNewVisualStudioInstance(_model.FilenameForFileActions, _model.LineNumberInFile);
+									if (!VsUtils.OpenFileInExistingVisualStudioInstance(_model.FilenameForFileActions, _model.LineNumberInFile))
+									{
+										string argument = _model.FilenameForFileActions;
+										System.Diagnostics.Process.Start("devenv.exe", argument);
+										VsUtils.OpenFileInExistingVisualStudioInstance(_model.FilenameForFileActions, _model.LineNumberInFile);
+									}
 								}
 							}
 						}

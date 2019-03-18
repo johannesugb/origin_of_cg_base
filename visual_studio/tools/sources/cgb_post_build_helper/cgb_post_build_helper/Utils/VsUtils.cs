@@ -161,6 +161,10 @@ namespace CgbPostBuildHelper.Utils
 				var vsProjects = GetAllProjectsOfVisualStudioInstance(vsInst);
 				foreach (Project vsProj in vsProjects)
 				{
+					if (string.IsNullOrWhiteSpace(vsProj.FileName))
+					{
+						continue;
+					}
 					if (AreFileNamesEqual(vsProj.FileName, specificProjectPath))
 					{
 						vsInst.ItemOperations.OpenFile(fileToActivate);
@@ -182,14 +186,31 @@ namespace CgbPostBuildHelper.Utils
 		/// <param name="fileToActivate">File to open</param>
 		/// <param name="lineToHighlight">Line inside the file to highlight</param>
 		/// <returns></returns>
-		public static void OpenFileInNewVisualStudioInstance(string fileToActivate, int? lineToHighlight)
+		public static bool OpenFileInExistingVisualStudioInstance(string fileToActivate, int? lineToHighlight)
 		{
-			EnvDTE80.DTE2 vsInst = (EnvDTE80.DTE2)System.Runtime.InteropServices.Marshal.GetActiveObject("VisualStudio.DTE");
-			vsInst.MainWindow.Activate();
-			EnvDTE.Window w = vsInst.ItemOperations.OpenFile(fileToActivate, EnvDTE.Constants.vsViewKindTextView);
-			if (lineToHighlight.HasValue)
+			try
 			{
-				((EnvDTE.TextSelection)vsInst.ActiveDocument.Selection).GotoLine(lineToHighlight.Value, SelectLine);
+				EnvDTE80.DTE2 vsInst = (EnvDTE80.DTE2)System.Runtime.InteropServices.Marshal.GetActiveObject("VisualStudio.DTE");
+				if (null == vsInst?.MainWindow)
+				{
+					return false;
+				}
+				vsInst.MainWindow.Activate();
+				EnvDTE.Window w = vsInst.ItemOperations.OpenFile(fileToActivate, EnvDTE.Constants.vsViewKindTextView);
+				if (null == w || null == vsInst.ActiveDocument)
+				{
+					return false;
+				}
+				if (lineToHighlight.HasValue)
+				{
+					((EnvDTE.TextSelection)vsInst.ActiveDocument.Selection).GotoLine(lineToHighlight.Value, SelectLine);
+				}
+				return true;
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.Message);
+				return false;
 			}
 		}
 	}

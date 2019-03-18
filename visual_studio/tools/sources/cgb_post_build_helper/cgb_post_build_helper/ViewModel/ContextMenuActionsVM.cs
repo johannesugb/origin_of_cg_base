@@ -47,9 +47,9 @@ namespace CgbPostBuildHelper.ViewModel
 
 			OpenAbout = new DelegateCommand(_ =>
 			{
-				var wnd = new View.SettingsView
+				var wnd = new View.AboutView
 				{
-					DataContext = new ViewModel.SettingsVM(_application)
+					Title = "About cgb_post_build_helper"
 				};
 				wnd.Show();
 			});

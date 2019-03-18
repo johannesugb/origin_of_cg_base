@@ -133,7 +133,17 @@ namespace CgbPostBuildHelper.ViewModel
 				switch (_eventType)
 				{
 					case CgbEventType.Build:
-						return View.Constants.InfoBrushDark;
+						{
+							if ((from x in Files select x.Messages.ContainsMessagesOfType(MessageType.Error)).Any(x => x == true))
+							{
+								return View.Constants.ErrorBrushDark;
+							}
+							if ((from x in Files select x.Messages.ContainsMessagesOfType(MessageType.Warning)).Any(x => x == true))
+							{
+								return View.Constants.WarningBrushDark;
+							}
+							return View.Constants.SuccessBrushDark;
+						}
 					case CgbEventType.Update:
 						{
 							if ((from x in Files select x.Messages.ContainsMessagesOfType(MessageType.Error)).Any(x => x == true))

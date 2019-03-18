@@ -356,6 +356,28 @@ namespace CgbPostBuildHelper
 						Config = config
 					};
 					_instances.Add(inst);
+
+					AddToMessagesList(Message.Create(MessageType.Information, $"Handling new instance '{inst.ShortPath}' at path '{inst.Path}'", () =>
+					{
+						var wnd = new View.InstancesList
+						{
+							DataContext = new { Items = _instances }
+						};
+						wnd.ContentRendered += (object sender, EventArgs e) =>
+						{
+							var children = wnd.GetChildren(true);
+							foreach (var child in children)
+							{
+								if (!(child is FrameworkElement feChild)) continue;
+								if (feChild.DataContext == inst)
+								{
+									feChild.BringIntoView();
+									break;
+								}
+							}
+						};
+						wnd.Show();
+					}), inst);
 				}
 				else
 				{
@@ -404,6 +426,19 @@ namespace CgbPostBuildHelper
 							{
 								DataContext = inst
 							};
+							window.ContentRendered += (object sender, EventArgs e) =>
+							{
+								var children = window.GetChildren(true);
+								foreach (var child in children)
+								{
+									if (!(child is FrameworkElement feChild)) continue;
+									if (feChild.DataContext == evnt)
+									{
+										feChild.BringIntoView();
+										break;
+									}
+								}
+							};
 							window.Show();
 						}), inst);
 					}
@@ -424,7 +459,7 @@ namespace CgbPostBuildHelper
 				}
 				else
 				{
-					AddToMessagesList(Message.Create(MessageType.Information, $"Deployed {fileDeployments.Count} files.", () =>
+					AddToMessagesList(Message.Create(MessageType.Success, $"Deployed {fileDeployments.Count} files.", () =>
 					{
 						var window = new View.WindowToTheTop
 						{
@@ -434,6 +469,19 @@ namespace CgbPostBuildHelper
 						window.InnerContent.Content = new EventFilesView()
 						{
 							DataContext = inst
+						};
+						window.ContentRendered += (object sender, EventArgs e) =>
+						{
+							var children = window.GetChildren(true);
+							foreach (var child in children)
+							{
+								if (!(child is FrameworkElement feChild)) continue;
+								if (feChild.DataContext == evnt)
+								{
+									feChild.BringIntoView();
+									break;
+								}
+							}
 						};
 						window.Show();
 					}), inst);

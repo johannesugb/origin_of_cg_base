@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CgbPostBuildHelper.View"
         mc:Ignorable="d"
-        Title="AboutView" Height="450" Width="800">
+        Title="AboutView" Height="240" Width="400">
     <Grid>
 		<Grid VerticalAlignment="Center" HorizontalAlignment="Center">
 			<Grid.ColumnDefinitions>
@@ -19,19 +19,26 @@
 					<Run Text="TU Wien" FontWeight="Bold"/>
 				</TextBlock>
 				<TextBlock>
-					<Hyperlink NavigateUri="https://www.cg.tuwien.ac.at/" >
+					<Hyperlink NavigateUri="https://www.cg.tuwien.ac.at/" RequestNavigate="Hyperlink_RequestNavigate">
 						Research Division of Computer Graphics
 					</Hyperlink>
 				</TextBlock>
 				<TextBlock Text="Created by" Margin="0,8,0,0" FontStyle="Italic" />
 				<TextBlock Text="Johannes Unterguggenberger in 2019"/>
-				<TextBlock Text="Developed at" Margin="0,8,0,0">
-					<Run Text="Part of the" />
-					<Run Text="cg_base" FontWeight="Bold"/>
-					<Run Text="framework" />
+				<TextBlock Margin="0,8,0,0">
+					<Run Text="cgb_post_build_helper" FontStyle="Italic" />
+					<Run Text="is used as a custom build step" />
 				</TextBlock>
 				<TextBlock>
-					<Hyperlink NavigateUri="https://github.com/johannesugb/CG-Base" >
+					<Run Text="for Visual Studio projects which are based on the" />
+				</TextBlock>
+				<TextBlock>
+					<Run Text="real-time rendering framework" />
+					<Run Text="cg_base," FontWeight="Bold"/>
+					<Run Text="available at:" />
+				</TextBlock>
+				<TextBlock>
+					<Hyperlink NavigateUri="https://github.com/johannesugb/CG-Base" RequestNavigate="Hyperlink_RequestNavigate">
 						johannesugb/CG-Base on GitHub
 					</Hyperlink>
 				</TextBlock>
