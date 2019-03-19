@@ -389,5 +389,8 @@
     <Filter Include="Header Files\stst">
       <UniqueIdentifier>{8e06662e-f796-42ca-b1e9-7fb5710b099d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{15f8ac6c-d112-4381-ba3f-b40b491e5a90}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

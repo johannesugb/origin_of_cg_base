@@ -33,7 +33,7 @@ namespace cgb {
 		mUniformBuffers.resize(mImageCount);
 
 		for (size_t i = 0; i < mImageCount; i++) {
-			mUniformBuffers[i] = std::make_shared<vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, commandBufferManager);
+			mUniformBuffers[i] = std::make_shared<vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 		}
 	}
 

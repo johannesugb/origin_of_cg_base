@@ -80,6 +80,9 @@ private:
 
 	std::unique_ptr<cgb::Model> mModel;
 
+
+	std::shared_ptr<cgb::vulkan_render_object> mSponzaModel;
+
 public:
 	void initialize() override
 	{
@@ -554,7 +557,38 @@ private:
 		auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
 			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
 
-		auto testObj = cgb::vulkan_render_object({outVertexBuffer}, outIndexBuffer, mesh.m_indices.size());
+		renderObject = new cgb::vulkan_render_object(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
+
+		// TODO
+		// uniform buffer
+		// textures
+		// resourceBundle
+
+		// TODO transfer code to camera
+		UniformBufferObject ubo = {};
+		ubo.model = outModel->transformation_matrix(); // glm::mat4(1.0f);
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.model[1][1] *= -1;
+		ubo.mvp = ubo.model;
+
+		vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
+		std::vector<std::shared_ptr<cgb::vulkan_buffer>>  uniformBuffers(cgb::vulkan_context::instance().dynamicRessourceCount);
+
+		for (size_t i = 0; i < uniformBuffers.size(); i++) {
+			uniformBuffers[i] = std::make_shared<cgb::vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, transferCommandBufferManager);
+			uniformBuffers[i]->update_buffer(&ubo, sizeof(ubo));
+		}
+
+
+		mResourceBundle = mResourceBundleGroup->create_resource_bundle(resourceBundleLayout, true);
+		mResourceBundle->add_dynamic_buffer_resource(0, mUniformBuffers, sizeof(UniformBufferObject));
+		mResourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, texture);
+
+		if (vulkan_context::instance().shadingRateImageSupported) {
+			mResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, debugTextures);
+		}
+
+		mSponzaModel = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({outVertexBuffer}), outIndexBuffer, mesh.m_indices.size());
 	}
 };
 

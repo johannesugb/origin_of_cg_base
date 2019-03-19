@@ -21,7 +21,7 @@ namespace cgb {
 		createBuffer(size, usage, properties, mBuffer, mBufferMemory);
 	}
 
-	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, void* bufferData) :
+	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, void* bufferData, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
 		mCommandBufferManager(commandBufferManager) {
 		vk::Buffer stagingBuffer;
 		vulkan_memory stagingBufferMemory;

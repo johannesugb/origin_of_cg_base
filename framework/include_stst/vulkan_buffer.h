@@ -23,7 +23,7 @@ namespace cgb {
 
 		// initializes the memory of the buffer with the given data
 		// uses a staging buffer to copy the data
-		vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, void* data);
+		vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, void* data, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
 
 		virtual ~vulkan_buffer();
 
