@@ -3,7 +3,7 @@
 
 namespace cgb
 {
-	class window
+	class window : public std::enable_shared_from_this<window>
 	{
 #if defined(USE_OPENGL46_CONTEXT)
 		friend class generic_glfw;
@@ -25,6 +25,9 @@ namespace cgb
 		window& operator =(const window&) = delete;
 		/** Move-assign a window */
 		window& operator =(window&&) noexcept;
+
+		/** Returns whether or not this window is currently in use and hence, may not be closed. */
+		bool is_in_use() const { return mIsInUse; }
 
 		/** @brief Consecutive ID, identifying a window.
 		 *	First window will get the ID=0, second one ID=1, etc.  */
@@ -54,6 +57,16 @@ namespace cgb
 		 */
 		std::optional<monitor_handle> monitor() const { return mMonitor; }
 
+		/**	Returns true if the input of this window will be regarded,
+		 *	false if the input of this window will be ignored.
+		 */
+		bool is_input_enabled() const { return mIsInputEnabled; }
+
+		/** Sets whether or not the window is in use. Setting this to true has the
+		 *	effect that the window can not be closed for the time being.
+		 */
+		void set_is_in_use(bool value);
+
 		/** Set a new identifier-name for this window */
 		void set_name(std::string pName);
 
@@ -72,10 +85,15 @@ namespace cgb
 		 */
 		void change_monitor(std::optional<monitor_handle> pMonitor);
 
+		/** Enable or disable input handling of this window */
+		void set_is_input_enabled(bool pValue);
 
 	private:
 		/** Static variable which holds the ID that the next window will get assigned */
 		static uint32_t mNextWindowId;
+
+		/** A flag indicating if this window is currently in use and hence, may not be closed */
+		bool mIsInUse;
 
 		/** Unique window id */
 		uint32_t mWindowId; 
@@ -91,5 +109,8 @@ namespace cgb
 
 		/** Monitor this window is attached to, if set */
 		std::optional<monitor_handle> mMonitor;
+
+		/** A flag which tells if this window is enabled for receiving input (w.r.t. a running composition) */
+		bool mIsInputEnabled;
 	};
 }

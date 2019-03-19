@@ -83,22 +83,6 @@ namespace cgb
 		 */
 		virtual void remove_element_immediately(cg_element& pElement, bool pIsBeingDestructed = false) = 0;
 
-		/** Returns the window which is currently in focus
-		 */
-		virtual window* window_in_focus() = 0;
-
-		/** Returns the window which matches the given name, if it is present in the composition.
-		 *	@param	pName	Name of the window
-		 *  @return	Pointer to the window with the given name or nullptr if no window matches
-		 */
-		virtual window* window_by_name(const std::string& pName) = 0;
-
-		/** Returns the window which matches the given id, if it is present in the composition.
-		 *	@param	pId		Id of the window
-		 *  @return	Pointer to the window with the given name or nullptr if no window matches
-		 */
-		virtual window* window_by_id(uint32_t pId) = 0;
-
 		/** @brief Start a game/rendering-loop for this composition_interface
 		 *
 		 *	Attention: In subclasses of @ref composition_interface, do not forget to call

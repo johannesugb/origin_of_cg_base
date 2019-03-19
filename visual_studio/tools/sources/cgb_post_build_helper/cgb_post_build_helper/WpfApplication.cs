@@ -34,7 +34,7 @@ namespace CgbPostBuildHelper
 		private TaskbarIcon _taskbarIcon;
 		private DateTime _messageListAliveUntil;
 		private static readonly TimeSpan MessageListCloseDelay = TimeSpan.FromSeconds(2.0);
-		private readonly MessagesListVM _messagesListVM = new MessagesListVM();
+		private readonly MessagesListVM _messagesListVM;
 		private readonly MessagesList _messagesListView;
 
 		/// <summary>
@@ -65,10 +65,11 @@ namespace CgbPostBuildHelper
 		public WpfApplication()
 		{
 			_myDispatcher = Dispatcher.CurrentDispatcher;
+			_messagesListVM = new MessagesListVM(this);
 
 			_messagesListView = new MessagesList()
 			{
-				Width = 450,
+				Width = 420,
 				LifetimeHandler = this,
 				DataContext = _messagesListVM
 			};
@@ -206,6 +207,15 @@ namespace CgbPostBuildHelper
 						CloseMessagesListLater(false);
 					}
 				});
+			}));
+		}
+
+		public void CloseMessagesListNow()
+		{
+			_myDispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+			{
+				_messageListAliveUntil = DateTime.Now - TimeSpan.FromSeconds(1.0);
+				_taskbarIcon.CloseBalloon();
 			}));
 		}
 

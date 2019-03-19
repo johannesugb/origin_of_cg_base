@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:CgbPostBuildHelper.View"
 			 xmlns:conv="clr-namespace:CgbPostBuildHelper.Converter"
              mc:Ignorable="d" Margin="3"
-			 FontSize="16"
+			 FontSize="13"
              d:DesignWidth="440">
 
 	<UserControl.Resources>

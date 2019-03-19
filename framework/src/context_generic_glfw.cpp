@@ -4,6 +4,7 @@
 
 namespace cgb
 {
+	window* generic_glfw::mWindowInFocus;
 	std::mutex generic_glfw::sInputMutex;
 	input_buffer* generic_glfw::sTargetInputBuffer(nullptr);
 	std::array<key_code, GLFW_KEY_LAST + 1> generic_glfw::sGlfwToKeyMapping{};
@@ -16,7 +17,7 @@ namespace cgb
 	
 		// Setting an error callback
 		glfwSetErrorCallback(glfw_error_callback);
-		
+
 		// Initializing GLFW
 		if (GLFW_TRUE == glfwInit())
 		{
@@ -209,8 +210,14 @@ namespace cgb
 			throw std::runtime_error("glfwCreateWindow failed"); 
 		}
 
+		// Set the focus callback
+		glfwSetWindowFocusCallback(handle, window_focus_callback);
+
 		// Insert in the back and return the newly created window
 		auto& back = mWindows.emplace_back(std::make_unique<window>(window_handle{ handle }));
+		if (mWindows.size() == 1) {
+			glfwFocusWindow(handle); // only for the first one!
+		}
 		return back.get();
 	}
 
@@ -220,6 +227,10 @@ namespace cgb
 		{
 			LOG_WARNING("The passed window has no valid handle. Has it already been destroyed?");
 			return;
+		}
+
+		if (wnd.is_in_use()) {
+			throw new std::logic_error("This window is in use and can not be closed at the moment.");
 		}
 
 		glfwDestroyWindow(wnd.handle()->mHandle);
@@ -248,6 +259,35 @@ namespace cgb
 	void generic_glfw::stop_receiving_input_from_window(const window& pWindow)
 	{
 		glfwSetMouseButtonCallback(pWindow.handle()->mHandle, nullptr);
+		glfwSetCursorPosCallback(pWindow.handle()->mHandle, nullptr);
+		glfwSetScrollCallback(pWindow.handle()->mHandle, nullptr);
+		glfwSetKeyCallback(pWindow.handle()->mHandle, nullptr);
+	}
+
+	window* generic_glfw::main_window() const
+	{
+		if (mWindows.size() > 0) {
+			return mWindows[0].get();
+		}
+		return nullptr;
+	}
+
+	window* generic_glfw::window_by_name(const std::string& pName) const
+	{
+		auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
+							   [&pName](const auto& w) {
+								   return w->name() == pName;
+							   });
+		return it != mWindows.end() ? it->get() : nullptr;
+	}
+
+	window* generic_glfw::window_by_id(uint32_t pId) const
+	{
+		auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
+							   [&pId](const auto & w) {
+								   return w->id() == pId;
+							   });
+		return it != mWindows.end() ? it->get() : nullptr;
 	}
 
 	void generic_glfw::change_target_input_buffer(input_buffer& pInputBuffer)
@@ -354,7 +394,20 @@ namespace cgb
 			// just ignore
 			break;
 		}
-		
+	}
+
+	void generic_glfw::window_focus_callback(GLFWwindow* window, int focused)
+	{
+		if (focused) {
+			auto result = context().select_windows([=](auto * w) { 
+				auto handle = w->handle();
+				assert(handle != std::nullopt);
+				return handle->mHandle == window; 
+			});
+			if (result.size() > 0) {
+				mWindowInFocus = result[0];
+			}
+		}
 	}
 
 }

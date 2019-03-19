@@ -2,12 +2,13 @@
 
 namespace cgb
 {
-	QuakeCamera::QuakeCamera() :
-		m_rotation_speed(0.001f),
-		m_move_speed(4.5f), // 4.5 m/s
-		m_fast_multiplier(6.0f), // 27 m/s
-		m_slow_multiplier(0.2f), // 0.9 m/s
-		m_accumulated_mouse_movement(0.0f, 0.0f)
+	QuakeCamera::QuakeCamera(window* wnd) 
+		: mWindow(nullptr == wnd ? cgb::context().main_window() : wnd)
+		, m_rotation_speed(0.001f)
+		, m_move_speed(4.5f) // 4.5 m/s
+		, m_fast_multiplier(6.0f) // 27 m/s
+		, m_slow_multiplier(0.2f) // 0.9 m/s
+		, m_accumulated_mouse_movement(0.0f, 0.0f)
 	{
 	}
 
@@ -44,15 +45,13 @@ namespace cgb
 
 	void QuakeCamera::HandleInputOnly()
 	{
-		auto wnd = current_composition().window_in_focus();
-
 		// switch mode
 		if (input().key_pressed(key_code::tab)) {
 			auto currentlyHidden = input().is_cursor_hidden();
 			auto newMode = !currentlyHidden;
-			//wnd->set_cursor_hidden(newMode);
 			m_capture_input = newMode == true;
-			input().center_cursor_position(*wnd);
+			input().set_cursor_hidden(newMode);
+			input().center_cursor_position(*mWindow);
 		}
 
 		// display info
@@ -67,12 +66,12 @@ namespace cgb
 
 	void QuakeCamera::initialize()
 	{
-		//current_composition().window_in_focus()->set_cursor_hidden(true);
+		input().set_cursor_hidden(true);
 	}
 
 	void QuakeCamera::finalize()
 	{
-		//current_composition().window_in_focus()->set_cursor_hidden(false);
+		input().set_cursor_hidden(false);
 	}
 
 	void QuakeCamera::update()
@@ -82,8 +81,7 @@ namespace cgb
 			return;
 		}
 
-		auto wnd = current_composition().window_in_focus();
-		auto extent = wnd->resolution();
+		auto extent = mWindow->resolution();
 		auto deltaTime = time().delta_time();
 
 		// query the position of the mouse cursor
@@ -116,6 +114,6 @@ namespace cgb
 			AddToCameraPositionAbsolute(kUpVec4, deltaTime);
 
 		// reset the mouse-cursor to the center of the screen
-		input().center_cursor_position(*wnd);
+		input().center_cursor_position(*mWindow);
 	}
 }

@@ -197,7 +197,11 @@ namespace CgbPostBuildHelper.ViewModel
 				};
 				window.InnerContent.Content = new MessagesList()
 				{
-					DataContext = new { Items = Messages }
+					DataContext = new 
+					{ 
+						Items = Messages,
+						DismissCommand = new Func<ICommand>(() => null)()
+					}
 				};
 				window.Show();
 			});

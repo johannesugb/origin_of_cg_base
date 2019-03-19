@@ -562,7 +562,7 @@ public:
 	void initialize() override
 	{
 		cgb::context().create_sync_objects(); // <-- TODO
-		auto swapChain = cgb::context().create_swap_chain(cgb::current_composition().window_in_focus(), cgb::context().mTmpSurface, cgb::swap_chain_params{});
+		auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface, cgb::swap_chain_params{});
 		cgb::context().mSurfSwap.emplace_back(std::make_unique<cgb::swap_chain_data>(std::move(swapChain)));
 
 		// temp:
@@ -689,7 +689,7 @@ public:
 		// Add the camera to the composition (and let it handle the updates)
 		mQuakeCam.set_position(glm::vec3(-3.0f, 1.0f, 0.0f));
 		mQuakeCam.LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
-		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::current_composition().window_in_focus()->aspect_ratio(), 0.1f, 1000.0f);
+		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
 		cgb::current_composition().add_element(mQuakeCam);
 	}
 
