@@ -75,6 +75,7 @@ private:
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mResourceBundleLayout;
 	std::shared_ptr<cgb::vulkan_resource_bundle_group> mResourceBundleGroup;
 
+
 	std::shared_ptr<eyetracking_interface> eyeInf;
 
 
@@ -82,6 +83,7 @@ private:
 
 
 	std::shared_ptr<cgb::vulkan_render_object> mSponzaModel;
+	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mPhysicalBasedMaterialResourceBundleLayout;
 
 public:
 	void initialize() override
@@ -245,6 +247,7 @@ private:
 
 		delete renderObject;
 		delete renderObject2;
+		mSponzaModel.reset();
 		texture.reset();
 		textureImage.reset();
 		transferCommandBufferManager.reset();
@@ -390,6 +393,12 @@ private:
 			mResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		}
 		mResourceBundleLayout->bake();
+
+
+		mPhysicalBasedMaterialResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
+		mPhysicalBasedMaterialResourceBundleLayout->add_binding(0, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eVertex);
+		mPhysicalBasedMaterialResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
+		mPhysicalBasedMaterialResourceBundleLayout->bake();
 	}
 
 	void createVrsComputeDescriptorSetLayout()
@@ -557,8 +566,6 @@ private:
 		auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
 			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
 
-		renderObject = new cgb::vulkan_render_object(imagePresenter->get_swap_chain_images_count(), verticesQuad, indicesQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
-
 		// TODO
 		// uniform buffer
 		// textures
@@ -580,13 +587,13 @@ private:
 		}
 
 
-		mResourceBundle = mResourceBundleGroup->create_resource_bundle(resourceBundleLayout, true);
-		mResourceBundle->add_dynamic_buffer_resource(0, mUniformBuffers, sizeof(UniformBufferObject));
-		mResourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, texture);
+		auto mResourceBundle = mResourceBundleGroup->create_resource_bundle(mPhysicalBasedMaterialResourceBundleLayout, true);
+		//mResourceBundle->add_dynamic_buffer_resource(0, mUniformBuffers, sizeof(UniformBufferObject));
+		//mResourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, texture);
 
-		if (vulkan_context::instance().shadingRateImageSupported) {
-			mResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, debugTextures);
-		}
+		//if (vulkan_context::instance().shadingRateImageSupported) {
+		//	mResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, debugTextures);
+		//}
 
 		mSponzaModel = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({outVertexBuffer}), outIndexBuffer, mesh.m_indices.size());
 	}

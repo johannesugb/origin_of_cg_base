@@ -7,7 +7,7 @@
 namespace cgb {
 
 	vulkan_buffer::vulkan_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, void* data) : 
-		vulkan_buffer(size, usage, vk::MemoryPropertyFlagBits::eDeviceLocal, vulkan_context::instance().transferCommandBufferManager, data) {
+		vulkan_buffer(size, usage, vk::MemoryPropertyFlagBits::eDeviceLocal, data) {
 
 	}
 
