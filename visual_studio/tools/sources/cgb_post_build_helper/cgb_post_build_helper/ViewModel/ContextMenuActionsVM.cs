@@ -40,7 +40,16 @@ namespace CgbPostBuildHelper.ViewModel
 			{
 				var wnd = new View.SettingsView
 				{
-					DataContext = new ViewModel.SettingsVM()
+					DataContext = new ViewModel.SettingsVM(_application)
+				};
+				wnd.Show();
+			});
+
+			OpenAbout = new DelegateCommand(_ =>
+			{
+				var wnd = new View.AboutView
+				{
+					Title = "About cgb_post_build_helper"
 				};
 				wnd.Show();
 			});
@@ -58,6 +67,8 @@ namespace CgbPostBuildHelper.ViewModel
 		public ICommand ClearMessages { get; set; }
 
 		public ICommand OpenSettings { get; set; }
+
+		public ICommand OpenAbout { get; set; }
 
 		public ICommand ExitApplicationCommand { get; set; }
 	}

@@ -528,7 +528,7 @@ public:
 				.setOffset(0)
 				.setRange(sizeof(UniformBufferObject));
 			auto descriptorWriteBuffer = vk::WriteDescriptorSet()
-				.setDstSet(mRtDescriptorSets[i].mDescriptorSet) // FUCK YOU, Vulkan! Note: Always pay attention to reference the right descriptor set!
+				.setDstSet(mRtDescriptorSets[i].mDescriptorSet) // Note: Always pay attention to reference the right descriptor set!
 				.setDstBinding(2u)
 				.setDstArrayElement(0u)
 				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
@@ -548,19 +548,23 @@ public:
 				.setRange(sizeof(UniformBufferObject))
 			};
 			auto descriptorWriteBuffer2 = vk::WriteDescriptorSet()
-				.setDstSet(mRtDescriptorSets[i].mDescriptorSet) // FUCK YOU, Vulkan! Note: Always pay attention to reference the right descriptor set!
+				.setDstSet(mRtDescriptorSets[i].mDescriptorSet) // Note: Always pay attention to reference the right descriptor set!
 				.setDstBinding(3u)
 				.setDstArrayElement(0u)
 				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 				.setDescriptorCount(static_cast<uint32_t>(bufferDescs.size()))
 				.setPBufferInfo(bufferDescs.data());
 
-			cgb::context().logical_device().updateDescriptorSets({ accStructWrite, outputImageWrite, descriptorWriteBuffer, descriptorWriteBuffer2 }, {}); // ...and fuck you again! Never forgetti!
+			cgb::context().logical_device().updateDescriptorSets({ accStructWrite, outputImageWrite, descriptorWriteBuffer, descriptorWriteBuffer2 }, {}); // ! Never forgetti!
 		}
 	}
 
 	void initialize() override
 	{
+		cgb::context().create_sync_objects(); // <-- TODO
+		auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface, cgb::swap_chain_params{});
+		cgb::context().mSurfSwap.emplace_back(std::make_unique<cgb::swap_chain_data>(std::move(swapChain)));
+
 		// temp:
 		ResourceBase::Init(
 			(VkPhysicalDevice)cgb::context().physical_device(),
@@ -685,7 +689,7 @@ public:
 		// Add the camera to the composition (and let it handle the updates)
 		mQuakeCam.set_position(glm::vec3(-3.0f, 1.0f, 0.0f));
 		mQuakeCam.LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
-		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::current_composition().window_in_focus()->aspect_ratio(), 0.1f, 1000.0f);
+		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
 		cgb::current_composition().add_element(mQuakeCam);
 	}
 
@@ -702,6 +706,17 @@ public:
 
 	void render() override
 	{
+		// Wait for the prev-prev frame (fence-ping-pong)
+		// TODO: We should only wait for fences if some were submitted 
+		//       ...during the last RENDER-call!!!
+
+		// TODO: auskommentiert während StSt-Meeting
+
+		auto& fence = cgb::context().fence_current_frame();
+		cgb::context().logical_device().waitForFences(1u, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		cgb::context().logical_device().resetFences(1u, &fence);
+
+
 		uint32_t imageIndex;
 		cgb::context().logical_device().acquireNextImageKHR(
 			mSwapChainData->mSwapChain, // the swap chain from which we wish to acquire an image [1]

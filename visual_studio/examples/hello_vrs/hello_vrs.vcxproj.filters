@@ -50,6 +50,9 @@
     <None Include="..\..\..\framework\assets\models\sponza\sponza_debris.obj" />
     <None Include="..\..\..\framework\assets\models\sponza\sponza_fabric.obj" />
     <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
@@ -64,10 +67,5 @@
     <Image Include="..\..\..\framework\assets\chalet\chalet.jpg">
       <Filter>assets</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\..\framework\assets\models\sponza\license.txt">
-      <Filter>assets\models\sponza</Filter>
-    </Text>
   </ItemGroup>
 </Project>

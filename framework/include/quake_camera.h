@@ -5,7 +5,7 @@ namespace cgb
 	class QuakeCamera : public Camera, public cg_element
 	{
 	public:
-		QuakeCamera();
+		QuakeCamera(window* wnd = nullptr);
 		~QuakeCamera();
 
 		void HandleInputOnly();
@@ -24,6 +24,7 @@ namespace cgb
 		void set_slow_multiplier(float value) { m_slow_multiplier = value; }
 
 	private:
+		window* mWindow;
 		float m_rotation_speed;
 		float m_move_speed;
 		float m_fast_multiplier;
@@ -31,8 +32,6 @@ namespace cgb
 
 		glm::vec2 m_accumulated_mouse_movement;
 		bool m_capture_input;
-
-		std::function<void(GLFWwindow*, int, int, int, int)> m_key_handler;
 
 		void AddToCameraPositionRelative(const glm::vec4& homoVectorToAdd, double deltaTime);
 		void AddToCameraPositionAbsolute(const glm::vec4& homoVectorToAdd, double deltaTime);

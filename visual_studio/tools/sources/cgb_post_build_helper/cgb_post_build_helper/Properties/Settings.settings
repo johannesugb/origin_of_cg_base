@@ -20,5 +20,11 @@
     <Setting Name="ShowWindowForModelDeployment" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="ReleaseSubPathInExternals" Type="System.String" Scope="User">
+      <Value Profile="(Default)">release</Value>
+    </Setting>
+    <Setting Name="DebugSubPathInExternals" Type="System.String" Scope="User">
+      <Value Profile="(Default)">debug</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

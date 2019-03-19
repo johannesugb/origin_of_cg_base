@@ -26,7 +26,6 @@ namespace cgb
 	{
 	public:
 		composition() :
-			mWindows(),
 			mElements(),
 			mTimer(),
 			mExecutor(this),
@@ -41,7 +40,6 @@ namespace cgb
 		}
 
 		composition(std::initializer_list<window*> pWindows, std::initializer_list<cg_element*> pObjects) :
-			mWindows(pWindows),
 			mElements(pObjects),
 			mTimer(),
 			mExecutor(this),
@@ -258,32 +256,6 @@ namespace cgb
 			}
 		}
 
-		window* window_in_focus() override
-		{
-			if (mWindows.size() > 0) {
-				return mWindows[0];
-			}
-			return nullptr;
-		}
-
-		window* window_by_name(const std::string& pName) override
-		{
-			auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
-								   [&pName](const window* w) {
-									   return w->name() == pName;
-								   });
-			return it != mWindows.end() ? *it : nullptr;
-		}
-
-		window* window_by_id(uint32_t pId) override
-		{
-			auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
-								   [&pId](const window* w) {
-									   return w->id() == pId;
-								   });
-			return it != mWindows.end() ? *it : nullptr;
-		}
-
 		void start() override
 		{
 			// Make myself the current composition_interface
@@ -299,11 +271,14 @@ namespace cgb
 			cgb::context().begin_composition();
 
 			// Enable receiving input
-			for (const auto& window : mWindows)
+			auto windows_for_input = context().select_windows([](auto * w) { return w->is_input_enabled(); });
+			for (auto* w : windows_for_input)
 			{
+				w->set_is_in_use(true);
 				// Write into the buffer at mInputBufferUpdateIndex,
 				// let client-objects read from the buffer at mInputBufferConsumerIndex
-				context().start_receiving_input_from_window(*window, mInputBuffers[mInputBufferUpdateIndex]);
+				context().start_receiving_input_from_window(*w, mInputBuffers[mInputBufferUpdateIndex]);
+				mWindowsReceivingInputFrom.push_back(w);
 			}
 
 			// game-/render-loop:
@@ -316,8 +291,9 @@ namespace cgb
 			{
 				if (mShouldSwapInputBuffers)
 				{
+					auto* windowForCursorActions = context().window_in_focus();
 					std::swap(mInputBufferUpdateIndex, mInputBufferConsumerIndex);
-					mInputBuffers[mInputBufferUpdateIndex].prepare_for_next_frame(mInputBuffers[mInputBufferConsumerIndex], window_in_focus());
+					mInputBuffers[mInputBufferUpdateIndex].prepare_for_next_frame(mInputBuffers[mInputBufferConsumerIndex], windowForCursorActions);
 					context().change_target_input_buffer(mInputBuffers[mInputBufferUpdateIndex]);
 					have_swapped_input_buffers();
 				}
@@ -330,10 +306,12 @@ namespace cgb
 			mIsRunning = false;
 
 			// Stop the input
-			for (const auto& window : mWindows)
+			for (auto* w : mWindowsReceivingInputFrom)
 			{
-				context().stop_receiving_input_from_window(*window);
+				context().stop_receiving_input_from_window(*w);
+				w->set_is_in_use(false);
 			}
+			mWindowsReceivingInputFrom.clear();
 
 			// Signal context before finalization
 			cgb::context().end_composition();
@@ -359,7 +337,7 @@ namespace cgb
 
 	private:
 		static composition* sComposition;
-		std::vector<window*> mWindows;
+		std::vector<window*> mWindowsReceivingInputFrom;
 		std::vector<cg_element*> mElements;
 		std::vector<cg_element*> mElementsToBeAdded;
 		std::vector<cg_element*> mElementsToBeRemoved;

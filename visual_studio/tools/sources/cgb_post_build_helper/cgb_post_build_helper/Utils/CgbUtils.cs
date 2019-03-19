@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using CgbPostBuildHelper.ViewModel;
 using Assimp;
 using CgbPostBuildHelper.Deployers;
+using System.Diagnostics;
 
 namespace CgbPostBuildHelper.Utils
 {
@@ -47,6 +48,14 @@ namespace CgbPostBuildHelper.Utils
 		static bool AreHashesEqual(byte[] hash1, byte[] hash2)
 		{
 			return hash1.SequenceEqual(hash2);
+		}
+
+		public static string NormalizePartialPath(string path)
+		{
+			return path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+					   .Trim()
+					   .Trim(Path.DirectorySeparatorChar)
+					   .ToUpperInvariant();
 		}
 
 		public static string NormalizePath(string path)
@@ -103,6 +112,7 @@ namespace CgbPostBuildHelper.Utils
 			var p = new InvocationParams
 			{
 				CgbFrameworkPath = ExtractValueForNamedArgument("-framework", args),
+				CgbExternalPath = ExtractValueForNamedArgument("-external", args),
 				TargetApi = configuration.Contains("opengl") 
 							? BuildTargetApi.OpenGL 
 							: configuration.Contains("vulkan")
@@ -180,19 +190,21 @@ namespace CgbPostBuildHelper.Utils
 			//  #2: If it is a shader file and we're building for OpenGL => modify GLSL
 			//  #3: If it is an .obj 3D Model file => get its materials file
 
+			var isExternalDependency = CgbUtils.NormalizePath(inputFile.FullName).Contains(CgbUtils.NormalizePath(config.CgbExternalPath));
 			var isAsset = RegexIsInAssets.IsMatch(filterPath);
 			var isShader = RegexIsInShaders.IsMatch(filterPath);
-			if (!isAsset && !isShader)
+			if (!isAsset && !isShader && !isExternalDependency)
 			{
-				Console.WriteLine($"Skipping '{filePath}' since it is neither in 'assets/' nor in 'shaders/'");
+				Console.WriteLine($"Skipping '{filePath}' since it is neither in 'assets/' nor in 'shaders/' nor is it an external dependency.");
 				return;
 			}
 
 			// Ensure we have no coding errors for the following cases:
-			Diag.Debug.Assert(isAsset != isShader);
+			Diag.Debug.Assert(isAsset != isShader || isExternalDependency);
 
 			// Construct the deployment and DO IT... JUST DO IT
 			IFileDeployment deploy = null;
+			Action<IFileDeployment> additionalInitAction = null;
 			if (isShader)
 			{
 				if (config.TargetApi == BuildTargetApi.Vulkan)
@@ -238,7 +250,11 @@ namespace CgbPostBuildHelper.Utils
 						{
 							deploy = new ModelDeployment();
 						}
-						((ModelDeployment)deploy).SetTextures(allTextures);
+
+						additionalInitAction = (theDeployment) =>
+						{
+							((ModelDeployment)theDeployment).SetTextures(allTextures);
+						};
 					}
 				}
 				catch (AssimpException aex)
@@ -252,11 +268,13 @@ namespace CgbPostBuildHelper.Utils
 					deploy = new CopyFileDeployment();
 				}
 			}
+
 			deploy.SetInputParameters(
 				config, 
 				filterPath, 
 				inputFile, 
 				Path.Combine(config.OutputPath, filterPath, inputFile.Name));
+			additionalInitAction?.Invoke(deploy);
 
 			// We're done here => return the deployment-instance to the caller
 			outDeployment = deploy;
@@ -280,6 +298,71 @@ namespace CgbPostBuildHelper.Utils
 		public static int NumberOfMessagesOfType(this IList<MessageVM> list, MessageType type)
 		{
 			return (from x in list where x.MessageType == type select x).Count();
+		}
+
+		public static string BuildPlatformToPartOfPath(this BuildPlatform buildPlatform)
+		{
+			switch (buildPlatform)
+			{
+				case BuildPlatform.x64:
+					return "x64";
+				default:
+					return "???";
+			}
+		}
+
+		public static void OpenFileWithSystemViewer(string path)
+		{
+			var info = new FileInfo(path);
+			if (!info.Exists)
+			{
+				return;
+			}
+
+			Process.Start(info.FullName);
+		}
+
+		public static void ShowDirectoryInExplorer(string path)
+		{
+			try
+			{
+				string dirPath;
+				string filePath = null;
+				var attr = File.GetAttributes(path);
+				if (attr.HasFlag(FileAttributes.Directory))
+				{
+					dirPath = path;
+					if (!Directory.Exists(dirPath))
+					{
+						return;
+					}
+				}
+				else
+				{
+					var info = new FileInfo(path);
+					if (!info.Directory.Exists)
+					{
+						return;
+					}
+					dirPath = info.Directory.FullName;
+					filePath = info.FullName;
+				}
+
+				if (null != filePath)
+				{
+					string argument = "/select, \"" + filePath + "\"";
+					Process.Start("explorer.exe", argument);
+				}
+				else
+				{
+					string argument = "\"" + dirPath + "\"";
+					Process.Start("explorer.exe", argument);
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
 		}
 	}
 }

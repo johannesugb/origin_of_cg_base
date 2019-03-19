@@ -116,7 +116,7 @@ public:
 
 		sum_t += cgb::time().delta_time();
 		if (sum_t >= 1.0f) {
-			cgb::current_composition().window_in_focus()->set_title(std::to_string(1.0f / cgb::time().delta_time()).c_str());
+			cgb::context().main_window()->set_title(std::to_string(1.0f / cgb::time().delta_time()).c_str());
 			sum_t -= 1.0f;
 
 			printf("Gaze point: %f, %f\n",

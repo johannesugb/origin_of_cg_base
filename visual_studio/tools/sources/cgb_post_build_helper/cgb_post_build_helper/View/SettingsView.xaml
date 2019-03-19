@@ -4,23 +4,46 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CgbPostBuildHelper.View"
-        mc:Ignorable="d"
-        Title="SettingsView" Height="400" Width="400">
+        mc:Ignorable="d" FontSize="14"
+        Title="SettingsView" Height="480" Width="410">
     <Grid>
 		<StackPanel Orientation="Vertical" Margin="20">
 			<TextBlock FontSize="20" Margin="0">
 				<Run>cgb_post_process_helper</Run>
 				<Run FontWeight="Bold">settings</Run>
 			</TextBlock>
-			<TextBlock FontSize="10">Tick/untick to change cgb_post_process_helper's behavior!</TextBlock>
+			<TextBlock FontSize="10">Tick/untick/enter to change cgb_post_process_helper's behavior!</TextBlock>
 			<TextBlock FontSize="10">Changes take effect immediately.</TextBlock>
 
-			<CheckBox Margin="0,15,0,0" IsChecked="{Binding AlwaysDeployReleaseDlls}">
-				<StackPanel Orientation="Vertical">
-					<TextBlock Text="Always deploy Release DLLs" />
-					<TextBlock FontSize="10" Text="(instead of Debug DLLs for Debug-builds)" />
-				</StackPanel>
-			</CheckBox>
+			<StackPanel Margin="0,15,0,0" Orientation="Vertical">
+				<CheckBox IsChecked="{Binding AlwaysDeployReleaseDlls}">
+					<StackPanel Orientation="Vertical">
+						<TextBlock Text="Always deploy Release DLLs" />
+						<TextBlock FontSize="10" Text="(instead of Debug DLLs for Debug-builds)" />
+					</StackPanel>
+				</CheckBox>
+				<Grid Margin="20,4,0,0">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+					</Grid.RowDefinitions>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="Auto" MinWidth="120"/>
+						<ColumnDefinition Width="Auto"/>
+					</Grid.ColumnDefinitions>
+					<TextBlock Grid.Row="0" Grid.Column="0" FontSize="12" Text="Release path: " VerticalAlignment="Center"/>
+					<TextBlock Grid.Row="1" Grid.Column="0" FontSize="12" Text="Debug path: " VerticalAlignment="Center"/>
+					<TextBox Grid.Row="0" Grid.Column="1" FontSize="12" 
+							 Text="{Binding ExternalsReleaseSubPath, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" VerticalAlignment="Center"/>
+					<TextBox Grid.Row="1" Grid.Column="1" FontSize="12" 
+							 Text="{Binding ExternalsDebugSubPath, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" VerticalAlignment="Center"/>
+					<TextBox IsReadOnly="True" Grid.Row="0" Grid.Column="2" FontSize="10" Foreground="#aaa" BorderThickness="0"
+							 Text="(default: &quot;release&quot;)" VerticalAlignment="Center"/>
+					<TextBox IsReadOnly="True" Grid.Row="1" Grid.Column="2" FontSize="10" Foreground="#aaa" BorderThickness="0"
+							 Text="(default: &quot;debug&quot;)" VerticalAlignment="Center"/>
+				</Grid>
+			</StackPanel>
 
 			<CheckBox Margin="0,15,0,0" IsChecked="{Binding CopyAssetsToOutputDirectory}">
 				<StackPanel Orientation="Vertical">

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace CgbPostBuildHelper.ViewModel
 {
@@ -28,6 +29,7 @@ namespace CgbPostBuildHelper.ViewModel
 				Filter = "TBD"
 			};
 			Files = new ObservableCollection<WatchedFileVM>();
+			_inst.IssueAllOnPropertyChanged();
 		}
 
 		private readonly System.Windows.Threading.Dispatcher _dispatcher;
@@ -53,9 +55,8 @@ namespace CgbPostBuildHelper.ViewModel
 			FileSystemWatcher.Renamed += FileSystemWatcher_Renamed;
 			FileSystemWatcher.Created += FileSystemWatcher_Created;
 			FileSystemWatcher.EnableRaisingEvents = true;
+			_inst.IssueAllOnPropertyChanged();
 		}
-
-		
 
 		private void FileSystemWatcher_Created(object sender, FileSystemEventArgs e)
 		{
@@ -76,7 +77,6 @@ namespace CgbPostBuildHelper.ViewModel
 		private void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
 		{
 			_app.HandleFileEvent(e.FullPath, _inst, Files);
-
 		}
 
 		public void EndWatchAndDie()
@@ -88,6 +88,31 @@ namespace CgbPostBuildHelper.ViewModel
 			FileSystemWatcher.Renamed -= FileSystemWatcher_Renamed;
 			Files.Clear();
 			FileSystemWatcher.Dispose();
+			_inst.IssueAllOnPropertyChanged();
+		}
+
+		public ICommand OpenFolderCommand
+		{
+			get
+			{
+				return new DelegateCommand(_ =>
+				{
+					CgbUtils.ShowDirectoryInExplorer(Directory);
+				});
+			}
+		}
+
+		public ICommand EndWatch
+		{
+			get
+			{
+				return new DelegateCommand(_ =>
+				{
+					EndWatchAndDie();
+					_inst.CurrentlyWatchedDirectories.Remove(this);
+					_inst.IssueAllOnPropertyChanged();
+				});
+			}
 		}
 	}
 }

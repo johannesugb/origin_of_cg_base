@@ -52,6 +52,43 @@ namespace cgb
 		 */
 		void stop_receiving_input_from_window(const window& pWindow);
 
+		/** Returns the first window which has been created
+		 */
+		window* main_window() const;
+
+		/** Returns the window which matches the given name, if it is present in the composition.
+		 *	@param	pName	Name of the window
+		 *  @return	Pointer to the window with the given name or nullptr if no window matches
+		 */
+		window* window_by_name(const std::string& pName) const;
+
+		/** Returns the window which matches the given id, if it is present in the composition.
+		 *	@param	pId		Id of the window
+		 *  @return	Pointer to the window with the given name or nullptr if no window matches
+		 */
+		window* window_by_id(uint32_t pId) const;
+
+		/** Select multiple windows and return a vector of pointers to them.
+		 *  Example: To select all windows, pass the lambda [](auto* w){ return true; }
+		 */
+		template <typename T>
+		std::vector<window*> select_windows(T selector)
+		{
+			std::vector<window*> results;
+			for (auto& wnd : mWindows) {
+				auto wnd_ptr = wnd.get();
+				if (selector(wnd_ptr)) {
+					results.push_back(wnd_ptr);
+				}
+			}
+			return results;
+		}
+
+		/** Returns the window which is currently in focus, i.e. this is also
+		 *	the window which is affected by all mouse cursor input interaction.
+		 */
+		window* window_in_focus() const { return mWindowInFocus; }
+
 		/** Get the cursor position w.r.t. the given window */
 		static glm::dvec2 cursor_position(const window& pWindow);
 
@@ -76,8 +113,10 @@ namespace cgb
 		static void glfw_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos);
 		static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 		static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+		static void window_focus_callback(GLFWwindow* window, int focused);
 
 		std::vector<window_ptr> mWindows;
+		static window* mWindowInFocus;
 		bool mInitialized;
 		static std::mutex sInputMutex;
 		static input_buffer* sTargetInputBuffer;

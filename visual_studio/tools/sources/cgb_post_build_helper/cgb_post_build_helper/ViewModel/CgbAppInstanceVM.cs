@@ -34,14 +34,14 @@ namespace CgbPostBuildHelper.ViewModel
 
 			OpenEventDetails = new DelegateCommand(_ =>
 			{
-				Window window = new Window
+				var window = new View.WindowToTheTop
 				{
 					Width = 800, Height = 600,
-					Title = $"All events for {ShortPath}",
-					Content = new View.EventFilesView()
-					{
-						DataContext = this
-					}
+					Title = $"All events for {ShortPath}"
+				};
+				window.InnerContent.Content = new View.EventFilesView()
+				{
+					DataContext = this
 				};
 				window.Show();
 			});

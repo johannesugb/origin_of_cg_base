@@ -257,7 +257,7 @@ namespace cgb
 
 		vk::SurfaceKHR& get_surface() { return mTmpSurface; }
 
-	private:
+	public:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		static size_t sActualMaxFramesInFlight;
 		size_t mFrameCounter;
@@ -284,6 +284,7 @@ namespace cgb
 		std::vector<command_pool> mCommandPools;
 		std::vector<descriptor_pool> mDescriptorPools;
 
+	public:
 		window* mTmpMainWindow;
 		vk::SurfaceKHR mTmpSurface;
 	};

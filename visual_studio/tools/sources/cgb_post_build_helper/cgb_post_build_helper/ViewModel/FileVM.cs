@@ -16,13 +16,7 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			get => new DelegateCommand(path =>
 			{
-				var info = new FileInfo((string)path);
-				if (!info.Exists)
-				{
-					return;
-				}
-
-				Process.Start(info.FullName);
+				CgbUtils.OpenFileWithSystemViewer((string)path);
 			});
 		}
 
@@ -30,22 +24,7 @@ namespace CgbPostBuildHelper.ViewModel
 		{
 			get => new DelegateCommand(path =>
 			{
-				var info = new FileInfo((string)path);
-				if (!info.Directory.Exists)
-				{
-					return;
-				}
-
-				if (info.Exists)
-				{
-					string argument = "/select, \"" + info.FullName + "\"";
-					Process.Start("explorer.exe", argument);
-				}
-				else
-				{
-					string argument = "/select, \"" + info.DirectoryName + "\"";
-					Process.Start("explorer.exe", argument);
-				}
+				CgbUtils.ShowDirectoryInExplorer((string)path);
 			});
 		}
 	}

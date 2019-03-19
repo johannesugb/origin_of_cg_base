@@ -94,5 +94,29 @@ namespace CgbPostBuildHelper.Properties {
                 this["ShowWindowForModelDeployment"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("release")]
+        public string ReleaseSubPathInExternals {
+            get {
+                return ((string)(this["ReleaseSubPathInExternals"]));
+            }
+            set {
+                this["ReleaseSubPathInExternals"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("debug")]
+        public string DebugSubPathInExternals {
+            get {
+                return ((string)(this["DebugSubPathInExternals"]));
+            }
+            set {
+                this["DebugSubPathInExternals"] = value;
+            }
+        }
     }
 }

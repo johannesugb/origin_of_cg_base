@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CopyFileToFolders Include="..\..\..\external\release\bin\x64\assimp-vc140-mt.dll">
-      <Filter>dlls\debug_dlls</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\..\..\external\debug\bin\x64\assimp-vc140-mt.dll">
-      <Filter>dlls\release_dlls</Filter>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\..\framework\shader\rt_09_first.rchit">
       <Filter>shaders</Filter>
     </None>
@@ -39,6 +31,10 @@
     <None Include="..\..\..\framework\assets\sphere.obj">
       <Filter>assets</Filter>
     </None>
+    <None Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
+      <Filter>assets</Filter>
+    </None>
+    <None Include="C:\Users\Johi\Desktop\Sponza am Desktop\sponza_fabric.obj\sponza_structure2.obj" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="assets">
@@ -46,15 +42,6 @@
     </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{25557352-4e4c-4c14-80e9-41e01d5b5f1f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dlls">
-      <UniqueIdentifier>{14674a77-c09a-47e2-bca3-e3d39c0e9cb1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dlls\debug_dlls">
-      <UniqueIdentifier>{b4450875-d858-4ddd-a7e0-a0159626cded}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dlls\release_dlls">
-      <UniqueIdentifier>{5d1b89cf-15f0-43a4-b21f-b812864237d3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
