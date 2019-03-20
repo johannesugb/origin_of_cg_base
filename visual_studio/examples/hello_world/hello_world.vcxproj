@@ -56,11 +56,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\framework\assets\chalet\chalet.jpg" />
-    <None Include="..\..\..\framework\shader\rt_09_first.rchit" />
-    <None Include="..\..\..\framework\shader\rt_09_first.rgen" />
-    <None Include="..\..\..\framework\shader\rt_09_first.rmiss" />
-    <None Include="..\..\..\framework\shader\rt_09_secondary.rchit" />
-    <None Include="..\..\..\framework\shader\rt_09_secondary.rmiss" />
+    <None Include="..\..\..\framework\shaders\rt_09_first.rchit" />
+    <None Include="..\..\..\framework\shaders\rt_09_first.rgen" />
+    <None Include="..\..\..\framework\shaders\rt_09_first.rmiss" />
+    <None Include="..\..\..\framework\shaders\rt_09_secondary.rchit" />
+    <None Include="..\..\..\framework\shaders\rt_09_secondary.rmiss" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\framework\assets\chalet\chalet.obj">
@@ -68,8 +68,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\framework\shader\shader.frag" />
-    <None Include="..\..\..\framework\shader\shader.vert" />
+    <None Include="..\..\..\framework\shaders\shader.frag" />
+    <None Include="..\..\..\framework\shaders\shader.vert" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\framework\assets\sphere.obj">
