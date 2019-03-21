@@ -68,6 +68,12 @@
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp" />
     <ClCompile Include="..\..\framework\src\window.cpp" />
+    <ClCompile Include="..\..\framework\src_e186\AmbientLight.cpp" />
+    <ClCompile Include="..\..\framework\src_e186\DirectionalLight.cpp" />
+    <ClCompile Include="..\..\framework\src_e186\MaterialData.cpp" />
+    <ClCompile Include="..\..\framework\src_e186\PointLight.cpp" />
+    <ClCompile Include="..\..\framework\src_e186\TexInfo.cpp" />
+    <ClCompile Include="..\..\framework\src_e186\TexLoadingHelper.cpp" />
     <ClCompile Include="..\..\framework\src_stst\vulkan_attribute_description_binding.cpp" />
     <ClCompile Include="..\..\framework\src_stst\vulkan_buffer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
@@ -199,6 +205,13 @@
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_only_timer.h" />
     <ClInclude Include="..\..\framework\include\window.h" />
+    <ClInclude Include="..\..\framework\include_e186\AmbientLight.h" />
+    <ClInclude Include="..\..\framework\include_e186\DirectionalLight.h" />
+    <ClInclude Include="..\..\framework\include_e186\MaterialData.h" />
+    <ClInclude Include="..\..\framework\include_e186\MaterialUniformLocation.h" />
+    <ClInclude Include="..\..\framework\include_e186\PointLight.h" />
+    <ClInclude Include="..\..\framework\include_e186\TexInfo.h" />
+    <ClInclude Include="..\..\framework\include_e186\TexLoadingHelper.h" />
     <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h" />
     <ClInclude Include="..\..\framework\include_stst\vulkan_buffer.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
@@ -275,6 +288,16 @@
     </ClInclude>
     <ClInclude Include="..\precompiled_headers\include\cg_stdafx.h" />
     <ClInclude Include="..\precompiled_headers\include\cg_targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\framework\assets\shaders\blinnphong.frag" />
+    <None Include="..\..\framework\assets\shaders\blinnphong.vert" />
+    <None Include="..\..\framework\assets\shaders\texture.frag" />
+    <None Include="..\..\framework\assets\shaders\texture.vert" />
+    <None Include="..\..\framework\assets\shaders\translucent_gizmo.frag" />
+    <None Include="..\..\framework\assets\shaders\translucent_gizmo.vert" />
+    <None Include="..\..\framework\shaders\shader.frag" />
+    <None Include="..\..\framework\shaders\shader.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

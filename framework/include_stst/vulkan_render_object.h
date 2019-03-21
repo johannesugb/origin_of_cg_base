@@ -83,10 +83,12 @@ namespace cgb {
 	{
 	public:
 		// simple standard constructor
-		vulkan_render_object(std::vector<std::shared_ptr<vulkan_buffer>> vertexBuffers, std::shared_ptr<vulkan_buffer> indexBuffer, size_t indexCount); // TODO resourceBundles/DescriptorSets for Uniforms and Textures
+		vulkan_render_object(std::vector<std::shared_ptr<vulkan_buffer>> vertexBuffers, std::shared_ptr<vulkan_buffer> indexBuffer, size_t indexCount,
+			std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
+			std::vector<std::shared_ptr<vulkan_resource_bundle>> resourceBundles, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
 
 
-		vulkan_render_object(uint32_t imageCount, std::vector<Vertex> vertices, std::vector<uint32_t> indices,
+		vulkan_render_object(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
 			std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
 			std::shared_ptr<vulkan_texture> texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
 		virtual ~vulkan_render_object();
@@ -102,13 +104,11 @@ namespace cgb {
 
 		PushUniforms get_push_uniforms() { return mPushUniforms; }
 
-		std::shared_ptr<vulkan_resource_bundle> get_resource_bundle() { return mResourceBundle; }
+		std::vector<std::shared_ptr<vulkan_resource_bundle>> get_resource_bundles() { return mResourceBundles; }
 
 		void update_uniform_buffer(uint32_t currentImage, UniformBufferObject ubo);
 
 	private:
-		uint32_t mImageCount;
-
 		std::vector<Vertex> mVertices;
 		std::vector<uint32_t> mIndices;
 
@@ -124,7 +124,7 @@ namespace cgb {
 		// suggestion: use an array of descriptor sets, the drawer then can decide, which descriptor set to use, 
 		// additionally allow global/per drawer descriptor sets
 		// this offers the most flexibility for the user of the framework, while still being easy to use
-		std::shared_ptr<vulkan_resource_bundle> mResourceBundle;
+		std::vector<std::shared_ptr<vulkan_resource_bundle>> mResourceBundles;
 
 		void create_uniform_buffer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager);
 		void create_descriptor_sets(std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,

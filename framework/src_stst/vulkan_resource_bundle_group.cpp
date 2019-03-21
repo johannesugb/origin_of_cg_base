@@ -19,6 +19,9 @@ namespace cgb {
 	std::shared_ptr<vulkan_resource_bundle> cgb::vulkan_resource_bundle_group::create_resource_bundle(
 		std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, bool dynamicResource)
 	{
+		if (mAllocationStarted) {
+			throw std::runtime_error("Allocation already started. Create a new vulkan_resource_bundle_group for new allocation!");
+		}
 		// std::make_shared not possible due to friend private constructor
 		auto resourceBundle = std::shared_ptr<vulkan_resource_bundle>(new vulkan_resource_bundle(resourceBundleLayout, dynamicResource));
 
@@ -51,7 +54,8 @@ namespace cgb {
 		allocInfo.pSetLayouts = layouts.data();
 
 		resourceBundle->mDescriptorSets.resize(resourceCount);
-		if (vulkan_context::instance().device.allocateDescriptorSets(&allocInfo, resourceBundle->mDescriptorSets.data()) != vk::Result::eSuccess) {
+		auto result = vulkan_context::instance().device.allocateDescriptorSets(&allocInfo, resourceBundle->mDescriptorSets.data());
+		if (result != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 

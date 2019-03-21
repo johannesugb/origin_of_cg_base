@@ -32,6 +32,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.frag" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_img.comp" />

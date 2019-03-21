@@ -7,15 +7,15 @@
 #include "vulkan_memory_manager.h"
 
 namespace cgb {
-	vulkan_image::vulkan_image(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, void* pixels, int texWidth, int texHeight, int texChannels) :
+	vulkan_image::vulkan_image(void* pixels, int texWidth, int texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
 		mCommandBufferManager(commandBufferManager), mTexWidth(texWidth), mTexHeight(texHeight), mTtexChannels(texChannels)
 	{
 		create_texture_image(pixels, texWidth, texHeight, texChannels);
 		create_texture_image_view();
 	}
 
-	vulkan_image::vulkan_image(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
-		vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects) : mCommandBufferManager(commandBufferManager), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels),
+	vulkan_image::vulkan_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+		vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) : mCommandBufferManager(commandBufferManager), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels),
 		mNumSamples(numSamples), mFormat(format), mTiling(tiling), mUsage(usage), mMemoryProperties(properties), mAspects(aspects)
 	{
 		create_image(mTexWidth, mTexHeight, mMipLevels, numSamples, format, tiling, usage, properties, mImage, mImageMemory);
@@ -47,7 +47,7 @@ namespace cgb {
 		transition_image_layout(vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mMipLevels);
 		copy_buffer_to_image(stagingBuffer, mImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-		generate_mipmaps(mImage, vk::Format::eR8G8B8A8Unorm, texWidth, texHeight, mMipLevels);
+		generate_mipmaps(vk::Format::eR8G8B8A8Unorm, texWidth, texHeight, mMipLevels);
 	}
 
 	void vulkan_image::create_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
@@ -206,7 +206,7 @@ namespace cgb {
 		mCommandBufferManager->end_single_time_commands(commandBuffer);
 	}
 
-	void vulkan_image::generate_mipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+	void vulkan_image::generate_mipmaps(vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
 		// Check if image format supports linear blitting
 		vk::FormatProperties formatProperties;
 		vulkan_context::instance().physicalDevice.getFormatProperties(imageFormat, &formatProperties);
@@ -217,7 +217,7 @@ namespace cgb {
 		vk::CommandBuffer commandBuffer = mCommandBufferManager->begin_single_time_commands();
 
 		vk::ImageMemoryBarrier barrier = {};
-		barrier.image = image;
+		barrier.image = mImage;
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -256,8 +256,8 @@ namespace cgb {
 			blit.dstSubresource.layerCount = 1;
 
 			commandBuffer.blitImage(
-				image, vk::ImageLayout::eTransferSrcOptimal,
-				image, vk::ImageLayout::eTransferDstOptimal,
+				mImage, vk::ImageLayout::eTransferSrcOptimal,
+				mImage, vk::ImageLayout::eTransferDstOptimal,
 				1, &blit,
 				vk::Filter::eLinear);
 

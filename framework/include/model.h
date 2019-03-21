@@ -1,5 +1,11 @@
 #pragma once
 
+#include <memory>
+
+#include "MaterialData.h"
+
+#include "vulkan_resource_bundle_group.h"
+#include "vulkan_resource_bundle.h"
 
 namespace cgb
 {
@@ -115,6 +121,9 @@ namespace cgb
 
 		glm::mat4 m_scene_transformation_matrix;
 
+		std::shared_ptr<MaterialData> m_material_data;
+		std::shared_ptr<vulkan_resource_bundle> mMaterialResourceBundle;
+
 	public:
 		// Constructor - initialize everything
 		Mesh() :
@@ -220,6 +229,7 @@ namespace cgb
 		static const float kDefaultReflectivity;
 
 		std::vector<Mesh> m_meshes;
+		std::shared_ptr<cgb::vulkan_resource_bundle_group> mResourceBundleGroup;
 
 #ifdef false
 		std::vector<Animator*> m_animators;
@@ -230,7 +240,7 @@ namespace cgb
 		glm::mat4 m_load_transformation_matrix;
 
 	public:
-		Model(const glm::mat4& loadTransMatrix = glm::mat4(1.0f));
+		Model(std::shared_ptr<cgb::vulkan_resource_bundle_group> resourceBundleGroup, const glm::mat4& loadTransMatrix = glm::mat4(1.0f));
 		Model(const Model& other) = delete;
 		Model(Model&& other) noexcept;
 		Model& operator=(const Model& other) = delete;
@@ -238,7 +248,7 @@ namespace cgb
 		~Model();
 
 	public:
-		static std::unique_ptr<Model> LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, const unsigned int model_loader_flags = MOLF_default);
+		static std::unique_ptr<Model> LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, std::shared_ptr<cgb::vulkan_resource_bundle_group> resourceBundleGroup, const unsigned int model_loader_flags = MOLF_default);
 		static std::unique_ptr<Model> LoadFromMemory(const std::string& memory, const glm::mat4& transform_matrix, const unsigned int model_loader_flags = MOLF_default);
 
 	private:
@@ -292,6 +302,8 @@ namespace cgb
 		static std::string GetReflectionTextureName(const aiScene* scene, unsigned int meshIndex);
 		static std::string GetLightmapTextureName(const aiScene* scene, unsigned int meshIndex);
 
+		void GatherMaterialData(const aiScene* scene, const std::string& model_path);
+		void AllocateMaterialData();
 		static aiMaterial* GetAssimpMaterialPtr(const aiScene* scene, unsigned int meshIndex);
 
 		template<typename Func>

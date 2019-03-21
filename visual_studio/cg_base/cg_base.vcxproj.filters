@@ -133,6 +133,24 @@
     <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_layout.cpp">
       <Filter>Source Files\stst</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src_e186\AmbientLight.cpp">
+      <Filter>Source Files\e186</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_e186\DirectionalLight.cpp">
+      <Filter>Source Files\e186</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_e186\MaterialData.cpp">
+      <Filter>Source Files\e186</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_e186\PointLight.cpp">
+      <Filter>Source Files\e186</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_e186\TexLoadingHelper.cpp">
+      <Filter>Source Files\e186</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_e186\TexInfo.cpp">
+      <Filter>Source Files\e186</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -288,6 +306,27 @@
     <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_layout.h">
       <Filter>Header Files\stst</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\AmbientLight.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\DirectionalLight.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\MaterialData.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\MaterialUniformLocation.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\PointLight.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\TexLoadingHelper.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\TexInfo.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -389,5 +428,43 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{15f8ac6c-d112-4381-ba3f-b40b491e5a90}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\e186">
+      <UniqueIdentifier>{28bb74de-8950-40e3-9c59-d12af1974483}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\e186">
+      <UniqueIdentifier>{a91628b5-5b70-4cd3-b14d-5d3111843094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{089c567b-5cdf-43ab-80b8-68ae0d6b95c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders">
+      <UniqueIdentifier>{1d88e8a2-55ba-43ed-9398-f05cea4230f1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\framework\shaders\shader.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\framework\shaders\shader.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\framework\assets\shaders\blinnphong.frag">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="..\..\framework\assets\shaders\blinnphong.vert">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="..\..\framework\assets\shaders\texture.frag">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="..\..\framework\assets\shaders\texture.vert">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="..\..\framework\assets\shaders\translucent_gizmo.frag">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="..\..\framework\assets\shaders\translucent_gizmo.vert">
+      <Filter>assets\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

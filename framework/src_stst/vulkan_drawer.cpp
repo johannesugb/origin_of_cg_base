@@ -43,7 +43,11 @@ namespace cgb {
 			commandBuffer.bindVertexBuffers(1, 2, vertexBuffers, offsets);
 			commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
-			commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, 1, &(renderObject->get_resource_bundle()->get_descriptor_set()), 0, nullptr);
+			std::vector<vk::DescriptorSet> descriptorSets(renderObject->get_resource_bundles().size());
+			for (int i = 0; i < descriptorSets.size(); i++) {
+				descriptorSets[i] = renderObject->get_resource_bundles()[i]->get_descriptor_set();
+			}
+			commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 
 			commandBuffer.pushConstants(
 				mPipeline->get_pipeline_layout(),

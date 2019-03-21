@@ -9,6 +9,9 @@
 #include "Model.h"
 #include <sstream>
 
+#include "TexLoadingHelper.h"
+#include "MaterialData.h"
+
 namespace cgb
 {
 	const char* Model::kIndent = "    ";
@@ -23,9 +26,10 @@ namespace cgb
 	const float Model::kDefaultRefraction = 0.0f;
 	const float Model::kDefaultReflectivity = 1.0f;
 
-	Model::Model(const glm::mat4& loadTransMatrix)
+	Model::Model(std::shared_ptr<cgb::vulkan_resource_bundle_group> resourceBundleGroup, const glm::mat4& loadTransMatrix)
 		: m_meshes(0),
-		m_load_transformation_matrix(loadTransMatrix)
+		m_load_transformation_matrix(loadTransMatrix),
+		mResourceBundleGroup(resourceBundleGroup)
 	{
 	}
 
@@ -47,9 +51,9 @@ namespace cgb
 		return *this;
 	}
 
-	std::unique_ptr<Model> Model::LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, const unsigned int model_loader_flags)
+	std::unique_ptr<Model> Model::LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, std::shared_ptr<cgb::vulkan_resource_bundle_group> resourceBundleGroup, const unsigned int model_loader_flags)
 	{
-		std::unique_ptr<Model> model = std::make_unique<Model>(transform_matrix);
+		std::unique_ptr<Model> model = std::make_unique<Model>(resourceBundleGroup, transform_matrix);
 		if (!model->LoadFromFile(path, model_loader_flags))
 		{
 			// smartpointer will be deleted automatically when it goes out of scope
@@ -60,7 +64,7 @@ namespace cgb
 
 	std::unique_ptr<Model> Model::LoadFromMemory(const std::string& memory, const glm::mat4& transform_matrix, const unsigned int model_loader_flags)
 	{
-		std::unique_ptr<Model> model = std::make_unique<Model>(transform_matrix);
+		std::unique_ptr<Model> model = std::make_unique<Model>(nullptr, transform_matrix);
 		if (!model->LoadFromMemory(memory, model_loader_flags))
 		{
 			// smartpointer will be deleted automatically when it goes out of scope
@@ -116,7 +120,9 @@ namespace cgb
 		if (scene)
 		{
 			auto retval = InitScene(scene);
-
+			if (file_path_or_null != nullptr) {
+				GatherMaterialData(scene, *file_path_or_null);
+			}
 			return retval;
 		}
 		else
@@ -125,7 +131,26 @@ namespace cgb
 		}
 	}
 
+	void Model::GatherMaterialData(const aiScene* scene, const std::string& model_path)
+	{
+		TexLoadingHelper tlh(model_path);
+		const auto n = num_meshes();
+		for (unsigned int i = 0; i < n; i++)
+		{
+			auto* ai_mat = GetAssimpMaterialPtr(scene, i);
+			m_meshes[i].m_material_data = std::make_shared<MaterialData>(ai_mat, tlh);
+			m_meshes[i].mMaterialResourceBundle = m_meshes[i].m_material_data->create_resource_bundle(mResourceBundleGroup);
+		}
+	}
 
+	void Model::AllocateMaterialData()
+	{
+		const auto n = num_meshes();
+		for (unsigned int i = 0; i < n; i++)
+		{
+			mResourceBundleGroup->allocate_resource_bundle(m_meshes[i].mMaterialResourceBundle.get());
+		}
+	}
 
 	bool Model::InitScene(const aiScene* scene)
 	{

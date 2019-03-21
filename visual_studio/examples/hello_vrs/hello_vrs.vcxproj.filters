@@ -54,6 +54,13 @@
     <None Include="@(NativeLibs)" />
     <None Include="@(NativeLibs)" />
     <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.vert">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
