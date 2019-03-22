@@ -55,7 +55,7 @@ namespace cgb
 		vk::Queue& presentation_queue() { return mPresentQueue; }
 		vk::Queue& transfer_queue() { return mTransferQueue; }
 
-		window* create_window(const window_params&, const swap_chain_params&);
+		window* create_window(const std::string&);
 
 		texture_handle create_texture()
 		{

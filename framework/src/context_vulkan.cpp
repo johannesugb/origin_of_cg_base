@@ -134,11 +134,11 @@ namespace cgb
 		pCommandBuffer.mCommandBuffer.drawIndexed(pIndexBuffer.mIndexCount, 1u, 0u, 0u, 0u);
 	}
 
-	window* vulkan::create_window(const window_params& pWndParams, const swap_chain_params& pSwapParams)
+	window* vulkan::create_window(const std::string& pTitle)
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		// Create a tuple of window, surface, and swap chain
-		auto wnd = generic_glfw::create_window(pWndParams, pSwapParams);
+		auto wnd = generic_glfw::prepare_window(pWndParams);
 		auto surface = create_surface_for_window(wnd);
 		// Vulkan init completion?
 		if (0u == wnd->id() && wnd->handle()) { // We need a surface to create the logical device => do it after the first window has been created

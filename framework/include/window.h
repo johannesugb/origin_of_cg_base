@@ -3,7 +3,7 @@
 
 namespace cgb
 {
-	class window : public std::enable_shared_from_this<window>
+	class window
 	{
 #if defined(USE_OPENGL46_CONTEXT)
 		friend class generic_glfw;
@@ -14,7 +14,7 @@ namespace cgb
 #endif
 	public:
 		/** Constructs a window with an already existing handle */
-		window(window_handle);
+		window();
 		/** Destructor */
 		~window();
 		// Prevent copying a window:
@@ -32,10 +32,6 @@ namespace cgb
 		/** @brief Consecutive ID, identifying a window.
 		 *	First window will get the ID=0, second one ID=1, etc.  */
 		uint32_t id() const { return mWindowId; }
-
-		/** Returns the user-defined name of this window which
-		 *	can be set via @ref set_name */
-		const std::string& name() const { return mName; }
 
 		/** Returns the window handle or std::nullopt if
 		 *	it wasn't constructed successfully, has been moved from,
@@ -88,6 +84,29 @@ namespace cgb
 		/** Enable or disable input handling of this window */
 		void set_is_input_enabled(bool pValue);
 
+		/** Indicates whether or not this window has already been created. */
+		bool is_alive() const { return mHandle.has_value(); }
+
+		/** Indicates whether or not this window must be recreated (because parameters have changed or so). */
+		bool must_be_recreated() const { return mRecreationRequired; }
+
+		/** Request a framebuffer for this window which is capable of sRGB formats */
+		void request_srgb_framebuffer(bool pRequestSrgb);
+
+		/** Sets the presentation mode for this window's swap chain. */
+		void set_presentaton_mode(cgb::presentation_mode pMode);
+
+		/** Sets the number of samples for MSAA */
+		void set_number_of_samples(int pNumSamples);
+
+		/** Creates or opens the window */
+		void open();
+
+		/** Sets this window to fullscreen mode 
+		 *	@param	pOnWhichMonitor	Handle to the monitor where to present the window in full screen mode
+		 */
+		void set_fullscreen(monitor_handle pOnWhichMonitor = monitor_handle::primary_monitor());
+
 	private:
 		/** Static variable which holds the ID that the next window will get assigned */
 		static uint32_t mNextWindowId;
@@ -97,9 +116,6 @@ namespace cgb
 
 		/** Unique window id */
 		uint32_t mWindowId; 
-
-		/** A name which used to identify this window => make sure, it is unique! */
-		std::string mName;
 
 		/** Handle of this window */
 		std::optional<window_handle> mHandle;
@@ -112,5 +128,20 @@ namespace cgb
 
 		/** A flag which tells if this window is enabled for receiving input (w.r.t. a running composition) */
 		bool mIsInputEnabled;
+		
+		// A flag to indicate that window recreation is required in order to apply new parameters 
+		bool mRecreationRequired;
+
+		// The requested window size which only has effect BEFORE the window was created 
+		window_size mRequestedSize;
+
+		// Internal flag to indicate whether or not an sRGB framebuffer was requested
+		bool mSrgbFramebufferRequested;
+
+		// Actions to be executed before the actual window (re-)creation
+		std::vector<std::function<void(window&)>> mPreCreateActions;
+
+		// Actions to be executed after the actual window (re-)creation
+		std::vector<std::function<void(window&)>> mPostCreateActions;
 	};
 }

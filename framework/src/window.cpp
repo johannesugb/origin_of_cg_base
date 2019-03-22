@@ -4,14 +4,15 @@ namespace cgb
 {
 	uint32_t window::mNextWindowId = 0u;
 
-	window::window(window_handle handle) 
+	window::window() 
 		: mIsInUse(false)
 		, mWindowId(mNextWindowId++)
-		, mName()
-		, mHandle(std::move(handle))
 		, mTitle()
 		, mMonitor()
 		, mIsInputEnabled(true)
+		, mRequestedSize{ 512, 512 }
+		, mPreCreateActions()
+		, mPostCreateActions()
 	{
 
 	}
@@ -27,15 +28,16 @@ namespace cgb
 	window::window(window&& other) noexcept
 		: mIsInUse(std::move(other.mIsInUse))
 		, mWindowId(std::move(other.mWindowId))
-		, mName(std::move(other.mName))
 		, mHandle(std::move(other.mHandle))
 		, mTitle(std::move(other.mTitle))
 		, mMonitor(std::move(other.mMonitor))
 		, mIsInputEnabled(std::move(other.mIsInputEnabled))
+		, mRequestedSize(std::move(other.mRequestedSize))
+		, mPreCreateActions(std::move(other.mPreCreateActions))
+		, mPostCreateActions(std::move(other.mPostCreateActions))
 	{
 		other.mIsInUse = false;
 		other.mWindowId = 0u;
-		other.mName = "moved from";
 		other.mHandle = std::nullopt;
 		other.mTitle = "moved from";
 		other.mMonitor = std::nullopt;
@@ -46,15 +48,16 @@ namespace cgb
 	{
 		mIsInUse = std::move(other.mIsInUse);
 		mWindowId = std::move(other.mWindowId);
-		mName = std::move(other.mName);
 		mHandle = std::move(other.mHandle);
 		mTitle = std::move(other.mTitle);
 		mMonitor = std::move(other.mMonitor);
 		mIsInputEnabled = std::move(other.mIsInputEnabled);
+		mRequestedSize = std::move(other.mRequestedSize);
+		mPreCreateActions = std::move(other.mPreCreateActions);
+		mPostCreateActions = std::move(other.mPostCreateActions);
 
 		other.mIsInUse = false;
 		other.mWindowId = 0u;
-		other.mName = "moved from";
 		other.mHandle = std::nullopt;
 		other.mTitle = "moved from";
 		other.mMonitor = std::nullopt;
@@ -66,11 +69,6 @@ namespace cgb
 	void window::set_is_in_use(bool value)
 	{
 		mIsInUse = value;
-	}
-
-	void window::set_name(std::string pName)
-	{
-		mName = pName;
 	}
 
 	glm::uvec2 window::resolution() const
@@ -108,4 +106,11 @@ namespace cgb
 		mIsInputEnabled = pValue; 
 	}
 
+	void window::set_fullscreen(monitor_handle pOnWhichMonitor)
+	{
+		if (is_alive()) {
+			glfwsetmonit
+		}
+		mMonitor = pOnWhichMonitor;
+	}
 }

@@ -10,6 +10,7 @@ namespace cgb
 
 	// =============================== type aliases =================================
 	using window_ptr = std::unique_ptr<window>;
+	using dispatcher_action = void(void);
 
 	// =========================== GLFW (PARTIAL) CONTEXT ===========================
 	/** @brief Provides generic GLFW-specific functionality
@@ -26,9 +27,8 @@ namespace cgb
 		/** Evaluates to true if GLFW initialization succeeded  */
 		operator bool() const;
 		
-		/** Creates a new window 
-		 */
-		window* create_window(const window_params&, const swap_chain_params&);
+		/** Prepares a new window */
+		window* prepare_window();
 
 		/** Close the given window, cleanup the resources */
 		void close_window(window& wnd);
@@ -107,6 +107,23 @@ namespace cgb
 		/** Sets the cursor to the given coordinates */
 		static void set_cursor_pos(const window& pWindow, glm::dvec2 pCursorPos);
 
+		/** With this context, all windows share the same graphics-context, this 
+		 *	method can be used to get a window to share the context with.
+		 */
+		GLFWwindow* get_window_for_shared_context();
+
+		/** Returns true if the calling thread is the main thread, false otherwise. */
+		static bool are_we_on_the_main_thread();
+
+		/**	Dispatch an action to the main thread and have it executed there.
+		 *	@param	pAction	The action to execute on the main thread.
+		 */
+		void dispatch_to_main_thread(std::function<dispatcher_action> pAction);
+
+		/** Works off all elements in the mDispatchQueue
+		 */
+		void work_off_all_pending_main_thread_actions();
+
 	protected:
 		static void glfw_error_callback(int error, const char* description);
 		static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
@@ -118,8 +135,13 @@ namespace cgb
 		std::vector<window_ptr> mWindows;
 		static window* mWindowInFocus;
 		bool mInitialized;
+
 		static std::mutex sInputMutex;
 		static input_buffer* sTargetInputBuffer;
 		static std::array<key_code, GLFW_KEY_LAST + 1> sGlfwToKeyMapping;
+
+		static std::thread::id sMainThreadId;
+		static std::mutex sDispatchMutex;
+		std::vector<std::function<dispatcher_action>> mDispatchQueue;
 	};
 }

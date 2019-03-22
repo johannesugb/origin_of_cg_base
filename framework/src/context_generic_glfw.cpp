@@ -8,6 +8,8 @@ namespace cgb
 	std::mutex generic_glfw::sInputMutex;
 	input_buffer* generic_glfw::sTargetInputBuffer(nullptr);
 	std::array<key_code, GLFW_KEY_LAST + 1> generic_glfw::sGlfwToKeyMapping{};
+	std::thread::id sMainThreadId = std::this_thread::get_id();
+	std::mutex generic_glfw::sDispatchMutex;
 
 	generic_glfw::generic_glfw()
 		: mInitialized(false)
@@ -171,54 +173,18 @@ namespace cgb
 		return mInitialized;
 	}
 
-	window* generic_glfw::create_window(const window_params& pParams, const swap_chain_params& unused)
+	window* generic_glfw::prepare_window()
 	{
-		// Determine the resolution or have it set to the default of 1600x900  (because, why not?!)
-		int width = 1600;
-		int height = 900;
-		if (pParams.mInitialWidth && pParams.mInitialHeight)
-		{
-			width = *pParams.mInitialWidth;
-			height = *pParams.mInitialHeight;
-		}
-		else
-		{
-			if (pParams.mMonitor)
-			{
-				const auto* mode = glfwGetVideoMode(pParams.mMonitor->mHandle);
-				width = mode->width;
-				height = mode->height;
-			}
-		}
-
-		// See if there are already other windows:
-		auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
-							   [](const window_ptr& wnd) {
-								   return wnd->handle();
-							   });
-
-		// Create the window
-		GLFWwindow* handle = glfwCreateWindow(
-			width,
-			height,
-			pParams.mWindowTitle.empty() ? "cg_base: GLFW Window" : pParams.mWindowTitle.c_str(),
-			static_cast<bool>(pParams.mMonitor) ? pParams.mMonitor->mHandle : nullptr,
-			it == mWindows.end() ? nullptr : (*it)->handle()->mHandle ); // Context is always shared, separate contexts are not supported (for now)
-		
-		if (!handle)
-		{
-			throw std::runtime_error("glfwCreateWindow failed"); 
-		}
+		// Insert in the back and return the newly created window
+		auto& back = mWindows.emplace_back(std::make_unique<window>(std::nullopt));
 
 		// Set the focus callback
-		glfwSetWindowFocusCallback(handle, window_focus_callback);
-
-		// Insert in the back and return the newly created window
-		auto& back = mWindows.emplace_back(std::make_unique<window>(window_handle{ handle }));
-		if (mWindows.size() == 1) {
-			glfwFocusWindow(handle); // only for the first one!
-		}
+		back->mPostCreateActions.push_back([](window& w) {
+			glfwSetWindowFocusCallback(w.handle()->mHandle, window_focus_callback);
+		});
+		
 		return back.get();
+
 	}
 
 	void generic_glfw::close_window(window& wnd)
@@ -233,12 +199,15 @@ namespace cgb
 			throw new std::logic_error("This window is in use and can not be closed at the moment.");
 		}
 
-		glfwDestroyWindow(wnd.handle()->mHandle);
-		wnd.mHandle = std::nullopt;
+		context().dispatch_to_main_thread([&wnd]() {
+			glfwDestroyWindow(wnd.handle()->mHandle);
+			wnd.mHandle = std::nullopt;
+		});
 	}
 
 	double generic_glfw::get_time()
 	{
+		assert(are_we_on_the_main_thread());
 		return glfwGetTime();
 	}
 
@@ -249,6 +218,7 @@ namespace cgb
 
 	void generic_glfw::start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer)
 	{
+		assert(are_we_on_the_main_thread());
 		glfwSetMouseButtonCallback(pWindow.handle()->mHandle, glfw_mouse_button_callback);
 		glfwSetCursorPosCallback(pWindow.handle()->mHandle, glfw_cursor_pos_callback);
 		glfwSetScrollCallback(pWindow.handle()->mHandle, glfw_scroll_callback);
@@ -258,6 +228,7 @@ namespace cgb
 
 	void generic_glfw::stop_receiving_input_from_window(const window& pWindow)
 	{
+		assert(are_we_on_the_main_thread());
 		glfwSetMouseButtonCallback(pWindow.handle()->mHandle, nullptr);
 		glfwSetCursorPosCallback(pWindow.handle()->mHandle, nullptr);
 		glfwSetScrollCallback(pWindow.handle()->mHandle, nullptr);
@@ -298,6 +269,7 @@ namespace cgb
 
 	glm::dvec2 generic_glfw::cursor_position(const window& pWindow)
 	{
+		assert(are_we_on_the_main_thread());
 		//std::lock_guard<std::mutex> lock(sInputMutex);
 		glm::dvec2 cursorPos;
 		assert(pWindow.handle() != std::nullopt);
@@ -307,6 +279,7 @@ namespace cgb
 
 	glm::uvec2 generic_glfw::window_extent(const window& pWindow)
 	{
+		assert(are_we_on_the_main_thread());
 		assert(pWindow.handle());
 		int width, height;
 		glfwGetWindowSize(pWindow.handle()->mHandle, &width, &height);
@@ -316,11 +289,14 @@ namespace cgb
 	void generic_glfw::set_window_size(const window& pWindow, glm::uvec2 pSize)
 	{
 		assert(pWindow.handle());
-		glfwSetWindowSize(pWindow.handle()->mHandle, pSize.x, pSize.y);
+		context().dispatch_to_main_thread([&pWindow, pSize]() {
+			glfwSetWindowSize(pWindow.handle()->mHandle, pSize.x, pSize.y);
+		});
 	}
 
 	void generic_glfw::hide_cursor(const window& pWindow, bool pHide)
 	{
+		assert(are_we_on_the_main_thread());
 		assert(pWindow.handle());
 		glfwSetInputMode(pWindow.handle()->mHandle, GLFW_CURSOR, 
 						 pHide ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
@@ -328,18 +304,22 @@ namespace cgb
 
 	bool generic_glfw::is_cursor_hidden(const window& pWindow)
 	{
+		assert(are_we_on_the_main_thread());
 		assert(pWindow.handle());
 		return glfwGetInputMode(pWindow.handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
 	}
 
 	void generic_glfw::set_cursor_pos(const window& pWindow, glm::dvec2 pCursorPos)
 	{
-		assert(pWindow.handle());
-		glfwSetCursorPos(pWindow.handle()->mHandle, pCursorPos.x, pCursorPos.y);
+		context().dispatch_to_main_thread([&pWindow, pCursorPos]() {
+			assert(pWindow.handle());
+			glfwSetCursorPos(pWindow.handle()->mHandle, pCursorPos.x, pCursorPos.y);
+		});
 	}
 
 	void generic_glfw::glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
+		assert(are_we_on_the_main_thread());
 		assert(sTargetInputBuffer);
 		std::lock_guard<std::mutex> lock(sInputMutex);
 		button = glm::clamp(button, 0, 7);
@@ -399,7 +379,7 @@ namespace cgb
 	void generic_glfw::window_focus_callback(GLFWwindow* window, int focused)
 	{
 		if (focused) {
-			auto result = context().select_windows([=](auto * w) { 
+			auto result = context().select_windows([=](auto* w) { 
 				auto handle = w->handle();
 				assert(handle != std::nullopt);
 				return handle->mHandle == window; 
@@ -410,4 +390,39 @@ namespace cgb
 		}
 	}
 
+	GLFWwindow* generic_glfw::get_window_for_shared_context()
+	{
+		for (const auto& w : mWindows) {
+			if (w->handle().has_value()) {
+				return w->handle()->mHandle;
+			}
+		}
+		return nullptr;
+	}
+
+	bool generic_glfw::are_we_on_the_main_thread()
+	{
+		sMainThreadId == std::this_thread::get_id();
+	}
+
+	void generic_glfw::dispatch_to_main_thread(std::function<dispatcher_action> pAction)
+	{
+		std::lock_guard<std::mutex> lock(sDispatchMutex);
+		// Are we on the main thread?
+		if (are_we_on_the_main_thread()) {
+			pAction();
+		}
+		else {
+			mDispatchQueue.push_back(std::move(pAction));
+		}
+	}
+
+	void generic_glfw::work_off_all_pending_main_thread_actions()
+	{
+		std::lock_guard<std::mutex> lock(sDispatchMutex);
+		for (auto& action : mDispatchQueue) {
+			action();
+		}
+		mDispatchQueue.clear();
+	}
 }

@@ -25,15 +25,11 @@ int main()
 			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
 
 		cgb::settings::gApplicationName = "Hello World";
-		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
 
 		// Create a window which we're going to use to render to
-		auto windowParams = cgb::window_params{
-			std::nullopt,
-			std::nullopt,
-			"Hello cg_base World!"
-		};
-		auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
+		auto mainWnd = cgb::context().create_window("Hello World!");
+		mainWnd.set_size(1600, 900);
+		mainWnd.set_presentation_mode(cgb::presentation_mode::vsync);
 
 		// Create a "behavior" which contains functionality of our program
 		auto helloBehavior = hello_behavior();
