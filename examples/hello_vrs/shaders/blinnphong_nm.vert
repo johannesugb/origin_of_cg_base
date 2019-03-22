@@ -1,12 +1,20 @@
-#extension GL_ARB_explicit_uniform_location : enable
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
 
 #define MAX_COUNT_POINT_LIGHTS 100
 
 // ################# UNIFORM DATA ###############
-uniform mat4 vmMatrix;
-uniform mat4 pMatrix;
 
-layout(location = 140) uniform vec2 uTexCoordsScale = vec2(1, 1);
+layout(set=2, binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 pMatrix;
+	mat4 mvp;
+	mat4 vmMatrix;
+} trans;
+
+//layout(location = 140) uniform vec2 uTexCoordsScale = vec2(1, 1);
+vec2 uTexCoordsScale = vec2(1, 1);
 // ----------------------------------------------
 
 // ################### INPUT DATA ###############
@@ -18,7 +26,7 @@ layout (location = 9) in vec3 aBitangent;
 // ----------------------------------------------
 
 // ################## OUTPUT DATA ###############
-out VertexData
+layout(location=0) out VertexData
 {
 	vec3 toEyeDirTS;
 	vec2 texCoords;
@@ -31,16 +39,16 @@ out VertexData
 // ----------------------------------------------
 
 // #################### LIGHTS ##################
-struct AmbientLightData
+layout(set=0, binding = 2) uniform AmbientLightData
 {
 	vec4 color;
-};
+} uAmbientLight;
 
-struct DirectionalLightData
+layout(set=0, binding = 2) uniform DirectionalLightData
 {
 	vec4 direction;
 	vec4 color;
-};
+} uDirectionalLight;
 
 struct PointLightData
 {
@@ -49,16 +57,11 @@ struct PointLightData
 	vec4 attenuation;
 };
 
-uniform AmbientLightData uAmbientLight;
-uniform DirectionalLightData uDirectionalLight;
-uniform PointLightData uPointLight;
-
-layout(std140) uniform uPointLightsBlock
+layout(set=0, binding = 2) uniform uPointLightsBlock
 {
 	PointLightData pointLightData[MAX_COUNT_POINT_LIGHTS];
 	int count;
 } uPointLights;
-
 // ----------------------------------------------
 
 // ############### HELPER FUNCTIONS #############
@@ -73,8 +76,8 @@ vec3 ReOrthogonalize(vec3 first, vec3 second)
 void main()
 {
 	vec4 positionOS = aPosition;
-	vec4 positionVS = vmMatrix * positionOS;
-	vec4 positionCS = pMatrix * positionVS;
+	vec4 positionVS = trans.vmMatrix * positionOS;
+	vec4 positionCS = trans.pMatrix * positionVS;
 	
 	// perform shading in tangent space => build the TBN matrix to transform all the stuff:
 	vec3 normalOS     = normalize(aNormal);
@@ -86,7 +89,7 @@ void main()
 		bitangentOS = -bitangentOS;
 	mat3 matrixTStoOS = mat3(tangentOS, bitangentOS, normalOS);
 	mat3 matrixOStoTS = transpose(matrixTStoOS);
-	mat3 matrixVStoTS = matrixOStoTS * mat3(inverse(vmMatrix));
+	mat3 matrixVStoTS = matrixOStoTS * mat3(inverse(trans.vmMatrix));
 
 	// transform all the stuff into tangent space and pass to the fragment shader:
 	

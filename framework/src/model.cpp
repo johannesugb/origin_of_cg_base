@@ -11,6 +11,7 @@
 
 #include "TexLoadingHelper.h"
 #include "MaterialData.h"
+#include "VertexAttribLocation.h"
 
 namespace cgb
 {
@@ -460,6 +461,70 @@ namespace cgb
 	{
 		m_indices = indices;
 		m_patch_size = patch_size;
+	}
+
+	vulkan_attribute_description_binding Mesh::GetOrCreateForVertexAttribConfig(VertexAttribData vertexDataConfig)
+	{
+		// ensure that this config is not already stored
+		auto it = m_vertex_array_objects.find(vertexDataConfig);
+		if (it != m_vertex_array_objects.end())
+		{
+			return it->second;
+		}
+
+		auto binding = vulkan_attribute_description_binding(1, m_size_one_vertex, vk::VertexInputRate::eVertex);
+
+
+		// Position
+		if (!((vertexDataConfig & VertexAttribData::Position) == VertexAttribData::Position))
+		{
+			LOG_WARNING("VertexData_Position not specified - enabling it anyways!");
+		}
+		{
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Position), vk::Format::eR32G32B32A32Sfloat, m_position_offset);
+		}
+
+		// Normal
+		if ((vertexDataConfig & VertexAttribData::Normal) == VertexAttribData::Normal)
+		{
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Normal), vk::Format::eR32G32B32Sfloat, m_normal_offset);
+		}
+
+		// TexCoord
+		if ((vertexDataConfig & VertexAttribData::Tex2D) == VertexAttribData::Tex2D)
+		{
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::TexCoord), vk::Format::eR32G32Sfloat, m_tex_coords_offset);
+		}
+
+		// Color
+		if ((vertexDataConfig & VertexAttribData::Color) == VertexAttribData::Color)
+		{
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Color), vk::Format::eR32G32B32Sfloat, m_color_offset);
+		}
+
+		// Bones
+		if ((vertexDataConfig & VertexAttribData::Bones) == VertexAttribData::Bones)
+		{
+			// todo validate format
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::BoneIndices), vk::Format::eR32G32B32A32Sfloat, m_bone_incides_offset);
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::BoneWeights), vk::Format::eR32G32B32A32Sfloat, m_bone_weights_offset);
+		}
+
+		// Tangent Space: Tangents
+		if ((vertexDataConfig & VertexAttribData::Tangents) == VertexAttribData::Tangents)
+		{
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Tangents), vk::Format::eR32G32B32Sfloat, m_tangent_offset);
+		}
+
+		// Tangent Space: Tangents
+		if ((vertexDataConfig & VertexAttribData::Bitangents) == VertexAttribData::Bitangents)
+		{
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Bitangents), vk::Format::eR32G32B32Sfloat, m_bitangent_offset);
+		}
+
+		m_vertex_array_objects.insert(std::pair<VertexAttribData, vulkan_attribute_description_binding>(vertexDataConfig, binding));
+
+		return binding;
 	}
 
 

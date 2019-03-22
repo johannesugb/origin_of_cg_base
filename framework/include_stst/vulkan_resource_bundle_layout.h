@@ -17,6 +17,7 @@ namespace cgb {
 		vk::DescriptorSetLayout& get_descriptor_set_layout() { return mDescriptorSetLayout; }
 
 		void bake();
+		bool baked() { return mInitialized; }
 
 		void add_binding(uint32_t binding, vk::DescriptorType descriptorType, ShaderStageFlagBits shaderStage, uint32_t descriptorCount = 1);
 		vk::DescriptorSetLayoutBinding& get_binding_description(uint32_t binding) { return mBindingMap[binding]; };

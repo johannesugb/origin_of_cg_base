@@ -2,6 +2,7 @@
 //
 #include <tobii/tobii.h>
 #include <tobii/tobii_streams.h>
+#include <random>
 
 #include "cg_base.h"
 #include "vulkan_render_object.h"
@@ -18,13 +19,18 @@
 #include "vulkan_resource_bundle_group.h"
 #include "vulkan_resource_bundle.h"
 
-
 #include "eyetracking_interface.h"
 
 #include "model.h"
+#include "AmbientLight.h"
+#include "DirectionalLight.h"
+#include "PointLight.h"
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
+
+
+const int MAX_COUNT_POINT_LIGHTS = 100;
 
 const std::string TEXTURE_PATH = "assets/chalet/chalet.jpg";
 
@@ -32,7 +38,8 @@ class vrs_behavior : public cgb::cg_element
 {
 
 public:
-	vrs_behavior() {}
+	vrs_behavior() : m_ambient_light(glm::vec3(1 / 255.0f, 2 / 255.0f, 3 / 255.0f)), m_dir_light(glm::vec3(13 / 255.0f, 17 / 255.0f, 27 / 255.0f), glm::vec3(-0.38f, -0.78f, -0.49f)) {
+	}
 private:
 
 	vk::DescriptorSetLayout vrsComputeDescriptorSetLayout;
@@ -82,10 +89,31 @@ private:
 	std::unique_ptr<cgb::Model> mModel;
 
 
-	std::shared_ptr<cgb::vulkan_render_object> mSponzaModel;
+	std::shared_ptr<cgb::vulkan_render_object> mSponzaRenderObject;
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mGlobalResourceBundleLayout; // contains lights and global flags
+	std::shared_ptr<cgb::vulkan_resource_bundle> mGlobalResourceBundle;
+
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mMaterialResourceBundleLayout; // contains material properties staying same for all objects
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mMaterialObjectResourceBundleLayout; // contains material properties varying for each object
+
+	cgb::QuakeCamera mCamera;
+
+	cgb::AmbientLight m_ambient_light;
+	cgb::DirectionalLight m_dir_light;
+	std::vector<cgb::PointLight> m_point_lights;
+
+	struct PointLights
+	{
+		cgb::PointLightGpuData pointLightData[MAX_COUNT_POINT_LIGHTS];
+		int count;
+	} pointLights;
+
+	std::shared_ptr<cgb::vulkan_buffer> mAmbientLightBuffer;
+	std::shared_ptr<cgb::vulkan_buffer> mDirLightBuffer;
+	std::shared_ptr<cgb::vulkan_buffer> mPointLightsBuffer;
+
+	std::unique_ptr<cgb::vulkan_drawer> mMaterialDrawer;
+	std::shared_ptr<cgb::vulkan_pipeline> mMaterialPipeline;
 
 public:
 	void initialize() override
@@ -185,8 +213,6 @@ private:
 		bind2->add_attribute_description(2, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
 
 		// Render Drawer and Pipeline
-		auto test = cgb::vulkan_pipeline("shaders/triangle.vert.spv", "shaders/triangle.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, { mResourceBundleLayout });
-
 		mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/triangle.vert.spv", "shaders/triangle.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
 
 		mRenderVulkanPipeline->add_attr_desc_binding(bind1);
@@ -235,16 +261,47 @@ private:
 		renderObject2->update_uniform_buffer(1, ubo);
 		renderObject2->update_uniform_buffer(2, ubo);
 
-		// Sponza specific structures
+		// initialize lights
+		create_lots_of_lights();
+		for (int i = 0; i < MAX_COUNT_POINT_LIGHTS && i < m_point_lights.size(); i++) {
+			pointLights.pointLightData[i] = m_point_lights[i].GetGpuData();
+		}
+		pointLights.count = m_point_lights.size();
 
+		mAmbientLightBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(m_ambient_light), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+			vk::MemoryPropertyFlagBits::eDeviceLocal, &m_ambient_light);
+		mDirLightBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(m_dir_light), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, 
+			vk::MemoryPropertyFlagBits::eDeviceLocal, &m_dir_light);
+		mPointLightsBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(PointLights), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, 
+			vk::MemoryPropertyFlagBits::eDeviceLocal, &pointLights);
+
+		int binding = 0;
 		mGlobalResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
+		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment);
+		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment);
+		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment);
+		mGlobalResourceBundleLayout->bake();
+		mGlobalResourceBundle = mResourceBundleGroup->create_resource_bundle(mGlobalResourceBundleLayout, false);
 
-
+		// Sponza specific structures
 		mMaterialObjectResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
 		mMaterialObjectResourceBundleLayout->add_binding(0, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eVertex);
 		mMaterialObjectResourceBundleLayout->bake();
 
 		load_model("assets/models/sponza/sponza_structure.obj", glm::scale(glm::vec3(0.01f)), cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace, mModel);
+
+
+		//Atribute description bindings
+		auto& mesh = mModel->mesh_at(0);
+		auto attrib_config = cgb::VertexAttribData::Nothing;
+		attrib_config = attrib_config | cgb::VertexAttribData::Position;
+		attrib_config = attrib_config | cgb::VertexAttribData::Tex2D;
+		attrib_config = attrib_config | cgb::VertexAttribData::Normal;
+		attrib_config = attrib_config | cgb::VertexAttribData::Tangents;
+		attrib_config = attrib_config | cgb::VertexAttribData::Bitangents;
+
+		auto sponzaBinding = std::shared_ptr<vulkan_attribute_description_binding>(new vulkan_attribute_description_binding(mesh.GetOrCreateForVertexAttribConfig(attrib_config)));
+
 
 		for (int i = 0; i < renderObject->get_resource_bundles().size(); i++) {
 			mResourceBundleGroup->allocate_resource_bundle(renderObject->get_resource_bundles()[i].get());
@@ -252,6 +309,27 @@ private:
 		for (int i = 0; i < renderObject2->get_resource_bundles().size(); i++) {
 			mResourceBundleGroup->allocate_resource_bundle(renderObject2->get_resource_bundles()[i].get());
 		}
+
+		mCamera.set_position(glm::vec3(-0.67, 0.53, 6.07));
+		mCamera.LookAlong(glm::vec3(0.0f, 0.0f, -1.0f));
+		mCamera.SetPerspectiveProjection(20.0f, cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
+		cgb::current_composition().add_element(mCamera);
+
+		UniformBufferObject uboCam{};
+		uboCam.model = mesh.transformation_matrix();
+		uboCam.view = mCamera.CalculateViewMatrix();
+		uboCam.proj = mCamera.projection_matrix();
+		uboCam.mv = ubo.view * ubo.model;
+		ubo.mvp = ubo.proj * ubo.view * ubo.model;
+
+		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
+			mSponzaRenderObject->update_uniform_buffer(i, uboCam);
+		}
+
+		mResourceBundleGroup->allocate_resource_bundle(mGlobalResourceBundle.get());
+
+		mMaterialPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/blinnphong_nm.vert.spv", "shaders/blinnphong_nm.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mGlobalResourceBundleLayout, cgb::MaterialData::get_resource_bundle_layout(), mMaterialObjectResourceBundleLayout });
+
 	}
 
 	void cleanup()
@@ -263,7 +341,7 @@ private:
 
 		delete renderObject;
 		delete renderObject2;
-		mSponzaModel.reset();
+		mSponzaRenderObject.reset();
 		texture.reset();
 		textureImage.reset();
 		transferCommandBufferManager.reset();
@@ -380,6 +458,13 @@ private:
 		ubo.proj[1][1] *= -1;
 		ubo.mvp = ubo.proj * ubo.view * ubo.model;
 		renderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, ubo);
+
+		UniformBufferObject uboCam{
+			glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
+			mCamera.CalculateViewMatrix(),
+			mCamera.projection_matrix()
+		};
+		mSponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
 
 		// start drawing, record draw commands, etc.
 		cgb::vulkan_context::instance().vulkanFramebuffer = mVulkanFramebuffer;
@@ -577,43 +662,114 @@ private:
 		auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
 			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
 
-		// TODO
-		// uniform buffer
-		// textures
-		// resourceBundle
-
-		// TODO transfer code to camera
-		UniformBufferObject ubo = {};
-		ubo.model = outModel->transformation_matrix(); // glm::mat4(1.0f);
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.model[1][1] *= -1;
-		ubo.mvp = ubo.model;
-
-		vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
-		std::vector<std::shared_ptr<cgb::vulkan_buffer>>  uniformBuffers(cgb::vulkan_context::instance().dynamicRessourceCount);
-
-		for (size_t i = 0; i < uniformBuffers.size(); i++) {
-			uniformBuffers[i] = std::make_shared<cgb::vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, transferCommandBufferManager);
-			uniformBuffers[i]->update_buffer(&ubo, sizeof(ubo));
-		}
-
-
-		//auto mResourceBundle = mResourceBundleGroup->create_resource_bundle(mMaterialResourceBundleLayout, true);
-		//mResourceBundle->add_dynamic_buffer_resource(0, mUniformBuffers, sizeof(UniformBufferObject));
-		//mResourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, texture);
-
-		//if (vulkan_context::instance().shadingRateImageSupported) {
-		//	mResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, debugTextures);
-		//}
-
 		auto resourceBundle = mesh.mMaterialResourceBundle;
 
-		mSponzaModel = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({ outVertexBuffer }), outIndexBuffer, mesh.m_indices.size(), mMaterialObjectResourceBundleLayout, mResourceBundleGroup, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> {resourceBundle});
+		mSponzaRenderObject = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({ outVertexBuffer }), outIndexBuffer, mesh.m_indices.size(), mMaterialObjectResourceBundleLayout, mResourceBundleGroup, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> {resourceBundle});
 
 		//outModel->AllocateMaterialData();
-		for (int i = 0; i < mSponzaModel->get_resource_bundles().size(); i++) {
-			mResourceBundleGroup->allocate_resource_bundle(mSponzaModel->get_resource_bundles()[i].get());
+		for (int i = 0; i < mSponzaRenderObject->get_resource_bundles().size(); i++) {
+			mResourceBundleGroup->allocate_resource_bundle(mSponzaRenderObject->get_resource_bundles()[i].get());
 		}
+	}
+
+	/*! Position of the first/second point light, or the rotation origin when animating its position. */
+	glm::vec3 kInitialPositionOfFirstPointLight = glm::vec3(-0.64f, 0.45f, 3.35f);
+	glm::vec3 kInitialPositionOfSecondPointLight = glm::vec3(-0.05f, 2.12f, 0.53f);
+
+	void create_lots_of_lights()
+	{
+		std::vector<glm::vec3> light_colors;
+		light_colors.emplace_back(1.0f, 1.0f, 1.0f);
+		light_colors.emplace_back(0.878f, 1.000f, 1.000f);
+		light_colors.emplace_back(0.957f, 0.643f, 0.376f);
+		light_colors.emplace_back(0.000f, 0.000f, 1.000f);
+		light_colors.emplace_back(0.251f, 0.878f, 0.816f);
+		light_colors.emplace_back(0.000f, 0.980f, 0.604f);
+		light_colors.emplace_back(0.545f, 0.000f, 0.545f);
+		light_colors.emplace_back(1.000f, 0.000f, 1.000f);
+		light_colors.emplace_back(0.984f, 1.000f, 0.729f);
+		light_colors.emplace_back(0.780f, 0.082f, 0.522f);
+		light_colors.emplace_back(1.000f, 0.843f, 0.000f);
+		light_colors.emplace_back(0.863f, 0.078f, 0.235f);
+		light_colors.emplace_back(0.902f, 0.902f, 0.980f);
+		light_colors.emplace_back(0.678f, 1.000f, 0.184f);
+
+		std::default_random_engine generator;
+		generator.seed(186);
+		// generates numbers in the range 0..light_colors.size()-1
+		std::uniform_int_distribution<size_t> distribution(0, light_colors.size() - 1);
+
+		// Create a (moving) light near the pillars at the initial view
+		m_point_lights.push_back(cgb::PointLight(
+			light_colors[distribution(generator)],
+			kInitialPositionOfFirstPointLight,
+			glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)));
+
+		// Create a (moving) light which is especially useful for evaluating Bonus-Task 1
+		m_point_lights.push_back(cgb::PointLight(
+			light_colors[distribution(generator)],
+			kInitialPositionOfSecondPointLight,
+			glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)));
+
+		{ // Create lots of small lights near the floor
+			const auto lb_x = -14.2f;
+			const auto lb_z = -6.37f;
+			const auto nx = 13;
+			const auto nz = 6;
+			const auto step_x = (12.93f - lb_x) / (nx - 1);
+			const auto step_z = (5.65f - lb_z) / (nz - 1);
+			const auto atten = glm::vec4(1.0f, 0.0f, 0.0f, 13.27f);
+			for (auto x = 0; x < nx; ++x)
+			{
+				for (auto z = 0; z < nz; ++z)
+				{
+					m_point_lights.push_back(cgb::PointLight(
+						light_colors[distribution(generator)],
+						glm::vec3(lb_x + x * step_x, 0.1f, lb_z + z * step_z),
+						atten));
+				}
+			}
+		}
+
+		{	// Create several larger lights in the upper floor
+			const auto lb_x = -13.36f;
+			const auto lb_z = -5.46f;
+			const auto nx = 6;
+			const auto nz = 3;
+			const auto step_x = (12.1f - lb_x) / (nx - 1);
+			const auto step_z = (4.84f - lb_z) / (nz - 1);
+			const auto atten = glm::vec4(1.0f, 0.0f, 5.666f, 0.0f);
+			for (auto x = 0; x < nx; ++x)
+			{
+				for (auto z = 0; z < nz; ++z)
+				{
+					m_point_lights.push_back(cgb::PointLight(
+						light_colors[distribution(generator)],
+						glm::vec3(lb_x + x * step_x, 7.0f, lb_z + z * step_z),
+						atten));
+				}
+			}
+		}
+	}
+
+
+
+	void AnimateFirstTwoPointLights(float elapsed_time)
+	{
+		const auto kSpeedXZ = 0.5f;
+		const auto kRadiusXZ = 1.5f;
+		m_point_lights[0].set_position(kInitialPositionOfFirstPointLight + glm::vec3(
+			kRadiusXZ * glm::sin(kSpeedXZ * elapsed_time),
+			0.0f,
+			kRadiusXZ * glm::cos(kSpeedXZ * elapsed_time)));
+
+		const auto kSpeed = 0.6f;
+		const auto kDistanceX = -0.23f;
+		const auto kDistanceY = 1.0f;
+		m_point_lights[1].set_position(kInitialPositionOfSecondPointLight + glm::vec3(
+			kDistanceX * glm::sin(kSpeed * elapsed_time),
+			kDistanceY * glm::sin(kSpeed * elapsed_time),
+			0.0f));
 	}
 };
 

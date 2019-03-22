@@ -246,19 +246,18 @@ namespace cgb
 		uniformBuffer->update_buffer(&materialUniform, sizeof(materialUniform));
 
 
-		int binding = 0;
-		resourceBundle->add_buffer_resource(binding++, uniformBuffer, bufferSize);
-		if (m_diffuse_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_diffuse_tex); }
-		if (m_specular_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_specular_tex); }
-		if (m_ambient_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_ambient_tex); }
-		if (m_emissive_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_emissive_tex); }
-		if (m_height_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_height_tex); }
-		if (m_normals_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_normals_tex); }
-		if (m_shininess_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_shininess_tex); }
-		if (m_opacity_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_opacity_tex); }
-		if (m_displacement_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_displacement_tex); }
-		if (m_reflection_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_reflection_tex); }
-		if (m_lightmap_tex) { resourceBundle->add_image_resource(binding++, vk::ImageLayout::eShaderReadOnlyOptimal, m_lightmap_tex); }
+		resourceBundle->add_buffer_resource(0, uniformBuffer, bufferSize);
+		if (m_diffuse_tex) { resourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, m_diffuse_tex); }
+		if (m_specular_tex) { resourceBundle->add_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, m_specular_tex); }
+		if (m_ambient_tex) { resourceBundle->add_image_resource(3, vk::ImageLayout::eShaderReadOnlyOptimal, m_ambient_tex); }
+		if (m_emissive_tex) { resourceBundle->add_image_resource(4, vk::ImageLayout::eShaderReadOnlyOptimal, m_emissive_tex); }
+		if (m_height_tex) { resourceBundle->add_image_resource(5, vk::ImageLayout::eShaderReadOnlyOptimal, m_height_tex); }
+		if (m_normals_tex) { resourceBundle->add_image_resource(6, vk::ImageLayout::eShaderReadOnlyOptimal, m_normals_tex); }
+		if (m_shininess_tex) { resourceBundle->add_image_resource(7, vk::ImageLayout::eShaderReadOnlyOptimal, m_shininess_tex); }
+		if (m_opacity_tex) { resourceBundle->add_image_resource(8, vk::ImageLayout::eShaderReadOnlyOptimal, m_opacity_tex); }
+		if (m_displacement_tex) { resourceBundle->add_image_resource(9, vk::ImageLayout::eShaderReadOnlyOptimal, m_displacement_tex); }
+		if (m_reflection_tex) { resourceBundle->add_image_resource(10, vk::ImageLayout::eShaderReadOnlyOptimal, m_reflection_tex); }
+		if (m_lightmap_tex) { resourceBundle->add_image_resource(11, vk::ImageLayout::eShaderReadOnlyOptimal, m_lightmap_tex); }
 
 		return resourceBundle;
 	}

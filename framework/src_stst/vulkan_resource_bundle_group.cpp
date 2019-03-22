@@ -19,9 +19,15 @@ namespace cgb {
 	std::shared_ptr<vulkan_resource_bundle> cgb::vulkan_resource_bundle_group::create_resource_bundle(
 		std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, bool dynamicResource)
 	{
+#ifdef _DEBUG
 		if (mAllocationStarted) {
 			throw std::runtime_error("Allocation already started. Create a new vulkan_resource_bundle_group for new allocation!");
 		}
+		if (!resourceBundleLayout->baked()) {
+			throw std::runtime_error("resourceBundleLayout not baked yet!");
+		}
+#endif
+
 		// std::make_shared not possible due to friend private constructor
 		auto resourceBundle = std::shared_ptr<vulkan_resource_bundle>(new vulkan_resource_bundle(resourceBundleLayout, dynamicResource));
 

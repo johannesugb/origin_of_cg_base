@@ -212,6 +212,7 @@
     <ClInclude Include="..\..\framework\include_e186\PointLight.h" />
     <ClInclude Include="..\..\framework\include_e186\TexInfo.h" />
     <ClInclude Include="..\..\framework\include_e186\TexLoadingHelper.h" />
+    <ClInclude Include="..\..\framework\include_e186\VertexAttribLocation.h" />
     <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h" />
     <ClInclude Include="..\..\framework\include_stst\vulkan_buffer.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>

@@ -1,4 +1,5 @@
-#extension GL_ARB_explicit_uniform_location : enable
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
 
 #define MAX_COUNT_POINT_LIGHTS 100
 #define PI 3.1415926535897932384626433832795
@@ -6,34 +7,44 @@
 // ################# UNIFORM DATA ###############
 
 // Material data:
-layout(location = 110) uniform vec3 uDiffuseReflectivity;
-layout(location = 111) uniform vec3 uSpecularReflectivity;
-layout(location = 112) uniform vec3 uAmbientReflectivity;
-layout(location = 113) uniform vec3 uEmissiveLight;
-layout(location = 116) uniform float uShininess;
-layout(location = 120) uniform sampler2D uDiffuseTexSampler;
-layout(location = 125) uniform sampler2D uNormalTexSampler;
+layout(set = 1, binding = 0) uniform MaterialDataBufferObject {
+	vec3 uDiffuseReflectivity;
+	vec3 uSpecularReflectivity;
+	vec3 uAmbientReflectivity;
+	vec3 uEmissiveLight;
+	float uShininess;
+	float uRoughness;
+	vec3 uAlbedo;
+	float uMetallic;
+} matData;
+
+layout(set = 1, binding = 1) uniform sampler2D uDiffuseTexSampler;
+layout(set = 1, binding = 6) uniform sampler2D uNormalTexSampler;
 
 
-layout(location = 136) uniform float uRoughness;
-layout(location = 131) uniform vec3 uAlbedo;
-layout(location = 132) uniform float uMetallic;
+layout(set=2, binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 pMatrix;
+	mat4 mvp;
+	mat4 vmMatrix;
+} trans;
 
-uniform mat4 vmMatrix;
-uniform float uNormalMappingStrength = 1.0;
+//uniform float uNormalMappingStrength = 1.0;
+float uNormalMappingStrength = 1.0;
 // ----------------------------------------------
 
 // #################### LIGHTS ##################
-struct AmbientLightData
+layout(set=0, binding = 2) uniform AmbientLightData
 {
 	vec4 color;
-};
+} uAmbientLight;
 
-struct DirectionalLightData
+layout(set=0, binding = 2) uniform DirectionalLightData
 {
 	vec4 direction;
 	vec4 color;
-};
+} uDirectionalLight;
 
 struct PointLightData
 {
@@ -42,11 +53,7 @@ struct PointLightData
 	vec4 attenuation;
 };
 
-uniform AmbientLightData uAmbientLight;
-uniform DirectionalLightData uDirectionalLight;
-uniform PointLightData uPointLight;
-
-layout(std140) uniform uPointLightsBlock
+layout(set=0, binding = 2) uniform uPointLightsBlock
 {
 	PointLightData pointLightData[MAX_COUNT_POINT_LIGHTS];
 	int count;
@@ -54,7 +61,7 @@ layout(std140) uniform uPointLightsBlock
 // ----------------------------------------------
 
 // ################### INPUT DATA ###############
-in VertexData
+layout(location = 0) in VertexData
 {
 	vec3 toEyeDirTS;			///< direction from vertex towards the eye in tangent space
 	vec2 texCoords;				///< texture coordinates
@@ -67,7 +74,7 @@ in VertexData
 // ----------------------------------------------
 
 // ################## OUTPUT DATA ###############
-out vec4 oFragColor;
+layout(location = 0) out vec4 oFragColor;
 // ----------------------------------------------
 
 // ############### HELPER FUNCTIONS #############
@@ -95,10 +102,10 @@ vec3 CalcBlinnPhongDiffAndSpecContribution(vec3 to_light, vec3 to_eye, vec3 norm
 	float n_dot_l = max(0.0, dot(normal, to_light)); // lambertian coefficient
 	vec3 half_vec = normalize(to_light + to_eye);
 	float n_dot_h = max(0.0, dot(normal, half_vec));
-	float spec_pwr = pow(n_dot_h, uShininess);
+	float spec_pwr = pow(n_dot_h, matData.uShininess);
 	
-	vec3 diffuse = uDiffuseReflectivity * diffuse_reflectivity_from_tex * n_dot_l; // component-wise product
-	vec3 specular = uSpecularReflectivity * spec_pwr;
+	vec3 diffuse = matData.uDiffuseReflectivity * diffuse_reflectivity_from_tex * n_dot_l; // component-wise product
+	vec3 specular = matData.uSpecularReflectivity * spec_pwr;
 	return diffuse + specular;
 }
 
@@ -108,17 +115,17 @@ vec3 CalcPhysicallyBasedLighting(vec3 to_light, vec3 to_eye, vec3 normal, vec3 d
 	vec3 half_vec = normalize(to_light + to_eye);
 	float n_dot_h = max(0.0, dot(normal, half_vec));
 	float n_dot_e = max(0.0, dot(normal, to_eye));
-	float spec_pwr = pow(n_dot_h, uShininess);
+	float spec_pwr = pow(n_dot_h, matData.uShininess);
 
 	vec3 fLambert = diffuse_reflectivity_from_tex / PI;
 
 	// compute specular cook-torrance part of BRDF
-	float normDistrGGX = uRoughness * uRoughness / (PI * pow(n_dot_h * n_dot_h*(uRoughness*uRoughness-1)+1,2)); 
+	float normDistrGGX = matData.uRoughness * matData.uRoughness / (PI * pow(n_dot_h * n_dot_h*(matData.uRoughness*matData.uRoughness-1)+1,2)); 
 
-	vec3 F0 = mix(vec3(0.04), diffuse_reflectivity_from_tex * uAlbedo, uMetallic); // use albedo for standard color with IOR at normal incidence, e.g. 0 degree angle for looking at the material 
+	vec3 F0 = mix(vec3(0.04), diffuse_reflectivity_from_tex * matData.uAlbedo, matData.uMetallic); // use albedo for standard color with IOR at normal incidence, e.g. 0 degree angle for looking at the material 
 	vec3 fresnelSchlick = F0 + (1-F0) * pow(1-n_dot_e,5);
 
-	float k = pow(uRoughness+1,2)/8;
+	float k = pow(matData.uRoughness+1,2)/8;
 	float geometryGGX = (n_dot_e/(n_dot_e * (1-k) + k)) * (n_dot_l/(n_dot_l * (1-k) + k));
 
 	vec3 fCookTorrance = normDistrGGX * fresnelSchlick * geometryGGX / (4 * n_dot_l * n_dot_e);
@@ -184,7 +191,7 @@ vec3 CalculateDiffuseAndSpecularIlluminationInTS(vec3 diff_tex_color)
 	
 	
 	mat3 matrixTStoOS = mat3(tangentOS, bitangentOS, normalOS);
-	vec3 normal_vs = normalize(transpose(inverse(mat3(vmMatrix))) * matrixTStoOS  * normal_ts);
+	vec3 normal_vs = normalize(transpose(inverse(mat3(trans.vmMatrix))) * matrixTStoOS  * normal_ts);
 	
 	vec3 to_eye_nrm_vs = normalize(vec3(0, 0, 0) - fs_in.positionVS.xyz);
 
@@ -216,8 +223,8 @@ void main()
 	// Sample the diffuse color 
 	vec3 diff_tex_color = texture(uDiffuseTexSampler, fs_in.texCoords).rgb;
 	// initialize all the colors
-	vec3 ambient = uAmbientLight.color.rgb * uAmbientReflectivity * diff_tex_color;
-	vec3 emissive = uEmissiveLight;
+	vec3 ambient = uAmbientLight.color.rgb * matData.uAmbientReflectivity * diff_tex_color;
+	vec3 emissive = matData.uEmissiveLight;
 	vec3 diffuse_and_specular = CalculateDiffuseAndSpecularIlluminationInTS(diff_tex_color);
 
 	// add all together

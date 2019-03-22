@@ -6,6 +6,7 @@
 
 #include "vulkan_resource_bundle_group.h"
 #include "vulkan_resource_bundle.h"
+#include "vulkan_attribute_description_binding.h"
 
 namespace cgb
 {
@@ -76,7 +77,7 @@ namespace cgb
 
 
 	using MeshIdx = int;
-	using VAOMap = std::unordered_map<VertexAttribData, uint32_t>;
+	using AttributeMap = std::unordered_map<VertexAttribData, vulkan_attribute_description_binding>;
 
 
 	class Model;
@@ -90,7 +91,7 @@ namespace cgb
 		VertexAttribData m_vertex_data_layout;
 
 		/// stores different VAOs for different VertexData-combinations
-		VAOMap m_vertex_array_objects;
+		AttributeMap m_vertex_array_objects;
 
 		std::vector<uint8_t> m_vertex_data;
 		
@@ -204,6 +205,8 @@ namespace cgb
 
 		void SetIndices(std::vector<uint32_t>&& indices, int patch_size);
 		void SetIndices(const std::vector<uint32_t>& indices, int patch_size);
+
+		vulkan_attribute_description_binding GetOrCreateForVertexAttribConfig(VertexAttribData vertexDataConfig);
 
 	};
 

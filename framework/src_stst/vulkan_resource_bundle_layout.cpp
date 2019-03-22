@@ -23,6 +23,11 @@ namespace cgb {
 	// TODO add enum for vk::DescriptorType
 	void cgb::vulkan_resource_bundle_layout::add_binding(uint32_t binding, vk::DescriptorType descriptorType, ShaderStageFlagBits shaderStage, uint32_t descriptorCount)
 	{
+#ifdef _DEBUG
+		if (baked()) {
+			throw std::runtime_error("resourceBundleLayout already baked. Cannot add more bindings to it!");
+		}
+#endif
 		vk::DescriptorSetLayoutBinding layoutBinding = {};
 		layoutBinding.binding = binding;
 		layoutBinding.descriptorType = descriptorType;

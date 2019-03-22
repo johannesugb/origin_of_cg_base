@@ -327,6 +327,9 @@
     <ClInclude Include="..\..\framework\include_e186\TexInfo.h">
       <Filter>Header Files\e186</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include_e186\VertexAttribLocation.h">
+      <Filter>Header Files\e186</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
