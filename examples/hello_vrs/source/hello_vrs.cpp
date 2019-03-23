@@ -213,7 +213,7 @@ private:
 		bind2->add_attribute_description(2, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
 
 		// Render Drawer and Pipeline
-		mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/triangle.vert.spv", "shaders/triangle.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
+		mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
 
 		mRenderVulkanPipeline->add_attr_desc_binding(bind1);
 		mRenderVulkanPipeline->add_attr_desc_binding(bind2);
@@ -227,7 +227,7 @@ private:
 			drawer->set_vrs_images(vrsImages);
 
 			// Compute Drawer and Pipeline
-			mComputeVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/vrs_img.comp.spv", std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> {}, sizeof(vrs_eye_comp_data));
+			mComputeVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> {}, sizeof(vrs_eye_comp_data));
 			mComputeVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_img.comp.spv");
 
 
@@ -277,15 +277,18 @@ private:
 
 		int binding = 0;
 		mGlobalResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
-		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment);
-		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment);
-		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment);
+		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
+		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
+		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
 		mGlobalResourceBundleLayout->bake();
 		mGlobalResourceBundle = mResourceBundleGroup->create_resource_bundle(mGlobalResourceBundleLayout, false);
+		mGlobalResourceBundle->add_buffer_resource(0, mAmbientLightBuffer, sizeof(m_ambient_light));
+		mGlobalResourceBundle->add_buffer_resource(1, mDirLightBuffer, sizeof(m_dir_light));
+		mGlobalResourceBundle->add_buffer_resource(2, mPointLightsBuffer, sizeof(pointLights));
 
 		// Sponza specific structures
 		mMaterialObjectResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
-		mMaterialObjectResourceBundleLayout->add_binding(0, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eVertex);
+		mMaterialObjectResourceBundleLayout->add_binding(0, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eVertex | cgb::ShaderStageFlagBits::eFragment);
 		mMaterialObjectResourceBundleLayout->bake();
 
 		load_model("assets/models/sponza/sponza_structure.obj", glm::scale(glm::vec3(0.01f)), cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace, mModel);
@@ -328,8 +331,16 @@ private:
 
 		mResourceBundleGroup->allocate_resource_bundle(mGlobalResourceBundle.get());
 
-		mMaterialPipeline = std::make_shared<cgb::vulkan_pipeline>("shaders/blinnphong_nm.vert.spv", "shaders/blinnphong_nm.frag.spv", mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mGlobalResourceBundleLayout, cgb::MaterialData::get_resource_bundle_layout(), mMaterialObjectResourceBundleLayout });
+		mMaterialPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mGlobalResourceBundleLayout, cgb::MaterialData::get_resource_bundle_layout(), mMaterialObjectResourceBundleLayout });
+		mMaterialPipeline->add_attr_desc_binding(sponzaBinding);
+		mMaterialPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/blinnphong_nm.vert.spv");
+		mMaterialPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/blinnphong_nm.frag.spv");
+		mMaterialPipeline->bake();
 
+		mMaterialDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mMaterialPipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { mGlobalResourceBundle });
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			mMaterialDrawer->set_vrs_images(vrsImages);
+		}
 	}
 
 	void cleanup()
@@ -474,6 +485,10 @@ private:
 		}
 
 		std::vector<cgb::vulkan_render_object*> renderObjects;
+		renderObjects.push_back(mSponzaRenderObject.get());
+		mRenderer->render({ renderObjects }, mMaterialDrawer.get());
+
+		renderObjects.clear();
 		//renderObjects.push_back(renderObject);
 		renderObjects.push_back(renderObject2);
 		//for (int i = 0; i < 1000; i++) {

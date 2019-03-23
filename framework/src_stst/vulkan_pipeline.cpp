@@ -24,13 +24,13 @@ namespace cgb {
 		return buffer;
 	}
 
-	vulkan_pipeline::vulkan_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout) :
-		mVertexFilename(vertexShaderFilename) , mFragmentFilename(fragmentShaderFilename), mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mResourceBundleLayouts(resourceBundleLayout)
+	vulkan_pipeline::vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout) :
+		mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mResourceBundleLayouts(resourceBundleLayout)
 	{
 	}
 
-	vulkan_pipeline::vulkan_pipeline(const std::string & filename, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout, size_t pushConstantsSize) :
-		mComputeFilename(filename), mResourceBundleLayouts(resourceBundleLayout), mPushConstantsSize(pushConstantsSize)
+	vulkan_pipeline::vulkan_pipeline(std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout, size_t pushConstantsSize) :
+		mResourceBundleLayouts(resourceBundleLayout), mPushConstantsSize(pushConstantsSize)
 	{
 	}
 
@@ -341,7 +341,6 @@ namespace cgb {
 		shader_module mod(shaderFilename, shaderStage);
 		check_shader_stage_present(mod);
 		mShaderModules.push_back(mod);
-
 	}
 
 	void cgb::vulkan_pipeline::add_shader(ShaderStageFlagBits shaderStage, std::shared_ptr<vk::PipelineShaderStageCreateInfo> shaderModule)

@@ -3,7 +3,9 @@
 #include "vulkan_framebuffer.h"
 
 namespace cgb {
-	vulkan_drawer::vulkan_drawer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline) : mCommandBufferManager(commandBufferManager), mPipeline(pipeline)
+	vulkan_drawer::vulkan_drawer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline,
+		std::vector<std::shared_ptr<vulkan_resource_bundle>> globalResourceBundles) :
+		mCommandBufferManager(commandBufferManager), mPipeline(pipeline), mGlobalResourceBundles(globalResourceBundles)
 	{
 	}
 
@@ -36,6 +38,9 @@ namespace cgb {
 			commandBuffer.bindShadingRateImageNV(mVrsImages[vulkan_context::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vulkan_context::instance().dynamicDispatchInstanceDevice);
 		}
 
+		auto globalDescriptorSets = get_descriptor_sets(mGlobalResourceBundles);
+		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, globalDescriptorSets.size(), globalDescriptorSets.data(), 0, nullptr);
+
 		for (vulkan_render_object* renderObject : renderObjects) {
 
 			vk::Buffer vertexBuffers[] = { renderObject->get_vertex_buffer(0) , renderObject->get_vertex_buffer(0) };
@@ -43,11 +48,8 @@ namespace cgb {
 			commandBuffer.bindVertexBuffers(1, 2, vertexBuffers, offsets);
 			commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
-			std::vector<vk::DescriptorSet> descriptorSets(renderObject->get_resource_bundles().size());
-			for (int i = 0; i < descriptorSets.size(); i++) {
-				descriptorSets[i] = renderObject->get_resource_bundles()[i]->get_descriptor_set();
-			}
-			commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+			auto descriptorSets = get_descriptor_sets(renderObject->get_resource_bundles());
+			commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), globalDescriptorSets.size(), descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 
 			commandBuffer.pushConstants(
 				mPipeline->get_pipeline_layout(),
@@ -59,4 +61,13 @@ namespace cgb {
 			commandBuffer.drawIndexed(static_cast<uint32_t>(renderObject->get_index_count()), 1, 0, 0, 0);
 		}
 	}
+
+	std::vector<vk::DescriptorSet> vulkan_drawer::get_descriptor_sets(std::vector<std::shared_ptr<vulkan_resource_bundle>> mResourceBundles) {
+		std::vector<vk::DescriptorSet> descriptorSets(mResourceBundles.size());
+		for (int i = 0; i < descriptorSets.size(); i++) {
+			descriptorSets[i] = mResourceBundles[i]->get_descriptor_set();
+		}
+		return descriptorSets;
+	}
+
 }

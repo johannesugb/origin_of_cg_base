@@ -31,9 +31,9 @@ namespace cgb {
 	class vulkan_pipeline
 	{
 	public:
-		vulkan_pipeline(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename, vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> resourceBundleLayouts);
+		vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> resourceBundleLayouts);
 
-		vulkan_pipeline(const std::string& filename, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayouts, size_t pushConstantsSize);
+		vulkan_pipeline(std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayouts, size_t pushConstantsSize);
 		virtual ~vulkan_pipeline();
 
 		vk::Pipeline  get_pipeline() { return mPipeline; }
@@ -66,13 +66,9 @@ namespace cgb {
 		vk::PipelineShaderStageCreateInfo build_shader_stage_create_info(shader_module& mod);
 
 		// pipeline config
-		std::string mComputeFilename;
 		std::vector<vk::PushConstantRange> mPushConstantRanges;
 		size_t mPushConstantsSize;
 
-		// TODO wrap
-		std::string mVertexFilename;
-		std::string mFragmentFilename;
 		vk::RenderPass mRenderPass;
 
 		vk::Viewport mViewport;

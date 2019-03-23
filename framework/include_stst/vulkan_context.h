@@ -31,6 +31,29 @@ namespace cgb {
 		eMeshNV = VK_SHADER_STAGE_MESH_BIT_NV
 	};
 
+	inline ShaderStageFlagBits operator| (ShaderStageFlagBits a, ShaderStageFlagBits b)
+	{
+		typedef std::underlying_type<ShaderStageFlagBits>::type EnumType;
+		return static_cast<ShaderStageFlagBits>(static_cast<EnumType>(a) | static_cast<EnumType>(b));
+	}
+
+	inline ShaderStageFlagBits operator& (ShaderStageFlagBits a, ShaderStageFlagBits b)
+	{
+		typedef std::underlying_type<ShaderStageFlagBits>::type EnumType;
+		return static_cast<ShaderStageFlagBits>(static_cast<EnumType>(a) & static_cast<EnumType>(b));
+	}
+
+	inline ShaderStageFlagBits& operator |= (ShaderStageFlagBits& a, ShaderStageFlagBits b)
+	{
+		return a = a | b;
+	}
+
+	inline ShaderStageFlagBits& operator &= (ShaderStageFlagBits& a, ShaderStageFlagBits b)
+	{
+		return a = a & b;
+	}
+
+
 	class vulkan_framebuffer;
 	class vulkan_memory_manager;
 	class vulkan_command_buffer_manager;

@@ -29,7 +29,7 @@ namespace cgb {
 
 
 		std::vector<vk::DescriptorSet> get_descriptor_sets() { return mDescriptorSets; }
-		vk::DescriptorSet& get_descriptor_set() { return mDescriptorSets[vulkan_context::instance().currentFrame]; }
+		vk::DescriptorSet& get_descriptor_set() { return mDynamicResource ? mDescriptorSets[vulkan_context::instance().currentFrame] : mDescriptorSets[0]; }
 
 	private:
 		vulkan_resource_bundle(std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, bool dynamicResource);

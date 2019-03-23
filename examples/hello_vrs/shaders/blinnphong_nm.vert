@@ -5,7 +5,7 @@
 
 // ################# UNIFORM DATA ###############
 
-layout(set=2, binding = 0) uniform UniformBufferObject {
+layout(set = 2, binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 pMatrix;
@@ -26,7 +26,7 @@ layout (location = 9) in vec3 aBitangent;
 // ----------------------------------------------
 
 // ################## OUTPUT DATA ###############
-layout(location=0) out VertexData
+layout(location = 0) out VertexData
 {
 	vec3 toEyeDirTS;
 	vec2 texCoords;
@@ -39,12 +39,12 @@ layout(location=0) out VertexData
 // ----------------------------------------------
 
 // #################### LIGHTS ##################
-layout(set=0, binding = 2) uniform AmbientLightData
+layout(set = 0, binding = 0) uniform AmbientLightData
 {
 	vec4 color;
 } uAmbientLight;
 
-layout(set=0, binding = 2) uniform DirectionalLightData
+layout(set = 0, binding = 1) uniform DirectionalLightData
 {
 	vec4 direction;
 	vec4 color;
@@ -57,7 +57,7 @@ struct PointLightData
 	vec4 attenuation;
 };
 
-layout(set=0, binding = 2) uniform uPointLightsBlock
+layout(set = 0, binding = 2) uniform uPointLightsBlock
 {
 	PointLightData pointLightData[MAX_COUNT_POINT_LIGHTS];
 	int count;

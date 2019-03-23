@@ -8,8 +8,8 @@ namespace cgb {
 	mVertexBuffers(vertexBuffers), mIndexBuffer(indexBuffer), mIndexCount(indexCount)
 	{
 		create_uniform_buffer(commandBufferManager);
-		create_descriptor_sets(resourceBundleLayout, resourceBundleGroup, nullptr, {});
 		mResourceBundles.insert(mResourceBundles.end(), resourceBundles.begin(), resourceBundles.end());
+		create_descriptor_sets(resourceBundleLayout, resourceBundleGroup, nullptr, {});
 	}
 
 	vulkan_render_object::vulkan_render_object(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
