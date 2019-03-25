@@ -102,14 +102,14 @@ namespace cgb
 			glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 		});
 	
-		wnd->mPostCreateActions.push_back([wnd]() {
+		wnd->mPostCreateActions.push_back([](cgb::window& w) {
 			if (!context().initialization_completed()) {
 				// If context has been newly created in the current call to create_window, 
 				// 1) make the newly created context current and
 				// 2) use the extension loader to get the proc-addresses (which needs an active context)
-				glfwMakeContextCurrent(wnd->handle()->mHandle);
+				glfwMakeContextCurrent(w.handle()->mHandle);
 				gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-				glfwFocusWindow(wnd->handle()->mHandle);
+				glfwFocusWindow(w.handle()->mHandle);
 				context().mInitializationComplete = true;
 			}
 		});
@@ -124,10 +124,14 @@ namespace cgb
 		}
 
 		auto* sharedContex = context().get_window_for_shared_context();
-		glfwCreateWindow(mRequestedSize.mWidth, mRequestedSize.mHeight,
+		auto* handle = glfwCreateWindow(mRequestedSize.mWidth, mRequestedSize.mHeight,
 						 mTitle.c_str(),
 						 mMonitor.has_value() ? mMonitor->mHandle : nullptr,
 						 sharedContex);
+		if (nullptr == handle) {
+			throw new std::runtime_error("Failed to create window with the title '" + mTitle + "'");
+		}
+		mHandle = window_handle{ handle };
 
 		for (const auto& action : mPostCreateActions) {
 			action(*this);

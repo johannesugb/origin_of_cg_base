@@ -28,8 +28,9 @@ int main()
 
 		// Create a window which we're going to use to render to
 		auto mainWnd = cgb::context().create_window("Hello World!");
-		mainWnd.set_size(1600, 900);
-		mainWnd.set_presentation_mode(cgb::presentation_mode::vsync);
+		mainWnd->set_resolution({ 1600, 900 });
+		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
+		mainWnd->open(); 
 
 		// Create a "behavior" which contains functionality of our program
 		auto helloBehavior = hello_behavior();

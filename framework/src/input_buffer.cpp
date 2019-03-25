@@ -7,7 +7,7 @@ namespace cgb
 		std::fill(std::begin(mKeyboardKeys), std::end(mKeyboardKeys), key_state::none);
 		if (pWindow)
 		{
-			mCursorPosition = context().cursor_position(*pWindow);
+			mCursorPosition = pWindow->cursor_position();
 		}
 		else
 		{
@@ -21,16 +21,16 @@ namespace cgb
 	{
 		if (nullptr != pWindow) {
 			if (mSetCursorPosition) {
-				context().set_cursor_pos(*pWindow, *mSetCursorPosition);
+				pWindow->set_cursor_pos(*mSetCursorPosition);
 			}
 			mSetCursorPosition = std::nullopt;
-			mCursorPosition = context().cursor_position(*pWindow);
+			mCursorPosition = pWindow->cursor_position();
 
 			if (mSetCursorHidden) {
-				context().hide_cursor(*pWindow, *mSetCursorHidden);
+				pWindow->hide_cursor(*mSetCursorHidden);
 			}
 			mSetCursorHidden = std::nullopt;
-			mCursorHidden = context().is_cursor_hidden(*pWindow);
+			mCursorHidden = pWindow->is_cursor_hidden();
 		}
 		else {
 			mSetCursorPosition = std::nullopt;
@@ -86,7 +86,7 @@ namespace cgb
 
 	glm::dvec2 input_buffer::cursor_position(const window& pWindow)
 	{
-		return context().cursor_position(pWindow);
+		return pWindow.cursor_position();
 	}
 
 	const glm::dvec2& input_buffer::scroll_delta()

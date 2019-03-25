@@ -2,6 +2,106 @@
 
 namespace cgb
 {
+
+	void window::request_srgb_framebuffer(bool pRequestSrgb)
+	{
+		switch (pRequestSrgb) {
+		case true:
+			mPreCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+			});
+			break;
+		default:
+			mPreCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_FALSE);
+			});
+			break;
+		}
+		// If the window has already been created, the new setting can't 
+		// be applied unless the window is being recreated.
+		if (is_alive()) {
+			mRecreationRequired = true;
+		}
+	}
+
+	void window::set_presentaton_mode(cgb::presentation_mode pMode)
+	{
+		switch (pMode) {
+		case cgb::presentation_mode::immediate:
+			mPreCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
+			});
+			mPostCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwSwapInterval(0);
+			});
+			break;
+		case cgb::presentation_mode::vsync:
+			mPreCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+			});
+			mPostCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwSwapInterval(1);
+			});
+			break;
+		default:
+			mPreCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+			});
+			mPostCreateActions.push_back(
+				[](cgb::window & w) {
+				glfwSwapInterval(0);
+			});
+			break;
+		}
+		// If the window has already been created, the new setting can't 
+		// be applied unless the window is being recreated.
+		if (is_alive()) {
+			mRecreationRequired = true;
+		}
+	}
+
+	void window::set_number_of_samples(int pNumSamples)
+	{
+		mPreCreateActions.push_back(
+			[samples = pNumSamples](cgb::window & w) {
+			glfwWindowHint(GLFW_SAMPLES, samples);
+		});
+		// If the window has already been created, the new setting can't 
+		// be applied unless the window is being recreated.
+		if (is_alive()) {
+			mRecreationRequired = true;
+		}
+	}
+
+	void window::open()
+	{
+		for (const auto& fu : mPreCreateActions) {
+			fu(*this);
+		}
+
+		auto* sharedContex = context().get_window_for_shared_context();
+		auto* handle = glfwCreateWindow(mRequestedSize.mWidth, mRequestedSize.mHeight,
+						 mTitle.c_str(),
+						 mMonitor.has_value() ? mMonitor->mHandle : nullptr,
+						 sharedContex);
+		if (nullptr == handle) {
+			throw new std::runtime_error("Failed to create window with the title '" + mTitle + "'");
+		}
+		mHandle = window_handle{ handle };
+
+		for (const auto& action : mPostCreateActions) {
+			action(*this);
+		}
+	}
+
+
 	size_t vulkan::sSettingMaxFramesInFlight = 2;
 	size_t vulkan::sActualMaxFramesInFlight = 2;
 
@@ -138,7 +238,7 @@ namespace cgb
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		// Create a tuple of window, surface, and swap chain
-		auto wnd = generic_glfw::prepare_window(pWndParams);
+		auto wnd = generic_glfw::prepare_window();
 		auto surface = create_surface_for_window(wnd);
 		// Vulkan init completion?
 		if (0u == wnd->id() && wnd->handle()) { // We need a surface to create the logical device => do it after the first window has been created
@@ -664,7 +764,7 @@ namespace cgb
 		}
 	}
 
-	swap_chain_data vulkan::create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface, const swap_chain_params& pParams)
+	swap_chain_data vulkan::create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface)
 	{
 		auto srfCaps = mPhysicalDevice.getSurfaceCapabilitiesKHR(pSurface);
 		auto srfFrmts = mPhysicalDevice.getSurfaceFormatsKHR(pSurface);
@@ -676,14 +776,14 @@ namespace cgb
 		// value of uint32_t. In that case we'll pick the resolution that best matches the window within 
 		// the minImageExtent and maxImageExtent bounds. [2]
 		auto extent = srfCaps.currentExtent.width == std::numeric_limits<uint32_t>::max()
-			? glm::clamp(generic_glfw::window_extent(*pWindow),
+			? glm::clamp(pWindow->resolution(),
 						 glm::uvec2(srfCaps.minImageExtent.width, srfCaps.minImageExtent.height),
 						 glm::uvec2(srfCaps.maxImageExtent.width, srfCaps.maxImageExtent.height))
 			: glm::uvec2(srfCaps.currentExtent.width, srfCaps.currentExtent.height);
 
 		// Select a presentation mode:
 		decltype(presModes)::iterator selPresModeItr = presModes.end();
-		if (pParams.mPresentationMode) {
+		if (pWindow->set_presentaton_mode pParams.mPresentationMode) {
 			switch (*pParams.mPresentationMode) {
 			case cgb::presentation_mode::immediate:
 				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eImmediate);

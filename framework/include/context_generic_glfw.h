@@ -60,7 +60,7 @@ namespace cgb
 		 *	@param	pName	Name of the window
 		 *  @return	Pointer to the window with the given name or nullptr if no window matches
 		 */
-		window* window_by_name(const std::string& pName) const;
+		window* window_by_title(const std::string& pTitle) const;
 
 		/** Returns the window which matches the given id, if it is present in the composition.
 		 *	@param	pId		Id of the window
@@ -88,24 +88,6 @@ namespace cgb
 		 *	the window which is affected by all mouse cursor input interaction.
 		 */
 		window* window_in_focus() const { return mWindowInFocus; }
-
-		/** Get the cursor position w.r.t. the given window */
-		static glm::dvec2 cursor_position(const window& pWindow);
-
-		/** Determine the window's extent */
-		static glm::uvec2 window_extent(const window& pWindow);
-
-		/** Sets a new size to the window */
-		static void set_window_size(const window& pWindow, glm::uvec2 pSize);
-
-		/** Hides or shows the cursor */
-		static void hide_cursor(const window& pWindow, bool pHide);
-
-		/** Returns whether or not the cursor is hidden */
-		static bool is_cursor_hidden(const window& pWindow);
-
-		/** Sets the cursor to the given coordinates */
-		static void set_cursor_pos(const window& pWindow, glm::dvec2 pCursorPos);
 
 		/** With this context, all windows share the same graphics-context, this 
 		 *	method can be used to get a window to share the context with.

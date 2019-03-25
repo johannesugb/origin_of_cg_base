@@ -185,7 +185,7 @@ namespace cgb
 		 *	@param pParams		[in] swap chain creation parameters
 		 *	@return				A newly created swap chain
 		 */
-		swap_chain_data create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface, const swap_chain_params& pParams);
+		swap_chain_data create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface);
 
 		/** TODO: TBD */
 		vk::RenderPass create_render_pass(image_format pImageFormat, image_format pDepthFormat);

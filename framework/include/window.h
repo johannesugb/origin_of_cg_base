@@ -38,9 +38,6 @@ namespace cgb
 		 *	or has been destroyed. */
 		std::optional<window_handle> handle() const { return mHandle; }
 
-		/** Returns the inner window size, i.e. the extent of the pixels which can be rendered into */
-		glm::uvec2 resolution() const;
-
 		/** Returns the aspect ratio of the window, which is width/height */
 		float aspect_ratio() const;
 
@@ -70,16 +67,10 @@ namespace cgb
 		 *  this window's underlying framebuffer 
 		 *  TODO: Resize underlying framebuffer!
 		 */
-		void set_resolution(glm::uvec2 pExtent);
+		void set_resolution(window_size pExtent);
 
 		/** Set a new title */
 		void set_title(std::string pTitle);
-
-		/** Change the monitor. This method can be used to switch
-		 *  between full-screen and windowed modes.
-		 *  TODO: Test and verify that statement ^ 
-		 */
-		void change_monitor(std::optional<monitor_handle> pMonitor);
 
 		/** Enable or disable input handling of this window */
 		void set_is_input_enabled(bool pValue);
@@ -105,7 +96,31 @@ namespace cgb
 		/** Sets this window to fullscreen mode 
 		 *	@param	pOnWhichMonitor	Handle to the monitor where to present the window in full screen mode
 		 */
-		void set_fullscreen(monitor_handle pOnWhichMonitor = monitor_handle::primary_monitor());
+		void switch_to_fullscreen_mode(monitor_handle pOnWhichMonitor = monitor_handle::primary_monitor());
+
+		/** Switches to windowed mode by removing this window's monitor assignment */
+		void switch_to_windowed_mode();
+
+		/** Get the cursor position w.r.t. the given window 
+		 *	Thread safety: This method must only be called from the main thread
+		 */
+		glm::dvec2 cursor_position() const;
+
+		/** Determine the window's extent 
+		 *	Thread safety: This method must only be called from the main thread
+		 */
+		glm::uvec2 resolution() const;
+
+		/** Hides or shows the cursor */
+		void hide_cursor(bool pHide);
+
+		/** Returns whether or not the cursor is hidden 
+		 *	Thread safety: This method must only be called from the main thread
+		 */
+		bool is_cursor_hidden() const;
+
+		/** Sets the cursor to the given coordinates */
+		void set_cursor_pos(glm::dvec2 pCursorPos);
 
 	private:
 		/** Static variable which holds the ID that the next window will get assigned */
@@ -137,6 +152,9 @@ namespace cgb
 
 		// Internal flag to indicate whether or not an sRGB framebuffer was requested
 		bool mSrgbFramebufferRequested;
+
+		// The presentation mode which has been requested
+		presentation_mode mPresentationModeRequested;
 
 		// Actions to be executed before the actual window (re-)creation
 		std::vector<std::function<void(window&)>> mPreCreateActions;

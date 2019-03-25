@@ -71,34 +71,32 @@ namespace cgb
 		mIsInUse = value;
 	}
 
-	glm::uvec2 window::resolution() const
-	{
-		return context().window_extent(*this);
-	}
-
 	float window::aspect_ratio() const
 	{
 		auto res = resolution();
 		return static_cast<float>(res.x) / static_cast<float>(res.y);
 	}
 
-	void window::set_resolution(glm::uvec2 pExtent)
+	void window::set_resolution(window_size pExtent)
 	{
-		context().set_window_size(*this, pExtent);
+		if (is_alive()) {
+			context().dispatch_to_main_thread([this, pExtent]() {
+				glfwSetWindowSize(handle()->mHandle, pExtent.mWidth, pExtent.mHeight);
+			});
+		}
+		else {
+			mRequestedSize = pExtent;
+		}
 	}
 
 	void window::set_title(std::string pTitle)
 	{
 		mTitle = pTitle;
 		if (mHandle.has_value()) {
-			glfwSetWindowTitle(mHandle->mHandle, pTitle.c_str());
+			context().dispatch_to_main_thread([this, pTitle]() {
+				glfwSetWindowTitle(mHandle->mHandle, pTitle.c_str());
+			});
 		}
-	}
-
-	void window::change_monitor(std::optional<monitor_handle> pMonitor)
-	{
-		mMonitor = pMonitor;
-		// TODO: assign the window to the monitor
 	}
 
 	void window::set_is_input_enabled(bool pValue)
@@ -106,11 +104,79 @@ namespace cgb
 		mIsInputEnabled = pValue; 
 	}
 
-	void window::set_fullscreen(monitor_handle pOnWhichMonitor)
+	void window::switch_to_fullscreen_mode(monitor_handle pOnWhichMonitor)
 	{
 		if (is_alive()) {
-			glfwsetmonit
+			context().dispatch_to_main_thread([this, pOnWhichMonitor]() {
+				glfwSetWindowMonitor(handle()->mHandle, pOnWhichMonitor.mHandle,
+									 0, 0,
+									 mRequestedSize.mWidth, mRequestedSize.mHeight, // TODO: Support different resolutions or query the current resolution
+									 GLFW_DONT_CARE); // TODO: Support different refresh rates
+			});
 		}
-		mMonitor = pOnWhichMonitor;
+		else {
+			mMonitor = std::nullopt;
+		}
 	}
+
+	void window::switch_to_windowed_mode()
+	{
+		if (is_alive()) {
+			context().dispatch_to_main_thread([this]() {
+				int xpos = 10, ypos = 10;
+				glfwGetWindowPos(handle()->mHandle, &xpos, &ypos);
+				glfwSetWindowMonitor(handle()->mHandle, nullptr,
+									 xpos, ypos,
+									 mRequestedSize.mWidth, mRequestedSize.mHeight, // TODO: Support different resolutions or query the current resolution
+									 GLFW_DONT_CARE); // TODO: Support different refresh rates
+			});
+		}
+		else {
+			mMonitor = std::nullopt;
+		}
+	}
+
+	glm::dvec2 window::cursor_position() const
+	{
+		assert(context().are_we_on_the_main_thread());
+		//std::lock_guard<std::mutex> lock(sInputMutex);
+		glm::dvec2 cursorPos;
+		assert(handle() != std::nullopt);
+		glfwGetCursorPos(handle()->mHandle, &cursorPos[0], &cursorPos[1]);
+		return cursorPos;
+	}
+
+	glm::uvec2 window::resolution() const
+	{
+		assert(context().are_we_on_the_main_thread());
+		assert(handle());
+		int width, height;
+		glfwGetWindowSize(handle()->mHandle, &width, &height);
+		return glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+	}
+
+	void window::hide_cursor(bool pHide)
+	{
+		assert(handle());
+		context().dispatch_to_main_thread([this, pHide]() {
+			glfwSetInputMode(handle()->mHandle, GLFW_CURSOR,
+							 pHide ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
+		});
+	}
+
+	bool window::is_cursor_hidden() const
+	{
+		assert(context().are_we_on_the_main_thread());
+		return glfwGetInputMode(handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
+	}
+
+	void window::set_cursor_pos(glm::dvec2 pCursorPos)
+	{
+		assert(handle());
+		context().dispatch_to_main_thread([this, pCursorPos]() {
+			assert(handle());
+			glfwSetCursorPos(handle()->mHandle, pCursorPos.x, pCursorPos.y);
+		});
+	}
+
 }
