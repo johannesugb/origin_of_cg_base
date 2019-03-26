@@ -1,10 +1,10 @@
 #include "context_generic_glfw.h"
-#include "window.h"
+#include "window_base.h"
 #include "input_buffer.h"
 
 namespace cgb
 {
-	window* generic_glfw::mWindowInFocus;
+	window* generic_glfw::sWindowInFocus = nullptr;
 	std::mutex generic_glfw::sInputMutex;
 	input_buffer* generic_glfw::sTargetInputBuffer(nullptr);
 	std::array<key_code, GLFW_KEY_LAST + 1> generic_glfw::sGlfwToKeyMapping{};
@@ -180,7 +180,23 @@ namespace cgb
 
 		// Set the focus callback
 		back->mPostCreateActions.push_back([](window& w) {
-			glfwSetWindowFocusCallback(w.handle()->mHandle, window_focus_callback);
+			glfwSetWindowFocusCallback(w.handle()->mHandle, glfw_window_focus_callback);
+			if (nullptr == sWindowInFocus) {
+				sWindowInFocus = &w;
+			}
+			
+			int width, height;
+			glfwGetWindowSize(w.handle()->mHandle, &width, &height);
+			w.mResultion = glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+			glfwSetWindowSizeCallback(w.handle()->mHandle, glfw_window_size_callback);
+
+			w.mIsCursorHidden = glfwGetInputMode(w.handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
+		});
+
+		// Make sure to cleanup 
+		back->mCleanupActions.push_back([](window & w) {
+			glfwSetWindowFocusCallback(w.handle()->mHandle, nullptr);
+			glfwSetWindowSizeCallback(w.handle()->mHandle, nullptr);
 		});
 		
 		return back.get();
@@ -200,6 +216,10 @@ namespace cgb
 		}
 
 		context().dispatch_to_main_thread([&wnd]() {
+			for (auto& fu : wnd.mCleanupActions) {
+				fu(wnd);
+			}
+
 			glfwDestroyWindow(wnd.handle()->mHandle);
 			wnd.mHandle = std::nullopt;
 		});
@@ -297,9 +317,9 @@ namespace cgb
 
 	void generic_glfw::glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	{
-		assert(sTargetInputBuffer);
-		std::lock_guard<std::mutex> lock(sInputMutex);
-		sTargetInputBuffer->mScrollPosition += glm::dvec2(xoffset, yoffset);
+		//assert(sTargetInputBuffer);
+		//std::lock_guard<std::mutex> lock(sInputMutex);
+		//sTargetInputBuffer->mScrollPosition += glm::dvec2(xoffset, yoffset);
 	}
 
 	void generic_glfw::glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -326,17 +346,29 @@ namespace cgb
 		}
 	}
 
-	void generic_glfw::window_focus_callback(GLFWwindow* window, int focused)
+	void generic_glfw::glfw_window_focus_callback(GLFWwindow* window, int focused)
 	{
 		if (focused) {
-			auto result = context().select_windows([=](auto* w) { 
+			auto result = context().find_window([=](auto* w) { 
 				auto handle = w->handle();
 				assert(handle != std::nullopt);
 				return handle->mHandle == window; 
 			});
-			if (result.size() > 0) {
-				mWindowInFocus = result[0];
+			if (nullptr != result) {
+				sWindowInFocus = result;
 			}
+		}
+	}
+
+	void generic_glfw::glfw_window_size_callback(GLFWwindow* window, int width, int height)
+	{
+		auto foundWindow = context().find_window([=](auto* w) { 
+			auto handle = w->handle();
+			assert(handle != std::nullopt);
+			return handle->mHandle == window; 
+		});
+		if (nullptr != foundWindow) {
+			foundWindow->mResultion = glm::uvec2(width, height);
 		}
 	}
 

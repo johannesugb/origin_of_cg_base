@@ -8,87 +8,22 @@ namespace cgb
 	{
 	}
 
-	void window::request_srgb_framebuffer(bool pRequestSrgb)
+	bool opengl46::check_error(const char* file, int line)
 	{
-		switch (pRequestSrgb) {
-		case true:
-			mPreCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
-				});
-			break;
-		default:
-			mPreCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_FALSE);
-				});
-			break;
+		bool hasError = false;
+		GLenum err;
+		while ((err = glGetError()) != GL_NO_ERROR)
+		{
+			LOG_ERROR(fmt::format("glError int[{:d}] hex[0x{:x}] in file[{}], line[{}]", err, err, file, line));
+			hasError = true;
 		}
-		// If the window has already been created, the new setting can't 
-		// be applied unless the window is being recreated.
-		if (is_alive()) {
-			mRecreationRequired = true;
-		}
-	}
-
-	void window::set_presentaton_mode(cgb::presentation_mode pMode)
-	{
-		switch (pMode) {
-		case cgb::presentation_mode::immediate:
-			mPreCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
-				});
-			mPostCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwSwapInterval(0);
-				});
-			break;
-		case cgb::presentation_mode::vsync:
-			mPreCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-				});
-			mPostCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwSwapInterval(1);
-				});
-			break;
-		default:
-			mPreCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-				});
-			mPostCreateActions.push_back(
-				[](cgb::window& w) {
-					glfwSwapInterval(0);
-				});
-			break;
-		}
-		// If the window has already been created, the new setting can't 
-		// be applied unless the window is being recreated.
-		if (is_alive()) {
-			mRecreationRequired = true;
-		}
-	}
-
-	void window::set_number_of_samples(int pNumSamples)
-	{
-		mPreCreateActions.push_back(
-			[samples = pNumSamples](cgb::window & w) {
-				glfwWindowHint(GLFW_SAMPLES, samples);
-			});
-		// If the window has already been created, the new setting can't 
-		// be applied unless the window is being recreated.
-		if (is_alive()) {
-			mRecreationRequired = true;
-		}
+		return hasError;
 	}
 
 	window* opengl46::create_window(const std::string& pTitle)
 	{
 		auto* wnd = generic_glfw::prepare_window();
-		wnd->mPreCreateActions.push_back([](cgb::window& w) {
+		wnd->mPreCreateActions.push_back([](cgb::window & w) {
 			// Set several configuration parameters before actually creating the window:
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -101,7 +36,7 @@ namespace cgb
 			glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_FALSE);
 			glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 		});
-	
+
 		wnd->mPostCreateActions.push_back([](cgb::window& w) {
 			if (!context().initialization_completed()) {
 				// If context has been newly created in the current call to create_window, 
@@ -115,39 +50,6 @@ namespace cgb
 		});
 
 		return wnd;
-	}
-
-	void window::open()
-	{
-		for (const auto& fu : mPreCreateActions) {
-			fu(*this);
-		}
-
-		auto* sharedContex = context().get_window_for_shared_context();
-		auto* handle = glfwCreateWindow(mRequestedSize.mWidth, mRequestedSize.mHeight,
-						 mTitle.c_str(),
-						 mMonitor.has_value() ? mMonitor->mHandle : nullptr,
-						 sharedContex);
-		if (nullptr == handle) {
-			throw new std::runtime_error("Failed to create window with the title '" + mTitle + "'");
-		}
-		mHandle = window_handle{ handle };
-
-		for (const auto& action : mPostCreateActions) {
-			action(*this);
-		}
-	}
-
-	bool opengl46::check_error(const char* file, int line)
-	{
-		bool hasError = false;
-		GLenum err;
-		while ((err = glGetError()) != GL_NO_ERROR)
-		{
-			LOG_ERROR(fmt::format("glError int[{:d}] hex[0x{:x}] in file[{}], line[{}]", err, err, file, line));
-			hasError = true;
-		}
-		return hasError;
 	}
 
 	void opengl46::finish_pending_work()

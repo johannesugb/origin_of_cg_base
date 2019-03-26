@@ -3,28 +3,18 @@
 
 namespace cgb
 {
-	class window
+	class window;
+
+	class window_base
 	{
-#if defined(USE_OPENGL46_CONTEXT)
 		friend class generic_glfw;
-		friend class opengl46;
-#elif defined(USE_VULKAN_CONTEXT)
-		friend class generic_glfw;
-		friend class vulkan;
-#endif
 	public:
-		/** Constructs a window with an already existing handle */
-		window();
-		/** Destructor */
-		~window();
-		// Prevent copying a window:
-		window(const window&) = delete;
-		/** Move a window */
-		window(window&&) noexcept;
-		// Prevent copy-assigning a window:
-		window& operator =(const window&) = delete;
-		/** Move-assign a window */
-		window& operator =(window&&) noexcept;
+		window_base();
+		~window_base();
+		window_base(const window_base&) = delete;
+		window_base(window_base&&) noexcept;
+		window_base& operator =(const window_base&) = delete;
+		window_base& operator =(window_base&&) noexcept;
 
 		/** Returns whether or not this window is currently in use and hence, may not be closed. */
 		bool is_in_use() const { return mIsInUse; }
@@ -60,9 +50,6 @@ namespace cgb
 		 */
 		void set_is_in_use(bool value);
 
-		/** Set a new identifier-name for this window */
-		void set_name(std::string pName);
-
 		/** Set a new resolution for this window. This will also update
 		 *  this window's underlying framebuffer 
 		 *  TODO: Resize underlying framebuffer!
@@ -81,18 +68,6 @@ namespace cgb
 		/** Indicates whether or not this window must be recreated (because parameters have changed or so). */
 		bool must_be_recreated() const { return mRecreationRequired; }
 
-		/** Request a framebuffer for this window which is capable of sRGB formats */
-		void request_srgb_framebuffer(bool pRequestSrgb);
-
-		/** Sets the presentation mode for this window's swap chain. */
-		void set_presentaton_mode(cgb::presentation_mode pMode);
-
-		/** Sets the number of samples for MSAA */
-		void set_number_of_samples(int pNumSamples);
-
-		/** Creates or opens the window */
-		void open();
-
 		/** Sets this window to fullscreen mode 
 		 *	@param	pOnWhichMonitor	Handle to the monitor where to present the window in full screen mode
 		 */
@@ -101,28 +76,28 @@ namespace cgb
 		/** Switches to windowed mode by removing this window's monitor assignment */
 		void switch_to_windowed_mode();
 
-		/** Get the cursor position w.r.t. the given window 
-		 *	Thread safety: This method must only be called from the main thread
-		 */
-		glm::dvec2 cursor_position() const;
-
-		/** Determine the window's extent 
-		 *	Thread safety: This method must only be called from the main thread
-		 */
-		glm::uvec2 resolution() const;
-
 		/** Hides or shows the cursor */
 		void hide_cursor(bool pHide);
-
-		/** Returns whether or not the cursor is hidden 
-		 *	Thread safety: This method must only be called from the main thread
-		 */
-		bool is_cursor_hidden() const;
 
 		/** Sets the cursor to the given coordinates */
 		void set_cursor_pos(glm::dvec2 pCursorPos);
 
-	private:
+
+		/** Get the cursor position w.r.t. the given window 
+		 */
+		glm::dvec2 cursor_position() const;
+
+		glm::dvec2 scroll_position() const;
+
+		/** Determine the window's extent 
+		 */
+		glm::uvec2 resolution() const;
+
+		/** Returns whether or not the cursor is hidden 
+		 */
+		bool is_cursor_hidden() const;
+
+	protected:
 		/** Static variable which holds the ID that the next window will get assigned */
 		static uint32_t mNextWindowId;
 
@@ -150,16 +125,18 @@ namespace cgb
 		// The requested window size which only has effect BEFORE the window was created 
 		window_size mRequestedSize;
 
-		// Internal flag to indicate whether or not an sRGB framebuffer was requested
-		bool mSrgbFramebufferRequested;
+		glm::dvec2 mCursorPosition;
 
-		// The presentation mode which has been requested
-		presentation_mode mPresentationModeRequested;
+		glm::dvec2 mScrollPosition;
 
-		// Actions to be executed before the actual window (re-)creation
-		std::vector<std::function<void(window&)>> mPreCreateActions;
+		glm::uvec2 mResultion;
+
+		bool mIsCursorHidden;
 
 		// Actions to be executed after the actual window (re-)creation
 		std::vector<std::function<void(window&)>> mPostCreateActions;
+
+		// Cleanup actions which are executed before the window will be destroyed
+		std::vector<std::function<void(window&)>> mCleanupActions;
 	};
 }

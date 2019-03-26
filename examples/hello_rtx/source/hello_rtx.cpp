@@ -562,7 +562,7 @@ public:
 	void initialize() override
 	{
 		cgb::context().create_sync_objects(); // <-- TODO
-		auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface, cgb::swap_chain_params{});
+		auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface);
 		cgb::context().mSurfSwap.emplace_back(std::make_unique<cgb::swap_chain_data>(std::move(swapChain)));
 
 		// temp:
@@ -698,6 +698,9 @@ public:
 		if (cgb::input().key_pressed(cgb::key_code::escape)) {
 			cgb::current_composition().stop();
 		}
+		if (cgb::input().key_pressed(cgb::key_code::c)) {
+			cgb::context().main_window()->set_cursor_pos({ 666.0, 100 });
+		}
 	}
 
 	void finalize() override
@@ -831,12 +834,10 @@ int main()
 
 
 		// Create a window which we're going to use to render to
-		auto windowParams = cgb::window_params{
-			std::nullopt,
-			std::nullopt,
-			"Hello cg_base World!"
-		};
-		auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
+		auto mainWnd = cgb::context().create_window("Hello RTX!");
+		mainWnd->set_resolution({ 1600, 900 });
+		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
+		mainWnd->open();
 
 		// Create a "behavior" which contains functionality of our program
 		auto helloBehavior = hello_behavior(mainWnd);

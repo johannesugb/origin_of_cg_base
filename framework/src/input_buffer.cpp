@@ -24,7 +24,10 @@ namespace cgb
 				pWindow->set_cursor_pos(*mSetCursorPosition);
 			}
 			mSetCursorPosition = std::nullopt;
-			mCursorPosition = pWindow->cursor_position();
+
+			//double xpos, ypos;
+			//glfwGetCursorPos(pWindow->handle()->mHandle, &xpos, &ypos);
+			//mCursorPosition = glm::dvec2(xpos, ypos);
 
 			if (mSetCursorHidden) {
 				pWindow->hide_cursor(*mSetCursorHidden);
@@ -47,6 +50,7 @@ namespace cgb
 		}
 
 		mScrollPosition = { 0.0, 0.0 };
+		mCursorPosition = pPreviousFrame.mCursorPosition;
 	}
 
 	bool input_buffer::key_pressed(key_code pKey)

@@ -67,7 +67,7 @@
     <ClCompile Include="..\..\framework\src\shader.cpp" />
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp" />
-    <ClCompile Include="..\..\framework\src\window.cpp" />
+    <ClCompile Include="..\..\framework\src\window_base.cpp" />
     <ClCompile Include="..\..\framework\src_stst\vulkan_attribute_description_binding.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -214,7 +214,7 @@
     <ClInclude Include="..\..\framework\include\transform.h" />
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_only_timer.h" />
-    <ClInclude Include="..\..\framework\include\window.h" />
+    <ClInclude Include="..\..\framework\include\window_base.h" />
     <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>

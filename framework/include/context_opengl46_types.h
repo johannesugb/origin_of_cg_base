@@ -1,9 +1,38 @@
 #pragma once
-
 #include <glad/glad.h>
+#include "window_base.h"
 
 namespace cgb
 {
+	class window : public window_base
+	{
+		friend class generic_glfw;
+		friend class opengl46;
+	public:
+		window();
+		~window();
+		window(const window&) = delete;
+		window(window&&) noexcept;
+		window& operator =(const window&) = delete;
+		window& operator =(window&&) noexcept;
+
+		/** Request a framebuffer for this window which is capable of sRGB formats */
+		void request_srgb_framebuffer(bool pRequestSrgb);
+
+		/** Sets the presentation mode for this window's swap chain. */
+		void set_presentaton_mode(cgb::presentation_mode pMode);
+
+		/** Sets the number of samples for MSAA */
+		void set_number_of_samples(int pNumSamples);
+
+		/** Creates or opens the window */
+		void open();
+
+	private:
+		// Actions to be executed before the actual window (re-)creation
+		std::vector<std::function<void(window&)>> mPreCreateActions;
+	};
+
 	/** Represents a native texture handle for the OpenGL 4.6 context */
 	struct texture_handle
 	{
@@ -70,4 +99,5 @@ namespace cgb
 	{
 		// TODO: implement
 	};
+
 }

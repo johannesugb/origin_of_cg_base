@@ -86,9 +86,11 @@ namespace cgb
 
 		// query the position of the mouse cursor
 		auto mousePos = input().cursor_position();
+		LOG_INFO(fmt::format("mousePos[{},{}]", mousePos.x, mousePos.y));
 
 		// calculate how much the cursor has moved from the center of the screen
 		auto mouseMoved = glm::dvec2(extent.x / 2.0 - mousePos.x, extent.y / 2.0 - mousePos.y);
+		LOG_INFO_EM(fmt::format("mouseMoved[{},{}]", mouseMoved.x, mouseMoved.y));
 
 		// accumulate values and create rotation-matrix
 		m_accumulated_mouse_movement.x += m_rotation_speed * static_cast<float>(mouseMoved.x);

@@ -613,12 +613,10 @@ int main()
 		cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
 
 		// Create a window which we're going to use to render to
-		auto windowParams = cgb::window_params{
-			std::nullopt,
-			std::nullopt,
-			"Hello VRS World!"
-		};
-		auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
+		auto mainWnd = cgb::context().create_window("Hello VRS!");
+		mainWnd->set_resolution({ 1600, 900 });
+		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
+		mainWnd->open();
 
 		// Create a "behavior" which contains functionality of our program
 		auto vrsBehavior = vrs_behavior();

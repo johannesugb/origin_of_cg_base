@@ -9,6 +9,9 @@ class hello_behavior : public cgb::cg_element
 		if (cgb::input().key_pressed(cgb::key_code::h)) {
 			LOG_INFO_EM("Hello cg_base!");
 		}
+		if (cgb::input().key_pressed(cgb::key_code::c)) {
+			cgb::context().main_window()->set_cursor_pos({ 666.0, 100 });
+		}
 		if (cgb::input().key_pressed(cgb::key_code::escape)) {
 			cgb::current_composition().stop();
 		}

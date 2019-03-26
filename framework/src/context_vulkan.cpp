@@ -2,106 +2,6 @@
 
 namespace cgb
 {
-
-	void window::request_srgb_framebuffer(bool pRequestSrgb)
-	{
-		switch (pRequestSrgb) {
-		case true:
-			mPreCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
-			});
-			break;
-		default:
-			mPreCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_FALSE);
-			});
-			break;
-		}
-		// If the window has already been created, the new setting can't 
-		// be applied unless the window is being recreated.
-		if (is_alive()) {
-			mRecreationRequired = true;
-		}
-	}
-
-	void window::set_presentaton_mode(cgb::presentation_mode pMode)
-	{
-		switch (pMode) {
-		case cgb::presentation_mode::immediate:
-			mPreCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
-			});
-			mPostCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwSwapInterval(0);
-			});
-			break;
-		case cgb::presentation_mode::vsync:
-			mPreCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-			});
-			mPostCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwSwapInterval(1);
-			});
-			break;
-		default:
-			mPreCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-			});
-			mPostCreateActions.push_back(
-				[](cgb::window & w) {
-				glfwSwapInterval(0);
-			});
-			break;
-		}
-		// If the window has already been created, the new setting can't 
-		// be applied unless the window is being recreated.
-		if (is_alive()) {
-			mRecreationRequired = true;
-		}
-	}
-
-	void window::set_number_of_samples(int pNumSamples)
-	{
-		mPreCreateActions.push_back(
-			[samples = pNumSamples](cgb::window & w) {
-			glfwWindowHint(GLFW_SAMPLES, samples);
-		});
-		// If the window has already been created, the new setting can't 
-		// be applied unless the window is being recreated.
-		if (is_alive()) {
-			mRecreationRequired = true;
-		}
-	}
-
-	void window::open()
-	{
-		for (const auto& fu : mPreCreateActions) {
-			fu(*this);
-		}
-
-		auto* sharedContex = context().get_window_for_shared_context();
-		auto* handle = glfwCreateWindow(mRequestedSize.mWidth, mRequestedSize.mHeight,
-						 mTitle.c_str(),
-						 mMonitor.has_value() ? mMonitor->mHandle : nullptr,
-						 sharedContex);
-		if (nullptr == handle) {
-			throw new std::runtime_error("Failed to create window with the title '" + mTitle + "'");
-		}
-		mHandle = window_handle{ handle };
-
-		for (const auto& action : mPostCreateActions) {
-			action(*this);
-		}
-	}
-
-
 	size_t vulkan::sSettingMaxFramesInFlight = 2;
 	size_t vulkan::sActualMaxFramesInFlight = 2;
 
@@ -237,27 +137,30 @@ namespace cgb
 	window* vulkan::create_window(const std::string& pTitle)
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		// Create a tuple of window, surface, and swap chain
-		auto wnd = generic_glfw::prepare_window();
-		auto surface = create_surface_for_window(wnd);
-		// Vulkan init completion?
-		if (0u == wnd->id() && wnd->handle()) { // We need a surface to create the logical device => do it after the first window has been created
-			// This finishes Vulkan initialization:
-			create_and_assign_logical_device(surface);
-			// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
-			sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
-			//create_sync_objects(); // <-- TODO
-		}
-		// Continue tuple creation
-		//auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
+		auto* wnd = generic_glfw::prepare_window();
 
-		// Insert at the back
-		//auto& back = mSurfSwap.emplace_back(std::make_unique<swap_chain_data>(std::move(swapChain)));
-		//return back->mWindow;
+		wnd->mPostCreateActions.push_back([](cgb::window& w) {
+			// Create a surface and tie it to the window // TODO: tie surface to the window!
+			auto surface = context().create_surface_for_window(&w);
+			// Vulkan init completion?
+			if (0u == w.id() && w.handle()) { // We need a surface to create the logical device => do it after the first window has been created
+				// This finishes Vulkan initialization:
+				context().create_and_assign_logical_device(surface);
+				// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
+				sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
+				//create_sync_objects(); // <-- TODO
+			}
+			// Continue tuple creation
+			//auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
 
-		mTmpMainWindow = wnd;
-		mTmpSurface = surface;
-		return mTmpMainWindow;
+			// Insert at the back
+			//auto& back = mSurfSwap.emplace_back(std::make_unique<swap_chain_data>(std::move(swapChain)));
+			//return back->mWindow;
+
+			context().mTmpMainWindow = &w;
+			context().mTmpSurface = surface;
+		});
+		return wnd;
 	}
 
 	void vulkan::create_instance()
@@ -441,7 +344,7 @@ namespace cgb
 		assert(pWindow->handle());
 		VkSurfaceKHR surface;
 		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mHandle, nullptr, &surface)) {
-			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->name()));
+			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->title()));
 		}
 		return surface;
 	}
@@ -764,11 +667,9 @@ namespace cgb
 		}
 	}
 
-	swap_chain_data vulkan::create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface)
+	swap_chain_data vulkan::create_swap_chain(window* pWindow, const vk::SurfaceKHR& pSurface)
 	{
 		auto srfCaps = mPhysicalDevice.getSurfaceCapabilitiesKHR(pSurface);
-		auto srfFrmts = mPhysicalDevice.getSurfaceFormatsKHR(pSurface);
-		auto presModes = mPhysicalDevice.getSurfacePresentModesKHR(pSurface);
 
 		// Vulkan tells us to match the resolution of the window by setting the width and height in the 
 		// currentExtent member. However, some window managers do allow us to differ here and this is 
@@ -781,53 +682,9 @@ namespace cgb
 						 glm::uvec2(srfCaps.maxImageExtent.width, srfCaps.maxImageExtent.height))
 			: glm::uvec2(srfCaps.currentExtent.width, srfCaps.currentExtent.height);
 
-		// Select a presentation mode:
-		decltype(presModes)::iterator selPresModeItr = presModes.end();
-		if (pWindow->set_presentaton_mode pParams.mPresentationMode) {
-			switch (*pParams.mPresentationMode) {
-			case cgb::presentation_mode::immediate:
-				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eImmediate);
-				break;
-			case cgb::presentation_mode::double_buffering:
-				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifoRelaxed);
-				break;
-			case cgb::presentation_mode::vsync:
-				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eFifo);
-				break;
-			case cgb::presentation_mode::triple_buffering:
-				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eMailbox);
-				break;
-			default:
-				throw std::runtime_error("should not get here");
-			}
-		}
-		if (selPresModeItr == presModes.end()) {
-			LOG_WARNING_EM("No presentation mode specified or desired presentation mode not available => will select any presentation mode");
-			selPresModeItr = presModes.begin();
-		}
 
-		// select a format:
-		auto selSurfaceFormat = vk::SurfaceFormatKHR{
-			vk::Format::eB8G8R8A8Unorm,
-			vk::ColorSpaceKHR::eSrgbNonlinear
-		};
-		if (!(srfFrmts.size() == 1 && srfFrmts[0].format == vk::Format::eUndefined)) {
-			for (const auto& e : srfFrmts) {
-				if (true == pParams.mFramebufferParams.mSrgbFormat) {
-					if (is_srgb_format(cgb::image_format(e))) {
-						selSurfaceFormat = e;
-						break;
-					}
-				}
-				else {
-					if (!is_srgb_format(cgb::image_format(e))) {
-						selSurfaceFormat = e;
-						break;
-					}
-				}
-			}
-		}
 
+		
 		// Select the number of images. 
 		// TODO: Should this depend on the selected presentation mode?
 		auto imageCount = srfCaps.minImageCount + 1u;
@@ -835,18 +692,20 @@ namespace cgb
 			imageCount = glm::min(imageCount, srfCaps.maxImageCount);
 		}
 
+		auto surfaceFormat = pWindow->get_surface_format(pSurface);
+
 		// With all settings gathered, create the swap chain!
 		auto createInfo = vk::SwapchainCreateInfoKHR()
 			.setSurface(pSurface)
 			.setMinImageCount(imageCount)
-			.setImageFormat(selSurfaceFormat.format)
-			.setImageColorSpace(selSurfaceFormat.colorSpace)
+			.setImageFormat(surfaceFormat.format)
+			.setImageColorSpace(surfaceFormat.colorSpace)
 			.setImageExtent(vk::Extent2D(extent.x, extent.y))
 			.setImageArrayLayers(1) // The imageArrayLayers specifies the amount of layers each image consists of. This is always 1 unless you are developing a stereoscopic 3D application. [2]
 			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
 			.setPreTransform(srfCaps.currentTransform) // To specify that you do not want any transformation, simply specify the current transformation. [2]
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // => no blending with other windows
-			.setPresentMode(*selPresModeItr)
+			.setPresentMode(pWindow->get_presentation_mode(pSurface))
 			.setClipped(VK_TRUE) // we don't care about the color of pixels that are obscured, for example because another window is in front of them.  [2]
 			.setOldSwapchain({}); // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
 
@@ -884,7 +743,7 @@ namespace cgb
 			const_cast<window*>(pWindow),
 			pSurface,
 			mLogicalDevice.createSwapchainKHR(createInfo),
-			selSurfaceFormat,
+			surfaceFormat,
 			vk::Extent2D(extent.x, extent.y),
 			{}, // std::vector<vk::Image> mSwapChainImages
 			{}  // std::vector<vk::ImageView> mSwapChainImageViews
@@ -1001,7 +860,7 @@ namespace cgb
 
 	pipeline vulkan::create_graphics_pipeline_for_swap_chain(
 		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
-		const swap_chain_data& pSwapChainData,
+		swap_chain_data& pSwapChainData,
 		image_format pDepthFormat,
 		const vk::VertexInputBindingDescription& pBindingDesc,
 		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
@@ -1065,15 +924,6 @@ namespace cgb
 			.setDepthBiasClamp(0.0f) // Optional
 			.setDepthBiasSlopeFactor(0.0f); // Optional
 
-		// MULTISAMPLING
-		auto multisampling = vk::PipelineMultisampleStateCreateInfo()
-			.setSampleShadingEnable(VK_FALSE) // disable
-			.setRasterizationSamples(vk::SampleCountFlagBits::e1)
-			.setMinSampleShading(1.0f) // Optional
-			.setPSampleMask(nullptr) // Optional
-			.setAlphaToCoverageEnable(VK_FALSE) // Optional
-			.setAlphaToOneEnable(VK_FALSE); // Optional
-
 		// COLOR BLENDING
 		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState()
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
@@ -1125,6 +975,8 @@ namespace cgb
 			.setFront(vk::StencilOpState())
 			.setBack(vk::StencilOpState());
 
+		// MULTISAMPLING
+		auto multisamplingInfo = pSwapChainData.mWindow->get_multisample_state_create_info();
 
 		// PIPELINE CREATION
 		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()
@@ -1134,7 +986,7 @@ namespace cgb
 			.setPInputAssemblyState(&inputAssembly)
 			.setPViewportState(&viewportInfo)
 			.setPRasterizationState(&rasterizer)
-			.setPMultisampleState(&multisampling)
+			.setPMultisampleState(&multisamplingInfo)
 			.setPDepthStencilState(&depthStencil) // Optional
 			.setPColorBlendState(&colorBlendingInfo)
 			.setPDynamicState(nullptr) // Optional

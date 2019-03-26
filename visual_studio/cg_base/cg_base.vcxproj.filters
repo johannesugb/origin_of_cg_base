@@ -4,9 +4,6 @@
     <ClCompile Include="..\..\framework\src\composition_interface.cpp">
       <Filter>Source Files\general</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\window.cpp">
-      <Filter>Source Files\environment</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\log.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
@@ -133,6 +130,9 @@
     <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_layout.cpp">
       <Filter>Source Files\stst</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\window_base.cpp">
+      <Filter>Source Files\environment</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -146,9 +146,6 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\composition_interface.h">
       <Filter>Header Files\general</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\window.h">
-      <Filter>Header Files\environment</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\log.h">
       <Filter>Header Files\utils</Filter>
@@ -287,6 +284,9 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_layout.h">
       <Filter>Header Files\stst</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\window_base.h">
+      <Filter>Header Files\environment</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

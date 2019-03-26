@@ -57,7 +57,7 @@
 #include "math_utils.h"
 #include "key_code.h"
 #include "key_state.h"
-#include "window.h"
+#include "window_base.h"
 #include "timer_interface.h"
 #include "timer_frame_type.h"
 #include "fixed_update_timer.h"

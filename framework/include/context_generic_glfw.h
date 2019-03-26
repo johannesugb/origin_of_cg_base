@@ -72,7 +72,22 @@ namespace cgb
 		 *  Example: To select all windows, pass the lambda [](auto* w){ return true; }
 		 */
 		template <typename T>
-		std::vector<window*> select_windows(T selector)
+		window* find_window(T selector)
+		{
+			for (auto& wnd : mWindows) {
+				auto wnd_ptr = wnd.get();
+				if (selector(wnd_ptr)) {
+					return wnd_ptr;
+				}
+			}
+			return nullptr;
+		}
+
+		/** Select multiple windows and return a vector of pointers to them.
+		 *  Example: To select all windows, pass the lambda [](auto* w){ return true; }
+		 */
+		template <typename T>
+		std::vector<window*> find_windows(T selector)
 		{
 			std::vector<window*> results;
 			for (auto& wnd : mWindows) {
@@ -87,7 +102,7 @@ namespace cgb
 		/** Returns the window which is currently in focus, i.e. this is also
 		 *	the window which is affected by all mouse cursor input interaction.
 		 */
-		window* window_in_focus() const { return mWindowInFocus; }
+		window* window_in_focus() const { return sWindowInFocus; }
 
 		/** With this context, all windows share the same graphics-context, this 
 		 *	method can be used to get a window to share the context with.
@@ -112,10 +127,11 @@ namespace cgb
 		static void glfw_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos);
 		static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 		static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-		static void window_focus_callback(GLFWwindow* window, int focused);
+		static void glfw_window_focus_callback(GLFWwindow* window, int focused);
+		static void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 
 		std::vector<window_ptr> mWindows;
-		static window* mWindowInFocus;
+		static window* sWindowInFocus;
 		bool mInitialized;
 
 		static std::mutex sInputMutex;

@@ -271,7 +271,7 @@ namespace cgb
 			cgb::context().begin_composition();
 
 			// Enable receiving input
-			auto windows_for_input = context().select_windows([](auto * w) { return w->is_input_enabled(); });
+			auto windows_for_input = context().find_windows([](auto * w) { return w->is_input_enabled(); });
 			for (auto* w : windows_for_input)
 			{
 				w->set_is_in_use(true);
@@ -289,6 +289,8 @@ namespace cgb
 			
 			while (!mShouldStop)
 			{
+				context().work_off_all_pending_main_thread_actions();
+
 				if (mShouldSwapInputBuffers)
 				{
 					auto* windowForCursorActions = context().window_in_focus();
