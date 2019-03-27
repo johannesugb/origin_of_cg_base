@@ -30,8 +30,8 @@ namespace cgb
 			mTimer(),
 			mExecutor(this),
 			mInputBuffers(),
-			mInputBufferUpdateIndex(0),
-			mInputBufferConsumerIndex(1),
+			mInputBufferForegroundIndex(0),
+			mInputBufferBackgroundIndex(1),
 			mShouldStop(false),
 			mShouldSwapInputBuffers(false),
 			mInputBufferGoodToGo(true),
@@ -44,8 +44,8 @@ namespace cgb
 			mTimer(),
 			mExecutor(this),
 			mInputBuffers(),
-			mInputBufferUpdateIndex(0),
-			mInputBufferConsumerIndex(1),
+			mInputBufferForegroundIndex(0),
+			mInputBufferBackgroundIndex(1),
 			mShouldStop(false),
 			mShouldSwapInputBuffers(false),
 			mInputBufferGoodToGo(true),
@@ -63,7 +63,12 @@ namespace cgb
 		 *	current user input data */
 		input_buffer& input() override
 		{
-			return mInputBuffers[mInputBufferConsumerIndex];
+			return mInputBuffers[mInputBufferForegroundIndex];
+		}
+
+		input_buffer& background_input_buffer() override
+		{
+			return mInputBuffers[mInputBufferBackgroundIndex];
 		}
 
 		/** Returns the @ref cg_element at the given index */
@@ -277,7 +282,7 @@ namespace cgb
 				w->set_is_in_use(true);
 				// Write into the buffer at mInputBufferUpdateIndex,
 				// let client-objects read from the buffer at mInputBufferConsumerIndex
-				context().start_receiving_input_from_window(*w, mInputBuffers[mInputBufferUpdateIndex]);
+				context().start_receiving_input_from_window(*w, mInputBuffers[mInputBufferForegroundIndex]);
 				mWindowsReceivingInputFrom.push_back(w);
 			}
 
@@ -294,9 +299,14 @@ namespace cgb
 				if (mShouldSwapInputBuffers)
 				{
 					auto* windowForCursorActions = context().window_in_focus();
-					std::swap(mInputBufferUpdateIndex, mInputBufferConsumerIndex);
-					mInputBuffers[mInputBufferUpdateIndex].prepare_for_next_frame(mInputBuffers[mInputBufferConsumerIndex], windowForCursorActions);
-					context().change_target_input_buffer(mInputBuffers[mInputBufferUpdateIndex]);
+					// The buffer which has been updated becomes the buffer which will be consumed in the next frame
+					//  update-buffer = previous frame, i.e. done
+					//  consumer-index = updated in the next frame, i.e. to be done
+					input_buffer::prepare_for_next_frame(
+						mInputBuffers[mInputBufferBackgroundIndex], 
+						mInputBuffers[mInputBufferForegroundIndex], 
+						windowForCursorActions);
+					std::swap(mInputBufferForegroundIndex, mInputBufferBackgroundIndex);
 					have_swapped_input_buffers();
 				}
 
@@ -346,8 +356,8 @@ namespace cgb
 		TTimer mTimer;
 		TExecutor mExecutor;
 		std::array<input_buffer, 2> mInputBuffers;
-		int32_t mInputBufferUpdateIndex;
-		int32_t mInputBufferConsumerIndex;
+		int32_t mInputBufferForegroundIndex;
+		int32_t mInputBufferBackgroundIndex;
 		std::atomic_bool mShouldStop;
 		std::atomic_bool mShouldSwapInputBuffers;
 		std::atomic_bool mInputBufferGoodToGo;

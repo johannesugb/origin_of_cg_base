@@ -1,12 +1,12 @@
 #include "context_generic_glfw.h"
 #include "window_base.h"
 #include "input_buffer.h"
+#include "composition_interface.h"
 
 namespace cgb
 {
 	window* generic_glfw::sWindowInFocus = nullptr;
 	std::mutex generic_glfw::sInputMutex;
-	input_buffer* generic_glfw::sTargetInputBuffer(nullptr);
 	std::array<key_code, GLFW_KEY_LAST + 1> generic_glfw::sGlfwToKeyMapping{};
 	std::thread::id generic_glfw::sMainThreadId = std::this_thread::get_id();
 	std::mutex generic_glfw::sDispatchMutex;
@@ -243,7 +243,6 @@ namespace cgb
 		glfwSetCursorPosCallback(pWindow.handle()->mHandle, glfw_cursor_pos_callback);
 		glfwSetScrollCallback(pWindow.handle()->mHandle, glfw_scroll_callback);
 		glfwSetKeyCallback(pWindow.handle()->mHandle, glfw_key_callback);
-		sTargetInputBuffer = &pInputBuffer;
 	}
 
 	void generic_glfw::stop_receiving_input_from_window(const window& pWindow)
@@ -281,38 +280,34 @@ namespace cgb
 		return it != mWindows.end() ? it->get() : nullptr;
 	}
 
-	void generic_glfw::change_target_input_buffer(input_buffer& pInputBuffer)
-	{
-		std::lock_guard<std::mutex> lock(sInputMutex);
-		sTargetInputBuffer = &pInputBuffer;
-	}
-
 	void generic_glfw::glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
 		assert(are_we_on_the_main_thread());
-		assert(sTargetInputBuffer);
 		std::lock_guard<std::mutex> lock(sInputMutex);
 		button = glm::clamp(button, 0, 7);
+
+		auto& inputBackBuffer = composition_interface::current()->background_input_buffer();
 		switch (action)
 		{
 		case GLFW_PRESS:
-			sTargetInputBuffer->mMouseKeys[button] |= key_state::pressed;
-			sTargetInputBuffer->mMouseKeys[button] |= key_state::down;
+			inputBackBuffer.mMouseKeys[button] |= key_state::pressed;
+			inputBackBuffer.mMouseKeys[button] |= key_state::down;
 			break;
 		case GLFW_RELEASE:
-			sTargetInputBuffer->mMouseKeys[button] |= key_state::released;
+			inputBackBuffer.mMouseKeys[button] |= key_state::released;
 			break;
 		case GLFW_REPEAT:
-			sTargetInputBuffer->mMouseKeys[button] |= key_state::down;
+			inputBackBuffer.mMouseKeys[button] |= key_state::down;
 			break;
 		}
 	}
 
 	void generic_glfw::glfw_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
 	{
-		assert(sTargetInputBuffer);
-		std::lock_guard<std::mutex> lock(sInputMutex);
-		sTargetInputBuffer->mCursorPosition = glm::dvec2(xpos, ypos);
+		assert(are_we_on_the_main_thread());
+		auto* wnd = context().window_for_handle(window);
+		assert(wnd);
+		wnd->mCursorPosition = glm::dvec2(xpos, ypos);
 	}
 
 	void generic_glfw::glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -324,21 +319,22 @@ namespace cgb
 
 	void generic_glfw::glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-		assert(sTargetInputBuffer);
 		std::lock_guard<std::mutex> lock(sInputMutex);
 
 		// TODO: Do something with the window-parameter? Or is it okay?
 
 		key = glm::clamp(key, 0, GLFW_KEY_LAST);
+
+		auto& inputBackBuffer = composition_interface::current()->background_input_buffer();
 		switch (action)
 		{
 		case GLFW_PRESS:
-			sTargetInputBuffer->mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] |= key_state::pressed;
-			sTargetInputBuffer->mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] |= key_state::down;
+			inputBackBuffer.mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] |= key_state::pressed;
+			inputBackBuffer.mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] |= key_state::down;
 			break;
 		case GLFW_RELEASE:
-			sTargetInputBuffer->mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] |= key_state::released;
-			sTargetInputBuffer->mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] &= ~key_state::down;
+			inputBackBuffer.mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] |= key_state::released;
+			inputBackBuffer.mKeyboardKeys[static_cast<size_t>(sGlfwToKeyMapping[key])] &= ~key_state::down;
 			break;
 		case GLFW_REPEAT:
 			// just ignore
@@ -349,27 +345,15 @@ namespace cgb
 	void generic_glfw::glfw_window_focus_callback(GLFWwindow* window, int focused)
 	{
 		if (focused) {
-			auto result = context().find_window([=](auto* w) { 
-				auto handle = w->handle();
-				assert(handle != std::nullopt);
-				return handle->mHandle == window; 
-			});
-			if (nullptr != result) {
-				sWindowInFocus = result;
-			}
+			sWindowInFocus = context().window_for_handle(window);
 		}
 	}
 
 	void generic_glfw::glfw_window_size_callback(GLFWwindow* window, int width, int height)
 	{
-		auto foundWindow = context().find_window([=](auto* w) { 
-			auto handle = w->handle();
-			assert(handle != std::nullopt);
-			return handle->mHandle == window; 
-		});
-		if (nullptr != foundWindow) {
-			foundWindow->mResultion = glm::uvec2(width, height);
-		}
+		auto* wnd = context().window_for_handle(window);
+		assert(wnd);
+		wnd->mResultion = glm::uvec2(width, height);
 	}
 
 	GLFWwindow* generic_glfw::get_window_for_shared_context()

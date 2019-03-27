@@ -43,9 +43,6 @@ namespace cgb
 		 */
 		void start_receiving_input_from_window(const window& pWindow, input_buffer& pInputBuffer);
 
-		/** Change the target input buffer to be modified by input events */
-		void change_target_input_buffer(input_buffer& pInputBuffer);
-
 		/**	@brief stops receiving mouse and keyboard input from specified window.
 		 *
 		 *	@param[in] pWindow The window to stop receiving input from
@@ -99,6 +96,18 @@ namespace cgb
 			return results;
 		}
 
+		/** Finds the window which is associated to the given handle.
+		 *	Throws an exception if the handle does not exist in the list of windows!
+		 */
+		window* window_for_handle(GLFWwindow* handle)
+		{
+			for (auto& wnd : mWindows) {
+				assert(wnd->handle());
+				return wnd.get();
+			}
+			return nullptr;
+		}
+
 		/** Returns the window which is currently in focus, i.e. this is also
 		 *	the window which is affected by all mouse cursor input interaction.
 		 */
@@ -135,7 +144,6 @@ namespace cgb
 		bool mInitialized;
 
 		static std::mutex sInputMutex;
-		static input_buffer* sTargetInputBuffer;
 		static std::array<key_code, GLFW_KEY_LAST + 1> sGlfwToKeyMapping;
 
 		static std::thread::id sMainThreadId;

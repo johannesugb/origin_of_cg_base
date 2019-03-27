@@ -94,6 +94,7 @@ namespace cgb
 		glm::uvec2 resolution() const;
 
 		/** Returns whether or not the cursor is hidden 
+		 *	Threading: This method must always be called from the main thread
 		 */
 		bool is_cursor_hidden() const;
 

@@ -174,9 +174,10 @@ namespace cgb
 	void window_base::set_cursor_pos(glm::dvec2 pCursorPos)
 	{
 		assert(handle());
-		context().dispatch_to_main_thread([this, pCursorPos]() {
+		context().dispatch_to_main_thread([this, newCursorPos = pCursorPos]() {
 			assert(handle());
-			glfwSetCursorPos(handle()->mHandle, pCursorPos.x, pCursorPos.y);
+			glfwSetCursorPos(handle()->mHandle, newCursorPos.x, newCursorPos.y);
+			mCursorPosition = newCursorPos;
 		});
 	}
 
