@@ -100,7 +100,7 @@ private:
 
 	cgb::AmbientLight m_ambient_light;
 	cgb::DirectionalLight m_dir_light;
-	std::vector<cgb::PointLight> m_point_lights;
+	std::vector<cgb::PointLight> mPointLights;
 
 	struct PointLights
 	{
@@ -263,10 +263,10 @@ private:
 
 		// initialize lights
 		create_lots_of_lights();
-		for (int i = 0; i < MAX_COUNT_POINT_LIGHTS && i < m_point_lights.size(); i++) {
-			pointLights.pointLightData[i] = m_point_lights[i].GetGpuData();
+		for (int i = 0; i < MAX_COUNT_POINT_LIGHTS && i < mPointLights.size(); i++) {
+			pointLights.pointLightData[i] = mPointLights[i].GetGpuData();
 		}
-		pointLights.count = m_point_lights.size();
+		pointLights.count = mPointLights.size();
 
 		mAmbientLightBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(m_ambient_light), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
 			vk::MemoryPropertyFlagBits::eDeviceLocal, &m_ambient_light);
@@ -330,6 +330,12 @@ private:
 				sponzaRenderObject->update_uniform_buffer(i, uboCam);
 			}
 		}
+
+		//TODO update point light position with view matrix 
+		for (int i = 0; i < MAX_COUNT_POINT_LIGHTS && i < mPointLights.size(); i++) {
+			pointLights.pointLightData[i] = mPointLights[i].GetGpuData(uboCam.view);
+		}
+		pointLights.count = mPointLights.size();
 
 		mResourceBundleGroup->allocate_resource_bundle(mGlobalResourceBundle.get());
 
@@ -744,13 +750,13 @@ private:
 		std::uniform_int_distribution<size_t> distribution(0, light_colors.size() - 1);
 
 		// Create a (moving) light near the pillars at the initial view
-		m_point_lights.push_back(cgb::PointLight(
+		mPointLights.push_back(cgb::PointLight(
 			light_colors[distribution(generator)],
 			kInitialPositionOfFirstPointLight,
 			glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)));
 
 		// Create a (moving) light which is especially useful for evaluating Bonus-Task 1
-		m_point_lights.push_back(cgb::PointLight(
+		mPointLights.push_back(cgb::PointLight(
 			light_colors[distribution(generator)],
 			kInitialPositionOfSecondPointLight,
 			glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)));
@@ -767,7 +773,7 @@ private:
 			{
 				for (auto z = 0; z < nz; ++z)
 				{
-					m_point_lights.push_back(cgb::PointLight(
+					mPointLights.push_back(cgb::PointLight(
 						light_colors[distribution(generator)],
 						glm::vec3(lb_x + x * step_x, 0.1f, lb_z + z * step_z),
 						atten));
@@ -787,7 +793,7 @@ private:
 			{
 				for (auto z = 0; z < nz; ++z)
 				{
-					m_point_lights.push_back(cgb::PointLight(
+					mPointLights.push_back(cgb::PointLight(
 						light_colors[distribution(generator)],
 						glm::vec3(lb_x + x * step_x, 7.0f, lb_z + z * step_z),
 						atten));
@@ -802,7 +808,7 @@ private:
 	{
 		const auto kSpeedXZ = 0.5f;
 		const auto kRadiusXZ = 1.5f;
-		m_point_lights[0].set_position(kInitialPositionOfFirstPointLight + glm::vec3(
+		mPointLights[0].set_position(kInitialPositionOfFirstPointLight + glm::vec3(
 			kRadiusXZ * glm::sin(kSpeedXZ * elapsed_time),
 			0.0f,
 			kRadiusXZ * glm::cos(kSpeedXZ * elapsed_time)));
@@ -810,7 +816,7 @@ private:
 		const auto kSpeed = 0.6f;
 		const auto kDistanceX = -0.23f;
 		const auto kDistanceY = 1.0f;
-		m_point_lights[1].set_position(kInitialPositionOfSecondPointLight + glm::vec3(
+		mPointLights[1].set_position(kInitialPositionOfSecondPointLight + glm::vec3(
 			kDistanceX * glm::sin(kSpeed * elapsed_time),
 			kDistanceY * glm::sin(kSpeed * elapsed_time),
 			0.0f));

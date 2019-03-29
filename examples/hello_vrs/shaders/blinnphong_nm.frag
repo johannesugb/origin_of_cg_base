@@ -12,10 +12,28 @@ layout(set = 1, binding = 0) uniform MaterialDataBufferObject {
 	vec3 uSpecularReflectivity;
 	vec3 uAmbientReflectivity;
 	vec3 uEmissiveLight;
+	vec3 uTransparentColor;
+	
+	bool wireframe_mode;
+	bool twosided;
+	uint blend_mode;
+	float opacity;
 	float uShininess;
-	float uRoughness;
+	float shininess_strength;
+	float refraction_index;
+	float reflectivity;
+		
 	vec3 uAlbedo;
 	float uMetallic;
+	float smoothness;
+	float sheen;
+	float thickness;
+	float uRoughness;
+	float anisotropy;
+	vec3 anisotropy_rotation;
+	vec2 offset;
+	vec2 tiling;
+
 } matData;
 
 layout(set = 1, binding = 1) uniform sampler2D uDiffuseTexSampler;
@@ -229,5 +247,6 @@ void main()
 
 	// add all together
 	oFragColor = vec4(ambient + emissive + diffuse_and_specular, 1.0);
+	oFragColor = vec4(ambient + diffuse_and_specular, 1.0);
 }
 // ----------------------------------------------
