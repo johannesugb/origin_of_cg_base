@@ -141,6 +141,7 @@ namespace cgb
 		void set_tiling(const glm::vec2& value) { m_tiling = value; }
 
 		std::shared_ptr<vulkan_resource_bundle> create_resource_bundle(std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup);
+		void update_material_buffer();
 
 	private:
 		// The first two are not uploaded to the shader, i.e. no uniform setters generated for these 
@@ -184,6 +185,8 @@ namespace cgb
 		glm::vec2 m_tiling;
 
 		static TexParams ai_mapping_mode_to_tex_params(aiTextureMapMode aimm);
+
+		std::shared_ptr<vulkan_buffer> mMaterialBuffer;
 	};
 
 }

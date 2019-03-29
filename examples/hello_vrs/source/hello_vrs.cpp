@@ -468,19 +468,27 @@ private:
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 		UniformBufferObject ubo = {};
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.model = glm::mat4(1.0f);
 		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), imagePresenter->get_swap_chain_extent().width / (float)imagePresenter->get_swap_chain_extent().height, 0.1f, 10.0f);
 		ubo.proj[1][1] *= -1;
 		ubo.mvp = ubo.proj * ubo.view * ubo.model;
 		renderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, ubo);
 
-		UniformBufferObject uboCam{
-			glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
-			mCamera.CalculateViewMatrix(),
-			mCamera.projection_matrix()
-		};
-		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+		UniformBufferObject uboCam{};
+		uboCam.view = mCamera.CalculateViewMatrix();
+		uboCam.proj = glm::perspective(glm::radians(45.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f); mCamera.projection_matrix();
+		uboCam.proj[1][1] *= -1;
+
+		for (int i = 0; i < mSponzaRenderObjects.size(); i++) {
+			auto sponzaRenderObject = mSponzaRenderObjects[i];
+			uboCam.model = mModel->transformation_matrix();
+			uboCam.model = glm::scale(glm::vec3(0.01f)) * mModel->mesh_at(i).transformation_matrix();
+			//uboCam.model = mModel->transformation_matrix(i);
+			uboCam.mv = uboCam.view * uboCam.model;
+			uboCam.mvp = uboCam.proj * uboCam.view * uboCam.model;
+
 			sponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
 		}
 
@@ -680,6 +688,14 @@ private:
 		outModel = cgb::Model::LoadFromFile(inPath, transform, mResourceBundleGroup, model_loader_flags);
 
 		auto meshes = outModel->SelectAllMeshes();
+		for (cgb::Mesh& mesh : meshes)
+		{
+			mesh.m_material_data->set_roughness(0.1f);
+			mesh.m_material_data->set_albedo(glm::vec3(0.95f, 0.64f, 0.54f));
+			mesh.m_material_data->set_metallic(1.0f);
+			mesh.m_material_data->update_material_buffer();
+		}
+
 		for (cgb::Mesh& mesh : meshes) {
 			auto outVertexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(),
 				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, mesh.m_vertex_data.data());

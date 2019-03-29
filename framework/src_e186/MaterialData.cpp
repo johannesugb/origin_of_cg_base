@@ -215,35 +215,11 @@ namespace cgb
 	{
 		auto resourceBundle = resourceBundleGroup->create_resource_bundle(MaterialData::get_resource_bundle_layout(), false);
 
-		auto materialUniform = material_uniform();
-		materialUniform.diffuse_reflectivity = m_diffuse_reflectivity;
-		materialUniform.specular_reflectivity = m_specular_reflectivity;
-		materialUniform.ambient_reflectivity = m_ambient_reflectivity;
-		materialUniform.emissive_color = m_emissive_color;
-		materialUniform.transparent_color = m_transparent_color;
-		materialUniform.wireframe_mode = m_wireframe_mode;
-		materialUniform.twosided = m_twosided;
-		materialUniform.blend_mode = m_blend_mode;
-		materialUniform.opacity = m_opacity;
-		materialUniform.shininess = m_shininess;
-		materialUniform.shininess_strength = m_shininess_strength;
-		materialUniform.refraction_index = m_refraction_index;
-		materialUniform.reflectivity = m_reflectivity;
-
-		materialUniform.albedo = m_albedo;
-		materialUniform.metallic = m_metallic;
-		materialUniform.smoothness = m_smoothness;
-		materialUniform.sheen = m_sheen;
-		materialUniform.thickness = m_thickness;
-		materialUniform.roughness = m_roughness;
-		materialUniform.anisotropy = m_anisotropy;
-		materialUniform.anisotropy_rotation = m_anisotropy_rotation;
-		materialUniform.offset = m_offset;
-		materialUniform.tiling = m_tiling;
-
 		vk::DeviceSize bufferSize = sizeof(material_uniform);
-		auto uniformBuffer = std::make_shared<cgb::vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		uniformBuffer->update_buffer(&materialUniform, sizeof(materialUniform));
+		mMaterialBuffer = std::make_shared<cgb::vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+		update_material_buffer();
+		
 
 		std::shared_ptr<cgb::vulkan_texture> whiteTex = nullptr;
 		if (!m_diffuse_tex || !m_specular_tex || !m_ambient_tex || !m_emissive_tex ||
@@ -277,7 +253,7 @@ namespace cgb
 		if (!m_lightmap_tex) { m_lightmap_tex = whiteTex; }
 
 
-		resourceBundle->add_buffer_resource(0, uniformBuffer, bufferSize);
+		resourceBundle->add_buffer_resource(0, mMaterialBuffer, bufferSize);
 		if (m_diffuse_tex) { resourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, m_diffuse_tex); }
 		if (m_specular_tex) { resourceBundle->add_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, m_specular_tex); }
 		if (m_ambient_tex) { resourceBundle->add_image_resource(3, vk::ImageLayout::eShaderReadOnlyOptimal, m_ambient_tex); }
@@ -291,6 +267,36 @@ namespace cgb
 		if (m_lightmap_tex) { resourceBundle->add_image_resource(11, vk::ImageLayout::eShaderReadOnlyOptimal, m_lightmap_tex); }
 
 		return resourceBundle;
+	}
+
+	void MaterialData::update_material_buffer() {
+		auto materialUniform = material_uniform();
+		materialUniform.diffuse_reflectivity = m_diffuse_reflectivity;
+		materialUniform.specular_reflectivity = m_specular_reflectivity;
+		materialUniform.ambient_reflectivity = m_ambient_reflectivity;
+		materialUniform.emissive_color = m_emissive_color;
+		materialUniform.transparent_color = m_transparent_color;
+		materialUniform.wireframe_mode = m_wireframe_mode;
+		materialUniform.twosided = m_twosided;
+		materialUniform.blend_mode = m_blend_mode;
+		materialUniform.opacity = m_opacity;
+		materialUniform.shininess = m_shininess;
+		materialUniform.shininess_strength = m_shininess_strength;
+		materialUniform.refraction_index = m_refraction_index;
+		materialUniform.reflectivity = m_reflectivity;
+
+		materialUniform.albedo = m_albedo;
+		materialUniform.metallic = m_metallic;
+		materialUniform.smoothness = m_smoothness;
+		materialUniform.sheen = m_sheen;
+		materialUniform.thickness = m_thickness;
+		materialUniform.roughness = m_roughness;
+		materialUniform.anisotropy = m_anisotropy;
+		materialUniform.anisotropy_rotation = m_anisotropy_rotation;
+		materialUniform.offset = m_offset;
+		materialUniform.tiling = m_tiling;
+
+		mMaterialBuffer->update_buffer(&materialUniform, sizeof(materialUniform));
 	}
 
 }

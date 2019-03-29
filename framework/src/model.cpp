@@ -93,6 +93,8 @@ namespace cgb
 			flags_for_assimp_importer |= aiProcess_LimitBoneWeights;
 		if (modelLoaderFlags & MOLF_calcTangentSpace)
 			flags_for_assimp_importer |= aiProcess_CalcTangentSpace;
+
+		//flags_for_assimp_importer |= aiProcess_MakeLeftHanded | aiProcess_FlipUVs | aiProcess_FlipWindingOrder;
 		return flags_for_assimp_importer;
 	}
 
@@ -481,7 +483,7 @@ namespace cgb
 			LOG_WARNING("VertexData_Position not specified - enabling it anyways!");
 		}
 		{
-			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Position), vk::Format::eR32G32B32A32Sfloat, m_position_offset);
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Position), vk::Format::eR32G32B32Sfloat, m_position_offset);
 		}
 
 		// Normal
@@ -499,7 +501,7 @@ namespace cgb
 		// Color
 		if ((vertexDataConfig & VertexAttribData::Color) == VertexAttribData::Color)
 		{
-			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Color), vk::Format::eR32G32B32Sfloat, m_color_offset);
+			binding.add_attribute_description(static_cast<uint_fast32_t>(VertexAttribLocation::Color), vk::Format::eR32G32B32A32Sfloat, m_color_offset);
 		}
 
 		// Bones
