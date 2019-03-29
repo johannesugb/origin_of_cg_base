@@ -41,13 +41,28 @@ namespace cgb {
 		vulkan_buffer stagingBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, mCommandBufferManager);
 		stagingBuffer.update_buffer(pixels, imageSize);
 
-		create_image(texWidth, texHeight, mMipLevels, vk::SampleCountFlagBits::e1, vk::Format::eR8G8B8A8Unorm, vk::ImageTiling::eOptimal,
+		auto format = vk::Format::eR8G8B8A8Unorm;
+		/*switch (texChannels) {
+		case 3:
+			format = vk::Format::eR8G8B8Unorm;
+			break;
+		case 2:
+			format = vk::Format::eR8G8Unorm;
+			break;
+		case 1:
+			format = vk::Format::eR8Unorm;
+			break;
+		}*/
+
+		create_image(texWidth, texHeight, mMipLevels, vk::SampleCountFlagBits::e1, format, vk::ImageTiling::eOptimal,
 			vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mImageMemory);
 
-		transition_image_layout(vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mMipLevels);
+		transition_image_layout(format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mMipLevels);
 		copy_buffer_to_image(stagingBuffer, mImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-		generate_mipmaps(vk::Format::eR8G8B8A8Unorm, texWidth, texHeight, mMipLevels);
+		if (format == vk::Format::eR8G8B8A8Unorm) {
+			generate_mipmaps(format, texWidth, texHeight, mMipLevels);
+		}
 	}
 
 	void vulkan_image::create_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
@@ -312,5 +327,14 @@ namespace cgb {
 		}
 
 		return imageView;
+	}
+
+	std::shared_ptr<vulkan_image> cgb::vulkan_image::generate_1px_image(uint8_t color_r, uint8_t color_g, uint8_t color_b)
+	{
+		auto one_px = new uint8_t[3];
+		one_px[0] = color_r;
+		one_px[1] = color_g;
+		one_px[2] = color_b;
+		return std::make_shared<vulkan_image>(&one_px, 1, 1, 3);
 	}
 }

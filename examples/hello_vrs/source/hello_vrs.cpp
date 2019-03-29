@@ -89,7 +89,7 @@ private:
 	std::unique_ptr<cgb::Model> mModel;
 
 
-	std::shared_ptr<cgb::vulkan_render_object> mSponzaRenderObject;
+	std::vector<std::shared_ptr<cgb::vulkan_render_object>> mSponzaRenderObjects;
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mGlobalResourceBundleLayout; // contains lights and global flags
 	std::shared_ptr<cgb::vulkan_resource_bundle> mGlobalResourceBundle;
 
@@ -325,8 +325,10 @@ private:
 		uboCam.mv = ubo.view * ubo.model;
 		ubo.mvp = ubo.proj * ubo.view * ubo.model;
 
-		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
-			mSponzaRenderObject->update_uniform_buffer(i, uboCam);
+		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+			for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
+				sponzaRenderObject->update_uniform_buffer(i, uboCam);
+			}
 		}
 
 		mResourceBundleGroup->allocate_resource_bundle(mGlobalResourceBundle.get());
@@ -352,7 +354,9 @@ private:
 
 		delete renderObject;
 		delete renderObject2;
-		mSponzaRenderObject.reset();
+		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+			sponzaRenderObject.reset();
+		}
 		texture.reset();
 		textureImage.reset();
 		transferCommandBufferManager.reset();
@@ -384,10 +388,11 @@ private:
 		depthImage.reset();
 
 		drawer.reset();
-		mRenderVulkanPipeline.reset();
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			mVrsImageComputeDrawer.reset();
 		}
+		mMaterialDrawer.reset();
+		mRenderVulkanPipeline.reset();
 		mComputeVulkanPipeline.reset();
 		mVulkanFramebuffer.reset();
 
@@ -475,7 +480,9 @@ private:
 			mCamera.CalculateViewMatrix(),
 			mCamera.projection_matrix()
 		};
-		mSponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
+		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+			sponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
+		}
 
 		// start drawing, record draw commands, etc.
 		cgb::vulkan_context::instance().vulkanFramebuffer = mVulkanFramebuffer;
@@ -485,7 +492,9 @@ private:
 		}
 
 		std::vector<cgb::vulkan_render_object*> renderObjects;
-		renderObjects.push_back(mSponzaRenderObject.get());
+		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+			renderObjects.push_back(sponzaRenderObject.get());
+		}
 		mRenderer->render({ renderObjects }, mMaterialDrawer.get());
 
 		renderObjects.clear();
@@ -495,7 +504,7 @@ private:
 		//	renderObjects.push_back(renderObject2);
 		//}
 
-		mRenderer->render(renderObjects, drawer.get());
+		//mRenderer->render(renderObjects, drawer.get());
 		mRenderer->end_frame();
 	}
 
@@ -670,20 +679,24 @@ private:
 	{
 		outModel = cgb::Model::LoadFromFile(inPath, transform, mResourceBundleGroup, model_loader_flags);
 
-		auto& mesh = outModel->mesh_at(0);
+		auto meshes = outModel->SelectAllMeshes();
+		for (cgb::Mesh& mesh : meshes) {
+			auto outVertexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(),
+				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, mesh.m_vertex_data.data());
+			auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
+				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
 
-		auto outVertexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(),
-			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, mesh.m_vertex_data.data());
-		auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
-			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
+			auto resourceBundle = mesh.mMaterialResourceBundle;
 
-		auto resourceBundle = mesh.mMaterialResourceBundle;
+			auto sponzaRenderObject = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({ outVertexBuffer }), outIndexBuffer, mesh.m_indices.size(), mMaterialObjectResourceBundleLayout, mResourceBundleGroup, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> {resourceBundle});
 
-		mSponzaRenderObject = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({ outVertexBuffer }), outIndexBuffer, mesh.m_indices.size(), mMaterialObjectResourceBundleLayout, mResourceBundleGroup, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> {resourceBundle});
-
+			mSponzaRenderObjects.push_back(sponzaRenderObject);
+		}
+		for (auto sponzaRenderObject : mSponzaRenderObjects) {
 		//outModel->AllocateMaterialData();
-		for (int i = 0; i < mSponzaRenderObject->get_resource_bundles().size(); i++) {
-			mResourceBundleGroup->allocate_resource_bundle(mSponzaRenderObject->get_resource_bundles()[i].get());
+			for (int i = 0; i < sponzaRenderObject->get_resource_bundles().size(); i++) {
+				mResourceBundleGroup->allocate_resource_bundle(sponzaRenderObject->get_resource_bundles()[i].get());
+			}
 		}
 	}
 

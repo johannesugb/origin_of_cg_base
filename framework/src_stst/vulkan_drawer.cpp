@@ -39,7 +39,9 @@ namespace cgb {
 		}
 
 		auto globalDescriptorSets = get_descriptor_sets(mGlobalResourceBundles);
-		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, globalDescriptorSets.size(), globalDescriptorSets.data(), 0, nullptr);
+		if (mGlobalResourceBundles.size() > 0) {
+			commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), 0, globalDescriptorSets.size(), globalDescriptorSets.data(), 0, nullptr);
+		}
 
 		for (vulkan_render_object* renderObject : renderObjects) {
 

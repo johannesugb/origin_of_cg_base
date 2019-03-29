@@ -33,6 +33,8 @@ namespace cgb {
 		int get_height() { return mTexHeight; }
 
 		void generate_mipmaps(vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+
+		static std::shared_ptr<vulkan_image> generate_1px_image(uint8_t color_r, uint8_t color_g, uint8_t color_b);
 	private:
 		vk::Image mImage;
 		vulkan_memory mImageMemory;

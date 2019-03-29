@@ -245,6 +245,37 @@ namespace cgb
 		auto uniformBuffer = std::make_shared<cgb::vulkan_buffer>(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 		uniformBuffer->update_buffer(&materialUniform, sizeof(materialUniform));
 
+		std::shared_ptr<cgb::vulkan_texture> whiteTex = nullptr;
+		if (!m_diffuse_tex || !m_specular_tex || !m_ambient_tex || !m_emissive_tex ||
+			!m_shininess_tex || !m_opacity_tex || !m_reflection_tex || !m_lightmap_tex) {
+			auto whiteImg = vulkan_image::generate_1px_image(255, 255, 255);
+			whiteTex = std::make_shared<cgb::vulkan_texture>(whiteImg);
+		}
+
+		std::shared_ptr<cgb::vulkan_texture> blackTex = nullptr;
+		if (!m_height_tex || !m_displacement_tex) {
+			auto blackImg = vulkan_image::generate_1px_image(0, 0, 0);
+			blackTex = std::make_shared<cgb::vulkan_texture>(blackImg);
+		}
+		
+		std::shared_ptr<cgb::vulkan_texture> straightUpNormalTex = nullptr; 
+		if (!m_normals_tex) { 
+			auto straightUpNormalImg = vulkan_image::generate_1px_image(127, 127, 255);
+			straightUpNormalTex = std::make_shared<cgb::vulkan_texture>(straightUpNormalImg);
+		}
+
+		if (!m_diffuse_tex) { m_diffuse_tex = whiteTex; }
+		if (!m_specular_tex) { m_specular_tex = whiteTex; }
+		if (!m_ambient_tex) { m_ambient_tex = whiteTex; }
+		if (!m_emissive_tex) { m_emissive_tex = whiteTex; }
+		if (!m_height_tex) { m_height_tex = blackTex; }
+		if (!m_normals_tex) { m_normals_tex = straightUpNormalTex; }
+		if (!m_shininess_tex) { m_shininess_tex = whiteTex; }
+		if (!m_opacity_tex) { m_opacity_tex = whiteTex; }
+		if (!m_displacement_tex) { m_displacement_tex = blackTex; }
+		if (!m_reflection_tex) { m_reflection_tex = whiteTex; }
+		if (!m_lightmap_tex) { m_lightmap_tex = whiteTex; }
+
 
 		resourceBundle->add_buffer_resource(0, uniformBuffer, bufferSize);
 		if (m_diffuse_tex) { resourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, m_diffuse_tex); }
