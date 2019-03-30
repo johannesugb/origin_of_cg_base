@@ -8,11 +8,11 @@
 
 // Material data:
 layout(set = 1, binding = 0) uniform MaterialDataBufferObject {
-	vec3 uDiffuseReflectivity;
-	vec3 uSpecularReflectivity;
-	vec3 uAmbientReflectivity;
-	vec3 uEmissiveLight;
-	vec3 uTransparentColor;
+	vec4 uDiffuseReflectivity;
+	vec4 uSpecularReflectivity;
+	vec4 uAmbientReflectivity;
+	vec4 uEmissiveLight;
+	vec4 uTransparentColor;
 	
 	bool wireframe_mode;
 	bool twosided;
@@ -23,14 +23,14 @@ layout(set = 1, binding = 0) uniform MaterialDataBufferObject {
 	float refraction_index;
 	float reflectivity;
 		
-	vec3 uAlbedo;
+	vec4 uAlbedo;
 	float uMetallic;
 	float smoothness;
 	float sheen;
 	float thickness;
 	float uRoughness;
 	float anisotropy;
-	vec3 anisotropy_rotation;
+	vec4 anisotropy_rotation;
 	vec2 offset;
 	vec2 tiling;
 
@@ -122,8 +122,8 @@ vec3 CalcBlinnPhongDiffAndSpecContribution(vec3 to_light, vec3 to_eye, vec3 norm
 	float n_dot_h = max(0.0, dot(normal, half_vec));
 	float spec_pwr = pow(n_dot_h, matData.uShininess);
 	
-	vec3 diffuse = matData.uDiffuseReflectivity * diffuse_reflectivity_from_tex * n_dot_l; // component-wise product
-	vec3 specular = matData.uSpecularReflectivity * spec_pwr;
+	vec3 diffuse = matData.uDiffuseReflectivity.xyz * diffuse_reflectivity_from_tex * n_dot_l; // component-wise product
+	vec3 specular = matData.uSpecularReflectivity.xyz * spec_pwr;
 	return diffuse + specular;
 }
 
@@ -140,7 +140,7 @@ vec3 CalcPhysicallyBasedLighting(vec3 to_light, vec3 to_eye, vec3 normal, vec3 d
 	// compute specular cook-torrance part of BRDF
 	float normDistrGGX = matData.uRoughness * matData.uRoughness / (PI * pow(n_dot_h * n_dot_h*(matData.uRoughness*matData.uRoughness-1)+1,2)); 
 
-	vec3 F0 = mix(vec3(0.04), diffuse_reflectivity_from_tex * matData.uAlbedo, matData.uMetallic); // use albedo for standard color with IOR at normal incidence, e.g. 0 degree angle for looking at the material 
+	vec3 F0 = mix(vec3(0.04), diffuse_reflectivity_from_tex * matData.uAlbedo.xyz, matData.uMetallic); // use albedo for standard color with IOR at normal incidence, e.g. 0 degree angle for looking at the material 
 	vec3 fresnelSchlick = F0 + (1-F0) * pow(1-n_dot_e,5);
 
 	float k = pow(matData.uRoughness+1,2)/8;
@@ -241,12 +241,13 @@ void main()
 	// Sample the diffuse color 
 	vec3 diff_tex_color = texture(uDiffuseTexSampler, fs_in.texCoords).rgb;
 	// initialize all the colors
-	vec3 ambient = uAmbientLight.color.rgb * matData.uAmbientReflectivity * diff_tex_color;
-	vec3 emissive = matData.uEmissiveLight;
+	vec3 ambient = uAmbientLight.color.rgb * matData.uAmbientReflectivity.xyz * diff_tex_color;
+	vec3 emissive = matData.uEmissiveLight.xyz;
 	vec3 diffuse_and_specular = CalculateDiffuseAndSpecularIlluminationInTS(diff_tex_color);
 
 	// add all together
 	oFragColor = vec4(ambient + emissive + diffuse_and_specular, 1.0);
-	oFragColor = vec4(ambient + diffuse_and_specular, 1.0);
+	//oFragColor = vec4(ambient + diffuse_and_specular, 1.0);
+	//oFragColor = vec4(matData.uSpecularReflectivity.xyz, 1.0);
 }
 // ----------------------------------------------

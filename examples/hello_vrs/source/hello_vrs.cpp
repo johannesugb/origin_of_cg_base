@@ -108,9 +108,9 @@ private:
 		int count;
 	} pointLights;
 
-	std::shared_ptr<cgb::vulkan_buffer> mAmbientLightBuffer;
-	std::shared_ptr<cgb::vulkan_buffer> mDirLightBuffer;
-	std::shared_ptr<cgb::vulkan_buffer> mPointLightsBuffer;
+	std::vector<std::shared_ptr<cgb::vulkan_buffer>> mAmbientLightBuffers;
+	std::vector<std::shared_ptr<cgb::vulkan_buffer>> mDirLightBuffers;
+	std::vector<std::shared_ptr<cgb::vulkan_buffer>> mPointLightsBuffers;
 
 	std::unique_ptr<cgb::vulkan_drawer> mMaterialDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mMaterialPipeline;
@@ -268,12 +268,18 @@ private:
 		}
 		pointLights.count = mPointLights.size();
 
-		mAmbientLightBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(m_ambient_light), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
-			vk::MemoryPropertyFlagBits::eDeviceLocal, &m_ambient_light);
-		mDirLightBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(m_dir_light), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, 
-			vk::MemoryPropertyFlagBits::eDeviceLocal, &m_dir_light);
-		mPointLightsBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(PointLights), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, 
-			vk::MemoryPropertyFlagBits::eDeviceLocal, &pointLights);
+		auto dynResourceCount = cgb::vulkan_context::instance().dynamicRessourceCount;
+		mAmbientLightBuffers.resize(dynResourceCount);
+		mDirLightBuffers.resize(dynResourceCount);
+		mPointLightsBuffers.resize(dynResourceCount);
+		for (int i = 0; i < dynResourceCount; i++) {
+			mAmbientLightBuffers[i] = std::make_shared<cgb::vulkan_buffer>(sizeof(cgb::AmbientLightGpuData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+				vk::MemoryPropertyFlagBits::eDeviceLocal, &m_ambient_light.GetGpuData());
+			mDirLightBuffers[i] = std::make_shared<cgb::vulkan_buffer>(sizeof(cgb::DirectionalLightGpuData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &m_dir_light.GetGpuData());
+			mPointLightsBuffers[i] = std::make_shared<cgb::vulkan_buffer>(sizeof(PointLights), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &pointLights);
+		}
 
 		int binding = 0;
 		mGlobalResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
@@ -281,10 +287,10 @@ private:
 		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
 		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
 		mGlobalResourceBundleLayout->bake();
-		mGlobalResourceBundle = mResourceBundleGroup->create_resource_bundle(mGlobalResourceBundleLayout, false);
-		mGlobalResourceBundle->add_buffer_resource(0, mAmbientLightBuffer, sizeof(m_ambient_light));
-		mGlobalResourceBundle->add_buffer_resource(1, mDirLightBuffer, sizeof(m_dir_light));
-		mGlobalResourceBundle->add_buffer_resource(2, mPointLightsBuffer, sizeof(pointLights));
+		mGlobalResourceBundle = mResourceBundleGroup->create_resource_bundle(mGlobalResourceBundleLayout, true);
+		mGlobalResourceBundle->add_dynamic_buffer_resource(0, mAmbientLightBuffers, sizeof(m_ambient_light));
+		mGlobalResourceBundle->add_dynamic_buffer_resource(1, mDirLightBuffers, sizeof(m_dir_light));
+		mGlobalResourceBundle->add_dynamic_buffer_resource(2, mPointLightsBuffers, sizeof(pointLights));
 
 		// Sponza specific structures
 		mMaterialObjectResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
@@ -330,12 +336,6 @@ private:
 				sponzaRenderObject->update_uniform_buffer(i, uboCam);
 			}
 		}
-
-		//TODO update point light position with view matrix 
-		for (int i = 0; i < MAX_COUNT_POINT_LIGHTS && i < mPointLights.size(); i++) {
-			pointLights.pointLightData[i] = mPointLights[i].GetGpuData(uboCam.view);
-		}
-		pointLights.count = mPointLights.size();
 
 		mResourceBundleGroup->allocate_resource_bundle(mGlobalResourceBundle.get());
 
@@ -486,6 +486,16 @@ private:
 		uboCam.view = mCamera.CalculateViewMatrix();
 		uboCam.proj = glm::perspective(glm::radians(45.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f); mCamera.projection_matrix();
 		uboCam.proj[1][1] *= -1;
+
+		// update point light position with view matrix 
+		mDirLightBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&m_dir_light.GetGpuData(uboCam.view), sizeof(cgb::DirectionalLightGpuData));
+
+		for (int i = 0; i < MAX_COUNT_POINT_LIGHTS && i < mPointLights.size(); i++) {
+			pointLights.pointLightData[i] = mPointLights[i].GetGpuData(uboCam.view);
+		}
+		pointLights.count = mPointLights.size();
+		mPointLightsBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&pointLights, sizeof(pointLights));
+
 
 		for (int i = 0; i < mSponzaRenderObjects.size(); i++) {
 			auto sponzaRenderObject = mSponzaRenderObjects[i];

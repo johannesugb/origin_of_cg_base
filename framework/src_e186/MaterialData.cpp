@@ -271,11 +271,11 @@ namespace cgb
 
 	void MaterialData::update_material_buffer() {
 		auto materialUniform = material_uniform();
-		materialUniform.diffuse_reflectivity = m_diffuse_reflectivity;
-		materialUniform.specular_reflectivity = m_specular_reflectivity;
-		materialUniform.ambient_reflectivity = m_ambient_reflectivity;
-		materialUniform.emissive_color = m_emissive_color;
-		materialUniform.transparent_color = m_transparent_color;
+		materialUniform.diffuse_reflectivity = glm::vec4(m_diffuse_reflectivity, 0);
+		materialUniform.specular_reflectivity = glm::vec4(m_specular_reflectivity, 0);
+		materialUniform.ambient_reflectivity = glm::vec4(m_ambient_reflectivity, 0);
+		materialUniform.emissive_color = glm::vec4(m_emissive_color, 0);
+		materialUniform.transparent_color = glm::vec4(m_transparent_color, 0);
 		materialUniform.wireframe_mode = m_wireframe_mode;
 		materialUniform.twosided = m_twosided;
 		materialUniform.blend_mode = m_blend_mode;
@@ -296,7 +296,7 @@ namespace cgb
 		materialUniform.offset = m_offset;
 		materialUniform.tiling = m_tiling;
 
-		mMaterialBuffer->update_buffer(&materialUniform, sizeof(materialUniform));
+		mMaterialBuffer->update_buffer(&materialUniform, sizeof(material_uniform));
 	}
 
 }

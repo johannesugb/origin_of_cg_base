@@ -17,11 +17,11 @@ namespace cgb
 	};
 
 	struct material_uniform {
-		glm::vec3 diffuse_reflectivity;
-		glm::vec3 specular_reflectivity;
-		glm::vec3 ambient_reflectivity;
-		glm::vec3 emissive_color;
-		glm::vec3 transparent_color;
+		glm::vec4 diffuse_reflectivity;
+		glm::vec4 specular_reflectivity;
+		glm::vec4 ambient_reflectivity;
+		glm::vec4 emissive_color;
+		glm::vec4 transparent_color;
 		bool wireframe_mode;
 		bool twosided;
 		BlendMode blend_mode;
