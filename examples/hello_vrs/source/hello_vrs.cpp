@@ -281,15 +281,14 @@ private:
 				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &pointLights);
 		}
 
-		int binding = 0;
 		mGlobalResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
-		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
-		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
-		mGlobalResourceBundleLayout->add_binding(binding++, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
+		mGlobalResourceBundleLayout->add_binding(0, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
+		mGlobalResourceBundleLayout->add_binding(1, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
+		mGlobalResourceBundleLayout->add_binding(2, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eFragment | cgb::ShaderStageFlagBits::eVertex);
 		mGlobalResourceBundleLayout->bake();
 		mGlobalResourceBundle = mResourceBundleGroup->create_resource_bundle(mGlobalResourceBundleLayout, true);
-		mGlobalResourceBundle->add_dynamic_buffer_resource(0, mAmbientLightBuffers, sizeof(m_ambient_light));
-		mGlobalResourceBundle->add_dynamic_buffer_resource(1, mDirLightBuffers, sizeof(m_dir_light));
+		mGlobalResourceBundle->add_dynamic_buffer_resource(0, mAmbientLightBuffers, sizeof(cgb::AmbientLightGpuData));
+		mGlobalResourceBundle->add_dynamic_buffer_resource(1, mDirLightBuffers, sizeof(cgb::DirectionalLightGpuData));
 		mGlobalResourceBundle->add_dynamic_buffer_resource(2, mPointLightsBuffers, sizeof(pointLights));
 
 		// Sponza specific structures
@@ -488,7 +487,7 @@ private:
 		uboCam.proj[1][1] *= -1;
 
 		// update point light position with view matrix 
-		mDirLightBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&m_dir_light.GetGpuData(uboCam.view), sizeof(cgb::DirectionalLightGpuData));
+		mDirLightBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&m_dir_light.GetGpuData(glm::mat3(uboCam.view)), sizeof(cgb::DirectionalLightGpuData));
 
 		for (int i = 0; i < MAX_COUNT_POINT_LIGHTS && i < mPointLights.size(); i++) {
 			pointLights.pointLightData[i] = mPointLights[i].GetGpuData(uboCam.view);

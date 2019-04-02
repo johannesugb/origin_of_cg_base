@@ -17,30 +17,20 @@ namespace cgb
 	};
 
 	struct material_uniform {
-		glm::vec4 diffuse_reflectivity;
-		glm::vec4 specular_reflectivity;
-		glm::vec4 ambient_reflectivity;
-		glm::vec4 emissive_color;
-		glm::vec4 transparent_color;
-		bool wireframe_mode;
-		bool twosided;
-		BlendMode blend_mode;
-		float opacity;
-		float shininess;
-		float shininess_strength;
-		float refraction_index;
-		float reflectivity;
-
-		glm::vec3 albedo;
-		float metallic;
-		float smoothness;
-		float sheen;
-		float thickness;
-		float roughness;
-		float anisotropy;
-		glm::vec3 anisotropy_rotation;
+		glm::vec4 diffuse_reflectivity_3_opacity_1;
+		glm::vec4 specular_reflectivity_3_shininess_1;
+		glm::vec4 ambient_reflectivity_3_shininess_strength_1;
+		glm::vec4 emissive_color_3_refraction_index_1;
+		glm::vec4 transparent_color_3_reflectivity1;
+		glm::vec4 albedo_3_metallic;
+		glm::vec4 anisotropy_rotation_3_smoothness;
+		glm::vec4 sheen_thickness_roughness_anisotropy;
 		glm::vec2 offset;
 		glm::vec2 tiling;
+		
+		BlendMode blend_mode;
+		bool wireframe_mode;
+		bool twosided;
 	};
 
 	class MaterialData

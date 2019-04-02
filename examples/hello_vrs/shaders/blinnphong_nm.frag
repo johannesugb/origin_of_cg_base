@@ -8,32 +8,20 @@
 
 // Material data:
 layout(set = 1, binding = 0) uniform MaterialDataBufferObject {
-	vec4 uDiffuseReflectivity;
-	vec4 uSpecularReflectivity;
-	vec4 uAmbientReflectivity;
-	vec4 uEmissiveLight;
-	vec4 uTransparentColor;
-	
-	bool wireframe_mode;
-	bool twosided;
-	uint blend_mode;
-	float opacity;
-	float uShininess;
-	float shininess_strength;
-	float refraction_index;
-	float reflectivity;
-		
-	vec4 uAlbedo;
-	float uMetallic;
-	float smoothness;
-	float sheen;
-	float thickness;
-	float uRoughness;
-	float anisotropy;
-	vec4 anisotropy_rotation;
+	vec4 uDiffuseReflectivity3Opacity1;
+	vec4 uSpecularReflectivity3Shininess1;
+	vec4 uAmbientReflectivity3ShininessStrength1;
+	vec4 uEmissiveLight3RefractionIndex1;
+	vec4 uTransparentColor3Reflectivity1;
+	vec4 uAlbedo3Metallic1;
+	vec4 uAnisotropyRotation3Smoothness;
+	vec4 uSheenThicknessRoughnessAnisotropy;
 	vec2 offset;
 	vec2 tiling;
-
+	
+	uint blend_mode;
+	bool wireframe_mode;
+	bool twosided;
 } matData;
 
 layout(set = 1, binding = 1) uniform sampler2D uDiffuseTexSampler;
@@ -120,10 +108,10 @@ vec3 CalcBlinnPhongDiffAndSpecContribution(vec3 to_light, vec3 to_eye, vec3 norm
 	float n_dot_l = max(0.0, dot(normal, to_light)); // lambertian coefficient
 	vec3 half_vec = normalize(to_light + to_eye);
 	float n_dot_h = max(0.0, dot(normal, half_vec));
-	float spec_pwr = pow(n_dot_h, matData.uShininess);
+	float spec_pwr = pow(n_dot_h, matData.uSpecularReflectivity3Shininess1.w);
 	
-	vec3 diffuse = matData.uDiffuseReflectivity.xyz * diffuse_reflectivity_from_tex * n_dot_l; // component-wise product
-	vec3 specular = matData.uSpecularReflectivity.xyz * spec_pwr;
+	vec3 diffuse = matData.uDiffuseReflectivity3Opacity1.xyz * diffuse_reflectivity_from_tex * n_dot_l; // component-wise product
+	vec3 specular = matData.uSpecularReflectivity3Shininess1.xyz * spec_pwr;
 	return diffuse + specular;
 }
 
@@ -133,17 +121,17 @@ vec3 CalcPhysicallyBasedLighting(vec3 to_light, vec3 to_eye, vec3 normal, vec3 d
 	vec3 half_vec = normalize(to_light + to_eye);
 	float n_dot_h = max(0.0, dot(normal, half_vec));
 	float n_dot_e = max(0.0, dot(normal, to_eye));
-	float spec_pwr = pow(n_dot_h, matData.uShininess);
+	float spec_pwr = pow(n_dot_h, matData.uSpecularReflectivity3Shininess1.w);
 
 	vec3 fLambert = diffuse_reflectivity_from_tex / PI;
 
 	// compute specular cook-torrance part of BRDF
-	float normDistrGGX = matData.uRoughness * matData.uRoughness / (PI * pow(n_dot_h * n_dot_h*(matData.uRoughness*matData.uRoughness-1)+1,2)); 
+	float normDistrGGX = matData.uSheenThicknessRoughnessAnisotropy.z * matData.uSheenThicknessRoughnessAnisotropy.z / (PI * pow(n_dot_h * n_dot_h*(matData.uSheenThicknessRoughnessAnisotropy.z*matData.uSheenThicknessRoughnessAnisotropy.z-1)+1,2)); 
 
-	vec3 F0 = mix(vec3(0.04), diffuse_reflectivity_from_tex * matData.uAlbedo.xyz, matData.uMetallic); // use albedo for standard color with IOR at normal incidence, e.g. 0 degree angle for looking at the material 
+	vec3 F0 = mix(vec3(0.04), diffuse_reflectivity_from_tex * matData.uAlbedo3Metallic1.xyz, matData.uAlbedo3Metallic1.w); // use albedo for standard color with IOR at normal incidence, e.g. 0 degree angle for looking at the material 
 	vec3 fresnelSchlick = F0 + (1-F0) * pow(1-n_dot_e,5);
 
-	float k = pow(matData.uRoughness+1,2)/8;
+	float k = pow(matData.uSheenThicknessRoughnessAnisotropy.z+1,2)/8;
 	float geometryGGX = (n_dot_e/(n_dot_e * (1-k) + k)) * (n_dot_l/(n_dot_l * (1-k) + k));
 
 	vec3 fCookTorrance = normDistrGGX * fresnelSchlick * geometryGGX / (4 * n_dot_l * n_dot_e);
@@ -224,13 +212,8 @@ vec3 CalculateDiffuseAndSpecularIlluminationInTS(vec3 diff_tex_color)
 		float atten = CalcAttenuation(uPointLights.pointLightData[i].attenuation, dist, dist * dist, dist * dist * dist);
 		vec3 pl_intensity = uPointLights.pointLightData[i].color.rgb / atten;
 
-		//
-		#ifdef USE_PB_SHADING
-			diffuse_and_specular += CalcPhysicallyBasedLighting(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color, 1.0f/uPointLights.count, pl_intensity);
-		#else 
-			//diffuse_and_specular += CalcPhysicallyBasedLighting(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color, 1.0f/uPointLights.count, pl_intensity);
-			diffuse_and_specular += pl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color);
-		#endif
+		//diffuse_and_specular += CalcPhysicallyBasedLighting(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color, 1.0f/uPointLights.count, pl_intensity);
+		diffuse_and_specular += pl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color);
 	}
 
 	return diffuse_and_specular;
@@ -241,13 +224,19 @@ void main()
 	// Sample the diffuse color 
 	vec3 diff_tex_color = texture(uDiffuseTexSampler, fs_in.texCoords).rgb;
 	// initialize all the colors
-	vec3 ambient = uAmbientLight.color.rgb * matData.uAmbientReflectivity.xyz * diff_tex_color;
-	vec3 emissive = matData.uEmissiveLight.xyz;
+	vec3 ambient = uAmbientLight.color.rgb * matData.uAmbientReflectivity3ShininessStrength1.xyz * diff_tex_color;
+	vec3 emissive = matData.uEmissiveLight3RefractionIndex1.xyz;
 	vec3 diffuse_and_specular = CalculateDiffuseAndSpecularIlluminationInTS(diff_tex_color);
 
 	// add all together
 	oFragColor = vec4(ambient + emissive + diffuse_and_specular, 1.0);
 	//oFragColor = vec4(ambient + diffuse_and_specular, 1.0);
-	//oFragColor = vec4(matData.uSpecularReflectivity.xyz, 1.0);
+
+	//oFragColor = vec4(matData.uSpecularReflectivity3Shininess1.xyz, 1.0);
+	//oFragColor = vec4(matData.uDiffuseReflectivity3Opacity1.xyz, 1.0);
+	//oFragColor = vec4(vec3(matData.uSpecularReflectivity3Shininess1.w), 1.0);
+	//oFragColor = vec4(fs_in.directionalLightDirTS, 1.0);
+	//oFragColor = vec4(uDirectionalLight.color.rgb, 1.0);
+	//oFragColor = vec4(vec3(13 / 255.0f, 17 / 255.0f, 27 / 255.0f), 1.0);
 }
 // ----------------------------------------------

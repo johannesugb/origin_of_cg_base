@@ -271,30 +271,21 @@ namespace cgb
 
 	void MaterialData::update_material_buffer() {
 		auto materialUniform = material_uniform();
-		materialUniform.diffuse_reflectivity = glm::vec4(m_diffuse_reflectivity, 0);
-		materialUniform.specular_reflectivity = glm::vec4(m_specular_reflectivity, 0);
-		materialUniform.ambient_reflectivity = glm::vec4(m_ambient_reflectivity, 0);
-		materialUniform.emissive_color = glm::vec4(m_emissive_color, 0);
-		materialUniform.transparent_color = glm::vec4(m_transparent_color, 0);
-		materialUniform.wireframe_mode = m_wireframe_mode;
-		materialUniform.twosided = m_twosided;
-		materialUniform.blend_mode = m_blend_mode;
-		materialUniform.opacity = m_opacity;
-		materialUniform.shininess = m_shininess;
-		materialUniform.shininess_strength = m_shininess_strength;
-		materialUniform.refraction_index = m_refraction_index;
-		materialUniform.reflectivity = m_reflectivity;
+		materialUniform.diffuse_reflectivity_3_opacity_1 = glm::vec4(m_diffuse_reflectivity, m_opacity);
+		materialUniform.specular_reflectivity_3_shininess_1 = glm::vec4(m_specular_reflectivity, m_shininess);
+		materialUniform.ambient_reflectivity_3_shininess_strength_1 = glm::vec4(m_ambient_reflectivity, m_shininess_strength);
+		materialUniform.emissive_color_3_refraction_index_1 = glm::vec4(m_emissive_color, m_refraction_index);
+		materialUniform.transparent_color_3_reflectivity1 = glm::vec4(m_transparent_color, m_reflectivity);
 
-		materialUniform.albedo = m_albedo;
-		materialUniform.metallic = m_metallic;
-		materialUniform.smoothness = m_smoothness;
-		materialUniform.sheen = m_sheen;
-		materialUniform.thickness = m_thickness;
-		materialUniform.roughness = m_roughness;
-		materialUniform.anisotropy = m_anisotropy;
-		materialUniform.anisotropy_rotation = m_anisotropy_rotation;
+		materialUniform.albedo_3_metallic = glm::vec4(m_albedo, m_metallic);
+		materialUniform.anisotropy_rotation_3_smoothness = glm::vec4(m_anisotropy_rotation, m_smoothness);
+		materialUniform.sheen_thickness_roughness_anisotropy = glm::vec4(m_sheen, m_thickness, m_roughness, m_anisotropy);
 		materialUniform.offset = m_offset;
 		materialUniform.tiling = m_tiling;
+
+		materialUniform.blend_mode = m_blend_mode;
+		materialUniform.wireframe_mode = m_wireframe_mode;
+		materialUniform.twosided = m_twosided;
 
 		mMaterialBuffer->update_buffer(&materialUniform, sizeof(material_uniform));
 	}
