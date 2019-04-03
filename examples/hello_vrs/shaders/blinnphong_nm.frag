@@ -212,8 +212,8 @@ vec3 CalculateDiffuseAndSpecularIlluminationInTS(vec3 diff_tex_color)
 		float atten = CalcAttenuation(uPointLights.pointLightData[i].attenuation, dist, dist * dist, dist * dist * dist);
 		vec3 pl_intensity = uPointLights.pointLightData[i].color.rgb / atten;
 
-		//diffuse_and_specular += CalcPhysicallyBasedLighting(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color, 1.0f/uPointLights.count, pl_intensity);
-		diffuse_and_specular += pl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color);
+		diffuse_and_specular += CalcPhysicallyBasedLighting(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color, 1.0f/uPointLights.count, pl_intensity);
+		//diffuse_and_specular += pl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_pt_light_vs, to_eye_nrm_vs, normal_vs, diff_tex_color);
 	}
 
 	return diffuse_and_specular;
@@ -237,6 +237,8 @@ void main()
 	//oFragColor = vec4(vec3(matData.uSpecularReflectivity3Shininess1.w), 1.0);
 	//oFragColor = vec4(fs_in.directionalLightDirTS, 1.0);
 	//oFragColor = vec4(uDirectionalLight.color.rgb, 1.0);
-	//oFragColor = vec4(vec3(13 / 255.0f, 17 / 255.0f, 27 / 255.0f), 1.0);
+	//oFragColor = vec4(CalcNormalizedNormalTS(), 1.0);
+	//oFragColor = vec4(normalize(texture(uNormalTexSampler, fs_in.texCoords).rgb * 2.0 - 1.0), 1.0);
+	
 }
 // ----------------------------------------------

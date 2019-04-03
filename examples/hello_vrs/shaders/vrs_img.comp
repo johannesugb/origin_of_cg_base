@@ -21,10 +21,11 @@ void main() {
 	vec2 distVecInv = vec2(1.0) -  clamp(pushConst.eyePoint, 0, 1) - uv * 1.0 / (pushConst.imgSize);
 
 
-	uint shadingRate = int((1.0 - clamp(dot(distVec,distVec),0,1))*(1.0 - clamp(dot(distVec,distVec),0,1)) * 12.0);
-	float shadingRateF = shadingRate / 12.0;
+	uint shadingRate = int((1.0 - clamp(dot(distVec,distVec),0,1))*(1.0 - clamp(dot(distVec,distVec),0,1)) * 11.0);
 	imageStore(targetImage, uv, uvec4(shadingRate,0,0,0));
-	imageStore(debugImage, uv, vec4(shadingRateF));
+	
+	//float shadingRateF = shadingRate / 12.0;
+	//imageStore(debugImage, uv, vec4(shadingRateF));
 	//imageStore(debugImage, uv, vec4( int((sqrt(2) - distance(pushConst.eyePoint,distVec))/sqrt(2)*12)/12.0 ));
 	//imageStore(debugImage, uv, vec4( int((1.0 - clamp(dot(distVec,distVec),0,1))*(1.0 - clamp(dot(distVec,distVec),0,1)) * 12.0)/12.0 ));
 	imageStore(debugImage, uv, vec4( int((1.0 - clamp(dot(distVecInv,distVecInv),0,1))*(1.0 - clamp(dot(distVecInv,distVecInv),0,1)) * 12.0) / 12.0 ));

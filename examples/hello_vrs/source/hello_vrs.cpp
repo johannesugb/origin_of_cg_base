@@ -115,6 +115,9 @@ private:
 	std::unique_ptr<cgb::vulkan_drawer> mMaterialDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mMaterialPipeline;
 
+	std::unique_ptr<cgb::vulkan_drawer> mVrsDebugDrawer;
+	std::shared_ptr<cgb::vulkan_pipeline> mVrsDebugPipeline;
+
 public:
 	void initialize() override
 	{
@@ -251,10 +254,8 @@ private:
 		renderObject = new cgb::vulkan_render_object(verticesQuad, indicesQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
 		renderObject2 = new cgb::vulkan_render_object(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
 
-		// TODO transfer code to camera
 		UniformBufferObject ubo = {};
 		ubo.model = glm::mat4(1.0f);
-		//ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.model[1][1] *= -1;
 		ubo.mvp = ubo.model;
 		renderObject2->update_uniform_buffer(0, ubo);
@@ -348,6 +349,20 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			mMaterialDrawer->set_vrs_images(vrsImages);
 		}
+
+		// VRS Debug render, used with e.g. fullscreen quad
+		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
+
+		mVrsDebugPipeline->add_attr_desc_binding(bind1);
+		//mVrsDebugPipeline->add_attr_desc_binding(bind2);
+		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
+		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/vrs_debug.frag.spv");
+
+		mVrsDebugPipeline->bake();
+		mVrsDebugDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mVrsDebugPipeline);
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			mVrsDebugDrawer->set_vrs_images(vrsImages);
+		}
 	}
 
 	void cleanup()
@@ -397,8 +412,10 @@ private:
 			mVrsImageComputeDrawer.reset();
 		}
 		mMaterialDrawer.reset();
+		mVrsDebugDrawer.reset();
 		mRenderVulkanPipeline.reset();
 		mComputeVulkanPipeline.reset();
+		mVrsDebugPipeline.reset();
 		mVulkanFramebuffer.reset();
 
 		imagePresenter.reset();
@@ -528,6 +545,7 @@ private:
 		//}
 
 		//mRenderer->render(renderObjects, drawer.get());
+		mRenderer->render(renderObjects, mVrsDebugDrawer.get());
 		mRenderer->end_frame();
 	}
 

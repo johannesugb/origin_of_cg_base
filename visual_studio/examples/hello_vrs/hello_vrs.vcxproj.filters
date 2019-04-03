@@ -62,6 +62,13 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.vert">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />

@@ -41,7 +41,7 @@ namespace cgb {
 		vulkan_buffer stagingBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, mCommandBufferManager);
 		stagingBuffer.update_buffer(pixels, imageSize);
 
-		auto format = vk::Format::eR8G8B8A8Srgb;
+		auto format = vk::Format::eR8G8B8A8Unorm;
 		/*switch (texChannels) {
 		case 3:
 			format = vk::Format::eR8G8B8Unorm;
@@ -60,7 +60,7 @@ namespace cgb {
 		transition_image_layout(format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mMipLevels);
 		copy_buffer_to_image(stagingBuffer, mImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-		if (format == vk::Format::eR8G8B8A8Srgb) {
+		if (format == vk::Format::eR8G8B8A8Unorm) {
 			generate_mipmaps(format, texWidth, texHeight, mMipLevels);
 		}
 	}
@@ -307,7 +307,7 @@ namespace cgb {
 	}
 
 	void vulkan_image::create_texture_image_view() {
-		mImageView = create_image_view(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor, mMipLevels);
+		mImageView = create_image_view(vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, mMipLevels);
 	}
 
 	vk::ImageView vulkan_image::create_image_view(vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) {
@@ -331,10 +331,11 @@ namespace cgb {
 
 	std::shared_ptr<vulkan_image> cgb::vulkan_image::generate_1px_image(uint8_t color_r, uint8_t color_g, uint8_t color_b)
 	{
-		auto one_px = new uint8_t[3];
+		uint8_t one_px[4];
 		one_px[0] = color_r;
 		one_px[1] = color_g;
 		one_px[2] = color_b;
-		return std::make_shared<vulkan_image>(&one_px, 1, 1, 3);
+		one_px[3] = 0;
+		return std::make_shared<vulkan_image>(&one_px, 1, 1, 4);
 	}
 }

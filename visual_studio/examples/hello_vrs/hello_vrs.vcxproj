@@ -36,6 +36,8 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.frag" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_img.comp" />
     <None Include="packages.config" />
     <None Include="Tobii\API-Reference.pdf" />
