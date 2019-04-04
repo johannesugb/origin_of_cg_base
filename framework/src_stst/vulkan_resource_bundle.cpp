@@ -63,7 +63,7 @@ namespace cgb {
 		mBufferMap.emplace(binding, buffers);
 	}
 
-	vk::WriteDescriptorSet&  cgb::vulkan_resource_bundle::create_image_resource_descriptor_write(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_texture> texture, uint32_t dstArrayElement, uint32_t descriptorCount)
+	vk::WriteDescriptorSet cgb::vulkan_resource_bundle::create_image_resource_descriptor_write(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_texture> texture, uint32_t dstArrayElement, uint32_t descriptorCount)
 	{
 		vk::DescriptorImageInfo imageInfo = {};
 		imageInfo.imageLayout = imageLayout;
@@ -84,7 +84,7 @@ namespace cgb {
 
 	}
 
-	vk::WriteDescriptorSet& cgb::vulkan_resource_bundle::create_buffer_resource_descriptor_write(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset, uint32_t dstArrayElement, uint32_t descriptorCount)
+	vk::WriteDescriptorSet cgb::vulkan_resource_bundle::create_buffer_resource_descriptor_write(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset, uint32_t dstArrayElement, uint32_t descriptorCount)
 	{
 		vk::DescriptorBufferInfo bufferInfo = {};
 		bufferInfo.buffer = buffer->get_vk_buffer();

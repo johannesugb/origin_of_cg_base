@@ -6,7 +6,6 @@ layout(binding = 1) uniform sampler2D texSampler;
 //layout(binding = 2) uniform sampler2D debugSampler;
 
 layout(location = 0) in vec3 fragColor;
-layout(location = 1) in vec2 fragTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
@@ -14,8 +13,16 @@ layout(location = 0) out vec4 outColor;
 //in int gl_InvocationsPerPixelNV;
 
 void main() {
-	outColor = vec4(vec3(gl_InvocationsPerPixelNV / 16.0f), 0.5f);
-	outColor = vec4(vec3(gl_FragmentSizeNV.x * gl_FragmentSizeNV.y / 16.0f), 0.5f);
-	outColor = vec4(vec3( 0.5 + (-gl_FragmentSizeNV.x * gl_FragmentSizeNV.y + 1.0)/30.0 + (gl_InvocationsPerPixelNV - 1.0) / 30.0f), 0.5f);
-	outColor = vec4(vec3(gl_FragmentSizeNV.x / 16.0f), 0.5f);
+	//float shadingRate = gl_InvocationsPerPixelNV / 16.0;
+	float shadingRate =  0.5 + (-gl_FragmentSizeNV.x * gl_FragmentSizeNV.y + 1.0)/30.0 + (gl_InvocationsPerPixelNV - 1.0) / 30.0f;
+
+	float greenOrBlue = step(0.5, shadingRate);
+	float redToGreen = smoothstep(0, 0.5, shadingRate);
+	float greenToBlue = smoothstep(0.5, 1, shadingRate);
+	outColor = 0.1 * vec4(mix(mix(vec3(1,0,0), vec3(0,1,0), redToGreen), mix(vec3(0,1,0), vec3(0,0,1), greenToBlue), greenOrBlue), 0.5);
+
+	//outColor = vec4(vec3(gl_InvocationsPerPixelNV / 16.0f), 0.5f);
+	//outColor = vec4(vec3(gl_FragmentSizeNV.x * gl_FragmentSizeNV.y / 16.0f), 0.5f);
+	//outColor = vec4(vec3( 0.5 + (-gl_FragmentSizeNV.x * gl_FragmentSizeNV.y + 1.0)/30.0 + (gl_InvocationsPerPixelNV - 1.0) / 30.0f), 0.5f);
+	//outColor = vec4(vec3(gl_FragmentSizeNV.x / 4.0f), 0.5f);
 }

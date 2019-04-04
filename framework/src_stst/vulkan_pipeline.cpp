@@ -27,6 +27,25 @@ namespace cgb {
 	vulkan_pipeline::vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout) :
 		mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mResourceBundleLayouts(resourceBundleLayout)
 	{
+		mColorBlendAttachment = {};
+		mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+		mColorBlendAttachment.blendEnable = VK_FALSE;
+		mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
+		mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
+		mColorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
+		mColorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
+		mColorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
+		mColorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
+
+		mColorBlending = {};
+		mColorBlending.logicOpEnable = VK_FALSE;
+		mColorBlending.logicOp = vk::LogicOp::eCopy; // Optional
+		mColorBlending.attachmentCount = 1;
+		mColorBlending.pAttachments = &mColorBlendAttachment;
+		mColorBlending.blendConstants[0] = 0.0f; // Optional
+		mColorBlending.blendConstants[1] = 0.0f; // Optional
+		mColorBlending.blendConstants[2] = 0.0f; // Optional
+		mColorBlending.blendConstants[3] = 0.0f; // Optional
 	}
 
 	vulkan_pipeline::vulkan_pipeline(std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout, size_t pushConstantsSize) :
@@ -121,6 +140,7 @@ namespace cgb {
 		// shaders
 		//auto vertShaderCode = readFile("Shader/vert.spv");
 		//auto fragShaderCode = readFile("Shader/frag.spv");
+		cleanup();
 
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages(mShaderModules.size());
 		for (int i = 0; i < mShaderModules.size(); i++) {
@@ -230,26 +250,6 @@ namespace cgb {
 		multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
 		multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
-		colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-		colorBlendAttachment.blendEnable = VK_FALSE;
-		colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
-		colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
-		colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
-		colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
-		colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
-		colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
-
-		vk::PipelineColorBlendStateCreateInfo colorBlending = {};
-		colorBlending.logicOpEnable = VK_FALSE;
-		colorBlending.logicOp = vk::LogicOp::eCopy; // Optional
-		colorBlending.attachmentCount = 1;
-		colorBlending.pAttachments = &colorBlendAttachment;
-		colorBlending.blendConstants[0] = 0.0f; // Optional
-		colorBlending.blendConstants[1] = 0.0f; // Optional
-		colorBlending.blendConstants[2] = 0.0f; // Optional
-		colorBlending.blendConstants[3] = 0.0f; // Optional
-
 		vk::DynamicState dynamicStates[] = {
 			vk::DynamicState::eViewport,
 			vk::DynamicState::eLineWidth
@@ -294,13 +294,14 @@ namespace cgb {
 		pipelineInfo.stageCount = shaderStages.size();
 		pipelineInfo.pStages = shaderStages.data();
 
+		mColorBlending.pAttachments = &mColorBlendAttachment;
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
 		pipelineInfo.pViewportState = &viewportState;
 		pipelineInfo.pRasterizationState = &rasterizer;
 		pipelineInfo.pMultisampleState = &multisampling;
 		pipelineInfo.pDepthStencilState = nullptr; // Optional
-		pipelineInfo.pColorBlendState = &colorBlending;
+		pipelineInfo.pColorBlendState = &mColorBlending;
 		pipelineInfo.pDynamicState = nullptr; // Optional
 
 		pipelineInfo.layout = mPipelineLayout;

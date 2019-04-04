@@ -16,6 +16,9 @@
     <Filter Include="Tobii">
       <UniqueIdentifier>{40467687-d0b9-4c15-a516-429ef2caebf1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assets\chalet">
+      <UniqueIdentifier>{429fa5bf-6ad9-4bbc-b579-c59f0fd54fba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag">
@@ -70,6 +73,7 @@
       <Filter>Tobii</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
@@ -82,7 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\framework\assets\chalet\chalet.jpg">
-      <Filter>assets</Filter>
+      <Filter>assets\chalet</Filter>
     </Image>
   </ItemGroup>
 </Project>

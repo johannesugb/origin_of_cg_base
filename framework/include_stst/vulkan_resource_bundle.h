@@ -44,9 +44,9 @@ namespace cgb {
 		std::unordered_map<uint32_t, std::vector<vk::DescriptorImageInfo>> mDescriptorImageInfoMap;
 		std::unordered_map<uint32_t, std::vector<vk::DescriptorBufferInfo>> mDescriptorBufferInfoMap;
 
-		vk::WriteDescriptorSet& create_image_resource_descriptor_write(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_texture> texture,
+		vk::WriteDescriptorSet create_image_resource_descriptor_write(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_texture> texture,
 			uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
-		vk::WriteDescriptorSet& create_buffer_resource_descriptor_write(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset = 0, uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
+		vk::WriteDescriptorSet create_buffer_resource_descriptor_write(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset = 0, uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
 
 
 		// specifies if this resource bundle contains dynamic resources

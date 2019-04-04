@@ -139,6 +139,13 @@ public:
 		if (cgb::input().key_pressed(cgb::key_code::escape)) {
 			cgb::current_composition().stop();
 		}
+		if (cgb::input().key_pressed(cgb::key_code::f5)) {
+			cgb::vulkan_context::instance().device.waitIdle();
+			mVrsDebugPipeline->bake();
+			mComputeVulkanPipeline->bake();
+			mMaterialPipeline->bake();
+			mRenderVulkanPipeline->bake();
+		}
 	}
 
 	void render() override
@@ -164,6 +171,8 @@ private:
 	void initVulkan()
 	{
 		cgb::vulkan_context::instance().initVulkan();
+
+		//cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
 
 		createCommandPools();
 
@@ -354,9 +363,11 @@ private:
 		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
 
 		mVrsDebugPipeline->add_attr_desc_binding(bind1);
-		//mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/vrs_debug.frag.spv");
+		auto& colorBlend = mVrsDebugPipeline->get_color_blend_attachment_state();
+		colorBlend.blendEnable = VK_TRUE;
+		colorBlend.dstColorBlendFactor = vk::BlendFactor::eOne;
 
 		mVrsDebugPipeline->bake();
 		mVrsDebugDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mVrsDebugPipeline);
@@ -545,7 +556,7 @@ private:
 		//}
 
 		//mRenderer->render(renderObjects, drawer.get());
-		//mRenderer->render(renderObjects, mVrsDebugDrawer.get());
+		mRenderer->render(renderObjects, mVrsDebugDrawer.get());
 		mRenderer->end_frame();
 	}
 
@@ -697,7 +708,7 @@ private:
 		auto width = imagePresenter->get_swap_chain_extent().width / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.width;
 		auto height = imagePresenter->get_swap_chain_extent().height / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.height;
 
-		vk::Format colorFormatDebug = imagePresenter->get_swap_chain_image_format();
+		vk::Format colorFormatDebug = vk::Format::eR8G8B8A8Unorm;
 
 		vrsImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
 		vrsDebugImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
