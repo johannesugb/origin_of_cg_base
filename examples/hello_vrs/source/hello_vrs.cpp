@@ -32,7 +32,7 @@ const int HEIGHT = 1080;
 
 const int MAX_COUNT_POINT_LIGHTS = 100;
 
-const std::string TEXTURE_PATH = "assets/chalet/chalet.jpg";
+const std::string TEXTURE_PATH = "assets/chalet.jpg";
 
 class vrs_behavior : public cgb::cg_element
 {

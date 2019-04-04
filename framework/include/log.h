@@ -60,6 +60,8 @@ namespace cgb
 	#else
 	#define LOG_ERROR(msg)
 	#define LOG_ERROR_EM(msg)
+	#define LOG_ERROR__(msg)
+	#define LOG_ERROR_EM__(msg)
 	#endif
 
 	#if LOG_LEVEL > 1
@@ -90,6 +92,8 @@ namespace cgb
 	#else 
 	#define LOG_WARNING(msg)
 	#define LOG_WARNING_EM(msg)
+	#define LOG_WARNING__(msg)
+	#define LOG_WARNING_EM__(msg)
 	#endif
 
 	#if LOG_LEVEL > 2
@@ -120,6 +124,8 @@ namespace cgb
 	#else
 	#define LOG_INFO(msg)
 	#define LOG_INFO_EM(msg)
+	#define LOG_INFO__(msg)
+	#define LOG_INFO_EM__(msg)
 	#endif
 
 	#if LOG_LEVEL > 3
@@ -150,6 +156,8 @@ namespace cgb
 	#else 
 	#define LOG_VERBOSE(msg)
 	#define LOG_VERBOSE_EM(msg)
+	#define LOG_VERBOSE__(msg)
+	#define LOG_VERBOSE_EM__(msg)
 	#endif
 
 	#ifdef _DEBUG
@@ -180,6 +188,8 @@ namespace cgb
 	#else
 	#define LOG_DEBUG(msg)
 	#define LOG_DEBUG_EM(msg)
+	#define LOG_DEBUG__(msg)
+	#define LOG_DEBUG_EM__(msg)	
 	#endif
 
 	#if defined(_DEBUG) && LOG_LEVEL > 3
@@ -209,7 +219,9 @@ namespace cgb
 								} while(false)
 	#else
 	#define LOG_DEBUG_VERBOSE(msg)
-	#define LOG_DEBUG_VERBOSE_EM(msg)   	
+	#define LOG_DEBUG_VERBOSE_EM(msg)   
+	#define LOG_DEBUG_VERBOSE__(msg)
+	#define LOG_DEBUG_VERBOSE_EM__(msg)
 	#endif
 
 	std::string to_string(const glm::mat4&);
