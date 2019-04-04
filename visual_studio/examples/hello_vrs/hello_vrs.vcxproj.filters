@@ -4,9 +4,6 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{be49ce2a-a44b-4fed-b3c7-933944d59bbe}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tobii">
-      <UniqueIdentifier>{6ef1a03e-9819-4edc-85d0-40d033a6b736}</UniqueIdentifier>
-    </Filter>
     <Filter Include="assets">
       <UniqueIdentifier>{bb9c2164-6c10-461f-a9f8-c113d160de93}</UniqueIdentifier>
     </Filter>
@@ -15,6 +12,9 @@
     </Filter>
     <Filter Include="assets\models\sponza">
       <UniqueIdentifier>{92f3608d-a2c5-4f97-801c-e359291f78d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tobii">
+      <UniqueIdentifier>{40467687-d0b9-4c15-a516-429ef2caebf1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -27,16 +27,6 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_img.comp">
       <Filter>shaders</Filter>
     </None>
-    <None Include="Tobii\SDK-License_zh.pdf">
-      <Filter>Tobii</Filter>
-    </None>
-    <None Include="Tobii\SDK-License_en.pdf">
-      <Filter>Tobii</Filter>
-    </None>
-    <None Include="Tobii\API-Reference.pdf">
-      <Filter>Tobii</Filter>
-    </None>
-    <None Include="packages.config" />
     <None Include="@(NativeLibs)" />
     <None Include="@(NativeLibs)" />
     <None Include="@(NativeLibs)" />
@@ -69,6 +59,17 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.vert">
       <Filter>shaders</Filter>
     </None>
+    <None Include="@(NativeLibs)" />
+    <None Include="Tobii\SDK-License_zh.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="Tobii\SDK-License_en.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="Tobii\API-Reference.pdf">
+      <Filter>Tobii</Filter>
+    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />

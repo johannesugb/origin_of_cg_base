@@ -545,7 +545,7 @@ private:
 		//}
 
 		//mRenderer->render(renderObjects, drawer.get());
-		mRenderer->render(renderObjects, mVrsDebugDrawer.get());
+		//mRenderer->render(renderObjects, mVrsDebugDrawer.get());
 		mRenderer->end_frame();
 	}
 
