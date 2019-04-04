@@ -26,7 +26,7 @@
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
 
-const std::string TEXTURE_PATH = "assets/chalet/chalet.jpg";
+const std::string TEXTURE_PATH = "assets/chalet.jpg";
 
 class vrs_behavior : public cgb::cg_element
 {
