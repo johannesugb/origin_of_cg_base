@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/lockfree/queue.hpp>
+
 namespace cgb
 {
 	// LOG-LEVELS:
@@ -31,6 +33,7 @@ namespace cgb
 	extern void set_console_output_color(cgb::log_type level, cgb::log_importance importance);
 	extern void reset_console_output_color();
 	extern std::mutex gLogMutex;
+	extern boost::lockfree::queue<std::string> gLogQueue; // TODO: use und in die precompiled headers?!
 	
 	#if LOG_LEVEL > 0
 	#define LOG_ERROR(msg)		do { \

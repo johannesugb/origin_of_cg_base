@@ -19,10 +19,10 @@ namespace cgb
 	{
 		glm::vec3 rotatedVector = glm::vec3(m_rotation * homoVectorToAdd);
 		float speedMultiplier = 1.0f;
-		if (input().key_pressed(key_code::left_shift)) {
+		if (input().key_down(key_code::left_shift)) {
 			speedMultiplier = mFastMultiplier;
 		}
-		if (input().key_pressed(key_code::left_control)) {
+		if (input().key_down(key_code::left_control)) {
 			speedMultiplier = mSlowMultiplier;
 		}
 		Translate(mMoveSpeed * speedMultiplier * static_cast<float>(deltaTime) * rotatedVector);
