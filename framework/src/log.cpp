@@ -82,6 +82,82 @@ namespace cgb
 	}
 
 
+	void dispatch_log(log_pack pToBeLogged)
+	{
+		static std::mutex sLogMutex;
+		static std::condition_variable sCondVar;
+		static std::queue<log_pack> sLogQueue;
+		static bool sContinueLogging = true;
+		static std::thread sLogThread = std::thread([]() {
+			cgb::set_console_output_color(cgb::log_type::verbose, cgb::log_importance::important);
+			fmt::print("Logger thread started...\n");
+			cgb::reset_console_output_color();
+			while (sContinueLogging) {
+				// Process all messages
+				{
+					log_pack front;
+					bool empty;
+					// 1st lock => See if there is something
+					{
+						std::scoped_lock<std::mutex> guard(sLogMutex);
+						empty = sLogQueue.empty();
+						if (!empty)
+						{
+							front = sLogQueue.front();
+							sLogQueue.pop();
+						}
+					}
+
+					if (!sContinueLogging) continue;
+
+					// If we were able to successfully pop an element => handle it, i.e. print it
+					if (!empty)
+					{
+						// ACTUAL LOGGING:
+						cgb::set_console_output_color(front.mLogType, front.mLogImportance);
+						fmt::print(front.mMessage);
+						cgb::reset_console_output_color();
+
+						// 2nd lock => get correct empty-value
+						{
+							std::scoped_lock<std::mutex> guard(sLogMutex);
+							empty = sLogQueue.empty();
+							if (!empty) continue;
+						}
+					}
+				}
+
+				if (!sContinueLogging) continue;
+
+				// No more messages => wait
+				{
+					// Do not take 100% of the CPU
+					std::unique_lock<std::mutex> lock(sLogMutex);
+					sCondVar.wait(lock);
+				}
+			}
+			cgb::set_console_output_color(cgb::log_type::verbose, cgb::log_importance::important);
+			fmt::print("Logger thread terminating.\n");
+			cgb::reset_console_output_color();
+		});
+		static struct thread_stopper {
+			~thread_stopper() {
+				{
+					std::unique_lock<std::mutex> lock(sLogMutex);
+					sContinueLogging = false;
+					sCondVar.notify_all();
+				}
+				sLogThread.join();
+			}
+		} sThreadStopper;
+
+		// Enqueue the message and wake the logger thread
+		std::scoped_lock<std::mutex> guard(sLogMutex);
+		sLogQueue.push(pToBeLogged);
+		sCondVar.notify_all();
+	}
+
+
 	std::string to_string(const glm::mat4& pMatrix)
 	{
 		char buf[128];

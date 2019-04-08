@@ -283,7 +283,7 @@ namespace cgb
 	void generic_glfw::glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
 		assert(are_we_on_the_main_thread());
-		std::lock_guard<std::mutex> lock(sInputMutex);
+		std::scoped_lock<std::mutex> guard(sInputMutex);
 		button = glm::clamp(button, 0, 7);
 
 		auto& inputBackBuffer = composition_interface::current()->background_input_buffer();
@@ -313,13 +313,13 @@ namespace cgb
 	void generic_glfw::glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	{
 		//assert(sTargetInputBuffer);
-		//std::lock_guard<std::mutex> lock(sInputMutex);
+		//std::scoped_lock<std::mutex> guard(sInputMutex);
 		//sTargetInputBuffer->mScrollPosition += glm::dvec2(xoffset, yoffset);
 	}
 
 	void generic_glfw::glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-		std::lock_guard<std::mutex> lock(sInputMutex);
+		std::scoped_lock<std::mutex> guard(sInputMutex);
 
 		// TODO: Do something with the window-parameter? Or is it okay?
 
@@ -373,7 +373,7 @@ namespace cgb
 
 	void generic_glfw::dispatch_to_main_thread(std::function<dispatcher_action> pAction)
 	{
-		std::lock_guard<std::mutex> lock(sDispatchMutex);
+		std::scoped_lock<std::mutex> guard(sDispatchMutex);
 		// Are we on the main thread?
 		if (are_we_on_the_main_thread()) {
 			pAction();
@@ -385,7 +385,7 @@ namespace cgb
 
 	void generic_glfw::work_off_all_pending_main_thread_actions()
 	{
-		std::lock_guard<std::mutex> lock(sDispatchMutex);
+		std::scoped_lock<std::mutex> guard(sDispatchMutex);
 		for (auto& action : mDispatchQueue) {
 			action();
 		}

@@ -21,6 +21,7 @@
 #include <typeinfo>
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
 #include <cstdlib>
 
 #include <stdio.h>
@@ -39,6 +40,8 @@
 #include <imgui.h>
 
 // Note: GLM is getting included in the context-headers.
+
+#include <boost/lockfree/queue.hpp>
 
 // -------------------- windows include ---------------------
 #ifdef _WIN32
