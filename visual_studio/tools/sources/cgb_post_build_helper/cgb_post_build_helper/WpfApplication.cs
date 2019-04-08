@@ -52,7 +52,7 @@ namespace CgbPostBuildHelper
 		public ObservableCollection<CgbAppInstanceVM> AllInstances => _instances;
 
 		private readonly Dictionary<CgbAppInstanceVM, Dictionary<string, Tuple<string, string>>> _toBeUpdated = new Dictionary<CgbAppInstanceVM, Dictionary<string, Tuple<string, string>>>();
-		private uint _invocationWhichMayUpdate = 0;
+		private readonly Dictionary<CgbAppInstanceVM, uint> _invocationWhichMayUpdate = new Dictionary<CgbAppInstanceVM, uint>();
 
 		System.Drawing.Icon[] _icons = new System.Drawing.Icon[8];
 
@@ -688,24 +688,30 @@ namespace CgbPostBuildHelper
 				}
 
 				// only one can be the updater!
-				var myId = ++_invocationWhichMayUpdate;
+                if (!_invocationWhichMayUpdate.ContainsKey(inst))
+                {
+                    _invocationWhichMayUpdate.Add(inst, 0);
+                }
+                _invocationWhichMayUpdate[inst] += 1;
+				var myId = _invocationWhichMayUpdate[inst];
 
-				var timer = new DispatcherTimer 
+
+                var timer = new DispatcherTimer 
 				{ 
-					Interval = TimeSpan.FromMilliseconds(300.0) // This is somewhat of a random/magic number, but it should be fine, I guess
+					Interval = TimeSpan.FromMilliseconds(200.0) // This is somewhat of a random/magic number, but it should be fine, I guess
 				};
 				timer.Start();
 				timer.Tick += (sender, args) =>
 				{
 					timer.Stop();
 					
-					if (myId == _invocationWhichMayUpdate)
+					if (myId == _invocationWhichMayUpdate[inst])
 					{
 						// I am the one!
-						var updConfig = inst.Config;
 						while (_toBeUpdated.Count > 0)
 						{
 							var nextRandomKey = _toBeUpdated.Keys.First();
+						    var updConfig = nextRandomKey.Config;
 							var item = _toBeUpdated[nextRandomKey];
 							_toBeUpdated.Remove(nextRandomKey);
 							Task.Run(() =>
