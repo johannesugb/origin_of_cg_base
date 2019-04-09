@@ -41,8 +41,6 @@
 
 // Note: GLM is getting included in the context-headers.
 
-#include <boost/lockfree/queue.hpp>
-
 // -------------------- windows include ---------------------
 #ifdef _WIN32
 // Include that after the assimp includes due to some conflict
