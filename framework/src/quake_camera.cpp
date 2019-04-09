@@ -17,7 +17,7 @@ namespace cgb
 
 	void QuakeCamera::AddToCameraPositionRelative(const glm::vec4& homoVectorToAdd, double deltaTime)
 	{
-		glm::vec3 rotatedVector = glm::vec3(m_rotation * homoVectorToAdd);
+		glm::vec3 rotatedVector = glm::vec3(mRotation * homoVectorToAdd);
 		float speedMultiplier = 1.0f;
 		if (input().key_down(key_code::left_shift)) {
 			speedMultiplier = mFastMultiplier;
@@ -106,9 +106,9 @@ namespace cgb
 		if (input().key_down(key_code::s))
 			AddToCameraPositionRelative(-kFrontVec4, deltaTime);
 		if (input().key_down(key_code::d))
-			AddToCameraPositionRelative(kSideVec4, deltaTime);
+			AddToCameraPositionRelative(kRightVec4, deltaTime);
 		if (input().key_down(key_code::a))
-			AddToCameraPositionRelative(-kSideVec4, deltaTime);
+			AddToCameraPositionRelative(-kRightVec4, deltaTime);
 		if (input().key_down(key_code::q))
 			AddToCameraPositionAbsolute(-kUpVec4, deltaTime);
 		if (input().key_down(key_code::e))

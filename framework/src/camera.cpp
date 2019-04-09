@@ -187,7 +187,7 @@ namespace cgb
 		return depth * 0.5f + 0.5f;
 	}
 
-	float Camera::CalcZBufferDepth(Transform* transform)
+	float Camera::CalcZBufferDepth(transform* transform)
 	{
 		return CalcZBufferDepth(transform->GetPosition());
 	}

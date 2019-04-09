@@ -9,7 +9,7 @@ namespace cgb
 		CameraProjectionConfig_Orthogonal,
 	};
 
-	class Camera : public Transform
+	class Camera : public transform
 	{
 	protected:
 		glm::mat4 m_projection_matrix;
@@ -59,7 +59,7 @@ namespace cgb
 		/// calculates the z-buffer depth of the specified position in world space
 		float CalcZBufferDepth(const glm::vec3& posWS);
 		/// Calculates the z-buffer depth of the specified GameObject's position 
-		float CalcZBufferDepth(Transform* transform);
+		float CalcZBufferDepth(transform* transform);
 
 		/// calculates the view matrix based on position, front- and up-vectors;
 		/// a lookat-calculation is performed

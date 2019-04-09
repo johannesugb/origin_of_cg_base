@@ -2,48 +2,48 @@
 
 namespace cgb
 {
-	const glm::mat4 Transform::kIdentityMatrix(1.0f);
-	const glm::vec3 Transform::kFrontVec3(0.0f, 0.0f, -1.0f);
-	const glm::vec4 Transform::kFrontVec4(0.0f, 0.0f, -1.0f, 1.0f);
-	const glm::vec3 Transform::kUpVec3(0.0f, 1.0f, 0.0f);
-	const glm::vec4 Transform::kUpVec4(0.0f, 1.0f, 0.0f, 1.0f);
-	const glm::vec3 Transform::kSideVec3(1.0f, 0.0f, 0.0f);
-	const glm::vec4 Transform::kSideVec4(1.0f, 0.0f, 0.0f, 1.0f);
-	const glm::vec3 Transform::kUnitVec3X(1, 0, 0);
-	const glm::vec3 Transform::kUnitVec3Y(0, 1, 0);
-	const glm::vec3 Transform::kUnitVec3Z(0, 0, 1);
-	const glm::vec4 Transform::kUnitVec4X(1, 0, 0, 1);
-	const glm::vec4 Transform::kUnitVec4Y(0, 1, 0, 1);
-	const glm::vec4 Transform::kUnitVec4Z(0, 0, 1, 1);
+	const glm::mat4 transform::kIdentityMatrix(1.0f);
+	const glm::vec3 transform::kFrontVec3(0.0f, 0.0f, -1.0f);
+	const glm::vec4 transform::kFrontVec4(0.0f, 0.0f, -1.0f, 1.0f);
+	const glm::vec3 transform::kUpVec3(0.0f, 1.0f, 0.0f);
+	const glm::vec4 transform::kUpVec4(0.0f, 1.0f, 0.0f, 1.0f);
+	const glm::vec3 transform::kRightVec3(1.0f, 0.0f, 0.0f);
+	const glm::vec4 transform::kRightVec4(1.0f, 0.0f, 0.0f, 1.0f);
+	const glm::vec3 transform::kUnitVec3X(1.0f, 0.0f, 0.0f);
+	const glm::vec3 transform::kUnitVec3Y(0.0f, 1.0f, 0.0f);
+	const glm::vec3 transform::kUnitVec3Z(0.0f, 0.0f, 1.0f);
+	const glm::vec4 transform::kUnitVec4X(1.0f, 0.0f, 0.0f, 1.0f);
+	const glm::vec4 transform::kUnitVec4Y(0.0f, 1.0f, 0.0f, 1.0f);
+	const glm::vec4 transform::kUnitVec4Z(0.0f, 0.0f, 1.0f, 1.0f);
 
-	Transform::Transform() :
+	transform::transform() :
 		m_update_id(0),
 		m_query_id(0),
-		m_rotation(1.0f), // rotation is a matrix
-		m_translation(0.0f),
-		m_scale(1.0f),
+		mRotation(1.0f), // rotation is a matrix
+		mTranslation(0.0f),
+		mScale(1.0f),
 		m_model_matrix(1.0f),
 		m_parent_ptr(nullptr)
 	{
 	}
 
-	Transform::Transform(glm::vec3 position) :
+	transform::transform(glm::vec3 position) :
 		m_update_id(0),
 		m_query_id(0),
-		m_rotation(1.0f), // rotation is a matrix
-		m_translation(std::move(position)),
-		m_scale(1.0f),
+		mRotation(1.0f), // rotation is a matrix
+		mTranslation(std::move(position)),
+		mScale(1.0f),
 		m_model_matrix(1.0f),
 		m_parent_ptr(nullptr)
 	{
 	}
 
-	Transform::Transform(Transform&& other) noexcept :
+	transform::transform(transform&& other) noexcept :
 		m_update_id(other.m_update_id),
 		m_query_id(other.m_query_id),
-		m_rotation(std::move(other.m_rotation)),
-		m_translation(std::move(other.m_translation)),
-		m_scale(std::move(other.m_scale)),
+		mRotation(std::move(other.mRotation)),
+		mTranslation(std::move(other.mTranslation)),
+		mScale(std::move(other.mScale)),
 		m_model_matrix(std::move(other.m_model_matrix)),
 		m_parent_ptr(std::move(other.m_parent_ptr)),
 		m_childs(std::move(other.m_childs))
@@ -54,25 +54,25 @@ namespace cgb
 		other.m_childs.clear();
 	}
 
-	Transform::Transform(const Transform& other) noexcept :
+	transform::transform(const transform& other) noexcept :
 		m_update_id(other.m_update_id),
 		m_query_id(other.m_query_id),
-		m_rotation(other.m_rotation),
-		m_translation(other.m_translation),
-		m_scale(other.m_scale),
+		mRotation(other.mRotation),
+		mTranslation(other.mTranslation),
+		mScale(other.mScale),
 		m_model_matrix(other.m_model_matrix),
 		m_parent_ptr(other.m_parent_ptr),
 		m_childs(other.m_childs)
 	{
 	}
 
-	Transform& Transform::operator=(Transform&& other) noexcept
+	transform& transform::operator=(transform&& other) noexcept
 	{
 		m_update_id = other.m_update_id;
 		m_query_id = other.m_query_id;
-		m_rotation = std::move(other.m_rotation);
-		m_translation = std::move(other.m_translation);
-		m_scale = std::move(other.m_scale);
+		mRotation = std::move(other.mRotation);
+		mTranslation = std::move(other.mTranslation);
+		mScale = std::move(other.mScale);
 		m_model_matrix = std::move(other.m_model_matrix);
 		m_parent_ptr = std::move(other.m_parent_ptr);
 		m_childs = std::move(other.m_childs);
@@ -83,36 +83,36 @@ namespace cgb
 		return *this;
 	}
 
-	Transform& Transform::operator=(const Transform& other) noexcept
+	transform& transform::operator=(const transform& other) noexcept
 	{
 		m_update_id = other.m_update_id;
 		m_query_id = other.m_query_id;
-		m_rotation = other.m_rotation;
-		m_translation = other.m_translation;
-		m_scale = other.m_scale;
+		mRotation = other.mRotation;
+		mTranslation = other.mTranslation;
+		mScale = other.mScale;
 		m_model_matrix = other.m_model_matrix;
 		m_parent_ptr = other.m_parent_ptr;
 		m_childs = other.m_childs;
 		return *this;
 	}
 
-	Transform::~Transform()
+	transform::~transform()
 	{
 	}
 
-	void Transform::DataUpdated()
+	void transform::DataUpdated()
 	{
 		++m_update_id;
 	}
 
-	void Transform::UpdateMatrices()
+	void transform::UpdateMatrices()
 	{
 		if (m_update_id != m_query_id) {
 			//                                                      3.          2.        1.
 			// calculate model-matrix, multiplication order is translation * rotation * scale
-			m_model_matrix = glm::translate(m_translation);
-			m_model_matrix = m_model_matrix * m_rotation;
-			m_model_matrix = glm::scale(m_model_matrix, m_scale);
+			m_model_matrix = glm::translate(mTranslation);
+			m_model_matrix = m_model_matrix * mRotation;
+			m_model_matrix = glm::scale(m_model_matrix, mScale);
 
 			m_query_id = m_update_id;
 		}
@@ -121,75 +121,75 @@ namespace cgb
 
 	// Set transformations
 
-	void Transform::set_position(glm::vec3 position)
+	void transform::set_position(glm::vec3 position)
 	{
-		m_translation = std::move(position);
+		mTranslation = std::move(position);
 		DataUpdated();
 	}
 
-	void Transform::set_rotation(glm::mat4 rotation)
+	void transform::set_rotation(glm::mat4 rotation)
 	{
-		m_rotation = std::move(rotation);
+		mRotation = std::move(rotation);
 		DataUpdated();
 	}
 
-	void Transform::set_scale(glm::vec3 scale)
+	void transform::set_scale(glm::vec3 scale)
 	{
-		m_scale = std::move(scale);
+		mScale = std::move(scale);
 		DataUpdated();
 	}
 
-	void Transform::set_scale(const float scale)
+	void transform::set_scale(const float scale)
 	{
-		m_scale = glm::vec3(scale);
+		mScale = glm::vec3(scale);
 		DataUpdated();
 	}
 
 
 	// Alter current transformations 
 
-	void Transform::Translate(const glm::vec3& translation)
+	void transform::Translate(const glm::vec3& translation)
 	{
-		m_translation += translation;
+		mTranslation += translation;
 		DataUpdated();
 	}
 
-	void Transform::Rotate(const glm::vec3& axis, const float angle)
+	void transform::Rotate(const glm::vec3& axis, const float angle)
 	{
-		m_rotation = glm::rotate(angle, axis) * m_rotation;
+		mRotation = glm::rotate(angle, axis) * mRotation;
 		DataUpdated();
 	}
 
-	void Transform::Rotate(const glm::mat4& mat)
+	void transform::Rotate(const glm::mat4& mat)
 	{
-		m_rotation = mat * m_rotation;
+		mRotation = mat * mRotation;
 		DataUpdated();
 	}
 
-	void Transform::RotateX(const float angle)
+	void transform::RotateX(const float angle)
 	{
 		Rotate(kUnitVec3X, angle);
 	}
 
-	void Transform::RotateY(const float angle)
+	void transform::RotateY(const float angle)
 	{
 		Rotate(kUnitVec3Y, angle);
 	}
 
-	void Transform::RotateZ(const float angle)
+	void transform::RotateZ(const float angle)
 	{
 		Rotate(kUnitVec3Z, angle);
 	}
 
-	void Transform::Scale(const glm::vec3& scale)
+	void transform::Scale(const glm::vec3& scale)
 	{
-		m_scale += scale;
+		mScale += scale;
 		DataUpdated();
 	}
 
-	void Transform::Scale(const float scale)
+	void transform::Scale(const float scale)
 	{
-		m_scale += glm::vec3(scale);
+		mScale += glm::vec3(scale);
 		DataUpdated();
 	}
 
@@ -197,7 +197,7 @@ namespace cgb
 
 	// Query matrices
 
-	glm::mat4 Transform::GetModelMatrix()
+	glm::mat4 transform::GetModelMatrix()
 	{
 		UpdateMatrices();
 		if (m_parent_ptr) {
@@ -209,12 +209,12 @@ namespace cgb
 
 
 
-	glm::mat4 Transform::model_matrix()
+	glm::mat4 transform::model_matrix()
 	{
 		return m_model_matrix;
 	}
 
-	glm::vec3 Transform::GetLocalFrontVector()
+	glm::vec3 transform::GetLocalFrontVector()
 	{
 		glm::mat4 mM = model_matrix();
 		glm::mat4 itM = glm::inverseTranspose(mM);
@@ -224,73 +224,73 @@ namespace cgb
 
 
 
-	glm::mat4 Transform::GetRotationMatrix()
+	glm::mat4 transform::GetRotationMatrix()
 	{
 		if (m_parent_ptr)
-			return m_parent_ptr->GetRotationMatrix() * m_rotation;
+			return m_parent_ptr->GetRotationMatrix() * mRotation;
 		else
-			return m_rotation;
+			return mRotation;
 	}
 
-	glm::mat4 Transform::rotation_matrix()
+	glm::mat4 transform::rotation_matrix()
 	{
-		return m_rotation;
+		return mRotation;
 	}
 
 
-	glm::vec3 Transform::GetScale()
+	glm::vec3 transform::GetScale()
 	{
 		if (m_parent_ptr)
-			return m_parent_ptr->GetScale() * m_scale;
+			return m_parent_ptr->GetScale() * mScale;
 		else
-			return m_scale;
+			return mScale;
 	}
 
-	glm::vec3 Transform::scale()
+	glm::vec3 transform::scale()
 	{
-		return m_scale;
+		return mScale;
 	}
 
 
 	// query position and orientation-vectors
 
-	glm::vec3 Transform::translation()
+	glm::vec3 transform::translation()
 	{
-		return m_translation;
+		return mTranslation;
 	}
 
-	glm::vec3 Transform::GetPosition()
+	glm::vec3 transform::GetPosition()
 	{
 		return  get_translation_from_matrix(GetModelMatrix());
 	}
 
-	glm::vec3 Transform::GetFrontVector()
+	glm::vec3 transform::GetFrontVector()
 	{
 		glm::mat4 mM = GetModelMatrix();
 		glm::mat4 itM = glm::inverseTranspose(mM);
 		return glm::normalize(glm::vec3(itM * kFrontVec4));
 	}
 
-	glm::vec3 Transform::GetUpVector()
+	glm::vec3 transform::GetUpVector()
 	{
 		glm::mat4 mM = GetModelMatrix();
 		glm::mat4 itM = glm::inverseTranspose(mM);
 		return glm::normalize(glm::vec3(itM * kUpVec4));
 	}
 
-	glm::vec3 Transform::GetSideVector()
+	glm::vec3 transform::GetSideVector()
 	{
 		return glm::cross(GetFrontVector(), GetUpVector());
 	}
 
 
-	void Transform::LookAt(Transform* target)
+	void transform::LookAt(transform* target)
 	{
 		assert(target);
 		LookAt(target->GetPosition());
 	}
 
-	void Transform::LookAt(const glm::vec3& target)
+	void transform::LookAt(const glm::vec3& target)
 	{
 		glm::vec3 direction = glm::normalize(target - GetPosition());
 		glm::vec2 anglesToTarget = get_angles_from_direction_yaw_pitch(direction);
@@ -298,7 +298,7 @@ namespace cgb
 		set_rotation(rotationToTarget);
 	}
 
-	void Transform::LookAlong(const glm::vec3& direction)
+	void transform::LookAlong(const glm::vec3& direction)
 	{
 		glm::vec2 anglesToTarget = get_angles_from_direction_yaw_pitch(direction);
 		glm::mat4 rotationToTarget = glm::rotate(anglesToTarget.x, kUnitVec3Y) * glm::rotate(anglesToTarget.y, kUnitVec3X);
@@ -306,13 +306,13 @@ namespace cgb
 	}
 
 
-	void Transform::AlignUpVectorTowards(Transform* target)
+	void transform::AlignUpVectorTowards(transform* target)
 	{
 		assert(target);
 		AlignUpVectorTowards(target->GetPosition());
 	}
 
-	void Transform::AlignUpVectorTowards(const glm::vec3& target)
+	void transform::AlignUpVectorTowards(const glm::vec3& target)
 	{
 		glm::vec3 directon = glm::normalize(target - GetPosition());
 		glm::vec2 anglesToTarget = get_angles_from_direction_roll_pitch(directon);
@@ -320,7 +320,7 @@ namespace cgb
 		set_rotation(rotationToTarget);
 	}
 
-	void Transform::AlignUpVectorAlong(const glm::vec3& direction)
+	void transform::AlignUpVectorAlong(const glm::vec3& direction)
 	{
 		glm::vec2 anglesToTarget = get_angles_from_direction_roll_pitch(direction);
 		glm::mat4 rotationToTarget = glm::rotate(anglesToTarget.x, kUnitVec3Z) * glm::rotate(anglesToTarget.y, kUnitVec3X);
@@ -329,20 +329,20 @@ namespace cgb
 
 
 
-	Transform* Transform::parent()
+	transform* transform::parent()
 	{
 		return m_parent_ptr;
 	}
 
 
-	void AttachTransform(Transform* parent, Transform* child)
+	void attach_transform(transform::ptr pParent, transform::ptr pChild)
 	{
-		assert(parent);
-		assert(child);
+		assert(pParent);
+		assert(pChild);
 
-		child->m_parent_ptr = parent;
+		pChild->m_parent_ptr = pParent;
 
-		auto result = std::find(parent->m_childs.begin(), parent->m_childs.end(), child);
+		auto result = std::find(pParent->m_childs.begin(), pParent->m_childs.end(), child);
 		if (parent->m_childs.end() == result) {
 			parent->m_childs.push_back(child);
 		}
@@ -351,10 +351,10 @@ namespace cgb
 		}
 	}
 
-	void DetachTransform(Transform* parent, Transform* child)
+	void detach_transform(transform::ptr pParent, transform::ptr pChild)
 	{
-		assert(parent);
-		assert(child);
+		assert(pParent);
+		assert(pChild);
 
 		child->m_parent_ptr = nullptr;
 		auto it = parent->m_childs.begin();
