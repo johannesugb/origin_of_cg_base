@@ -107,16 +107,16 @@ namespace cgb {
 
 			// no render pass if this is a pure compute renderer (maybe better solution required) 
 			if (!mIsCompute) {
+				auto currentFramebuffer = vulkan_context::instance().vulkanFramebuffer;
+
 				vk::RenderPassBeginInfo renderPassInfo = {};
-				renderPassInfo.renderPass = vulkan_context::instance().vulkanFramebuffer->get_render_pass();
-				renderPassInfo.framebuffer = vulkan_context::instance().vulkanFramebuffer->get_swapchain_framebuffer();
+				renderPassInfo.renderPass = currentFramebuffer->get_render_pass();
+				renderPassInfo.framebuffer = currentFramebuffer->get_swapchain_framebuffer();
 
 				renderPassInfo.renderArea.offset = { 0, 0 };
-				renderPassInfo.renderArea.extent = vulkan_context::instance().vulkanFramebuffer->get_framebuffer_extent();
+				renderPassInfo.renderArea.extent = currentFramebuffer->get_framebuffer_extent();
 
-				std::array<vk::ClearValue, 2> clearValues = {};
-				clearValues[0].color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
-				clearValues[1].depthStencil = { 1.0f, 0 };
+				auto clearValues = currentFramebuffer->get_clear_values();
 				renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 				renderPassInfo.pClearValues = clearValues.data();
 

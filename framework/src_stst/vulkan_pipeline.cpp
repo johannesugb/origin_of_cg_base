@@ -27,21 +27,20 @@ namespace cgb {
 	vulkan_pipeline::vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout) :
 		mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mResourceBundleLayouts(resourceBundleLayout)
 	{
-		mColorBlendAttachment = {};
-		mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-		mColorBlendAttachment.blendEnable = VK_FALSE;
-		mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
-		mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
-		mColorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
-		mColorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
-		mColorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
-		mColorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
+		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState{};
+		colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+		colorBlendAttachment.blendEnable = VK_FALSE;
+		colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
+		colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
+		colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
+		colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
+		colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
+		colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
+		mColorBlendAttachments.push_back(colorBlendAttachment);
 
 		mColorBlending = {};
 		mColorBlending.logicOpEnable = VK_FALSE;
 		mColorBlending.logicOp = vk::LogicOp::eCopy; // Optional
-		mColorBlending.attachmentCount = 1;
-		mColorBlending.pAttachments = &mColorBlendAttachment;
 		mColorBlending.blendConstants[0] = 0.0f; // Optional
 		mColorBlending.blendConstants[1] = 0.0f; // Optional
 		mColorBlending.blendConstants[2] = 0.0f; // Optional
@@ -294,7 +293,8 @@ namespace cgb {
 		pipelineInfo.stageCount = shaderStages.size();
 		pipelineInfo.pStages = shaderStages.data();
 
-		mColorBlending.pAttachments = &mColorBlendAttachment;
+		mColorBlending.attachmentCount = mColorBlendAttachments.size();
+		mColorBlending.pAttachments = mColorBlendAttachments.data();
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
 		pipelineInfo.pViewportState = &viewportState;

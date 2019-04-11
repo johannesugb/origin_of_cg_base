@@ -57,7 +57,8 @@ namespace cgb {
 		void add_resource_bundle_layout(std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout) { mResourceBundleLayouts.push_back(resourceBundleLayout); };
 
 		vk::PipelineColorBlendStateCreateInfo& get_color_blend_state() { return mColorBlending; }
-		vk::PipelineColorBlendAttachmentState& get_color_blend_attachment_state() { return mColorBlendAttachment; }
+		vk::PipelineColorBlendAttachmentState& get_color_blend_attachment_state(int i) { return mColorBlendAttachments[i]; }
+		void add_color_blend_attachment_state(vk::PipelineColorBlendAttachmentState attach) { return mColorBlendAttachments.push_back(attach); }
 
 	private:
 		vk::Pipeline mPipeline;
@@ -78,7 +79,7 @@ namespace cgb {
 		vk::Rect2D mScissor; 
 		vk::SampleCountFlagBits mMsaaSamples; 
 		vk::PipelineColorBlendStateCreateInfo mColorBlending;
-		vk::PipelineColorBlendAttachmentState mColorBlendAttachment;
+		std::vector<vk::PipelineColorBlendAttachmentState> mColorBlendAttachments;
 
 		std::vector<std::shared_ptr<vulkan_attribute_description_binding>> mAttrDescBindings;
 		std::vector<shader_module> mShaderModules;

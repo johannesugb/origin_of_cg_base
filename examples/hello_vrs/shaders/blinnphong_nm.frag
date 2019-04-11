@@ -69,18 +69,19 @@ layout(set = 0, binding = 2) uniform uPointLightsBlock
 // ################### INPUT DATA ###############
 layout(location = 0) in VertexData
 {
-	vec3 toEyeDirTS;			///< direction from vertex towards the eye in tangent space
-	vec2 texCoords;				///< texture coordinates
-	vec3 directionalLightDirTS;	///< directional light's direction in tangent space
-	vec3 positionVS;			///< interpolated vertex position in view-space
-	vec3 aNormal;
-	vec3 aTangent;
-	vec3 aBitangent;
+	centroid vec3 toEyeDirTS;			///< direction from vertex towards the eye in tangent space
+	centroid vec2 texCoords;				///< texture coordinates
+	centroid vec3 directionalLightDirTS;	///< directional light's direction in tangent space
+	centroid vec3 positionVS;			///< interpolated vertex position in view-space
+	centroid vec3 aNormal;
+	centroid vec3 aTangent;
+	centroid vec3 aBitangent;
 } fs_in;
 // ----------------------------------------------
 
 // ################## OUTPUT DATA ###############
 layout(location = 0) out vec4 oFragColor;
+layout(location = 1) out vec4 oTexelDifferentials;
 // ----------------------------------------------
 
 // ############### HELPER FUNCTIONS #############
@@ -239,6 +240,12 @@ void main()
 	//oFragColor = vec4(uDirectionalLight.color.rgb, 1.0);
 	//oFragColor = vec4(CalcNormalizedNormalTS(), 1.0);
 	//oFragColor = vec4(normalize(texture(uNormalTexSampler, fs_in.texCoords).rgb * 2.0 - 1.0), 1.0);
+
+	//oFragColor = vec4(vec3(fwidth(fs_in.texCoords.y) + fwidth(fs_in.texCoords.x)), 1.0); 
+	oTexelDifferentials = vec4(vec3(fwidth(fs_in.texCoords.y) + fwidth(fs_in.texCoords.x)), 1.0);
+	float greyValue = dot(oFragColor.rgb, vec3(0.299, 0.587, 0.114));
+	//oTexelDifferentials = vec4(vec3(fwidthCoarse(greyValue)), 1.0); 
+	//oTexelDifferentials = vec4(vec3(dFdxCoarse(greyValue)), 1.0);
 	
 }
 // ----------------------------------------------

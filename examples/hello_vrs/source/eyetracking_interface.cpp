@@ -14,8 +14,8 @@ static void log(void* log_context, tobii_log_level_t level, char const* text)
 eyetracking_interface::eyetracking_interface() : exit_thread(false)
 {
 	auto tmpData = eyetracking_data();
-	tmpData.positionX = 0;
-	tmpData.positionY = 0;
+	tmpData.positionX = 0.5;
+	tmpData.positionY = 0.5;
 	tmpData.timestamp_us = 0;
 
 	mEyetrackingData.store(tmpData);
