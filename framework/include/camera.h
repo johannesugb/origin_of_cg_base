@@ -43,10 +43,6 @@ namespace cgb
 		float far_plane() const;
 		float field_of_view() const;
 		float aspect_ratio() const;
-		float left() const;
-		float right() const;
-		float top() const;
-		float bottom() const;
 		void set_near_plane(float value);
 		void set_far_plane(float value);
 		void set_field_of_view(float value);

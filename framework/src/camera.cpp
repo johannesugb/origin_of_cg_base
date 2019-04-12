@@ -98,26 +98,6 @@ namespace cgb
 		return m_aspect;
 	}
 
-	float Camera::left() const
-	{
-		return m_left;
-	}
-
-	float Camera::right() const
-	{
-		return m_right;
-	}
-
-	float Camera::top() const
-	{
-		return m_top;
-	}
-
-	float Camera::bottom() const
-	{
-		return m_bottom;
-	}
-
 	void Camera::set_near_plane(float value)
 	{
 		m_near_plane = value;

@@ -687,8 +687,7 @@ public:
 
 
 		// Add the camera to the composition (and let it handle the updates)
-		mQuakeCam.set_position(glm::vec3(-3.0f, 1.0f, 0.0f));
-		mQuakeCam.LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+		mQuakeCam.set_translation({ -3.0f, 1.0f, 0.0f });
 		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
 		cgb::current_composition().add_element(mQuakeCam);
 	}

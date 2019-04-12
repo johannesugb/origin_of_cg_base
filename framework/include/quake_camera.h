@@ -32,8 +32,7 @@ namespace cgb
 		glm::vec2 mAccumulatedMouseMovement;
 		bool mCaptureInput;
 
-		void AddToCameraPositionRelative(const glm::vec4& homoVectorToAdd, double deltaTime);
-		void AddToCameraPositionAbsolute(const glm::vec4& homoVectorToAdd, double deltaTime);
+		void AddToCameraPosition(const glm::vec3& translation, double deltaTime);
 
 	};
 }

@@ -25,61 +25,35 @@ namespace cgb
 		virtual ~transform();
 
 		/** sets a new position, current position is overwritten */
-		transform& set_translation(const glm::vec3& value);
+		void set_translation(const glm::vec3& pValue);
 		/** sets a new rotation, current rotation is overwritten */
-		transform& set_rotation(const glm::quat& value);
+		void set_rotation(const glm::quat& pValue);
 		/** sets a new scale, current scale is overwritten */
-		transform& set_scale(const glm::vec3& value);
-
-		/** translates the current basis */
-		transform& translate_local(const glm::vec3& pTranslation);
-		/** rotates the current basis */
-		transform& rotate_local(const glm::quat& pRotation);
-		/** scales the current basis */
-		transform& scale_local(const glm::vec3& pScale);
+		void set_scale(const glm::vec3& pValue);
 
 		/** returns the local transformation matrix, disregarding parent transforms */
 		const glm::mat4& local_transformation_matrix() const;
 		/** returns the global transformation matrix, taking parent transforms into account */
 		glm::mat4 global_transformation_matrix() const;
 
-		/** Get's the front-vector in global coordinates, which is the vector pointing in negative z-direction of the basis */
-		glm::vec3 front_vector();
-		/** Get's the basis' z-axis in global coordinates, which is the vector pointing in positive z-direction */
-		glm::vec3 x_axis();
-		/** Get's the basis' y-axis in global coordinates, which is the vector pointing in positive y-direction */
-		glm::vec3 y_axis();
-		/** Get's the basis' x-axis in global coordinates, which is the vector pointing in positive x-direction */
-		glm::vec3 z_axis();
+		/** Gets the matrix' x-axis, which can be seen as the local right vector */
+		glm::vec3 x_axis() const { return mMatrix[0]; }
+		/** Gets the matrix' y-axis, which can be seen as the local up vector */
+		glm::vec3 y_axis() const { return mMatrix[1]; }
+		/** Gets the matrix' z-axis, which can be seen as the local back vector */
+		glm::vec3 z_axis() const { return mMatrix[2]; }
 
-		/** returns the quaternion representing the local rotation, disregarding parent transforms */
-		glm::vec4 local_rotation();
-		/** returns the quaternion representing the global rotation, taking parent transforms into account */
-		glm::vec4 global_rotation();
+		/** Gets the local transformation matrix */
+		const glm::mat4& matrix() const { return mMatrix; }
 
-		/** returns the local scale, disregarding parent transformations */
-		glm::vec3 local_scale();
-		/** returns the global scale, taking parent transformations into account */
-		glm::vec3 global_scale();
+		/** Gets the local translation */
+		const glm::vec3& translation() const { return mTranslation; }
+		
+		/** Gets the local rotation */
+		const glm::quat& rotation() const { return mRotation; }
 
-		/** returns the local translation, disregarding parent transformations */
-		glm::vec3 local_translation();
-		/** returns the global translation, taking parent transformations into account */
-		glm::vec3 global_translation();
-
-		/**  */
-		void LookAt(transform* target);
-		/**  */
-		void LookAt(const glm::vec3& target);
-		/**  */
-		void LookAlong(const glm::vec3& direction);
-
-		/**  */
-		void AlignUpVectorTowards(transform* target);
-		/**  */
-		void AlignUpVectorTowards(const glm::vec3& target);
-		/**  */
-		void AlignUpVectorAlong(const glm::vec3& direction);
+		/** Local scale vector */
+		const glm::vec3& scale() const { return mScale; }
 
 		/** Returns true if this transform is a child has a parent transform. */
 		bool has_parent();
@@ -89,14 +63,14 @@ namespace cgb
 		transform::ptr parent();
 
 	private:
-		/**  */
+		/** Updates the internal matrix based on translation, rotation scale */
 		void update_matrix_from_transforms();
-		/**  */
+		/** Extracts translation, rotation and scale from the matrix and sets the internal fields' values */ 
 		void update_transforms_from_matrix();
 
 	protected:
 		/** Orthogonal basis + translation in a 4x4 matrix */
-		glm::mat4 mTransformationMatrix;
+		glm::mat4 mMatrix;
 		/** Offset from the coordinate origin */
 		glm::vec3 mTranslation;
 		/** Rotation quaternion */
@@ -112,4 +86,37 @@ namespace cgb
 
 	void attach_transform(transform::ptr pParent, transform::ptr pChild);
 	void detach_transform(transform::ptr pParent, transform::ptr pChild);
+
+	static glm::vec3 back (const transform& pTransform) { return  pTransform.z_axis(); }
+	static glm::vec3 front(const transform& pTransform) { return -pTransform.z_axis(); }
+	static glm::vec3 right(const transform& pTransform) { return  pTransform.x_axis(); }
+	static glm::vec3 left (const transform& pTransform) { return -pTransform.x_axis(); }
+	static glm::vec3 up   (const transform& pTransform) { return  pTransform.y_axis(); }
+	static glm::vec3 down (const transform& pTransform) { return -pTransform.y_axis(); }
+	glm::vec3 front_wrt(const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 back_wrt (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 right_wrt(const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 left_wrt (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 up_wrt   (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 down_wrt (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	void translate(transform& pTransform, const glm::vec3& pTranslation);
+	void rotate(transform& pTransform, const glm::quat& pRotation);
+	void scale(transform& pTransform, const glm::vec3& pScale);
+	void translate_wrt(transform& pTransform, const glm::vec3& pTranslation, glm::mat4 pReference = glm::mat4(1.0f));
+	void rotate_wrt(transform& pTransform, const glm::quat& pRotation, glm::mat4 pReference = glm::mat4(1.0f));
+	void scale_wrt(transform& pTransform, const glm::vec3& pScale, glm::mat4 pReference = glm::mat4(1.0f));
+
+	///**  */
+	//void LookAt(transform* target);
+	///**  */
+	//void LookAt(const glm::vec3& target);
+	///**  */
+	//void LookAlong(const glm::vec3& direction);
+
+	///**  */
+	//void AlignUpVectorTowards(transform* target);
+	///**  */
+	//void AlignUpVectorTowards(const glm::vec3& target);
+	///**  */
+	//void AlignUpVectorAlong(const glm::vec3& direction);
 }

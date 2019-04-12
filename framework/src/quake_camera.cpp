@@ -15,21 +15,7 @@ namespace cgb
 	{
 	}
 
-	void QuakeCamera::AddToCameraPositionRelative(const glm::vec4& homoVectorToAdd, double deltaTime)
-	{
-		glm::vec3 rotatedVector = glm::vec3(mRotation * homoVectorToAdd);
-		float speedMultiplier = 1.0f;
-		if (input().key_down(key_code::left_shift)) {
-			speedMultiplier = mFastMultiplier;
-		}
-		if (input().key_down(key_code::left_control)) {
-			speedMultiplier = mSlowMultiplier;
-		}
-		Translate(mMoveSpeed * speedMultiplier * static_cast<float>(deltaTime) * rotatedVector);
-		//log_verbose("cam-pos[%.2f, %.2f, %.2f]", GetPosition().x, GetPosition().y, GetPosition().z);
-	}
-
-	void QuakeCamera::AddToCameraPositionAbsolute(const glm::vec4& homoVectorToAdd, double deltaTime)
+	void QuakeCamera::AddToCameraPosition(const glm::vec3& translation, double deltaTime)
 	{
 		float speedMultiplier = 1.0f;
 		if (input().key_down(key_code::left_shift)) {
@@ -38,7 +24,7 @@ namespace cgb
 		if (input().key_down(key_code::left_control)) {
 			speedMultiplier = mSlowMultiplier;
 		}
-		Translate(mMoveSpeed * speedMultiplier * static_cast<float>(deltaTime) * homoVectorToAdd);
+		translate(*this, mMoveSpeed * speedMultiplier * static_cast<float>(deltaTime) * translation);
 		//log_verbose("cam-pos[%.2f, %.2f, %.2f]", GetPosition().x, GetPosition().y, GetPosition().z);
 	}
 
@@ -56,10 +42,10 @@ namespace cgb
 		// display info
 		if (input().key_pressed(key_code::i) 
 			&& (input().key_down(key_code::left_control) || input().key_down(key_code::right_control))) {
-			LOG_INFO(fmt::format("QuakeCamera's position: {}", to_string(GetPosition())));
-			LOG_INFO(fmt::format("QuakeCamera's view-dir: {}", to_string(GetFrontVector())));
-			LOG_INFO(fmt::format("QuakeCamera's up-vec:   {}", to_string(GetUpVector())));
-			LOG_INFO(fmt::format("QuakeCamera's view-mat: {}", to_string(CalculateViewMatrix())));
+			LOG_INFO(fmt::format("QuakeCamera's position: {}", to_string(translation())));
+			LOG_INFO(fmt::format("QuakeCamera's view-dir: {}", to_string(front(*this))));
+			LOG_INFO(fmt::format("QuakeCamera's up-vec:   {}", to_string(up(*this))));
+			LOG_INFO(fmt::format("QuakeCamera's view-mat: {}", to_string(matrix())));
 		}
 	}
 
@@ -92,27 +78,24 @@ namespace cgb
 		LOG_INFO_EM(fmt::format("mouseMoved[{},{}]", mouseMoved.x, mouseMoved.y));
 
 		// accumulate values and create rotation-matrix
-		mAccumulatedMouseMovement.x += mRotationSpeed * static_cast<float>(mouseMoved.x);
-		mAccumulatedMouseMovement.y += mRotationSpeed * static_cast<float>(mouseMoved.y);
-		mAccumulatedMouseMovement.y = glm::clamp(mAccumulatedMouseMovement.y, -glm::half_pi<float>(), glm::half_pi<float>());
-		glm::mat4 cameraRotation = glm::rotate(mAccumulatedMouseMovement.x, kUnitVec3Y) * glm::rotate(mAccumulatedMouseMovement.y, kUnitVec3X);
-
-		// set the rotation
-		set_rotation(cameraRotation);
+		glm::mat4 cameraRotation = 
+			  glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.x), glm::vec3(0.f, 1.f, 0.f))
+			* glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.y), glm::vec3(1.f, 0.f, 0.f));
+		rotate(*this, glm::quat_cast(cameraRotation));
 
 		// move camera to new position
 		if (input().key_down(key_code::w))
-			AddToCameraPositionRelative(kFrontVec4, deltaTime);
+			AddToCameraPosition(front(*this), deltaTime);
 		if (input().key_down(key_code::s))
-			AddToCameraPositionRelative(-kFrontVec4, deltaTime);
+			AddToCameraPosition(back(*this), deltaTime);
 		if (input().key_down(key_code::d))
-			AddToCameraPositionRelative(kRightVec4, deltaTime);
+			AddToCameraPosition(right(*this), deltaTime);
 		if (input().key_down(key_code::a))
-			AddToCameraPositionRelative(-kRightVec4, deltaTime);
+			AddToCameraPosition(left(*this), deltaTime);
 		if (input().key_down(key_code::q))
-			AddToCameraPositionAbsolute(-kUpVec4, deltaTime);
+			AddToCameraPosition(up(*this), deltaTime);
 		if (input().key_down(key_code::e))
-			AddToCameraPositionAbsolute(kUpVec4, deltaTime);
+			AddToCameraPosition(down(*this), deltaTime);
 
 		// reset the mouse-cursor to the center of the screen
 		input().center_cursor_position();
