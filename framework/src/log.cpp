@@ -2,8 +2,6 @@
 
 namespace cgb
 {
-	std::mutex gLogMutex;
-
 	void set_console_output_color(cgb::log_type level, cgb::log_importance importance)
 	{
 #ifdef _WIN32
@@ -81,6 +79,8 @@ namespace cgb
 #endif // WIN32
 	}
 
+#ifdef LOGGING_ON_SEPARATE_THREAD
+	std::mutex gLogMutex;
 
 	void dispatch_log(log_pack pToBeLogged)
 	{
@@ -156,7 +156,14 @@ namespace cgb
 		sLogQueue.push(pToBeLogged);
 		sCondVar.notify_all();
 	}
-
+#else
+	void dispatch_log(log_pack pToBeLogged)
+	{
+		cgb::set_console_output_color(pToBeLogged.mLogType, pToBeLogged.mLogImportance);
+		fmt::print(pToBeLogged.mMessage);
+		cgb::reset_console_output_color();
+	}
+#endif
 
 	std::string to_string(const glm::mat4& pMatrix)
 	{

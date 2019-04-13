@@ -13,7 +13,7 @@ namespace cgb
 		/** Constructs a transform with separate values for translation, rotation, and scale */
 		transform(glm::vec3 pTranslation = { 0.f, 0.f, 0.f }, glm::quat pRotation = { 0.f, 0.f, 0.f, 1.f }, glm::vec3 pScale = { 1.f, 1.f, 1.f }) noexcept;
 		/** Constructs a transform with coordinate transform basis vectors, and a translation */
-		transform(glm::vec3 pBasisX = { 1.f, 0.f, 0.f }, glm::vec3 pBasisY = { 0.f, 1.f, 0.f }, glm::vec3 pBasisZ = { 0.f, 0.f, 1.f }, glm::vec3 pTranslation = { 0.f, 0.f, 0.f }) noexcept;
+		transform(glm::vec3 pBasisX, glm::vec3 pBasisY, glm::vec3 pBasisZ, glm::vec3 pTranslation = { 0.f, 0.f, 0.f }) noexcept;
 		/** Steal the guts of another transform */
 		transform(transform&& other) noexcept;
 		/** Copy of another transform */

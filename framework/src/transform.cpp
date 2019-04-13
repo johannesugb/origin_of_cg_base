@@ -20,11 +20,11 @@ namespace cgb
 	
 	void transform::update_transforms_from_matrix()
 	{
-		mTranslation = mMatrix[3].xyz;
+		mTranslation = vec3(mMatrix[3]);
 		mScale = {
-			glm::length(mMatrix[0].xyz),
-			glm::length(mMatrix[1].xyz),
-			glm::length(mMatrix[2].xyz)
+			glm::length(vec3(mMatrix[0])),
+			glm::length(vec3(mMatrix[1])),
+			glm::length(vec3(mMatrix[2]))
 		};
 		mRotation = glm::quat_cast(glm::mat3(
 			mMatrix[0] / mScale.x,
@@ -37,21 +37,23 @@ namespace cgb
 		: mTranslation(pTranslation)
 		, mRotation(pRotation)
 		, mScale(pScale)
+		//, mParent(nullptr)
 	{ 
 		update_matrix_from_transforms();
 	}
 	
-	transform::transform(glm::vec3 pBasisX = { 1.f, 0.f, 0.f }, vec3 pBasisY = { 0.f, 1.f, 0.f }, vec3 pBasisZ = { 0.f, 0.f, 1.f }, vec3 pTranslation = { 0.f, 0.f, 0.f }) noexcept
+	transform::transform(glm::vec3 pBasisX, vec3 pBasisY, vec3 pBasisZ, vec3 pTranslation) noexcept
 		: mMatrix(mat4(
 			vec4(pBasisX, 0.0f)* mScale.x,
 			vec4(pBasisY, 0.0f)* mScale.y,
 			vec4(pBasisZ, 0.0f)* mScale.z,
 			vec4(pTranslation, 1.0f)
 		))
+		//, mParent(nullptr)
 	{
 		update_transforms_from_matrix();
 	}
-	
+
 	transform::transform(transform&& other) noexcept
 		: mMatrix{ std::move(other.mMatrix) }
 		, mTranslation{ std::move(other.mTranslation) }
@@ -78,7 +80,7 @@ namespace cgb
 		for (auto& child : other.mChilds) {
 			// Copy the childs. This can have undesired side effects, actually (e.g. if 
 			// childs' classes are derived from transform, what happens then? Don't know.)
-			auto clonedChild = std::make_shared<transform>(child);
+			auto clonedChild = std::make_shared<transform>(*child);
 			attach_transform(shared_from_this(), child);
 		}
 	}
@@ -97,6 +99,7 @@ namespace cgb
 		}
 		other.mParent = nullptr;
 		other.mChilds.clear();
+		return *this;
 	}
 	
 	transform& transform::operator=(const transform& other) noexcept
@@ -109,9 +112,10 @@ namespace cgb
 		for (auto& child : other.mChilds) {
 			// Copy the childs. This can have undesired side effects, actually (e.g. if 
 			// childs' classes are derived from transform, what happens then? Don't know.)
-			auto clonedChild = std::make_shared<transform>(child);
+			auto clonedChild = std::make_shared<transform>(*child);
 			attach_transform(shared_from_this(), child);
 		}
+		return *this;
 	}
 
 	transform::~transform()
@@ -223,14 +227,14 @@ namespace cgb
 		return invTrSpace * glm::vec4(cgb::left(pTransform), 1.0f);
 	}
 
-	glm::vec3 up_wrt(const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f))
+	glm::vec3 up_wrt(const transform& pTransform, glm::mat4 pReference)
 	{
 		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
 		glm::mat4 invTrSpace = glm::inverse(trSpace);
 		return invTrSpace * glm::vec4(cgb::up(pTransform), 1.0f);
 	}
 
-	glm::vec3 down_wrt(const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f))
+	glm::vec3 down_wrt(const transform& pTransform, glm::mat4 pReference)
 	{
 		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
 		glm::mat4 invTrSpace = glm::inverse(trSpace);
@@ -252,17 +256,17 @@ namespace cgb
 		pTransform.set_scale(pTransform.scale() * pScale);
 	}
 
-	void translate_wrt(transform& pTransform, const glm::vec3& pTranslation, glm::mat4 pReference = glm::mat4(1.0f))
+	void translate_wrt(transform& pTransform, const glm::vec3& pTranslation, glm::mat4 pReference)
 	{
 		// TODO: How to?
 	}
 
-	void rotate_wrt(transform& pTransform, const glm::quat& pRotation, glm::mat4 pReference = glm::mat4(1.0f))
+	void rotate_wrt(transform& pTransform, const glm::quat& pRotation, glm::mat4 pReference)
 	{
 		// TODO: How to?
 	}
 
-	void scale_wrt(transform& pTransform, const glm::vec3& pScale, glm::mat4 pReference = glm::mat4(1.0f))
+	void scale_wrt(transform& pTransform, const glm::vec3& pScale, glm::mat4 pReference)
 	{
 		// TODO: How to?
 	}

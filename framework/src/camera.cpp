@@ -32,8 +32,8 @@ namespace cgb
 
 	glm::mat4 Camera::CalculateViewMatrix()
 	{
-		glm::vec3 camTarget = GetPosition() + GetFrontVector();
-		return glm::lookAt(GetPosition(), camTarget, GetUpVector());
+		auto m = matrix();
+		return glm::inverse(m);
 	}
 
 	void Camera::CopyFrom(const Camera& other)
@@ -169,6 +169,6 @@ namespace cgb
 
 	float Camera::CalcZBufferDepth(transform* transform)
 	{
-		return CalcZBufferDepth(transform->GetPosition());
+		return CalcZBufferDepth(transform->translation());
 	}
 }
