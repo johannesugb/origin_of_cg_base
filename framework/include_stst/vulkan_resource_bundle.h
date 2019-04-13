@@ -23,6 +23,13 @@ namespace cgb {
 		void add_dynamic_image_resource(uint32_t binding, vk::ImageLayout imageLayout, std::vector<std::shared_ptr<vulkan_texture>> textures,
 			uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
 
+		void add_image_resource(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_image> texture,
+			uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
+
+		void add_dynamic_image_resource(uint32_t binding, vk::ImageLayout imageLayout, std::vector<std::shared_ptr<vulkan_image>> textures,
+			uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
+
+
 		void add_buffer_resource(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset = 0, uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
 
 		void add_dynamic_buffer_resource(uint32_t binding, std::vector<std::shared_ptr<vulkan_buffer>> buffers, vk::DeviceSize range, vk::DeviceSize offset = 0, uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
@@ -39,13 +46,18 @@ namespace cgb {
 
 		// TODO maybe clear after descriptor set creation
 		std::vector<std::vector<vk::WriteDescriptorSet>> mDescriptorWrites;
+
 		std::unordered_map<uint32_t, std::vector<std::shared_ptr<vulkan_texture>>> mTextureMap;
+		std::unordered_map<uint32_t, std::vector<std::shared_ptr<vulkan_image>>> mImageMap;
 		std::unordered_map<uint32_t, std::vector<std::shared_ptr<vulkan_buffer>>> mBufferMap;
 		std::unordered_map<uint32_t, std::vector<vk::DescriptorImageInfo>> mDescriptorImageInfoMap;
 		std::unordered_map<uint32_t, std::vector<vk::DescriptorBufferInfo>> mDescriptorBufferInfoMap;
 
 		vk::WriteDescriptorSet create_image_resource_descriptor_write(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_texture> texture,
 			uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
+		vk::WriteDescriptorSet create_image_resource_descriptor_write(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_image> image,
+			uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
+
 		vk::WriteDescriptorSet create_buffer_resource_descriptor_write(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset = 0, uint32_t dstArrayElement = 0, uint32_t descriptorCount = 1);
 
 

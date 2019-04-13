@@ -38,6 +38,30 @@ namespace cgb {
 		mTextureMap.emplace(binding, textures);
 	}
 
+	void cgb::vulkan_resource_bundle::add_image_resource(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_image> image, uint32_t dstArrayElement, uint32_t descriptorCount)
+	{
+		auto descriptorWrites = create_image_resource_descriptor_write(binding, imageLayout, image, dstArrayElement, descriptorCount);
+
+		size_t resourceCount = get_resource_count();
+		for (int i = 0; i < resourceCount; i++) {
+			mDescriptorWrites[i].push_back(std::move(descriptorWrites));
+		}
+		mImageMap.emplace(binding, std::vector<std::shared_ptr<vulkan_image>> { image });
+	}
+
+	void cgb::vulkan_resource_bundle::add_dynamic_image_resource(uint32_t binding, vk::ImageLayout imageLayout, std::vector<std::shared_ptr<vulkan_image>> images, uint32_t dstArrayElement, uint32_t descriptorCount)
+	{
+		assert(mDynamicResource);
+		assert(images.size() == vulkan_context::instance().dynamicRessourceCount);
+
+		mDescriptorImageInfoMap[binding].reserve(vulkan_context::instance().dynamicRessourceCount);
+		for (int i = 0; i < vulkan_context::instance().dynamicRessourceCount; i++) {
+			auto descriptorWrite = create_image_resource_descriptor_write(binding, imageLayout, images[i], dstArrayElement, descriptorCount);
+			mDescriptorWrites[i].push_back(std::move(descriptorWrite));
+		}
+		mImageMap.emplace(binding, images);
+	}
+
 	void cgb::vulkan_resource_bundle::add_buffer_resource(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset, uint32_t dstArrayElement, uint32_t descriptorCount)
 	{
 		auto descriptorWrites = create_buffer_resource_descriptor_write(binding, buffer, range, offset, dstArrayElement, descriptorCount);
@@ -84,6 +108,25 @@ namespace cgb {
 
 	}
 
+	vk::WriteDescriptorSet cgb::vulkan_resource_bundle::create_image_resource_descriptor_write(uint32_t binding, vk::ImageLayout imageLayout, std::shared_ptr<vulkan_image> image, uint32_t dstArrayElement, uint32_t descriptorCount)
+	{
+		vk::DescriptorImageInfo imageInfo = {};
+		imageInfo.imageLayout = imageLayout;
+		imageInfo.imageView = image->get_image_view();
+
+		size_t idx = mDescriptorImageInfoMap[binding].size();
+		mDescriptorImageInfoMap[binding].push_back(imageInfo);
+
+		auto bindingDesc = mResourceBundleLayout->get_binding_description(binding);
+		vk::WriteDescriptorSet descriptorWrites = {};
+		descriptorWrites.dstBinding = binding;
+		descriptorWrites.descriptorType = bindingDesc.descriptorType;
+		descriptorWrites.dstArrayElement = dstArrayElement;
+		descriptorWrites.descriptorCount = descriptorCount;
+		descriptorWrites.pImageInfo = &mDescriptorImageInfoMap[binding][idx];
+		return descriptorWrites;
+
+	}
 	vk::WriteDescriptorSet cgb::vulkan_resource_bundle::create_buffer_resource_descriptor_write(uint32_t binding, std::shared_ptr<vulkan_buffer> buffer, vk::DeviceSize range, vk::DeviceSize offset, uint32_t dstArrayElement, uint32_t descriptorCount)
 	{
 		vk::DescriptorBufferInfo bufferInfo = {};

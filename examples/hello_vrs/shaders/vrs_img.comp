@@ -12,7 +12,7 @@ layout(push_constant) uniform PushUniforms
 } pushConst;
 
 layout(set = 0, binding = 0, r8ui) uniform uimage2D targetImage;
-layout(set = 1, binding = 1, rgba8) uniform image2D debugImage;
+layout(set = 1, binding = 0, rgba8) uniform image2D debugImage;
 
 void main() {
 	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);

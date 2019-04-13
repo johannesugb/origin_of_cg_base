@@ -95,22 +95,11 @@ namespace cgb {
 		imgMemBarrier.subresourceRange.layerCount = 1;
 		imgMemBarrier.subresourceRange.levelCount = 1;
 		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eShadingRateImageNV, {}, nullptr, nullptr, imgMemBarrier);
-
-		//for (vulkan_render_object* renderObject : renderObjects) {
-
-		//	commandBuffer.pushConstants(
-		//		mPipeline->get_pipeline_layout(),
-		//		vk::ShaderStageFlagBits::eVertex,
-		//		0,
-		//		sizeof(PushUniforms),
-		//		&(renderObject->get_push_uniforms()));
-
-		//}
 	}
 
 	void vrs_image_compute_drawer::createVrsComputeDescriptorSetLayout() {
 		vk::DescriptorSetLayoutBinding storageImageLayoutBinding = {};
-		storageImageLayoutBinding.binding = 1;
+		storageImageLayoutBinding.binding = 0;
 		storageImageLayoutBinding.descriptorCount = 1;
 		storageImageLayoutBinding.descriptorType = vk::DescriptorType::eStorageImage;
 		storageImageLayoutBinding.pImmutableSamplers = nullptr;
@@ -162,7 +151,7 @@ namespace cgb {
 			std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
 
 			descriptorWrites[0].dstSet = mVrsComputeDebugDescriptorSets[i];
-			descriptorWrites[0].dstBinding = 1;
+			descriptorWrites[0].dstBinding = 0;
 			descriptorWrites[0].dstArrayElement = 0;
 			descriptorWrites[0].descriptorType = vk::DescriptorType::eStorageImage;
 			descriptorWrites[0].descriptorCount = 1;

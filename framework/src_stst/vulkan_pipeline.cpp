@@ -113,11 +113,13 @@ namespace cgb {
 
 		// TODO replace with ressource
 		mPushConstantRanges.clear();
-		vk::PushConstantRange pushConstantRange = {};
-		pushConstantRange.offset = 0;
-		pushConstantRange.size = mPushConstantsSize;
-		pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
-		mPushConstantRanges.push_back(pushConstantRange);
+		if (mPushConstantsSize > 0) {
+			vk::PushConstantRange pushConstantRange = {};
+			pushConstantRange.offset = 0;
+			pushConstantRange.size = mPushConstantsSize;
+			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+			mPushConstantRanges.push_back(pushConstantRange);
+		}
 
 		mTempLayouts.resize(mResourceBundleLayouts.size());
 		std::transform(mResourceBundleLayouts.begin(), mResourceBundleLayouts.end(), mTempLayouts.begin(), [](auto rBLayout) { return rBLayout->get_descriptor_set_layout(); });

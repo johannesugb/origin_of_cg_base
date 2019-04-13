@@ -33,7 +33,7 @@ namespace cgb {
 	public:
 		vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> resourceBundleLayouts);
 
-		vulkan_pipeline(std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayouts, size_t pushConstantsSize);
+		vulkan_pipeline(std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayouts = {}, size_t pushConstantsSize = 0);
 		virtual ~vulkan_pipeline();
 
 		vk::Pipeline  get_pipeline() { return mPipeline; }
