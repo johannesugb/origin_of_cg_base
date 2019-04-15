@@ -11,7 +11,7 @@ namespace cgb
 		friend void detach_transform(transform::ptr pParent, transform::ptr pChild);
 
 		/** Constructs a transform with separate values for translation, rotation, and scale */
-		transform(glm::vec3 pTranslation = { 0.f, 0.f, 0.f }, glm::quat pRotation = { 0.f, 0.f, 0.f, 1.f }, glm::vec3 pScale = { 1.f, 1.f, 1.f }) noexcept;
+		transform(glm::vec3 pTranslation = { 0.f, 0.f, 0.f }, glm::quat pRotation = { 1.f, 0.f, 0.f, 0.f }, glm::vec3 pScale = { 1.f, 1.f, 1.f }) noexcept;
 		/** Constructs a transform with coordinate transform basis vectors, and a translation */
 		transform(glm::vec3 pBasisX, glm::vec3 pBasisY, glm::vec3 pBasisZ, glm::vec3 pTranslation = { 0.f, 0.f, 0.f }) noexcept;
 		/** Steal the guts of another transform */
@@ -87,8 +87,8 @@ namespace cgb
 	void attach_transform(transform::ptr pParent, transform::ptr pChild);
 	void detach_transform(transform::ptr pParent, transform::ptr pChild);
 
-	static glm::vec3 back (const transform& pTransform) { return  pTransform.z_axis(); }
-	static glm::vec3 front(const transform& pTransform) { return -pTransform.z_axis(); }
+	static glm::vec3 back (const transform& pTransform) { return -pTransform.z_axis(); }
+	static glm::vec3 front(const transform& pTransform) { return  pTransform.z_axis(); }
 	static glm::vec3 right(const transform& pTransform) { return  pTransform.x_axis(); }
 	static glm::vec3 left (const transform& pTransform) { return -pTransform.x_axis(); }
 	static glm::vec3 up   (const transform& pTransform) { return  pTransform.y_axis(); }

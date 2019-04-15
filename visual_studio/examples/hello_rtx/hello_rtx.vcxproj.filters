@@ -34,7 +34,6 @@
     <None Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
       <Filter>assets</Filter>
     </None>
-    <None Include="C:\Users\Johi\Desktop\Sponza am Desktop\sponza_fabric.obj\sponza_structure2.obj" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="assets">

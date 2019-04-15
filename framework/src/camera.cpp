@@ -32,8 +32,14 @@ namespace cgb
 
 	glm::mat4 Camera::CalculateViewMatrix()
 	{
-		auto m = matrix();
-		return glm::inverse(m);
+		glm::mat4 vM = glm::mat4(
+			 mMatrix[0],
+			-mMatrix[1],
+			-mMatrix[2],
+			 mMatrix[3]
+		);
+		vM = mMatrix;
+		return glm::inverse(vM);
 	}
 
 	void Camera::CopyFrom(const Camera& other)
@@ -152,11 +158,43 @@ namespace cgb
 		case CameraProjectionConfig_None:
 			break;
 		case CameraProjectionConfig_Perspective:
-			m_projection_matrix = glm::perspective(m_fov, m_aspect, m_near_plane, m_far_plane);
-			break;
+			{
+				m_projection_matrix = glm::perspective(m_fov, m_aspect, m_near_plane, m_far_plane);
+
+				auto tanHalfFovy = glm::tan(m_fov / 2.f);
+
+				glm::mat4 m(0.0f);
+				m[0][0] = 1.f / m_aspect * tanHalfFovy;
+				m[1][1] = 1.f / tanHalfFovy;
+				m[2][2] = m_far_plane / (m_near_plane - m_far_plane);
+				m[2][3] = -1.f;
+				m[3][2] = -(m_far_plane * m_near_plane) / (m_far_plane - m_near_plane);
+
+				m_projection_matrix = m;
+
+				break;
+			}
 		case CameraProjectionConfig_Orthogonal:
-			m_projection_matrix = glm::ortho(m_left, m_right, m_bottom, m_top, m_near_plane, m_far_plane);
-			break;
+			{
+
+
+				glm::mat4 m(1.0f);
+				auto R_L = m_right - m_left;
+				auto T_B = m_top - m_bottom;
+				auto F_N = m_far_plane - m_near_plane;
+
+				m[0][0] = 2.f / R_L;
+				m[1][1] = 2.f / T_B;
+				m[2][2] = 1.f / F_N;
+				m[3][0] = (m_right + m_left) / R_L;
+				m[3][1] = (m_top + m_bottom) / T_B;
+				m[3][2] = (m_near_plane + m_far_plane) / F_N;
+			
+				m_projection_matrix = m;
+				//m_projection_matrix = glm::ortho(m_left, m_right, m_bottom, m_top, m_near_plane, m_far_plane);
+
+				break;
+			}
 		}
 	}
 

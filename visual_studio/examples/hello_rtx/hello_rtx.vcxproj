@@ -64,9 +64,6 @@
     <None Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
       <FileType>Document</FileType>
     </None>
-    <None Include="C:\Users\Johi\Desktop\Sponza am Desktop\sponza_fabric.obj\sponza_structure2.obj">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

@@ -117,10 +117,10 @@ public:
 		cgb::copy(stagingBuffer, mIndexBuffer);
 	}
 
-	static void load_model(std::string inPath, std::unique_ptr<cgb::Model>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer)
+	static void load_model(std::string inPath, std::unique_ptr<cgb::Model>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer, int mesh_index)
 	{
 		outModel = cgb::Model::LoadFromFile(inPath, glm::mat4(1.0f));
-		auto& mesh = outModel->mesh_at(0);
+		auto& mesh = outModel->mesh_at(mesh_index);
 		
 		{
 			auto stagingBuffer = cgb::buffer::create(
@@ -581,8 +581,8 @@ public:
 		create_vertex_buffer();
 		create_index_buffer();
 
-		load_model("assets/chalet.obj", mModel, mModelVertices, mModelIndices);
-		load_model("assets/sphere.obj", mSphere, mSphereVertices, mSphereIndices);
+		load_model("assets/sponza_structure.obj", mModel, mModelVertices, mModelIndices, 2);
+		load_model("assets/sphere.obj", mSphere, mSphereVertices, mSphereIndices, 0);
 		create_texture_image();
 		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
 		mSampler = cgb::sampler::create();
@@ -687,8 +687,9 @@ public:
 
 
 		// Add the camera to the composition (and let it handle the updates)
-		mQuakeCam.set_translation({ -3.0f, 1.0f, 0.0f });
-		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
+		mQuakeCam.set_translation({ 0.0f, 0.0f, 0.0f });
+		//mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
+		mQuakeCam.SetOrthogonalProjection(-20, 20, -20, 20, 0, 50);
 		cgb::current_composition().add_element(mQuakeCam);
 	}
 
@@ -728,7 +729,8 @@ public:
 			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
 
 		UniformBufferObject ubo{
-			glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
+			//glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
+			glm::scale(glm::vec3(0.01f)),
 			mQuakeCam.CalculateViewMatrix(),
 			mQuakeCam.projection_matrix()
 			//glm::rotate(glm::mat4(1.0f), cgb::time().frame_time() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
@@ -738,7 +740,7 @@ public:
 		// GLM was originally designed for OpenGL, where the Y coordinate of the clip coordinates is inverted. 
 		//The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in 
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
-		ubo.proj[1][1] *= -1;
+		//ubo.proj[1][1] *= -1;
 		mUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
 		mRtUniformBuffers[imageIndex][0].fill_host_coherent_memory(&ubo);
 		glm::vec4 color1(1.0, 1.0, 0.0, 0.0);

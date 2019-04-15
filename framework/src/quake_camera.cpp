@@ -45,7 +45,8 @@ namespace cgb
 			LOG_INFO(fmt::format("QuakeCamera's position: {}", to_string(translation())));
 			LOG_INFO(fmt::format("QuakeCamera's view-dir: {}", to_string(front(*this))));
 			LOG_INFO(fmt::format("QuakeCamera's up-vec:   {}", to_string(up(*this))));
-			LOG_INFO(fmt::format("QuakeCamera's view-mat: {}", to_string(matrix())));
+			LOG_INFO(fmt::format("QuakeCamera's position and orientation:\n{}", to_string(mMatrix)));
+			LOG_INFO(fmt::format("QuakeCamera's view-mat:\n{}", to_string(CalculateViewMatrix())));
 		}
 	}
 
@@ -71,17 +72,16 @@ namespace cgb
 
 		// query the position of the mouse cursor
 		auto mousePos = input().cursor_position();
-		LOG_INFO(fmt::format("mousePos[{},{}]", mousePos.x, mousePos.y));
+		//LOG_INFO(fmt::format("mousePos[{},{}]", mousePos.x, mousePos.y));
 
 		// calculate how much the cursor has moved from the center of the screen
 		auto mouseMoved = deltaCursor;
-		LOG_INFO_EM(fmt::format("mouseMoved[{},{}]", mouseMoved.x, mouseMoved.y));
+		//LOG_INFO_EM(fmt::format("mouseMoved[{},{}]", mouseMoved.x, mouseMoved.y));
 
 		// accumulate values and create rotation-matrix
-		glm::mat4 cameraRotation = 
-			  glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.x), glm::vec3(0.f, 1.f, 0.f))
-			* glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.y), glm::vec3(1.f, 0.f, 0.f));
-		rotate(*this, glm::quat_cast(cameraRotation));
+		glm::quat rotHoriz = glm::quat_cast(glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.x), glm::vec3(0.f, 1.f, 0.f)));
+		glm::quat rotVert =  glm::quat_cast(glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.y), glm::vec3(1.f, 0.f, 0.f)));
+		set_rotation(rotVert * rotation() * rotHoriz);
 
 		// move camera to new position
 		if (input().key_down(key_code::w))
