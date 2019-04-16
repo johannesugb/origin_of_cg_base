@@ -75,6 +75,9 @@
     <None Include="packages.config" />
     <None Include="@(NativeLibs)" />
     <None Include="@(NativeLibs)" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_cas_img.comp">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />

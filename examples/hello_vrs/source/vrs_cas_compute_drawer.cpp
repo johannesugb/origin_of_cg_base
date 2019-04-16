@@ -44,8 +44,17 @@ void vrs_cas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> render
 	imgMemBarrier.subresourceRange.levelCount = 1;
 	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eShadingRateImageNV, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
 
-	auto globalDescriptorSets = get_descriptor_sets(mGlobalResourceBundles);
+	auto data = vrs_cas_comp_data{};
+	data.vPMatrix = mCamData.proj * mCamData.view;
+	data.invPMatrix = glm::inverse(mPrevCamData.proj);
+	data.invVMatrix = glm::inverse(mPrevCamData.view);
+	data.projAScale = glm::vec2(mFarPlane / (mFarPlane - mNearPlane), -mFarPlane * mNearPlane / (mFarPlane - mNearPlane));
+	data.imgSize = glm::vec2(mWidth, mHeight);
 
+	auto arr = vk::ArrayProxy<const vrs_cas_comp_data>(data);
+	commandBuffer.pushConstants(mPipeline->get_pipeline_layout(), vk::ShaderStageFlagBits::eCompute, 0, arr);
+
+	auto globalDescriptorSets = get_descriptor_sets(mGlobalResourceBundles);
 	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mPipeline->get_pipeline_layout(), 0, globalDescriptorSets.size(), globalDescriptorSets.data(), 0, nullptr);
 
 	commandBuffer.dispatch(std::ceil(mWidth * 1.0 / WORKGROUP_SIZE), std::ceil(mHeight * 1.0 / WORKGROUP_SIZE), 1);
@@ -122,4 +131,11 @@ void vrs_cas_compute_drawer::blit_image(vk::CommandBuffer& commandBuffer)
 		0, nullptr,
 		0, nullptr,
 		1, &barrier);
+}
+
+void vrs_cas_compute_drawer::set_cam_data(UniformBufferObject camData, float nearPlane, float farPlane) {
+	mNearPlane = nearPlane;
+	mFarPlane = farPlane;
+	mPrevCamData = mCamData;
+	mCamData = camData;
 }
