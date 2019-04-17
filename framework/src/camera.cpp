@@ -38,7 +38,7 @@ namespace cgb
 			-mMatrix[2],
 			 mMatrix[3]
 		);
-		vM = mMatrix;
+		//vM = mMatrix;
 		return glm::inverse(vM);
 	}
 
@@ -159,18 +159,23 @@ namespace cgb
 			break;
 		case CameraProjectionConfig_Perspective:
 			{
-				m_projection_matrix = glm::perspective(m_fov, m_aspect, m_near_plane, m_far_plane);
-
-				auto tanHalfFovy = glm::tan(m_fov / 2.f);
+				// Scaling factor for the x and y coordinates which depends on the 
+				// field of view (and the aspect ratio... see matrix construction)
+				auto xyScale = 1.0f / glm::tan(m_fov / 2.f);
+				auto F_N = m_far_plane - m_near_plane;
+				auto zScale = m_far_plane / F_N;
 
 				glm::mat4 m(0.0f);
-				m[0][0] = 1.f / m_aspect * tanHalfFovy;
-				m[1][1] = 1.f / tanHalfFovy;
-				m[2][2] = m_far_plane / (m_near_plane - m_far_plane);
-				m[2][3] = -1.f;
-				m[3][2] = -(m_far_plane * m_near_plane) / (m_far_plane - m_near_plane);
+				m[0][0] = xyScale / m_aspect;
+				m[1][1] = xyScale;
+				m[2][2] = zScale;
+				m[2][3] = 1.f; // Offset z...
+				m[3][2] = -m_near_plane * zScale; // ... by this amount
 
 				m_projection_matrix = m;
+
+				//m_projection_matrix = glm::perspective(m_fov, m_aspect, m_near_plane, m_far_plane);
+				//m_projection_matrix[1][1] *= -1;
 
 				break;
 			}
@@ -186,12 +191,21 @@ namespace cgb
 				m[0][0] = 2.f / R_L;
 				m[1][1] = 2.f / T_B;
 				m[2][2] = 1.f / F_N;
-				m[3][0] = (m_right + m_left) / R_L;
-				m[3][1] = (m_top + m_bottom) / T_B;
-				m[3][2] = (m_near_plane + m_far_plane) / F_N;
+				m[3][0] = -(m_right + m_left) / R_L;
+				m[3][1] = -(m_top + m_bottom) / T_B;
+				m[3][2] = -(m_near_plane)     / F_N;
 			
+				//Result[0][0] = static_cast<T>(2) / (right - left);
+				//Result[1][1] = static_cast<T>(2) / (top - bottom);
+				//Result[2][2] = -static_cast<T>(1) / (zFar - zNear);
+				//Result[3][0] = -(right + left) / (right - left);
+				//Result[3][1] = -(top + bottom) / (top - bottom);
+				//Result[3][2] = -zNear / (zFar - zNear);
+
 				m_projection_matrix = m;
-				//m_projection_matrix = glm::ortho(m_left, m_right, m_bottom, m_top, m_near_plane, m_far_plane);
+				
+				m_projection_matrix = glm::ortho(m_left, m_right, m_bottom, m_top, m_near_plane, m_far_plane);
+				//m_projection_matrix[1][1] *= -1;
 
 				break;
 			}

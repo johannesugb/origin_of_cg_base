@@ -87,8 +87,8 @@ namespace cgb
 	void attach_transform(transform::ptr pParent, transform::ptr pChild);
 	void detach_transform(transform::ptr pParent, transform::ptr pChild);
 
-	static glm::vec3 back (const transform& pTransform) { return -pTransform.z_axis(); }
-	static glm::vec3 front(const transform& pTransform) { return  pTransform.z_axis(); }
+	static glm::vec3 back (const transform& pTransform) { return  pTransform.z_axis(); }
+	static glm::vec3 front(const transform& pTransform) { return -pTransform.z_axis(); }
 	static glm::vec3 right(const transform& pTransform) { return  pTransform.x_axis(); }
 	static glm::vec3 left (const transform& pTransform) { return -pTransform.x_axis(); }
 	static glm::vec3 up   (const transform& pTransform) { return  pTransform.y_axis(); }

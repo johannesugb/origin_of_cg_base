@@ -674,12 +674,12 @@ public:
 				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height, 1,
 				cgb::context().dynamic_dispatch());
 
-			cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal));
-			cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eTransferRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal));
+			//cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal));
+			//cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eTransferRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal));
 
-			cmdbfr.copy_image(*mOffscreenImages[i], mSwapChainData->mSwapChainImages[i]);
+			//cmdbfr.copy_image(*mOffscreenImages[i], mSwapChainData->mSwapChainImages[i]);
 
-			cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlagBits::eTransferWrite, vk::AccessFlags(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR));
+			//cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlagBits::eTransferWrite, vk::AccessFlags(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR));
 	
 
 			cmdbfr.end_recording();
@@ -688,8 +688,8 @@ public:
 
 		// Add the camera to the composition (and let it handle the updates)
 		mQuakeCam.set_translation({ 0.0f, 0.0f, 0.0f });
-		//mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
-		mQuakeCam.SetOrthogonalProjection(-20, 20, -20, 20, 0, 50);
+		mQuakeCam.SetPerspectiveProjection(glm::radians(90.0f), cgb::context().main_window()->aspect_ratio(), 0.5f, 100.0f);
+		//mQuakeCam.SetOrthogonalProjection(-10, 10, -10, 10, 0.1, 50);
 		cgb::current_composition().add_element(mQuakeCam);
 	}
 

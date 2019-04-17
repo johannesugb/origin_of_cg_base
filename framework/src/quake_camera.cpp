@@ -81,7 +81,7 @@ namespace cgb
 		// accumulate values and create rotation-matrix
 		glm::quat rotHoriz = glm::quat_cast(glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.x), glm::vec3(0.f, 1.f, 0.f)));
 		glm::quat rotVert =  glm::quat_cast(glm::rotate(mRotationSpeed * static_cast<float>(mouseMoved.y), glm::vec3(1.f, 0.f, 0.f)));
-		set_rotation(rotVert * rotation() * rotHoriz);
+		set_rotation(rotHoriz * rotation() * rotVert);
 
 		// move camera to new position
 		if (input().key_down(key_code::w))
@@ -92,9 +92,9 @@ namespace cgb
 			AddToCameraPosition(right(*this), deltaTime);
 		if (input().key_down(key_code::a))
 			AddToCameraPosition(left(*this), deltaTime);
-		if (input().key_down(key_code::q))
-			AddToCameraPosition(up(*this), deltaTime);
 		if (input().key_down(key_code::e))
+			AddToCameraPosition(up(*this), deltaTime);
+		if (input().key_down(key_code::q))
 			AddToCameraPosition(down(*this), deltaTime);
 
 		// reset the mouse-cursor to the center of the screen
