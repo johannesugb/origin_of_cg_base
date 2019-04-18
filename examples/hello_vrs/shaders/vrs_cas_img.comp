@@ -30,7 +30,7 @@ vec3 project(vec4 pos)
 vec3 NDCToWorld(vec3 posNDC)
 {
 	vec2 pos = posNDC.xy;
-	vec4 positionVS =  pushConst.invPMatrix * vec4(pos.xy * 2 - 1, 0, 1) * vec4(1, -1, 1, 1);
+	vec4 positionVS =  vec4(pos.xy * 2 - 1, 0, 1) * vec4(1, -1, 1, 1);
 	vec3 viewRay = vec3(positionVS.xy / positionVS.z, 1.0f) * 1.0; // view rays are facing to the camera due to negative z axis, inverting here solves the problem
 	float linearDepth = pushConst.projAScale.y / (posNDC.z - pushConst.projAScale.x);
 	vec3 position_vs = viewRay * linearDepth;
@@ -47,7 +47,7 @@ vec3 NDCToWorld2(vec3 posNDC)
 
 void main() {
 	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
-	vec2 xySSC = uv / pushConst.imgSize;
+	vec2 xySSC = uv / pushConst.imgSize + 0.5/pushConst.imgSize;
 
 	//vec4 prevFrameVal = imageLoad(prevFrameImage, uv);
 	vec4 prevFrameVal = texture(prevFrameImage, xySSC);
@@ -63,17 +63,19 @@ void main() {
 	//uint shadingRate = int( pushConst.projAScale.y / (newPosNDC.z - pushConst.projAScale.x) ); // current depth linear
 	//uint shadingRate = int( pushConst.projAScale.y / (prevFrameVal.w - pushConst.projAScale.x)); // previos depth linear
 	//uint shadingRate = int( posWorld.z ); // current depth world space
-	uint shadingRate = int(frameVal.x * 12.0); // current texel diff
 	//uint shadingRate = int(round(distance(xySSC, newPosNDC.xy) * 12.0));
 	//uint shadingRate = int( pushConst.projAScale.x / (posWorld.y - pushConst.projAScale.x));
 	//shadingRate = int( pushConst.projAScale.y / (prevFrameVal.y - pushConst.projAScale.x)); // previos depth linear
-	
-	vec4 val = pushConst.invPMatrix * vec4(xySSC * 2 - 1, 0, 1);
-	vec3 viewRay = vec3(val.xy / val.z, 1.0f) * 1.0; // view rays are facing to the camera due to negative z axis, inverting here solves the problem
-
 	//shadingRate = int(abs(val.x * val.y * 12));
 
+	uvec4 prevShadingRate = imageLoad(targetImage, uv);
+
+	float scaledVal = abs(clamp(frameVal.x * 8 * 2 - 0.75,-1,1));
+	float shadingRate = (scaledVal * scaledVal); // current texel diff
+	shadingRate = shadingRate * 12;
+	//shadingRate = (shadingRate * 2/4 + prevShadingRate.x * 2/4);
+	//shadingRate = 12;
 	imageStore(targetImage, uv, uvec4(shadingRate,0,0,0));
-	
-	imageStore(debugImage, uv, vec4(vec3(shadingRate / 12.0), 1.0));
+
+	imageStore(debugImage, uv, vec4(vec3(scaledVal * scaledVal + 0.5), 1.0));
 }
