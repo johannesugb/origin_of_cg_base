@@ -16,11 +16,21 @@ namespace cgb
 			: mParentComposition(pComposition) 
 		{}
 
+		void execute_handle_enablings(const std::vector<cg_element*>& elements)
+		{
+			for (auto& e : elements)
+			{
+				e->handle_enabling();
+			}
+		}
+
 		void execute_fixed_updates(const std::vector<cg_element*>& elements)
 		{
 			for (auto& e : elements)
 			{
-				e->fixed_update();
+				if (e->is_enabled()) {
+					e->fixed_update();
+				}
 			}
 		}
 
@@ -28,7 +38,9 @@ namespace cgb
 		{
 			for (auto& e : elements)
 			{
-				e->update();
+				if (e->is_enabled()) {
+					e->update();
+				}
 			}
 		}
 
@@ -36,7 +48,9 @@ namespace cgb
 		{
 			for (auto& e : elements)
 			{
-				e->render();
+				if (e->is_render_enabled()) {
+					e->render();
+				}
 			}
 		}
 
@@ -44,7 +58,9 @@ namespace cgb
 		{
 			for (auto& e : elements)
 			{
-				e->render_gizmos();
+				if (e->is_render_gizmos_enabled()) {
+					e->render_gizmos();
+				}
 			}
 		}
 
@@ -52,7 +68,17 @@ namespace cgb
 		{
 			for (auto& e : elements)
 			{
-				e->render_gui();
+				if (e->is_render_gui_enabled()) {
+					e->render_gui();
+				}
+			}
+		}
+
+		void execute_handle_disablings(const std::vector<cg_element*>& elements)
+		{
+			for (auto& e : elements)
+			{
+				e->handle_disabling();
 			}
 		}
 

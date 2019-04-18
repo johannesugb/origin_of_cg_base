@@ -49,7 +49,12 @@ namespace cgb
 		 */
 		void stop_receiving_input_from_window(const window& pWindow);
 
-		/** Returns the first window which has been created
+		/** Sets the given window as the new main window.
+		 */
+		void set_main_window(window* pMainWindowToBe);
+
+		/** Returns the first window which has been created and is still alive or
+		 *	the one which has been made the main window via set_main_window()
 		 */
 		window* main_window() const;
 
@@ -102,7 +107,6 @@ namespace cgb
 		window* window_for_handle(GLFWwindow* handle)
 		{
 			for (auto& wnd : mWindows) {
-				assert(wnd->handle());
 				return wnd.get();
 			}
 			return nullptr;

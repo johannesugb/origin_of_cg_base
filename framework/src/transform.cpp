@@ -6,11 +6,8 @@ namespace cgb
 
 	void transform::update_matrix_from_transforms()
 	{
-		// HMM: WHAT?!
-		auto extraQuat = glm::quat(glm::cos(radians(45.0f)), glm::sin(radians(45.0f)) * glm::vec3(0, 0, 1));
-
-		auto x = extraQuat * mRotation * vec3 { 1.0f, 0.0f, 0.0f };
-		auto y = extraQuat * mRotation * vec3{ 0.0f, 1.0f, 0.0f };
+		auto x = mRotation * vec3{ 1.0f, 0.0f, 0.0f };
+		auto y = mRotation * vec3{ 0.0f, 1.0f, 0.0f };
 		auto z = glm::cross(x, y);
 		y = glm::cross(z, x);
 		mMatrix = mat4(

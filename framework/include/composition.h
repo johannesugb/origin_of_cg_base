@@ -39,7 +39,7 @@ namespace cgb
 		{
 		}
 
-		composition(std::initializer_list<window*> pWindows, std::initializer_list<cg_element*> pObjects) :
+		composition(std::initializer_list<cg_element*> pObjects) :
 			mElements(pObjects),
 			mTimer(),
 			mExecutor(this),
@@ -188,7 +188,10 @@ namespace cgb
 
 				wait_for_input_buffers_swapped(thiz);
 
-				// 2. fixed_update
+				// 2. check and possibly issue on_enable event handlers
+				thiz->mExecutor.execute_handle_enablings(thiz->mElements);
+
+				// 3. fixed_update
 				if ((frameType & timer_frame_type::fixed) != timer_frame_type::none)
 				{
 					thiz->mExecutor.execute_fixed_updates(thiz->mElements);
@@ -196,19 +199,19 @@ namespace cgb
 
 				if ((frameType & timer_frame_type::varying) != timer_frame_type::none)
 				{
-					// 3. update
+					// 4. update
 					thiz->mExecutor.execute_updates(thiz->mElements);
 
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
 					please_swap_input_buffers(thiz);
 
-					// 4. render
+					// 5. render
 					thiz->mExecutor.execute_renders(thiz->mElements);
 
-					// 5. render_gizmos
+					// 6. render_gizmos
 					thiz->mExecutor.execute_render_gizmos(thiz->mElements);
 					
-					// 6. render_gui
+					// 7. render_gui
 					thiz->mExecutor.execute_render_guis(thiz->mElements);
 				}
 				else
@@ -216,6 +219,9 @@ namespace cgb
 					// If not done from inside the positive if-branch, tell the main thread of our input buffer update desire here:
 					please_swap_input_buffers(thiz);
 				}
+
+				// 8. check and possibly issue on_disable event handlers
+				thiz->mExecutor.execute_handle_disablings(thiz->mElements);
 
 				// signal context
 				cgb::context().end_frame();
@@ -234,6 +240,7 @@ namespace cgb
 		void add_element_immediately(cg_element& pElement) override
 		{
 			mElements.push_back(&pElement);
+			// 1. initialize
 			pElement.initialize();
 			// Remove from mElementsToBeAdded container (if it was contained in it)
 			mElementsToBeAdded.erase(std::remove(std::begin(mElementsToBeAdded), std::end(mElementsToBeAdded), &pElement));
@@ -248,6 +255,7 @@ namespace cgb
 		{
 			if (!pIsBeingDestructed) {
 				assert(std::find(std::begin(mElements), std::end(mElements), &pElement) != mElements.end());
+				// 9. finalize
 				pElement.finalize();
 				// Remove from the actual elements-container
 				mElements.erase(std::remove(std::begin(mElements), std::end(mElements), &pElement));
@@ -328,7 +336,7 @@ namespace cgb
 			// Signal context before finalization
 			cgb::context().end_composition();
 
-			// 7. finalize
+			// 9. finalize
 			for (auto& o : mElements)
 			{
 				o->finalize();

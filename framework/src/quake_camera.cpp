@@ -2,69 +2,39 @@
 
 namespace cgb
 {
-	QuakeCamera::QuakeCamera() 
+	quake_camera::quake_camera()
 		: mRotationSpeed(0.001f)
 		, mMoveSpeed(4.5f) // 4.5 m/s
 		, mFastMultiplier(6.0f) // 27 m/s
 		, mSlowMultiplier(0.2f) // 0.9 m/s
-		, mAccumulatedMouseMovement(0.0f, 0.0f)
 	{
 	}
 
-	QuakeCamera::~QuakeCamera()
+	quake_camera::~quake_camera()
 	{
 	}
 
-	void QuakeCamera::AddToCameraPosition(const glm::vec3& translation, double deltaTime)
-	{
-		float speedMultiplier = 1.0f;
-		if (input().key_down(key_code::left_shift)) {
-			speedMultiplier = mFastMultiplier;
-		}
-		if (input().key_down(key_code::left_control)) {
-			speedMultiplier = mSlowMultiplier;
-		}
-		translate(*this, mMoveSpeed * speedMultiplier * static_cast<float>(deltaTime) * translation);
-		//log_verbose("cam-pos[%.2f, %.2f, %.2f]", GetPosition().x, GetPosition().y, GetPosition().z);
-	}
-
-	void QuakeCamera::HandleInputOnly()
-	{
-		// switch mode
-		if (input().key_pressed(key_code::tab)) {
-			auto currentlyHidden = input().is_cursor_hidden();
-			auto newMode = !currentlyHidden;
-			mCaptureInput = newMode == true;
-			input().set_cursor_hidden(newMode);
-			input().center_cursor_position();
-		}
-
-		// display info
-		if (input().key_pressed(key_code::i) 
-			&& (input().key_down(key_code::left_control) || input().key_down(key_code::right_control))) {
-			LOG_INFO(fmt::format("QuakeCamera's position: {}", to_string(translation())));
-			LOG_INFO(fmt::format("QuakeCamera's view-dir: {}", to_string(front(*this))));
-			LOG_INFO(fmt::format("QuakeCamera's up-vec:   {}", to_string(up(*this))));
-			LOG_INFO(fmt::format("QuakeCamera's position and orientation:\n{}", to_string(mMatrix)));
-			LOG_INFO(fmt::format("QuakeCamera's view-mat:\n{}", to_string(CalculateViewMatrix())));
-		}
-	}
-
-	void QuakeCamera::initialize()
+	void quake_camera::on_enable()
 	{
 		input().set_cursor_hidden(true);
+		input().center_cursor_position();
 	}
 
-	void QuakeCamera::finalize()
+	void quake_camera::on_disable()
 	{
 		input().set_cursor_hidden(false);
 	}
 
-	void QuakeCamera::update()
+	void quake_camera::update()
 	{
-		HandleInputOnly();
-		if (!mCaptureInput) {
-			return;
+		// display info about myself
+		if (input().key_pressed(key_code::i)
+			&& (input().key_down(key_code::left_control) || input().key_down(key_code::right_control))) {
+			LOG_INFO(fmt::format("quake_camera's position: {}", to_string(translation())));
+			LOG_INFO(fmt::format("quake_camera's view-dir: {}", to_string(front(*this))));
+			LOG_INFO(fmt::format("quake_camera's up-vec:   {}", to_string(up(*this))));
+			LOG_INFO(fmt::format("quake_camera's position and orientation:\n{}", to_string(mMatrix)));
+			LOG_INFO(fmt::format("quake_camera's view-mat:\n{}", to_string(view_matrix())));
 		}
 
 		auto deltaCursor = input().delta_cursor_position();
@@ -84,20 +54,39 @@ namespace cgb
 		set_rotation(rotHoriz * rotation() * rotVert);
 
 		// move camera to new position
-		if (input().key_down(key_code::w))
-			AddToCameraPosition(front(*this), deltaTime);
-		if (input().key_down(key_code::s))
-			AddToCameraPosition(back(*this), deltaTime);
-		if (input().key_down(key_code::d))
-			AddToCameraPosition(right(*this), deltaTime);
-		if (input().key_down(key_code::a))
-			AddToCameraPosition(left(*this), deltaTime);
-		if (input().key_down(key_code::e))
-			AddToCameraPosition(up(*this), deltaTime);
-		if (input().key_down(key_code::q))
-			AddToCameraPosition(down(*this), deltaTime);
+		if (input().key_down(key_code::w)) {
+			translate_myself(front(*this), deltaTime);
+		}
+		if (input().key_down(key_code::s)) {
+			translate_myself(back(*this), deltaTime);
+		}
+		if (input().key_down(key_code::d)) {
+			translate_myself(right(*this), deltaTime);
+		}
+		if (input().key_down(key_code::a)) {
+			translate_myself(left(*this), deltaTime);
+		}
+		if (input().key_down(key_code::e)) {
+			translate_myself(up(*this), deltaTime);
+		}
+		if (input().key_down(key_code::q)) {
+			translate_myself(down(*this), deltaTime);
+		}
 
 		// reset the mouse-cursor to the center of the screen
 		input().center_cursor_position();
+	}
+
+
+	void quake_camera::translate_myself(const glm::vec3& translation, double deltaTime)
+	{
+		float speedMultiplier = 1.0f;
+		if (input().key_down(key_code::left_shift)) {
+			speedMultiplier = mFastMultiplier;
+		}
+		if (input().key_down(key_code::left_control)) {
+			speedMultiplier = mSlowMultiplier;
+		}
+		translate(*this, mMoveSpeed * speedMultiplier * static_cast<float>(deltaTime) * translation);
 	}
 }

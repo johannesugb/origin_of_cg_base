@@ -10,9 +10,6 @@
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp">
       <Filter>Source Files\timer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp">
-      <Filter>Source Files\timer</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\input_buffer.cpp">
       <Filter>Source Files\input</Filter>
     </ClCompile>
@@ -133,6 +130,9 @@
     <ClCompile Include="..\..\framework\src\window_base.cpp">
       <Filter>Source Files\environment</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\varying_update_timer.cpp">
+      <Filter>Source Files\timer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -157,9 +157,6 @@
       <Filter>Header Files\timer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\timer_interface.h">
-      <Filter>Header Files\timer</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\varying_update_only_timer.h">
       <Filter>Header Files\timer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\input_buffer.h">
@@ -287,6 +284,9 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\window_base.h">
       <Filter>Header Files\environment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\varying_update_timer.h">
+      <Filter>Header Files\timer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -627,9 +627,7 @@ int main()
 		//  - an executor
 		//  - a window
 		//  - a behavior
-		auto hello = cgb::composition<cgb::varying_update_only_timer, cgb::sequential_executor>({
-				mainWnd
-				}, {
+		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
 					&vrsBehavior
 				});
 

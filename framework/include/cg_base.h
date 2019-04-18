@@ -62,7 +62,7 @@
 #include "timer_interface.h"
 #include "timer_frame_type.h"
 #include "fixed_update_timer.h"
-#include "varying_update_only_timer.h"
+#include "varying_update_timer.h"
 #include "input_buffer.h"
 #include "composition_interface.h"
 

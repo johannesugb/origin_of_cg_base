@@ -262,6 +262,21 @@ namespace cgb
 		return nullptr;
 	}
 
+	void generic_glfw::set_main_window(window* pMainWindowToBe) 
+	{
+		context().dispatch_to_main_thread([this, pMainWindowToBe]() {
+			auto position = std::find_if(std::begin(mWindows), std::end(mWindows), [pMainWindowToBe](const window_ptr & w) -> bool {
+				return w.get() == pMainWindowToBe;
+				});
+
+			if (position == mWindows.end()) {
+				throw std::runtime_error(fmt::format("Window[{}] not found in collection of windows", fmt::ptr(pMainWindowToBe)));
+			}
+
+			std::rotate(std::begin(mWindows), position, position + 1); // Move ONE element to the beginning, not the rest of the vector => hence, not std::end(mWindows)
+		});
+	}
+
 	window* generic_glfw::window_by_title(const std::string& pTitle) const
 	{
 		auto it = std::find_if(std::begin(mWindows), std::end(mWindows),

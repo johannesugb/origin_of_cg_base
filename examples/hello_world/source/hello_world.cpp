@@ -23,9 +23,11 @@ class hello_behavior : public cgb::cg_element
 int main()
 {
 	try {
+
 		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
 			.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm); })
 			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
+
 
 		cgb::settings::gApplicationName = "Hello World";
 
@@ -44,9 +46,7 @@ int main()
 		//  - an executor
 		//  - a window
 		//  - a behavior
-		auto hello = cgb::composition<cgb::varying_update_only_timer, cgb::sequential_executor>({
-				mainWnd 
-			}, {
+		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
 				&helloBehavior
 			});
 

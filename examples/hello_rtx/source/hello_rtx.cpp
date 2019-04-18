@@ -63,9 +63,8 @@ class hello_behavior : public cgb::cg_element
 	};
 
 public:
-	hello_behavior(cgb::window* pMainWnd) 
-		: mMainWnd(pMainWnd)
-		, mVertices({	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	hello_behavior() 
+		: mVertices({	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
 						{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
 						{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
 						{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
@@ -574,7 +573,7 @@ public:
 
 		auto rtProps = cgb::context().get_ray_tracing_properties();
 
-		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
+		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(cgb::context().main_window());
 		assert(mSwapChainData);
 
 		// create the buffer and its memory
@@ -613,13 +612,13 @@ public:
 
 			mPipeline = cgb::context().create_graphics_pipeline_for_window(
 				shaderInfos, 
-				mMainWnd, 
+				cgb::context().main_window(), 
 				cgb::image_format(mDepthImage->mInfo.format),
 				Vertex::binding_description(), 
 				vertexAttribDesc.size(), 
 				vertexAttribDesc.data(), 
 				{ mDescriptorSetLayout.mDescriptorSetLayout });
-			mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd, mDepthImageView);
+			mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, cgb::context().main_window(), mDepthImageView);
 			mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
 		}
 
@@ -688,8 +687,8 @@ public:
 
 		// Add the camera to the composition (and let it handle the updates)
 		mQuakeCam.set_translation({ 0.0f, 0.0f, 0.0f });
-		mQuakeCam.SetPerspectiveProjection(glm::radians(90.0f), cgb::context().main_window()->aspect_ratio(), 0.5f, 100.0f);
-		//mQuakeCam.SetOrthogonalProjection(-10, 10, -10, 10, 0.1, 50);
+		mQuakeCam.set_perspective_projection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.5f, 100.0f);
+		//mQuakeCam.set_orthographic_projection(-5, 5, -5, 5, 0.5, 100);
 		cgb::current_composition().add_element(mQuakeCam);
 	}
 
@@ -700,6 +699,14 @@ public:
 		}
 		if (cgb::input().key_pressed(cgb::key_code::c)) {
 			cgb::context().main_window()->set_cursor_pos({ 666.0, 100 });
+		}
+		if (cgb::input().key_pressed(cgb::key_code::tab)) {
+			if (mQuakeCam.is_enabled()) {
+				mQuakeCam.disable();
+			}
+			else {
+				mQuakeCam.enable();
+			}
 		}
 	}
 
@@ -731,7 +738,7 @@ public:
 		UniformBufferObject ubo{
 			//glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
 			glm::scale(glm::vec3(0.01f)),
-			mQuakeCam.CalculateViewMatrix(),
+			mQuakeCam.view_matrix(),
 			mQuakeCam.projection_matrix()
 			//glm::rotate(glm::mat4(1.0f), cgb::time().frame_time() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 			//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
@@ -757,7 +764,7 @@ public:
 			.setPCommandBuffers(&mCmdBfrs[imageIndex].mCommandBuffer)
 			.setSignalSemaphoreCount(1u)
 			.setPSignalSemaphores(&cgb::context().render_finished_semaphore_current_frame());
-		// TODO: This only works because we are using cgb::varying_update_only_timer which makes a call to render() in each and every frame
+		// TODO: This only works because we are using cgb::varying_update_timer which makes a call to render() in each and every frame
 		cgb::context().graphics_queue().submit(1u, &submitInfo, cgb::context().fence_current_frame());
 
 		auto presentInfo = vk::PresentInfoKHR()
@@ -772,7 +779,6 @@ public:
 #endif
 
 private:
-	cgb::window* mMainWnd;
 	const std::vector<Vertex> mVertices;
 	const std::vector<uint16_t> mIndices;
 	std::unique_ptr<cgb::Model> mModel;
@@ -812,7 +818,7 @@ private:
 	std::vector<cgb::image_view> mOffscreenImageViews;
 #endif
 
-	cgb::QuakeCamera mQuakeCam;
+	cgb::quake_camera mQuakeCam;
 
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -841,7 +847,7 @@ int main()
 		mainWnd->open();
 
 		// Create a "behavior" which contains functionality of our program
-		auto helloBehavior = hello_behavior(mainWnd);
+		auto helloBehavior = hello_behavior();
 
 		// Create a composition of all things that define the essence of 
 		// our program, which there are:
@@ -849,9 +855,7 @@ int main()
 		//  - an executor
 		//  - a window
 		//  - a behavior
-		auto hello = cgb::composition<cgb::varying_update_only_timer, cgb::sequential_executor>({
-				mainWnd 
-			}, {
+		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
 				&helloBehavior
 			});
 
