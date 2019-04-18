@@ -76,8 +76,8 @@ namespace cgb
 		/** Switches to windowed mode by removing this window's monitor assignment */
 		void switch_to_windowed_mode();
 
-		/** Hides or shows the cursor */
-		void hide_cursor(bool pHide);
+		/** Disables and hides, or shows the cursor */
+		void disable_cursor(bool pDisable);
 
 		/** Sets the cursor to the given coordinates */
 		void set_cursor_pos(glm::dvec2 pCursorPos);
@@ -96,7 +96,7 @@ namespace cgb
 		/** Returns whether or not the cursor is hidden 
 		 *	Threading: This method must always be called from the main thread
 		 */
-		bool is_cursor_hidden() const;
+		bool is_cursor_disabled() const;
 
 	protected:
 		/** Static variable which holds the ID that the next window will get assigned */
@@ -132,7 +132,7 @@ namespace cgb
 
 		glm::uvec2 mResultion;
 
-		bool mIsCursorHidden;
+		bool mIsCursorDisabled;
 
 		// Actions to be executed after the actual window (re-)creation
 		std::vector<std::function<void(window&)>> mPostCreateActions;

@@ -16,13 +16,12 @@ namespace cgb
 
 	void quake_camera::on_enable()
 	{
-		input().set_cursor_hidden(true);
-		input().center_cursor_position();
+		input().set_cursor_disabled(true);
 	}
 
 	void quake_camera::on_disable()
 	{
-		input().set_cursor_hidden(false);
+		input().set_cursor_disabled(false);
 	}
 
 	void quake_camera::update()
@@ -72,9 +71,6 @@ namespace cgb
 		if (input().key_down(key_code::q)) {
 			translate_myself(down(*this), deltaTime);
 		}
-
-		// reset the mouse-cursor to the center of the screen
-		input().center_cursor_position();
 	}
 
 

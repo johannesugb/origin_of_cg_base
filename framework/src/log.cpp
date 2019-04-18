@@ -10,60 +10,70 @@ namespace cgb
 		case cgb::log_type::error:
 			switch (importance) {
 			case cgb::log_importance::important:
-				SetConsoleTextAttribute(std_output_handle, 0xCF);
+				SetConsoleTextAttribute(std_output_handle, 0xCF); // white on red
 				break;
 			default:
-				SetConsoleTextAttribute(std_output_handle, 0xC);
+				SetConsoleTextAttribute(std_output_handle, 0xC); // red on black
 				break;
 			}
 			break;
 		case cgb::log_type::warning:
 			switch (importance) {
 			case cgb::log_importance::important:
-				SetConsoleTextAttribute(std_output_handle, 0xE0);
+				SetConsoleTextAttribute(std_output_handle, 0xE0); // black on yellow
 				break;
 			default:
-				SetConsoleTextAttribute(std_output_handle, 0xE);
+				SetConsoleTextAttribute(std_output_handle, 0xE); // yellow on black
 				break;
 			}
 			break;
 		case cgb::log_type::verbose:
 			switch (importance) {
 			case cgb::log_importance::important:
-				SetConsoleTextAttribute(std_output_handle, 0x80);
+				SetConsoleTextAttribute(std_output_handle, 0x80); // black on gray
 				break;
 			default:
-				SetConsoleTextAttribute(std_output_handle, 0x8);
+				SetConsoleTextAttribute(std_output_handle, 0x8); // gray on black
 				break;
 			}
 			break;
 		case cgb::log_type::debug:
 			switch (importance) {
 			case cgb::log_importance::important:
-				SetConsoleTextAttribute(std_output_handle, 0xA0);
+				SetConsoleTextAttribute(std_output_handle, 0xA0); // black on green
 				break;
 			default:
-				SetConsoleTextAttribute(std_output_handle, 0xA);
+				SetConsoleTextAttribute(std_output_handle, 0xA); // green on black
 				break;
 			}
 			break;
 		case cgb::log_type::debug_verbose:
 			switch (importance) {
 			case cgb::log_importance::important:
-				SetConsoleTextAttribute(std_output_handle, 0x20);
+				SetConsoleTextAttribute(std_output_handle, 0x20); // black on dark green
 				break;
 			default:
-				SetConsoleTextAttribute(std_output_handle, 0x2);
+				SetConsoleTextAttribute(std_output_handle, 0x2); // dark green on black
+				break;
+			}
+			break;
+		case cgb::log_type::system:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xDF); // white on magenta
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0xD); // magenta on black
 				break;
 			}
 			break;
 		default:
 			switch (importance) {
 			case cgb::log_importance::important:
-				SetConsoleTextAttribute(std_output_handle, 0xF0);
+				SetConsoleTextAttribute(std_output_handle, 0xF0); // black on white
 				break;
 			default:
-				SetConsoleTextAttribute(std_output_handle, 0xF);
+				SetConsoleTextAttribute(std_output_handle, 0xF); // white on black
 				break;
 			}
 			break;
@@ -75,7 +85,7 @@ namespace cgb
 	{
 #ifdef _WIN32
 		static auto std_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleTextAttribute(std_output_handle, 0xF);
+		SetConsoleTextAttribute(std_output_handle, 0xF); // white on black
 #endif // WIN32
 	}
 
@@ -89,9 +99,12 @@ namespace cgb
 		static std::queue<log_pack> sLogQueue;
 		static bool sContinueLogging = true;
 		static std::thread sLogThread = std::thread([]() {
-			cgb::set_console_output_color(cgb::log_type::verbose, cgb::log_importance::important);
-			fmt::print("Logger thread started...\n");
+			
+			cgb::set_console_output_color(cgb::log_type::system, cgb::log_importance::important);
+			fmt::print("Logger thread started...");
 			cgb::reset_console_output_color();
+			fmt::print("\n");
+
 			while (sContinueLogging) {
 				// Process all messages
 				{
@@ -136,9 +149,11 @@ namespace cgb
 					sCondVar.wait(lock);
 				}
 			}
-			cgb::set_console_output_color(cgb::log_type::verbose, cgb::log_importance::important);
-			fmt::print("Logger thread terminating.\n");
+
+			cgb::set_console_output_color(cgb::log_type::system, cgb::log_importance::important);
+			fmt::print("Logger thread terminating.");
 			cgb::reset_console_output_color();
+			fmt::print("\n");
 		});
 		static struct thread_stopper {
 			~thread_stopper() {

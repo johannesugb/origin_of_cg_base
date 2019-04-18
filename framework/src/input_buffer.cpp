@@ -10,9 +10,10 @@ namespace cgb
 		mCursorPosition = { 0.0, 0.0 };
 		mDeltaCursorPosition = { 0.0, 0.0 };
 		mScrollDelta = { 0.0, 0.0 };
-		mCursorHidden = false;
+		mCursorDisabled = false;
 		mCenterCursorPosition = std::nullopt;
-		mSetCursorHidden = std::nullopt;
+		mSetCursorPosition = std::nullopt;
+		mSetCursorDisabled = std::nullopt;
 	}
 
 	void input_buffer::prepare_for_next_frame(input_buffer& pFrontBufferToBe, input_buffer& pBackBufferToBe, window* pWindow)
@@ -31,18 +32,6 @@ namespace cgb
 			pBackBufferToBe.mMouseKeys[i] = (pFrontBufferToBe.mMouseKeys[i] & key_state::down);
 		}
 
-		//// Handle the case of not having a window in focus (which should actually not happen?)
-		//if (nullptr == pWindow) {
-		//	mWindow = nullptr;
-		//	mCursorPosition = { 0.0, 0.0 };
-		//	mScrollDelta = { 0.0, 0.0 };
-		//	mCursorHidden = false;
-		//	mCenterCursorPosition = std::nullopt;
-		//	mSetCursorHidden = std::nullopt;
-		//	LOG_WARNING(fmt::format("No valid window* passed to input_buffer::prepare_for_next_frame"));
-		//	return;
-		//}
-
 		// Handle window changes (different window in focus) and other window-related actions
 		pFrontBufferToBe.mWindow = pWindow;
 		pFrontBufferToBe.mCursorPosition = pFrontBufferToBe.mWindow->cursor_position();
@@ -51,28 +40,34 @@ namespace cgb
 		}
 		else { // Window has changed!
 			pFrontBufferToBe.mDeltaCursorPosition = { 0.0, 0.0 };
-			pFrontBufferToBe.mCursorHidden = pFrontBufferToBe.mWindow->is_cursor_hidden(); // Query GLFW for cursor-hidden status
+			pFrontBufferToBe.mCursorDisabled = pFrontBufferToBe.mWindow->is_cursor_disabled(); // Query GLFW for cursor-hidden status
 		}
 
-		if (pBackBufferToBe.mCenterCursorPosition.has_value()) {
+		if (pBackBufferToBe.mCenterCursorPosition.has_value() || pBackBufferToBe.mSetCursorPosition.has_value()) {
 			assert(context().are_we_on_the_main_thread());
-			auto res = pWindow->resolution();
-			pWindow->set_cursor_pos({ res.x / 2.0, res.y / 2.0 });
+			if (pBackBufferToBe.mCenterCursorPosition.has_value()) {
+				auto res = pWindow->resolution();
+				pWindow->set_cursor_pos({ res.x / 2.0, res.y / 2.0 });
+			}
+			else {
+				pWindow->set_cursor_pos({ pBackBufferToBe.mSetCursorPosition->x, pBackBufferToBe.mSetCursorPosition->y });
+			}
 			// Optimistic approach: Do not query GLFW for actual cursor position afterwards
 			// BUT (important!), set both buffers to the center coordinates (because of the delta position)!
 			pFrontBufferToBe.mCursorPosition = pBackBufferToBe.mCursorPosition = pWindow->cursor_position();
 			// Mark action as done:
 			pBackBufferToBe.mCenterCursorPosition = std::nullopt;
+			pBackBufferToBe.mSetCursorPosition = std::nullopt;
 		}
 
-		if (pBackBufferToBe.mSetCursorHidden.has_value()) {
+		if (pBackBufferToBe.mSetCursorDisabled.has_value()) {
 			assert(context().are_we_on_the_main_thread());
-			bool hidden = pBackBufferToBe.mSetCursorHidden.value();
-			pWindow->hide_cursor(hidden);
+			bool hidden = pBackBufferToBe.mSetCursorDisabled.value();
+			pWindow->disable_cursor(hidden);
 			// Optimistic approach: Do not query GLFW for actual cursor-hidden status
-			pFrontBufferToBe.mCursorHidden = pBackBufferToBe.mCursorHidden = hidden;
+			pFrontBufferToBe.mCursorDisabled = pBackBufferToBe.mCursorDisabled = hidden;
 			// Mark action as done:
-			pBackBufferToBe.mSetCursorHidden = std::nullopt;
+			pBackBufferToBe.mSetCursorDisabled = std::nullopt;
 		}
 
 		// Scroll delta is always a relative amount and filled into the back-buffer by the GLFW context,
@@ -125,18 +120,23 @@ namespace cgb
 		return mScrollDelta;
 	}
 
-	void input_buffer::set_cursor_hidden(bool pHidden)
+	void input_buffer::set_cursor_disabled(bool pDisabled)
 	{
-		mSetCursorHidden = pHidden;
+		mSetCursorDisabled = pDisabled;
 	}
 
-	bool input_buffer::is_cursor_hidden() const
+	bool input_buffer::is_cursor_disabled() const
 	{
-		return mCursorHidden;
+		return mCursorDisabled;
 	}
 
 	void input_buffer::center_cursor_position()
 	{
 		mCenterCursorPosition = true;
+	}
+
+	void input_buffer::set_cursor_position(glm::dvec2 pNewPosition)
+	{
+		mSetCursorPosition = pNewPosition;
 	}
 }

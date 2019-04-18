@@ -190,7 +190,7 @@ namespace cgb
 			w.mResultion = glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 			glfwSetWindowSizeCallback(w.handle()->mHandle, glfw_window_size_callback);
 
-			w.mIsCursorHidden = glfwGetInputMode(w.handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
+			w.mIsCursorDisabled = glfwGetInputMode(w.handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
 		});
 
 		// Make sure to cleanup 
@@ -319,6 +319,7 @@ namespace cgb
 
 	void generic_glfw::glfw_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
 	{
+		LOG_VERBOSE(fmt::format("Cursor-pos= {} x {}", xpos, ypos));
 		assert(are_we_on_the_main_thread());
 		auto* wnd = context().window_for_handle(window);
 		assert(wnd);

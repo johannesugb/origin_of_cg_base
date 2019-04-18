@@ -13,7 +13,7 @@ namespace cgb
 		, mRequestedSize{ 512, 512 }
 		, mCursorPosition{ 0.0, 0.0 }
 		, mResultion{ 0, 0 }
-		, mIsCursorHidden{ false }
+		, mIsCursorDisabled{ false }
 		, mPostCreateActions()
 		, mCleanupActions()
 	{
@@ -32,7 +32,7 @@ namespace cgb
 		, mRequestedSize(std::move(other.mRequestedSize))
 		, mCursorPosition(std::move(other.mCursorPosition))
 		, mResultion(std::move(other.mResultion))
-		, mIsCursorHidden(std::move(other.mIsCursorHidden))
+		, mIsCursorDisabled(std::move(other.mIsCursorDisabled))
 		, mPostCreateActions(std::move(other.mPostCreateActions))
 		, mCleanupActions(std::move(other.mCleanupActions))
 	{
@@ -44,7 +44,7 @@ namespace cgb
 		other.mIsInputEnabled = false;
 		other.mCursorPosition = { 0.0, 0.0 };
 		other.mResultion = { 0, 0 };
-		other.mIsCursorHidden = false;
+		other.mIsCursorDisabled = false;
 	}
 
 	window_base& window_base::operator= (window_base&& other) noexcept
@@ -58,7 +58,7 @@ namespace cgb
 		mRequestedSize = std::move(other.mRequestedSize);
 		mCursorPosition = std::move(other.mCursorPosition);
 		mResultion = std::move(other.mResultion);
-		mIsCursorHidden = std::move(other.mIsCursorHidden);
+		mIsCursorDisabled = std::move(other.mIsCursorDisabled);
 		mPostCreateActions = std::move(other.mPostCreateActions);
 		mCleanupActions = std::move(other.mCleanupActions);
 
@@ -70,7 +70,7 @@ namespace cgb
 		other.mIsInputEnabled = false;
 		other.mCursorPosition = { 0.0, 0.0 };
 		other.mResultion = { 0, 0 };
-		other.mIsCursorHidden = false;
+		other.mIsCursorDisabled = false;
 
 		return *this;
 	}
@@ -155,20 +155,33 @@ namespace cgb
 		return mResultion;
 	}
 
-	void window_base::hide_cursor(bool pHide)
+	void window_base::disable_cursor(bool pDisable)
 	{
 		assert(handle());
-		context().dispatch_to_main_thread([this, pHide]() {
-			glfwSetInputMode(handle()->mHandle, GLFW_CURSOR,
-							 pHide ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
-			mIsCursorHidden = pHide;
+		context().dispatch_to_main_thread([this, pDisable]() {
+			if (pDisable) {
+
+				// RAAAAW!
+				if (glfwRawMouseMotionSupported()) {
+					glfwSetInputMode(handle()->mHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+				}
+
+				glfwSetInputMode(handle()->mHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			} 
+			else {
+				glfwSetInputMode(handle()->mHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
+
+
+
+			mIsCursorDisabled = pDisable;
 		});
 	}
 
-	bool window_base::is_cursor_hidden() const
+	bool window_base::is_cursor_disabled() const
 	{
 		assert(context().are_we_on_the_main_thread());
-		return glfwGetInputMode(handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
+		return glfwGetInputMode(handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
 	}
 
 	void window_base::set_cursor_pos(glm::dvec2 pCursorPos)

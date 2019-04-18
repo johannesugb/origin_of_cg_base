@@ -85,14 +85,17 @@ namespace cgb
 		 */
 		const glm::dvec2& scroll_delta() const;
 
-		/** Sets whether or not the cursor should be hidden */
-		void set_cursor_hidden(bool pHidden);
+		/** Sets whether or not the cursor should be disabled */
+		void set_cursor_disabled(bool pDisabled);
 
 		/** Returns if the cursor is hidden or not */
-		bool is_cursor_hidden() const;
+		bool is_cursor_disabled() const;
 
 		/** Positions the cursor in the center of the screen */
 		void center_cursor_position();
+
+		/** Positions the cursor at the new coordinates */
+		void set_cursor_position(glm::dvec2 pNewPosition);
 
 		/** Prepares this input buffer for the next frame based on data of
 		 *	the previous frame. This means that key-down states are preserved.
@@ -118,13 +121,16 @@ namespace cgb
 		/** Scrolling wheel position data */
 		glm::dvec2 mScrollDelta;
 
-		/** True if the cursor is hidden, false otherwise */
-		bool mCursorHidden;
+		/** True if the cursor is disabled, false otherwise */
+		bool mCursorDisabled;
 
-		/** Has value if the cursor's position should be changed */
+		/** Has value if the cursor's position should be cetered */
 		std::optional<bool> mCenterCursorPosition;
 
-		/** Has value if the cursor's visibility should be changed */
-		std::optional<bool> mSetCursorHidden;
+		/** Has value if the cursor's position should be changed */
+		std::optional<glm::dvec2> mSetCursorPosition;
+
+		/** Has value if the cursor's mode should be changed */
+		std::optional<bool> mSetCursorDisabled;
 	};
 }
