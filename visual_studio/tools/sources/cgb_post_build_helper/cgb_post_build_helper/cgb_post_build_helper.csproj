@@ -33,7 +33,7 @@
     <ProductName>CG-Base Post Build Helper</ProductName>
     <PublisherName>TU Wien</PublisherName>
     <SuiteName>CG-Base</SuiteName>
-    <ApplicationRevision>2</ApplicationRevision>
+    <ApplicationRevision>3</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -62,7 +62,7 @@
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
   <PropertyGroup>
-    <GenerateManifests>false</GenerateManifests>
+    <GenerateManifests>true</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -81,6 +81,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <ManifestKeyFile>cgb_post_build_helper_1_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>false</DelaySign>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AssimpNet, Version=4.1.0.0, Culture=neutral, PublicKeyToken=0d51b391f59f42a6, processorArchitecture=MSIL">
@@ -284,6 +287,11 @@
     <Error Condition="!Exists('..\packages\AssimpNet.4.1.0\build\AssimpNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\AssimpNet.4.1.0\build\AssimpNet.targets'))" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>xcopy $(TargetPath) $(SolutionDir)..\..\executables\ /R /Y</PostBuildEvent>
+    <PostBuildEvent>xcopy $(TargetPath) $(SolutionDir)..\..\executables\ /R /Y
+xcopy $(TargetDir)AssimpNet.dll $(SolutionDir)..\..\executables\ /R /Y
+xcopy $(TargetDir)EnvDTE.dll $(SolutionDir)..\..\executables\ /R /Y
+xcopy $(TargetDir)EnvDTE80.dll $(SolutionDir)..\..\executables\ /R /Y
+xcopy $(TargetDir)Hardcodet.Wpf.TaskbarNotification.dll $(SolutionDir)..\..\executables\ /R /Y
+</PostBuildEvent>
   </PropertyGroup>
 </Project>
