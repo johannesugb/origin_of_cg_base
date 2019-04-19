@@ -15,6 +15,7 @@ using System.Windows.Threading;
 using System.Windows.Controls;
 using System.Collections.ObjectModel;
 using CgbPostBuildHelper.Deployers;
+using System.Windows.Input;
 
 namespace CgbPostBuildHelper
 {
@@ -508,8 +509,12 @@ namespace CgbPostBuildHelper
 					};
 					window.InnerContent.Content = new MessagesList()
 					{
-						DataContext = new { Items = vm.Messages }
-					};
+						DataContext = new 
+                        { 
+                            Items = vm.Messages,
+                            DismissCommand = new Func<ICommand>(() => null)() // Evaluate to null in order to set the >>>DISMISS>>> buttons to collapsed}
+                        }
+                    };
 					window.Show();
 				}
 

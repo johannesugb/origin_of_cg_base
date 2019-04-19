@@ -200,7 +200,7 @@ namespace CgbPostBuildHelper.ViewModel
 					DataContext = new 
 					{ 
 						Items = Messages,
-						DismissCommand = new Func<ICommand>(() => null)()
+						DismissCommand = new Func<ICommand>(() => null)() // Evaluate to null in order to set the >>>DISMISS>>> buttons to collapsed
 					}
 				};
 				window.Show();
