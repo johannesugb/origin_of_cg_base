@@ -23,7 +23,7 @@ namespace CgbPostBuildHelper.Deployers
 		};
 		private static readonly Regex RegexGlslLayoutSetBinding = new Regex(@"(layout\s*\(.*)(set\s*\=\s*\d+\s*\,\s*)(binding\s*\=\s*\d+)(.*\))",
 			RegexOptions.Compiled);
-		private static readonly Regex RegexGlslLayoutSetBinding2 = new Regex(@"(layout\s*\(.*)(binding\s*\=\s*\d\s*+)(\,\s*set\s*\=\s*\d+)(.*\))",
+		private static readonly Regex RegexGlslLayoutSetBinding2 = new Regex(@"(layout\s*\(.*)(binding\s*\=\s*\d\s*)(\,\s*set\s*\=\s*\d+)(.*\))",
 			RegexOptions.Compiled);
 
 		public static string MorphVkGlslIntoGlGlsl(string vkGlsl)
@@ -42,19 +42,17 @@ namespace CgbPostBuildHelper.Deployers
 			Directory.CreateDirectory(outFile.DirectoryName);
 			// Read in -> modify -> write out
 			string glslCode = File.ReadAllText(_inputFile.FullName);
-			File.WriteAllText(_outputFile.FullName, MorphVkGlslIntoGlGlsl(glslCode));
+			File.WriteAllText(outFile.FullName, MorphVkGlslIntoGlGlsl(glslCode));
 
 			var assetFile = PrepareNewAssetFile(null);
 			assetFile.FileType = FileType.GlslShaderForGl;
-			assetFile.OutputFilePath = _outputFile.FullName;
+			assetFile.OutputFilePath = outFile.FullName;
 			assetFile.DeploymentType = DeploymentType.MorphedCopy;
 
 			assetFile.Messages.Add(Message.Create(MessageType.Success, $"Copied (Vk->Gl morphed) GLSL file to '{outFile.FullName}'", null)); // TODO: open a window or so?
 
 			FilesDeployed.Add(assetFile);
 		}
-
-		protected FileInfo _outputFile = null;
 	}
 
 }
