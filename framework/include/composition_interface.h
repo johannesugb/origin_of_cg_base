@@ -10,6 +10,7 @@ namespace cgb
 	 */
 	class composition_interface
 	{
+		friend class generic_glfw;
 	public:
 		/** @brief Get the currently active composition_interface
 		 *
@@ -114,6 +115,9 @@ namespace cgb
 			// It's okay.
 			sCurrentComposition = pNewComposition;
 		}
+
+		/** Hidden access to the background input buffer, accessible to friends (namely @ref generic_glfw) */
+		virtual input_buffer& background_input_buffer() = 0;
 
 	private:
 		/** The (single) currently active composition_interface */

@@ -23,7 +23,7 @@ namespace cgb
 		bool enabled() const { return m_enabled; }
 
 		void set_light_direction(const glm::vec3& direction);
-		void set_light_direction(Transform& transform);
+		void set_light_direction(transform& transform);
 		void set_light_color(glm::vec3 color);
 		void set_enabled(bool is_enabled);
 

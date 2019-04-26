@@ -66,15 +66,19 @@
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
     <ClCompile Include="..\..\framework\src\shader.cpp" />
     <ClCompile Include="..\..\framework\src\transform.cpp" />
-    <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp" />
-    <ClCompile Include="..\..\framework\src\window.cpp" />
     <ClCompile Include="..\..\framework\src_e186\AmbientLight.cpp" />
     <ClCompile Include="..\..\framework\src_e186\DirectionalLight.cpp" />
     <ClCompile Include="..\..\framework\src_e186\MaterialData.cpp" />
     <ClCompile Include="..\..\framework\src_e186\PointLight.cpp" />
     <ClCompile Include="..\..\framework\src_e186\TexInfo.cpp" />
     <ClCompile Include="..\..\framework\src_e186\TexLoadingHelper.cpp" />
-    <ClCompile Include="..\..\framework\src_stst\vulkan_attribute_description_binding.cpp" />
+    <ClCompile Include="..\..\framework\src\varying_update_timer.cpp" />
+    <ClCompile Include="..\..\framework\src\window_base.cpp" />
+    <ClCompile Include="..\..\framework\src_stst\vulkan_attribute_description_binding.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\framework\src_stst\vulkan_buffer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -125,9 +129,21 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle.cpp" />
-    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_group.cpp" />
-    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_layout.cpp" />
+    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_group.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src_stst\vulkan_resource_bundle_layout.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\framework\src_stst\vulkan_texture.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -203,8 +219,6 @@
     <ClInclude Include="..\..\framework\include\timer_interface.h" />
     <ClInclude Include="..\..\framework\include\transform.h" />
     <ClInclude Include="..\..\framework\include\various_utils.h" />
-    <ClInclude Include="..\..\framework\include\varying_update_only_timer.h" />
-    <ClInclude Include="..\..\framework\include\window.h" />
     <ClInclude Include="..\..\framework\include_e186\AmbientLight.h" />
     <ClInclude Include="..\..\framework\include_e186\DirectionalLight.h" />
     <ClInclude Include="..\..\framework\include_e186\MaterialData.h" />
@@ -213,7 +227,13 @@
     <ClInclude Include="..\..\framework\include_e186\TexInfo.h" />
     <ClInclude Include="..\..\framework\include_e186\TexLoadingHelper.h" />
     <ClInclude Include="..\..\framework\include_e186\VertexAttribLocation.h" />
-    <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h" />
+    <ClInclude Include="..\..\framework\include\varying_update_timer.h" />
+    <ClInclude Include="..\..\framework\include\window_base.h" />
+    <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\..\framework\include_stst\vulkan_buffer.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -264,9 +284,21 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle.h" />
-    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_group.h" />
-    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_layout.h" />
+    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_group.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include_stst\vulkan_resource_bundle_layout.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\..\framework\include_stst\vulkan_texture.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -305,47 +337,47 @@
     <ProjectGuid>{602F842F-50C1-466D-8696-1707937D8AB9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>cgb</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>cg_base</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>

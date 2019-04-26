@@ -8,10 +8,10 @@ namespace cgb
 	 *	Beware that there is no fixed time step and, thus, no @ref fixed_delta_time
 	 *	Time between frames is always varying.
 	 */
-	class varying_update_only_timer : public timer_interface
+	class varying_update_timer : public timer_interface
 	{
 	public:
-		varying_update_only_timer();
+		varying_update_timer();
 
 		timer_frame_type tick();
 

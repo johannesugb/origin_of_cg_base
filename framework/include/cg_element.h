@@ -13,14 +13,16 @@ namespace cgb
 	 *	Invocation order of cg_element's methods:
 	 *	  1. initialize
 	 *	  loop:
-	 *	    2. fixed_update 
+	 *	    2. check and possibly issue on_enable event handlers
+	 *	    3. fixed_update 
 	 *	       possibly continue; // depending on the timer_interface used
-	 *	    3. update
-	 *	    4. render
-	 *	    5. render_gizmos
-	 *	    6. render_gui
+	 *	    4. update
+	 *	    5. render
+	 *	    6. render_gizmos
+	 *	    7. render_gui
+	 *	    8. check and possibly issue on_disable event handlers
 	 *	  loop-end
-	 *	  7. finalize
+	 *	  9. finalize
 	 */
 	class cg_element
 	{
@@ -28,15 +30,26 @@ namespace cgb
 		/**
 		 * @brief Constructor which automatically generates a name for this object
 		 */
-		cg_element() :
-			mName("cg_element #" + std::to_string(sGeneratedNameId++))
+		cg_element()
+			: mName{ "cg_element #" + std::to_string(sGeneratedNameId++) }
+			, mWasEnabledLastFrame{ false }
+			, mEnabled{ true }
+			, mRenderEnabled{ true }
+			, mRenderGizmosEnabled{ true }
+			, mRenderGuiEnabled{ true }
 		{ }
 
 		/**	@brief Constructor
 		 *	@param pName Name by which this object can be identified
+		 *	@param pIsEnabled Enabled means that this object will receive the method invocations during the loop
 		 */
-		cg_element(std::string pName) : 
-			mName(pName)
+		cg_element(std::string pName, bool pIsEnabled = true) 
+			: mName{ pName }
+			, mWasEnabledLastFrame{ false }
+			, mEnabled{ pIsEnabled }
+			, mRenderEnabled{ true }
+			, mRenderGizmosEnabled{ true }
+			, mRenderGuiEnabled{ true }
 		{ }
 
 		virtual ~cg_element()
@@ -113,8 +126,149 @@ namespace cgb
 		 */
 		virtual void finalize() {}
 
+		/**	@brief Enable this element
+		 *
+		 *	@param pAlsoEnableRendering Set to true to also enable
+		 *  rending of this element. If set to false, the flags which 
+		 *  indicate whether or not to render, render gizmos, and render 
+		 *  gui of this element, will remain unchanged.
+		 *
+		 *	Call this method to enable this cg_element by the end of 
+		 *	the current frame! I.e. this method expresses your intent
+		 *	to enable. Perform neccessary actions in the on_enable() 
+		 *	event handler method (not here!).
+		 *
+		 *	It is strongly recommended not to override this method!
+		 *	However, if you do, make sure to set the flag, i.e. call 
+		 *	base class' implementation (i.e. this one).
+		 */
+		virtual void enable(bool pAlsoEnableRendering = true) 
+		{ 
+			mEnabled = true; 
+			if (pAlsoEnableRendering) {
+				mRenderEnabled = true;
+				mRenderGizmosEnabled = true;
+				mRenderGuiEnabled = true;
+			}
+		}
+
+		/**	@brief Handle the event of this cg_element having been enabled
+		 *
+		 *	Perform all your "This element has been enabled" actions within
+		 *	this event handler method! 
+		 */
+		virtual void on_enable() {}
+
+		/**	@brief Disable this element
+		 *
+		 *	@param pAlsoDisableRendering Set to true to also disable
+		 *  rending of this element. If set to false, the flags which
+		 *  indicate whether or not to render, render gizmos, and render
+		 *  gui of this element, will remain unchanged.
+		 *
+		 *	Call this method to disable this cg_element by the end of
+		 *	the current frame! I.e. this method expresses your intent
+		 *	to disable. Perform neccessary actions in the on_disable()
+		 *	event handler method (not here!).
+		 *
+		 *	It is strongly recommended not to override this method!
+		 *	However, if you do, make sure to set the flag, i.e. call
+		 *	base class' implementation (i.e. this one).
+		 */
+		virtual void disable(bool pAlsoDisableRendering = true)
+		{ 
+			mEnabled = false; 
+			if (pAlsoDisableRendering) {
+				mRenderEnabled = false;
+				mRenderGizmosEnabled = false;
+				mRenderGuiEnabled = false;
+			}
+		}
+
+		/**	@brief Handle the event of this cg_element having been disabled
+		 *
+		 *	Perform all your "This element has been disabled" actions within
+		 *	this event handler method! It will be called regardless of 
+		 *	whether the disable request has come from within this cg_element
+		 *	or from outside.
+		 */
+		virtual void on_disable() {}
+
+		/**	@brief Checks if the element has been enabled and if so, issues 
+		 *	the on_enable() event method. Also updates the internal state.
+		 *
+		 *	This method will be called by the composition. Do not 
+		 *	call it directly!! (Unless, of course, you really know
+		 *	what you are doing)
+		 */
+		void handle_enabling() 
+		{
+			if (mEnabled && !mWasEnabledLastFrame) {
+				on_enable();
+				update_enabled_state();
+			}
+		}
+
+		/**	@brief Checks if the element has been enabled and if so, issues
+		 *	the on_enable() event method. Also updates the internal state.
+		 *
+		 *	This method will be called by the composition. Do not
+		 *	call it directly!! (Unless, of course, you really know
+		 *	what you are doing)
+		 */
+		void handle_disabling()
+		{
+			if (!mEnabled && mWasEnabledLastFrame) {
+				on_disable();
+				update_enabled_state();
+			}
+		}
+
+		/**	@brief Also updates the internal enabled/disabled state.
+		 *
+		 *	This method will be called internally. Do not call it 
+		 *  directly!! (Unless, of course, you really know what you 
+		 *	are doing)
+		 */
+		void update_enabled_state()
+		{
+			mWasEnabledLastFrame = mEnabled;
+		}
+
+		/**	@brief Returns whether or not this element is currently enabled. */
+		bool is_enabled() const { return mEnabled; }
+
+		/** @brief Enable or disable rendering of this element
+		 *	@param pValue true to enable, false to disable
+		 */
+		void set_render_enabled(bool pValue) { mRenderEnabled = pValue; }
+
+		/** @brief Enable or disable rendering of this element's gizmos
+		 *	@param pValue true to enable, false to disable
+		 */
+		void set_render_gizmos_enabled(bool pValue) { mRenderGizmosEnabled = pValue; }
+
+		/** @brief Enable or disable rendering of this element's GUI
+		 *	@param pValue true to enable, false to disable
+		 */
+		void set_render_gui_enabled(bool pValue) { mRenderGuiEnabled = pValue; }
+
+		/** @brief Returns whether rendering of this element is enabled or not. */
+		bool is_render_enabled() const { return mRenderEnabled; }
+
+		/** @brief Returns whether rendering this element's gizmos is enabled or not. */
+		bool is_render_gizmos_enabled() const { return mRenderGizmosEnabled; }
+
+		/** @brief Returns whether rendering this element's gui is enabled or not. */
+		bool is_render_gui_enabled() const { return mRenderGuiEnabled; }
+
 	private:
 		inline static int32_t sGeneratedNameId = 0;
 		std::string mName;
+		bool mWasEnabledLastFrame;
+		bool mEnabled;
+		bool mRenderEnabled;
+		bool mRenderGizmosEnabled;
+		bool mRenderGuiEnabled;
 	};
 }

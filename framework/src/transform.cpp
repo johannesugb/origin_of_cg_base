@@ -2,373 +2,438 @@
 
 namespace cgb
 {
-	const glm::mat4 Transform::kIdentityMatrix(1.0f);
-	const glm::vec3 Transform::kFrontVec3(0.0f, 0.0f, -1.0f);
-	const glm::vec4 Transform::kFrontVec4(0.0f, 0.0f, -1.0f, 1.0f);
-	const glm::vec3 Transform::kUpVec3(0.0f, 1.0f, 0.0f);
-	const glm::vec4 Transform::kUpVec4(0.0f, 1.0f, 0.0f, 1.0f);
-	const glm::vec3 Transform::kSideVec3(1.0f, 0.0f, 0.0f);
-	const glm::vec4 Transform::kSideVec4(1.0f, 0.0f, 0.0f, 1.0f);
-	const glm::vec3 Transform::kUnitVec3X(1, 0, 0);
-	const glm::vec3 Transform::kUnitVec3Y(0, 1, 0);
-	const glm::vec3 Transform::kUnitVec3Z(0, 0, 1);
-	const glm::vec4 Transform::kUnitVec4X(1, 0, 0, 1);
-	const glm::vec4 Transform::kUnitVec4Y(0, 1, 0, 1);
-	const glm::vec4 Transform::kUnitVec4Z(0, 0, 1, 1);
+	using namespace glm;
 
-	Transform::Transform() :
-		m_update_id(0),
-		m_query_id(0),
-		m_rotation(1.0f), // rotation is a matrix
-		m_translation(0.0f),
-		m_scale(1.0f),
-		m_model_matrix(1.0f),
-		m_parent_ptr(nullptr)
+	void transform::update_matrix_from_transforms()
 	{
+		auto x = mRotation * vec3{ 1.0f, 0.0f, 0.0f };
+		auto y = mRotation * vec3{ 0.0f, 1.0f, 0.0f };
+		auto z = glm::cross(x, y);
+		y = glm::cross(z, x);
+		mMatrix = mat4(
+			vec4(x, 0.0f) * mScale.x,
+			vec4(y, 0.0f) * mScale.y,
+			vec4(z, 0.0f) * mScale.z,
+			vec4(mTranslation, 1.0f)
+		);
+	}
+	
+	void transform::update_transforms_from_matrix()
+	{
+		mTranslation = vec3(mMatrix[3]);
+		mScale = {
+			glm::length(vec3(mMatrix[0])),
+			glm::length(vec3(mMatrix[1])),
+			glm::length(vec3(mMatrix[2]))
+		};
+		mRotation = glm::quat_cast(glm::mat3(
+			mMatrix[0] / mScale.x,
+			mMatrix[1] / mScale.y,
+			mMatrix[2] / mScale.z
+		));
 	}
 
-	Transform::Transform(glm::vec3 position) :
-		m_update_id(0),
-		m_query_id(0),
-		m_rotation(1.0f), // rotation is a matrix
-		m_translation(std::move(position)),
-		m_scale(1.0f),
-		m_model_matrix(1.0f),
-		m_parent_ptr(nullptr)
+	transform::transform(vec3 pTranslation, quat pRotation, vec3 pScale) noexcept
+		: mTranslation(pTranslation)
+		, mRotation(pRotation)
+		, mScale(pScale)
+		//, mParent(nullptr)
+	{ 
+		update_matrix_from_transforms();
+	}
+	
+	transform::transform(glm::vec3 pBasisX, vec3 pBasisY, vec3 pBasisZ, vec3 pTranslation) noexcept
+		: mMatrix(mat4(
+			vec4(pBasisX, 0.0f)* mScale.x,
+			vec4(pBasisY, 0.0f)* mScale.y,
+			vec4(pBasisZ, 0.0f)* mScale.z,
+			vec4(pTranslation, 1.0f)
+		))
+		//, mParent(nullptr)
 	{
+		update_transforms_from_matrix();
 	}
 
-	Transform::Transform(Transform&& other) noexcept :
-		m_update_id(other.m_update_id),
-		m_query_id(other.m_query_id),
-		m_rotation(std::move(other.m_rotation)),
-		m_translation(std::move(other.m_translation)),
-		m_scale(std::move(other.m_scale)),
-		m_model_matrix(std::move(other.m_model_matrix)),
-		m_parent_ptr(std::move(other.m_parent_ptr)),
-		m_childs(std::move(other.m_childs))
+	transform::transform(transform&& other) noexcept
+		: mMatrix{ std::move(other.mMatrix) }
+		, mTranslation{ std::move(other.mTranslation) }
+		, mRotation{ std::move(other.mRotation) }
+		, mScale{ std::move(other.mScale) }
+		, mParent{ std::move(other.mParent) }
+		, mChilds{ std::move(other.mChilds) }
 	{
-		other.m_update_id = 0;
-		other.m_query_id = 0;
-		other.m_parent_ptr = nullptr;
-		other.m_childs.clear();
+		for (auto& child : mChilds) {
+			// This will overwrite their previous parent-pointer:
+			attach_transform(shared_from_this(), child);
+		}
+		other.mParent = nullptr;
+		other.mChilds.clear();
 	}
-
-	Transform::Transform(const Transform& other) noexcept :
-		m_update_id(other.m_update_id),
-		m_query_id(other.m_query_id),
-		m_rotation(other.m_rotation),
-		m_translation(other.m_translation),
-		m_scale(other.m_scale),
-		m_model_matrix(other.m_model_matrix),
-		m_parent_ptr(other.m_parent_ptr),
-		m_childs(other.m_childs)
+	
+	transform::transform(const transform& other) noexcept
+		: mMatrix{ other.mMatrix }
+		, mTranslation{ other.mTranslation }
+		, mRotation{ other.mRotation }
+		, mScale{ other.mScale }
+		, mParent{ other.mParent }
 	{
+		for (auto& child : other.mChilds) {
+			// Copy the childs. This can have undesired side effects, actually (e.g. if 
+			// childs' classes are derived from transform, what happens then? Don't know.)
+			auto clonedChild = std::make_shared<transform>(*child);
+			attach_transform(shared_from_this(), child);
+		}
 	}
-
-	Transform& Transform::operator=(Transform&& other) noexcept
+	
+	transform& transform::operator=(transform&& other) noexcept
 	{
-		m_update_id = other.m_update_id;
-		m_query_id = other.m_query_id;
-		m_rotation = std::move(other.m_rotation);
-		m_translation = std::move(other.m_translation);
-		m_scale = std::move(other.m_scale);
-		m_model_matrix = std::move(other.m_model_matrix);
-		m_parent_ptr = std::move(other.m_parent_ptr);
-		m_childs = std::move(other.m_childs);
-		other.m_update_id = 0;
-		other.m_query_id = 0;
-		other.m_parent_ptr = nullptr;
-		other.m_childs.clear();
+		mMatrix = std::move(other.mMatrix);
+		mTranslation = std::move(other.mTranslation);
+		mRotation = std::move(other.mRotation);
+		mScale = std::move(other.mScale);
+		mParent = std::move(other.mParent);
+		mChilds = std::move(other.mChilds);
+		for (auto& child : mChilds) {
+			// This will overwrite their previous parent-pointer:
+			attach_transform(shared_from_this(), child);
+		}
+		other.mParent = nullptr;
+		other.mChilds.clear();
+		return *this;
+	}
+	
+	transform& transform::operator=(const transform& other) noexcept
+	{
+		mMatrix = other.mMatrix;
+		mTranslation = other.mTranslation;
+		mRotation = other.mRotation;
+		mScale = other.mScale;
+		mParent = other.mParent;
+		for (auto& child : other.mChilds) {
+			// Copy the childs. This can have undesired side effects, actually (e.g. if 
+			// childs' classes are derived from transform, what happens then? Don't know.)
+			auto clonedChild = std::make_shared<transform>(*child);
+			attach_transform(shared_from_this(), child);
+		}
 		return *this;
 	}
 
-	Transform& Transform::operator=(const Transform& other) noexcept
+	transform::~transform()
 	{
-		m_update_id = other.m_update_id;
-		m_query_id = other.m_query_id;
-		m_rotation = other.m_rotation;
-		m_translation = other.m_translation;
-		m_scale = other.m_scale;
-		m_model_matrix = other.m_model_matrix;
-		m_parent_ptr = other.m_parent_ptr;
-		m_childs = other.m_childs;
-		return *this;
+		mParent = nullptr;
+		mChilds.clear();
 	}
 
-	Transform::~Transform()
+	void transform::set_translation(const vec3& pValue)
 	{
+		mTranslation = pValue;
+		update_matrix_from_transforms();
 	}
 
-	void Transform::DataUpdated()
+	void transform::set_rotation(const quat& pValue)
 	{
-		++m_update_id;
+		mRotation = pValue;
+		update_matrix_from_transforms();
 	}
 
-	void Transform::UpdateMatrices()
+	void transform::set_scale(const vec3& pValue)
 	{
-		if (m_update_id != m_query_id) {
-			//                                                      3.          2.        1.
-			// calculate model-matrix, multiplication order is translation * rotation * scale
-			m_model_matrix = glm::translate(m_translation);
-			m_model_matrix = m_model_matrix * m_rotation;
-			m_model_matrix = glm::scale(m_model_matrix, m_scale);
-
-			m_query_id = m_update_id;
-		}
+		mScale = pValue;
+		update_matrix_from_transforms();
 	}
 
-
-	// Set transformations
-
-	void Transform::set_position(glm::vec3 position)
+	const mat4& transform::local_transformation_matrix() const
 	{
-		m_translation = std::move(position);
-		DataUpdated();
+		return mMatrix;
 	}
 
-	void Transform::set_rotation(glm::mat4 rotation)
+	glm::mat4 transform::global_transformation_matrix() const
 	{
-		m_rotation = std::move(rotation);
-		DataUpdated();
-	}
-
-	void Transform::set_scale(glm::vec3 scale)
-	{
-		m_scale = std::move(scale);
-		DataUpdated();
-	}
-
-	void Transform::set_scale(const float scale)
-	{
-		m_scale = glm::vec3(scale);
-		DataUpdated();
-	}
-
-
-	// Alter current transformations 
-
-	void Transform::Translate(const glm::vec3& translation)
-	{
-		m_translation += translation;
-		DataUpdated();
-	}
-
-	void Transform::Rotate(const glm::vec3& axis, const float angle)
-	{
-		m_rotation = glm::rotate(angle, axis) * m_rotation;
-		DataUpdated();
-	}
-
-	void Transform::Rotate(const glm::mat4& mat)
-	{
-		m_rotation = mat * m_rotation;
-		DataUpdated();
-	}
-
-	void Transform::RotateX(const float angle)
-	{
-		Rotate(kUnitVec3X, angle);
-	}
-
-	void Transform::RotateY(const float angle)
-	{
-		Rotate(kUnitVec3Y, angle);
-	}
-
-	void Transform::RotateZ(const float angle)
-	{
-		Rotate(kUnitVec3Z, angle);
-	}
-
-	void Transform::Scale(const glm::vec3& scale)
-	{
-		m_scale += scale;
-		DataUpdated();
-	}
-
-	void Transform::Scale(const float scale)
-	{
-		m_scale += glm::vec3(scale);
-		DataUpdated();
-	}
-
-
-
-	// Query matrices
-
-	glm::mat4 Transform::GetModelMatrix()
-	{
-		UpdateMatrices();
-		if (m_parent_ptr) {
-			return m_parent_ptr->GetModelMatrix() * m_model_matrix;
-		}
-		else
-			return m_model_matrix;
-	}
-
-
-
-	glm::mat4 Transform::model_matrix()
-	{
-		return m_model_matrix;
-	}
-
-	glm::vec3 Transform::GetLocalFrontVector()
-	{
-		glm::mat4 mM = model_matrix();
-		glm::mat4 itM = glm::inverseTranspose(mM);
-		return glm::normalize(glm::vec3(itM * kFrontVec4));
-	}
-
-
-
-
-	glm::mat4 Transform::GetRotationMatrix()
-	{
-		if (m_parent_ptr)
-			return m_parent_ptr->GetRotationMatrix() * m_rotation;
-		else
-			return m_rotation;
-	}
-
-	glm::mat4 Transform::rotation_matrix()
-	{
-		return m_rotation;
-	}
-
-
-	glm::vec3 Transform::GetScale()
-	{
-		if (m_parent_ptr)
-			return m_parent_ptr->GetScale() * m_scale;
-		else
-			return m_scale;
-	}
-
-	glm::vec3 Transform::scale()
-	{
-		return m_scale;
-	}
-
-
-	// query position and orientation-vectors
-
-	glm::vec3 Transform::translation()
-	{
-		return m_translation;
-	}
-
-	glm::vec3 Transform::GetPosition()
-	{
-		return  get_translation_from_matrix(GetModelMatrix());
-	}
-
-	glm::vec3 Transform::GetFrontVector()
-	{
-		glm::mat4 mM = GetModelMatrix();
-		glm::mat4 itM = glm::inverseTranspose(mM);
-		return glm::normalize(glm::vec3(itM * kFrontVec4));
-	}
-
-	glm::vec3 Transform::GetUpVector()
-	{
-		glm::mat4 mM = GetModelMatrix();
-		glm::mat4 itM = glm::inverseTranspose(mM);
-		return glm::normalize(glm::vec3(itM * kUpVec4));
-	}
-
-	glm::vec3 Transform::GetSideVector()
-	{
-		return glm::cross(GetFrontVector(), GetUpVector());
-	}
-
-
-	void Transform::LookAt(Transform* target)
-	{
-		assert(target);
-		LookAt(target->GetPosition());
-	}
-
-	void Transform::LookAt(const glm::vec3& target)
-	{
-		glm::vec3 direction = glm::normalize(target - GetPosition());
-		glm::vec2 anglesToTarget = get_angles_from_direction_yaw_pitch(direction);
-		glm::mat4 rotationToTarget = glm::rotate(anglesToTarget.x, kUnitVec3Y) * glm::rotate(anglesToTarget.y, kUnitVec3X);
-		set_rotation(rotationToTarget);
-	}
-
-	void Transform::LookAlong(const glm::vec3& direction)
-	{
-		glm::vec2 anglesToTarget = get_angles_from_direction_yaw_pitch(direction);
-		glm::mat4 rotationToTarget = glm::rotate(anglesToTarget.x, kUnitVec3Y) * glm::rotate(anglesToTarget.y, kUnitVec3X);
-		set_rotation(rotationToTarget);
-	}
-
-
-	void Transform::AlignUpVectorTowards(Transform* target)
-	{
-		assert(target);
-		AlignUpVectorTowards(target->GetPosition());
-	}
-
-	void Transform::AlignUpVectorTowards(const glm::vec3& target)
-	{
-		glm::vec3 directon = glm::normalize(target - GetPosition());
-		glm::vec2 anglesToTarget = get_angles_from_direction_roll_pitch(directon);
-		glm::mat4 rotationToTarget = glm::rotate(anglesToTarget.x, kUnitVec3Z) * glm::rotate(anglesToTarget.y, kUnitVec3X);
-		set_rotation(rotationToTarget);
-	}
-
-	void Transform::AlignUpVectorAlong(const glm::vec3& direction)
-	{
-		glm::vec2 anglesToTarget = get_angles_from_direction_roll_pitch(direction);
-		glm::mat4 rotationToTarget = glm::rotate(anglesToTarget.x, kUnitVec3Z) * glm::rotate(anglesToTarget.y, kUnitVec3X);
-		set_rotation(rotationToTarget);
-	}
-
-
-
-	Transform* Transform::parent()
-	{
-		return m_parent_ptr;
-	}
-
-
-	void AttachTransform(Transform* parent, Transform* child)
-	{
-		assert(parent);
-		assert(child);
-
-		child->m_parent_ptr = parent;
-
-		auto result = std::find(parent->m_childs.begin(), parent->m_childs.end(), child);
-		if (parent->m_childs.end() == result) {
-			parent->m_childs.push_back(child);
+		if (mParent) {
+			return mParent->global_transformation_matrix() * mMatrix;
 		}
 		else {
-			LOG_WARNING(fmt::format("In AttachTransform: Prevented double-adding of child[{}] to parent[{}]", fmt::ptr(child), fmt::ptr(parent)));
+			return mMatrix;
 		}
 	}
 
-	void DetachTransform(Transform* parent, Transform* child)
+	bool transform::has_parent()
 	{
-		assert(parent);
-		assert(child);
-
-		child->m_parent_ptr = nullptr;
-		auto it = parent->m_childs.begin();
-		while (it != parent->m_childs.end()) {
-			if (*it == child) {
-				break;
-			}
-		}
-
-		if (it != parent->m_childs.end()) {
-			parent->m_childs.erase(it);
-		}
-		else {
-			LOG_WARNING(fmt::format("In DetachTransform: Couldn't find the Transform[{}] in the parent's[{}] m_childs", fmt::ptr(child), fmt::ptr(parent)));
-		}
+		return static_cast<bool>(mParent);
 	}
+
+	bool transform::has_childs()
+	{
+		return mChilds.size() > 0;
+	}
+
+	transform::ptr transform::parent()
+	{
+		return mParent;
+	}
+
+	void attach_transform(transform::ptr pParent, transform::ptr pChild)
+	{
+		assert(pParent);
+		assert(pChild);
+		if (pChild->has_parent()) {
+			detach_transform(pChild->parent(), pChild);
+		}
+		pChild->mParent = pParent;
+		pParent->mChilds.push_back(pChild);
+	}
+
+	void detach_transform(transform::ptr pParent, transform::ptr pChild)
+	{
+		assert(pParent);
+		assert(pChild);
+		if (!pChild->has_parent() || pChild->parent() != pParent) {
+			LOG_WARNING(fmt::format("Can not detach child[{}] from parent[{}]", fmt::ptr(pChild.get()), fmt::ptr(pParent.get())));
+			return;
+		}
+		pChild->mParent = nullptr;
+		pParent->mChilds.erase(std::remove(
+			std::begin(pParent->mChilds),
+			std::end(pParent->mChilds),
+			pChild
+		));
+	}
+
+	glm::vec3 front_wrt(const transform& pTransform, glm::mat4 pReference)
+	{
+		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
+		glm::mat4 invTrSpace = glm::inverse(trSpace);
+		return invTrSpace * glm::vec4(cgb::front(pTransform), 1.0f);
+	}
+
+	glm::vec3 back_wrt(const transform& pTransform, glm::mat4 pReference)
+	{
+		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
+		glm::mat4 invTrSpace = glm::inverse(trSpace);
+		return invTrSpace * glm::vec4(cgb::back(pTransform), 1.0f);
+	}
+
+	glm::vec3 right_wrt(const transform& pTransform, glm::mat4 pReference)
+	{
+		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
+		glm::mat4 invTrSpace = glm::inverse(trSpace);
+		return invTrSpace * glm::vec4(cgb::right(pTransform), 1.0f);
+	}
+
+	glm::vec3 left_wrt(const transform& pTransform, glm::mat4 pReference)
+	{
+		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
+		glm::mat4 invTrSpace = glm::inverse(trSpace);
+		return invTrSpace * glm::vec4(cgb::left(pTransform), 1.0f);
+	}
+
+	glm::vec3 up_wrt(const transform& pTransform, glm::mat4 pReference)
+	{
+		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
+		glm::mat4 invTrSpace = glm::inverse(trSpace);
+		return invTrSpace * glm::vec4(cgb::up(pTransform), 1.0f);
+	}
+
+	glm::vec3 down_wrt(const transform& pTransform, glm::mat4 pReference)
+	{
+		glm::mat4 trSpace = pReference * pTransform.global_transformation_matrix();
+		glm::mat4 invTrSpace = glm::inverse(trSpace);
+		return invTrSpace * glm::vec4(cgb::down(pTransform), 1.0f);
+	}
+
+	void translate(transform& pTransform, const glm::vec3& pTranslation)
+	{
+		pTransform.set_translation(pTransform.translation() + pTranslation);
+	}
+
+	void rotate(transform& pTransform, const glm::quat& pRotation)
+	{
+		pTransform.set_rotation(pRotation * pTransform.rotation());
+	}
+
+	void scale(transform& pTransform, const glm::vec3& pScale)
+	{
+		pTransform.set_scale(pTransform.scale() * pScale);
+	}
+
+	void translate_wrt(transform& pTransform, const glm::vec3& pTranslation, glm::mat4 pReference)
+	{
+		// TODO: How to?
+	}
+
+	void rotate_wrt(transform& pTransform, const glm::quat& pRotation, glm::mat4 pReference)
+	{
+		// TODO: How to?
+	}
+
+	void scale_wrt(transform& pTransform, const glm::vec3& pScale, glm::mat4 pReference)
+	{
+		// TODO: How to?
+	}
+
+
+
+
+
+	//// Alter current transformations 
+
+	//void transform::Translate(const vec3& translation)
+	//{
+	//	mTranslation += translation;
+	//	DataUpdated();
+	//}
+
+	//void transform::Rotate(const vec3& axis, const float angle)
+	//{
+	//	mRotation = rotate(angle, axis) * mRotation;
+	//	DataUpdated();
+	//}
+
+	//void transform::Rotate(const mat4& mat)
+	//{
+	//	mRotation = mat * mRotation;
+	//	DataUpdated();
+	//}
+
+	//void transform::RotateX(const float angle)
+	//{
+	//	Rotate(kUnitVec3X, angle);
+	//}
+
+	//void transform::RotateY(const float angle)
+	//{
+	//	Rotate(kUnitVec3Y, angle);
+	//}
+
+	//void transform::RotateZ(const float angle)
+	//{
+	//	Rotate(kUnitVec3Z, angle);
+	//}
+
+	//void transform::Scale(const vec3& scale)
+	//{
+	//	mScale += scale;
+	//	DataUpdated();
+	//}
+
+	//void transform::Scale(const float scale)
+	//{
+	//	mScale += vec3(scale);
+	//	DataUpdated();
+	//}
+
+
+	//glm::vec3 transform::GetLocalFrontVector()
+	//{
+	//	glm::mat4 mM = model_matrix();
+	//	glm::mat4 itM = inverseTranspose(mM);
+	//	return normalize(glm::vec3(itM * kFrontVec4));
+	//}
+
+
+
+
+	//glm::mat4 transform::GetRotationMatrix()
+	//{
+	//	if (m_parent_ptr)
+	//		return m_parent_ptr->GetRotationMatrix() * mRotation;
+	//	else
+	//		return mRotation;
+	//}
+
+	//glm::mat4 transform::rotation_matrix()
+	//{
+	//	return mRotation;
+	//}
+
+
+	//glm::vec3 transform::GetScale()
+	//{
+	//	if (m_parent_ptr)
+	//		return m_parent_ptr->GetScale() * mScale;
+	//	else
+	//		return mScale;
+	//}
+
+	//glm::vec3 transform::scale()
+	//{
+	//	return mScale;
+	//}
+
+
+	//// query position and orientation-vectors
+
+	//glm::vec3 transform::translation()
+	//{
+	//	return mTranslation;
+	//}
+
+	//glm::vec3 transform::GetPosition()
+	//{
+	//	return  get_translation_from_matrix(GetModelMatrix());
+	//}
+
+	//glm::vec3 transform::GetFrontVector()
+	//{
+	//	glm::mat4 mM = GetModelMatrix();
+	//	glm::mat4 itM = inverseTranspose(mM);
+	//	return normalize(glm::vec3(itM * kFrontVec4));
+	//}
+
+	//glm::vec3 transform::GetUpVector()
+	//{
+	//	glm::mat4 mM = GetModelMatrix();
+	//	glm::mat4 itM = inverseTranspose(mM);
+	//	return normalize(glm::vec3(itM * kUpVec4));
+	//}
+
+	//glm::vec3 transform::GetSideVector()
+	//{
+	//	return cross(GetFrontVector(), GetUpVector());
+	//}
+
+
+	//void transform::LookAt(transform* target)
+	//{
+	//	assert(target);
+	//	LookAt(target->GetPosition());
+	//}
+
+	//void transform::LookAt(const vec3& target)
+	//{
+	//	glm::vec3 direction = normalize(target - GetPosition());
+	//	glm::vec2 anglesToTarget = get_angles_from_direction_yaw_pitch(direction);
+	//	glm::mat4 rotationToTarget = rotate(anglesToTarget.x, kUnitVec3Y) * rotate(anglesToTarget.y, kUnitVec3X);
+	//	set_rotation(rotationToTarget);
+	//}
+
+	//void transform::LookAlong(const vec3& direction)
+	//{
+	//	glm::vec2 anglesToTarget = get_angles_from_direction_yaw_pitch(direction);
+	//	glm::mat4 rotationToTarget = rotate(anglesToTarget.x, kUnitVec3Y) * rotate(anglesToTarget.y, kUnitVec3X);
+	//	set_rotation(rotationToTarget);
+	//}
+
+
+	//void transform::AlignUpVectorTowards(transform* target)
+	//{
+	//	assert(target);
+	//	AlignUpVectorTowards(target->GetPosition());
+	//}
+
+	//void transform::AlignUpVectorTowards(const vec3& target)
+	//{
+	//	glm::vec3 directon = normalize(target - GetPosition());
+	//	glm::vec2 anglesToTarget = get_angles_from_direction_roll_pitch(directon);
+	//	glm::mat4 rotationToTarget = rotate(anglesToTarget.x, kUnitVec3Z) * rotate(anglesToTarget.y, kUnitVec3X);
+	//	set_rotation(rotationToTarget);
+	//}
+
+	//void transform::AlignUpVectorAlong(const vec3& direction)
+	//{
+	//	glm::vec2 anglesToTarget = get_angles_from_direction_roll_pitch(direction);
+	//	glm::mat4 rotationToTarget = rotate(anglesToTarget.x, kUnitVec3Z) * rotate(anglesToTarget.y, kUnitVec3X);
+	//	set_rotation(rotationToTarget);
+	//}
+
 }

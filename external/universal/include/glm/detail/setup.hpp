@@ -7,8 +7,8 @@
 #define GLM_VERSION_MINOR			9
 #define GLM_VERSION_PATCH			9
 #define GLM_VERSION_REVISION		4
-#define GLM_VERSION					994
-#define GLM_VERSION_MESSAGE			"GLM: version 0.9.9.4"
+#define GLM_VERSION					996
+#define GLM_VERSION_MESSAGE			"GLM: version 0.9.9.6"
 
 #define GLM_SETUP_INCLUDED			GLM_VERSION
 
@@ -284,7 +284,6 @@
 #else
 #	define GLM_HAS_CONSTEXPR ((GLM_LANG & GLM_LANG_CXX0X_FLAG) && GLM_HAS_INITIALIZER_LISTS && (\
 		((GLM_COMPILER & GLM_COMPILER_INTEL) && (GLM_COMPILER >= GLM_COMPILER_INTEL17)) || \
-		((GLM_COMPILER & GLM_COMPILER_GCC) && (GLM_COMPILER >= GLM_COMPILER_GCC6)) || \
 		((GLM_COMPILER & GLM_COMPILER_VC) && (GLM_COMPILER >= GLM_COMPILER_VC15))))
 #endif
 
@@ -292,6 +291,27 @@
 #	define GLM_CONSTEXPR constexpr
 #else
 #	define GLM_CONSTEXPR
+#endif
+
+//
+#if GLM_HAS_CONSTEXPR
+# if (GLM_COMPILER & GLM_COMPILER_CLANG)
+#	define GLM_HAS_IF_CONSTEXPR __has_feature(cxx_if_constexpr)
+# elif (GLM_COMPILER & GLM_COMPILER_GCC) 
+#	define GLM_HAS_IF_CONSTEXPR GLM_COMPILER >= GLM_COMPILER_GCC7
+# elif (GLM_LANG & GLM_LANG_CXX17_FLAG)
+# 	define GLM_HAS_IF_CONSTEXPR 1
+# else
+# 	define GLM_HAS_IF_CONSTEXPR 0
+# endif
+#else
+#	define GLM_HAS_IF_CONSTEXPR 0
+#endif
+
+#if GLM_HAS_IF_CONSTEXPR
+# 	define GLM_IF_CONSTEXPR if constexpr
+#else
+#	define GLM_IF_CONSTEXPR if
 #endif
 
 //

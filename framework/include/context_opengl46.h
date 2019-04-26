@@ -20,7 +20,10 @@ namespace cgb
 	public:
 		opengl46();
 
-		window* create_window(const window_params&, const swap_chain_params&);
+		window* create_window(const std::string&);
+
+		/** Will return true if the OpenGL 4.6 context has been initialized completely. */
+		bool initialization_completed() const { return mInitializationComplete; }
 
 		/**	Checks whether there is a GL-Error and logs it to the console
 				 *	@return true if there was an error, false if not
@@ -51,5 +54,8 @@ namespace cgb
 
 		/** Completes all pending work on the device, blocks the current thread until then. */
 		void finish_pending_work();
+
+	private:
+		bool mInitializationComplete;
 	};
 }

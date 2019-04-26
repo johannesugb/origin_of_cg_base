@@ -2,193 +2,203 @@
 
 namespace cgb
 {
-	Camera::Camera()
-		: m_projection_matrix(1.0f),
-		m_projection_config(CameraProjectionConfig_None),
-		m_near_plane(0.0f),
-		m_far_plane(0.0f),
-		m_fov(0.0f),
-		m_left(0.0f),
-		m_right(0.0f),
-		m_top(0.0f),
-		m_bottom(0.0f)
+	camera::camera()
+		: mProjectionMatrix{ 1.0f }
+		, mProjectionType{ projection_type::unknown }
+		, mNear{ 0 }
+		, mFar{ 0 }
+		, mFov{ 0.0f }
+		, mAspect{ 0.0 }
+		, mLeft{ 0 }
+		, mRight{ 0 }
+		, mTop{ 0 }
+		, mBottom{ 0 }
+	{}
+
+	camera::~camera()
+	{}
+
+
+	camera& camera::set_projection_matrix(const glm::mat4& pMatrix)
 	{
+		mProjectionType = projection_type::unknown;
+		mProjectionMatrix = pMatrix;
+		return *this;
 	}
 
-	Camera::~Camera()
+	camera& camera::set_perspective_projection(float pFov, float pAspect, float pNear, float pFar)
 	{
+		mProjectionType = projection_type::perspective;
+		mFov = pFov;
+		mAspect = pAspect;
+		mNear = pNear;
+		mFar = pFar;
+		update_projection_matrix();
+		return *this;
 	}
 
-	void Camera::set_projection_matrix(glm::mat4 matrix)
+	camera& camera::set_orthographic_projection(float pLeft, float pRight, float pBottom, float pTop, float pNear, float pFar)
 	{
-		m_projection_config = CameraProjectionConfig_None;
-		m_projection_matrix = std::move(matrix);
+		mProjectionType = projection_type::orthographic;
+		mLeft = pLeft;
+		mRight = pRight;
+		mBottom = pBottom;
+		mTop = pTop;
+		mNear = pNear;
+		mFar = pFar;
+		update_projection_matrix();
+		return *this;
 	}
 
-	const glm::mat4& Camera::projection_matrix() const
+
+	camera& camera::set_near_plane_distance(float pValue)
 	{
-		return m_projection_matrix;
+		mNear = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	glm::mat4 Camera::CalculateViewMatrix()
+	camera& camera::set_far_plane_distance(float pValue)
 	{
-		glm::vec3 camTarget = GetPosition() + GetFrontVector();
-		return glm::lookAt(GetPosition(), camTarget, GetUpVector());
+		mFar = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	void Camera::CopyFrom(const Camera& other)
+	camera& camera::set_field_of_view(float pValue)
 	{
-		m_projection_matrix = other.m_projection_matrix;
-		m_projection_config = other.m_projection_config;
-		m_near_plane = other.m_near_plane;
-		m_far_plane = other.m_far_plane;
-		m_fov = other.m_fov;
-		m_aspect = other.m_aspect;
-		m_left = other.m_left;
-		m_right = other.m_right;
-		m_top = other.m_top;
-		m_bottom = other.m_bottom;
-		UpdateProjectionMatrix();
+		mFov = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	void Camera::SetPerspectiveProjection(float fov, float aspect, float nearPlane, float farPlane)
+	camera& camera::set_aspect_ratio(float pValue)
 	{
-		m_projection_config = CameraProjectionConfig_Perspective;
-		m_fov = fov;
-		m_aspect = aspect;
-		m_near_plane = nearPlane;
-		m_far_plane = farPlane;
-		UpdateProjectionMatrix();
+		mAspect = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	void Camera::SetOrthogonalProjection(float left, float right, float bottom, float top, float nearPlane, float farPlane)
+	camera& camera::set_left_border(float pValue)
 	{
-		m_projection_config = CameraProjectionConfig_Orthogonal;
-		m_left = left;
-		m_right = right;
-		m_top = top;
-		m_bottom = bottom;
-		m_near_plane = nearPlane;
-		m_far_plane = farPlane;
-		UpdateProjectionMatrix();
+		mLeft = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	CameraProjectionConfig Camera::projection_config() const
+	camera& camera::set_right_border(float pValue)
 	{
-		return m_projection_config;
+		mRight = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	float Camera::near_plane() const
+	camera& camera::set_top_border(float pValue)
 	{
-		return m_near_plane;
+		mTop = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	float Camera::far_plane() const
+	camera& camera::set_bottom_border(float pValue)
 	{
-		return m_far_plane;
+		mBottom = pValue;
+		update_projection_matrix();
+		return *this;
 	}
 
-	float Camera::field_of_view() const
+
+	camera& camera::copy_parameters_from(const camera& pOtherCamera)
 	{
-		return m_fov;
+		mProjectionMatrix = pOtherCamera.mProjectionMatrix;
+		mProjectionType = pOtherCamera.mProjectionType;
+		mNear = pOtherCamera.mNear;
+		mFar = pOtherCamera.mFar;
+		mFov = pOtherCamera.mFov;
+		mAspect = pOtherCamera.mAspect;
+		mLeft = pOtherCamera.mLeft;
+		mRight = pOtherCamera.mRight;
+		mTop = pOtherCamera.mTop;
+		mBottom = pOtherCamera.mBottom;
+		update_projection_matrix();
+		return *this;
 	}
 
-	float Camera::aspect_ratio() const
-	{
-		return m_aspect;
-	}
 
-	float Camera::left() const
+	float camera::get_z_buffer_depth(const glm::vec3& pWorldSpacePosition)
 	{
-		return m_left;
-	}
-
-	float Camera::right() const
-	{
-		return m_right;
-	}
-
-	float Camera::top() const
-	{
-		return m_top;
-	}
-
-	float Camera::bottom() const
-	{
-		return m_bottom;
-	}
-
-	void Camera::set_near_plane(float value)
-	{
-		m_near_plane = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::set_far_plane(float value)
-	{
-		m_far_plane = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::set_field_of_view(float value)
-	{
-		m_fov = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::set_aspect_ratio(float value)
-	{
-		m_aspect = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::set_left(float value)
-	{
-		m_left = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::set_right(float value)
-	{
-		m_right = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::set_top(float value)
-	{
-		m_top = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::set_bottom(float value)
-	{
-		m_bottom = value;
-		UpdateProjectionMatrix();
-	}
-
-	void Camera::UpdateProjectionMatrix()
-	{
-		switch (m_projection_config) {
-		case CameraProjectionConfig_None:
-			break;
-		case CameraProjectionConfig_Perspective:
-			m_projection_matrix = glm::perspective(m_fov, m_aspect, m_near_plane, m_far_plane);
-			break;
-		case CameraProjectionConfig_Orthogonal:
-			m_projection_matrix = glm::ortho(m_left, m_right, m_bottom, m_top, m_near_plane, m_far_plane);
-			break;
-		}
-	}
-
-	float Camera::CalcZBufferDepth(const glm::vec3& posWS)
-	{
-		auto posSS = projection_matrix() * CalculateViewMatrix() * glm::vec4(posWS, 1.0f);
+		auto posSS = projection_and_view_matrix() * glm::vec4(pWorldSpacePosition, 1.0f);
 		float depth = posSS.z / posSS.w;
-		return depth * 0.5f + 0.5f;
+		// TODO: For OpenGL, this has to be transformed into a different range most likely
+		return depth;
 	}
 
-	float Camera::CalcZBufferDepth(Transform* transform)
+	float camera::get_z_buffer_depth(transform& transform)
 	{
-		return CalcZBufferDepth(transform->GetPosition());
+		// TODO: pass transform's world space position:
+		return get_z_buffer_depth(glm::vec3{ 0.f, 0.f, 0.f });
+	}
+
+
+	glm::mat4 camera::view_matrix() const
+	{
+		// TODO: For OpenGL, this will have to be a different matrix, namely one that transform into a left-handed coordinate system
+		glm::mat4 vM = glm::mat4(
+			 mMatrix[0],
+			-mMatrix[1],
+			-mMatrix[2],
+			 mMatrix[3]
+		);
+		return glm::inverse(vM);
+	}
+
+	glm::mat4 camera::projection_and_view_matrix() const
+	{
+		return projection_matrix() * view_matrix();
+	}
+
+	void camera::update_projection_matrix()
+	{
+		switch (mProjectionType) {
+			case projection_type::unknown:
+				break;
+			case projection_type::perspective:
+			{
+				// Scaling factor for the x and y coordinates which depends on the 
+				// field of view (and the aspect ratio... see matrix construction)
+				auto xyScale = 1.0f / glm::tan(mFov / 2.f);
+				auto F_N = mFar - mNear;
+				auto zScale = mFar / F_N;
+
+				glm::mat4 m(0.0f);
+				m[0][0] = xyScale / mAspect;
+				m[1][1] = xyScale;
+				m[2][2] = zScale;
+				m[2][3] = 1.f; // Offset z...
+				m[3][2] = -mNear * zScale; // ... by this amount
+
+				mProjectionMatrix = m;
+
+				break;
+			}
+			case projection_type::orthographic:
+			{
+				glm::mat4 m(1.0f);
+				auto R_L = mRight - mLeft;
+				auto T_B = mTop - mBottom;
+				auto F_N = mFar - mNear;
+
+				m[0][0] = 2.f / R_L;
+				m[1][1] = 2.f / T_B;
+				m[2][2] = 1.f / F_N;
+				m[3][0] = -(mRight + mLeft) / R_L;
+				m[3][1] = -(mTop + mBottom) / T_B;
+				m[3][2] = -(mNear) / F_N;
+
+				mProjectionMatrix = m;
+
+				break;
+			}
+		}
 	}
 }

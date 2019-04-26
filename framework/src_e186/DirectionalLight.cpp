@@ -21,9 +21,9 @@ namespace cgb
 		m_light_direction = glm::normalize(direction);
 	}
 
-	void DirectionalLight::set_light_direction(Transform& transform)
+	void DirectionalLight::set_light_direction(transform& transform)
 	{
-		m_light_direction = transform.GetFrontVector();
+		m_light_direction = cgb::front(transform);
 	}
 
 	void DirectionalLight::set_light_color(glm::vec3 color)

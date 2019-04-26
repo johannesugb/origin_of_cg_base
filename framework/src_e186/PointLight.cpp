@@ -30,9 +30,9 @@ namespace cgb
 	{
 	}
 
-	PointLight::PointLight(const glm::vec3& color, Transform transform, float const_atten, float lin_atten, float quad_atten, float cub_atten)
+	PointLight::PointLight(const glm::vec3& color, transform transform, float const_atten, float lin_atten, float quad_atten, float cub_atten)
 		//: m_transform( position ),
-		: m_position(transform.GetPosition()),
+		: m_position(transform.translation()),
 		m_light_color(color),
 		m_attenuation(const_atten, lin_atten, quad_atten, cub_atten),
 		m_enabled{ true }

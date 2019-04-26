@@ -15,7 +15,7 @@ namespace cgb
 		PointLight(const glm::vec3& color, const glm::vec3& position);
 		PointLight(const glm::vec3& color, const glm::vec3& position, const glm::vec4& attenuation);
 		PointLight(const glm::vec3& color, const glm::vec3& position, float const_atten, float lin_atten, float quad_atten, float cub_atten);
-		PointLight(const glm::vec3& color, Transform transform, float const_atten, float lin_atten, float quad_atten, float cub_atten);
+		PointLight(const glm::vec3& color, transform transform, float const_atten, float lin_atten, float quad_atten, float cub_atten);
 		PointLight(const PointLight& other) noexcept = default;
 		PointLight(PointLight&& other) noexcept = default;
 		PointLight& operator=(const PointLight& other) noexcept = default;

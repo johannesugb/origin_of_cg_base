@@ -2,122 +2,121 @@
 
 namespace cgb
 {
-	class Transform
+	class transform : std::enable_shared_from_this<transform>
 	{
 	public:
-		static const glm::mat4 kIdentityMatrix;
-		static const glm::vec3 kFrontVec3;
-		static const glm::vec4 kFrontVec4;
-		static const glm::vec3 kUpVec3;
-		static const glm::vec4 kUpVec4;
-		static const glm::vec3 kSideVec3;
-		static const glm::vec4 kSideVec4;
-		static const glm::vec3 kUnitVec3X;
-		static const glm::vec3 kUnitVec3Y;
-		static const glm::vec3 kUnitVec3Z;
-		static const glm::vec4 kUnitVec4X;
-		static const glm::vec4 kUnitVec4Y;
-		static const glm::vec4 kUnitVec4Z;
+		using ptr = std::shared_ptr<transform>;
 
-	protected:
-		unsigned int m_update_id;		///< increased whenever rotation, translation, scale is altered to determine when matrix-update required
+		friend void attach_transform(transform::ptr pParent, transform::ptr pChild);
+		friend void detach_transform(transform::ptr pParent, transform::ptr pChild);
 
-		unsigned int m_query_id;		///< update-id of the matrices; the matrices have to be updated if m_query_id != m_update_id
+		/** Constructs a transform with separate values for translation, rotation, and scale */
+		transform(glm::vec3 pTranslation = { 0.f, 0.f, 0.f }, glm::quat pRotation = { 1.f, 0.f, 0.f, 0.f }, glm::vec3 pScale = { 1.f, 1.f, 1.f }) noexcept;
+		/** Constructs a transform with coordinate transform basis vectors, and a translation */
+		transform(glm::vec3 pBasisX, glm::vec3 pBasisY, glm::vec3 pBasisZ, glm::vec3 pTranslation = { 0.f, 0.f, 0.f }) noexcept;
+		/** Steal the guts of another transform */
+		transform(transform&& other) noexcept;
+		/** Copy of another transform */
+		transform(const transform& other) noexcept;
+		/** Steal the guts of another transform */
+		transform& operator=(transform&& other) noexcept;
+		/** Copy of another transform */
+		transform& operator=(const transform& other) noexcept;
+		virtual ~transform();
 
-		glm::mat4 m_rotation;		///< (accumulated) rotation of the object
-		glm::vec3 m_translation;	///< (accumulated) translation of the object
-		glm::vec3 m_scale;			///< (accumulated) scale of the object
+		/** sets a new position, current position is overwritten */
+		void set_translation(const glm::vec3& pValue);
+		/** sets a new rotation, current rotation is overwritten */
+		void set_rotation(const glm::quat& pValue);
+		/** sets a new scale, current scale is overwritten */
+		void set_scale(const glm::vec3& pValue);
 
-		glm::mat4 m_model_matrix;			///< the model matrix which is calculated on demand
+		/** returns the local transformation matrix, disregarding parent transforms */
+		const glm::mat4& local_transformation_matrix() const;
+		/** returns the global transformation matrix, taking parent transforms into account */
+		glm::mat4 global_transformation_matrix() const;
 
-		Transform* m_parent_ptr;				///< a parent Transform
-		std::vector<Transform*> m_childs;	///< child Transforms
+		/** Gets the matrix' x-axis, which can be seen as the local right vector */
+		glm::vec3 x_axis() const { return mMatrix[0]; }
+		/** Gets the matrix' y-axis, which can be seen as the local up vector */
+		glm::vec3 y_axis() const { return mMatrix[1]; }
+		/** Gets the matrix' z-axis, which can be seen as the local back vector */
+		glm::vec3 z_axis() const { return mMatrix[2]; }
 
-		friend void AttachTransform(Transform* parent, Transform* child);
-		friend void DetachTransform(Transform* parent, Transform* child);
+		/** Gets the local transformation matrix */
+		const glm::mat4& matrix() const { return mMatrix; }
+
+		/** Gets the local translation */
+		const glm::vec3& translation() const { return mTranslation; }
+		
+		/** Gets the local rotation */
+		const glm::quat& rotation() const { return mRotation; }
+
+		/** Local scale vector */
+		const glm::vec3& scale() const { return mScale; }
+
+		/** Returns true if this transform is a child has a parent transform. */
+		bool has_parent();
+		/** Returns true if this transform has child transforms. */
+		bool has_childs();
+		/** Returns the parent of this transform or nullptr */
+		transform::ptr parent();
 
 	private:
-		void DataUpdated();
-		void UpdateMatrices();
+		/** Updates the internal matrix based on translation, rotation scale */
+		void update_matrix_from_transforms();
+		/** Extracts translation, rotation and scale from the matrix and sets the internal fields' values */ 
+		void update_transforms_from_matrix();
 
-	public:
-		Transform();
-		Transform(glm::vec3 position);
-		Transform(Transform&& other) noexcept;
-		Transform(const Transform& other) noexcept;
-		Transform& operator=(Transform&& other) noexcept;
-		Transform& operator=(const Transform& other) noexcept;
-		virtual ~Transform();
+	protected:
+		/** Orthogonal basis + translation in a 4x4 matrix */
+		glm::mat4 mMatrix;
+		/** Offset from the coordinate origin */
+		glm::vec3 mTranslation;
+		/** Rotation quaternion */
+		glm::quat mRotation;
+		/** Local scale vector */
+		glm::vec3 mScale;
 
-		/// sets a new position, current position is overwritten
-		void set_position(glm::vec3 position);
-		/// sets a new rotation, current rotation is overwritten
-		void set_rotation(glm::mat4 rotation);
-		/// sets a new scale, current scale is overwritten
-		void set_scale(glm::vec3 scale);
-		/// sets a new uniform scale, current scale is overwritten
-		void set_scale(const float scale);
-
-
-		/// translates the object from the current position by `translation`
-		void Translate(const glm::vec3& translation);
-		/// rotates the object by the specified angle around the x-axis
-		void RotateX(const float angle);
-		/// rotates the object by the specified angle around the y-axis
-		void RotateY(const float angle);
-		/// rotates the object by the specified angle around the z-axis
-		void RotateZ(const float angle);
-		/// rotates the object by the specified angle around the specified axis
-		void Rotate(const glm::vec3& axis, const float angle);
-		/// rotate the object by the specified matrix
-		void Rotate(const glm::mat4& mat);
-		/// scales the object by the specified scale
-		void Scale(const glm::vec3& scale);
-		/// scales the object by the specified uniform scale
-		void Scale(const float scale);
-
-		/// returns the model matrix, the matrix is updated internally on demand
-		virtual glm::mat4 GetModelMatrix();
-
-		glm::mat4 model_matrix();
-		glm::vec3 GetLocalFrontVector();
-
-		/// returns a matrix representating rotation only, also regarding parent-transformations
-		glm::mat4 GetRotationMatrix();
-
-		/// returns a matrix representing the local rotation, without parent-transformations
-		glm::mat4 rotation_matrix();
-
-		/// returns the scale only, also regarding parent-transformations
-		glm::vec3 GetScale();
-
-		/// returns the local scale, without parent-transformations
-		glm::vec3 scale();
-
-		/// returns the position of the object (which is effectively m_translation)
-		glm::vec3 GetPosition();
-		/// returns the normalized front-vector, which is FRONT_VEC transformed by the transposed(inverse(modelMatrix))
-		glm::vec3 GetFrontVector();
-		/// returns the normalized up-vector, which is UP_VEC transformed by the transposed(inverse(modelMatrix))
-		glm::vec3 GetUpVector();
-		/// returns the cross product of front vector and up vector
-		glm::vec3 GetSideVector();
-
-		/// returns the local position, not regarding parent-transformations
-		glm::vec3 translation();
-
-		void LookAt(Transform* target);
-		void LookAt(const glm::vec3& target);
-		void LookAlong(const glm::vec3& direction);
-
-		void AlignUpVectorTowards(Transform* target);
-		void AlignUpVectorTowards(const glm::vec3& target);
-		void AlignUpVectorAlong(const glm::vec3& direction);
-
-		/// Returns the parent of this Transform, null means no parent
-		Transform* parent();
+		/** Parent transform or nullptr */
+		transform::ptr mParent;
+		/** List of child transforms */
+		std::vector<transform::ptr> mChilds;
 	};
 
-	void AttachTransform(Transform* parent, Transform* child);
-	void DetachTransform(Transform* parent, Transform* child);
+	void attach_transform(transform::ptr pParent, transform::ptr pChild);
+	void detach_transform(transform::ptr pParent, transform::ptr pChild);
+
+	static glm::vec3 back (const transform& pTransform) { return  pTransform.z_axis(); }
+	static glm::vec3 front(const transform& pTransform) { return -pTransform.z_axis(); }
+	static glm::vec3 right(const transform& pTransform) { return  pTransform.x_axis(); }
+	static glm::vec3 left (const transform& pTransform) { return -pTransform.x_axis(); }
+	static glm::vec3 up   (const transform& pTransform) { return  pTransform.y_axis(); }
+	static glm::vec3 down (const transform& pTransform) { return -pTransform.y_axis(); }
+	glm::vec3 front_wrt(const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 back_wrt (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 right_wrt(const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 left_wrt (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 up_wrt   (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 down_wrt (const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
+	void translate(transform& pTransform, const glm::vec3& pTranslation);
+	void rotate(transform& pTransform, const glm::quat& pRotation);
+	void scale(transform& pTransform, const glm::vec3& pScale);
+	void translate_wrt(transform& pTransform, const glm::vec3& pTranslation, glm::mat4 pReference = glm::mat4(1.0f));
+	void rotate_wrt(transform& pTransform, const glm::quat& pRotation, glm::mat4 pReference = glm::mat4(1.0f));
+	void scale_wrt(transform& pTransform, const glm::vec3& pScale, glm::mat4 pReference = glm::mat4(1.0f));
+
+	///**  */
+	//void LookAt(transform* target);
+	///**  */
+	//void LookAt(const glm::vec3& target);
+	///**  */
+	//void LookAlong(const glm::vec3& direction);
+
+	///**  */
+	//void AlignUpVectorTowards(transform* target);
+	///**  */
+	//void AlignUpVectorTowards(const glm::vec3& target);
+	///**  */
+	//void AlignUpVectorAlong(const glm::vec3& direction);
 }

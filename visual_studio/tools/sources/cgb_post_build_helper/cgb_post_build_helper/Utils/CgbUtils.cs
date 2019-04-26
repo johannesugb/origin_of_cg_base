@@ -113,7 +113,7 @@ namespace CgbPostBuildHelper.Utils
 			{
 				CgbFrameworkPath = ExtractValueForNamedArgument("-framework", args),
 				CgbExternalPath = ExtractValueForNamedArgument("-external", args),
-				TargetApi = configuration.Contains("opengl") 
+				TargetApi = configuration.Contains("gl") 
 							? BuildTargetApi.OpenGL 
 							: configuration.Contains("vulkan")
 							  ? BuildTargetApi.Vulkan

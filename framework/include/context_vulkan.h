@@ -55,7 +55,7 @@ namespace cgb
 		vk::Queue& presentation_queue() { return mPresentQueue; }
 		vk::Queue& transfer_queue() { return mTransferQueue; }
 
-		window* create_window(const window_params&, const swap_chain_params&);
+		window* create_window(const std::string&);
 
 		texture_handle create_texture()
 		{
@@ -185,7 +185,7 @@ namespace cgb
 		 *	@param pParams		[in] swap chain creation parameters
 		 *	@return				A newly created swap chain
 		 */
-		swap_chain_data create_swap_chain(const window* pWindow, const vk::SurfaceKHR& pSurface, const swap_chain_params& pParams);
+		swap_chain_data create_swap_chain(window* pWindow, const vk::SurfaceKHR& pSurface);
 
 		/** TODO: TBD */
 		vk::RenderPass create_render_pass(image_format pImageFormat, image_format pDepthFormat);
@@ -201,7 +201,7 @@ namespace cgb
 		/** TODO: TBD */
 		pipeline create_graphics_pipeline_for_swap_chain(
 			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, 
-			const swap_chain_data& pSwapChainData, 
+			swap_chain_data& pSwapChainData, 
 			image_format pDepthFormat,
 			const vk::VertexInputBindingDescription& pBindingDesc, 
 			size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,

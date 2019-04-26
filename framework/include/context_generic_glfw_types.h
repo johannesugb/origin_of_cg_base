@@ -2,13 +2,19 @@
 
 #include <GLFW/glfw3.h>
 
-// GLM:
+// GLM: 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <glm/ext.hpp>
+#include <glm/ext/quaternion_float.hpp>
+#include <glm/ext/quaternion_common.hpp>
+#include <glm/ext/quaternion_geometric.hpp>
+#include <glm/ext/quaternion_trigonometric.hpp>
+#include <glm/ext/quaternion_exponential.hpp>
+#include <glm/ext/quaternion_relational.hpp>
+#include <glm/ext/quaternion_transform.hpp>
 #include <glm/mat4x4.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform2.hpp>
@@ -29,43 +35,27 @@ namespace cgb
 	 */
 	struct monitor_handle
 	{
+		/** Gets a monitor handle to the primary monitor */
+		static monitor_handle primary_monitor()
+		{
+			return monitor_handle{ glfwGetPrimaryMonitor() };
+		}
+
+		/** Gets a monitor handle to ANY secondary monitor */
+		static monitor_handle secondary_monitor()
+		{
+			auto primary = primary_monitor();
+			int count;
+			GLFWmonitor** monitors = glfwGetMonitors(&count);
+			for (int i = 0; i < count; ++i) {
+				if (monitors[i] != primary.mHandle) {
+					return monitor_handle{ monitors[i] };
+				}
+			}
+			throw std::runtime_error("No secondary monitor found");
+		}
+
 		GLFWmonitor* mHandle;
-	};
-
-	/** Parameters for creating a GLFW window
-	 */
-	struct window_params
-	{
-		/** Desired height of the window */
-		std::optional<int> mInitialWidth;
-		
-		/** Desired width of the window */
-		std::optional<int> mInitialHeight;
-		
-		/** Window title */
-		std::string mWindowTitle;
-		
-		/** Optional monitor handle to assign the window to.
-		 *	If this is set, the window will run in fullscreen mode. 
-		 */
-		std::optional<monitor_handle> mMonitor;
-	};
-
-	/** Parameters about a framebuffer to be used.
-	 */
-	struct framebuffer_params
-	{
-		/** Set to true to enable/request a sRGB compatible framebuffer
-		 *	By default (i.e. if not set), it will not be enabled.
-		 */
-		std::optional<bool> mSrgbFormat;
-
-		/** Set the number of samples for an MSAA-enabled framebuffer.
-		 *	By default (i.e. if not set), the number of samples is set to 1,
-		 *	which means that MSAA is disabled.
-		 */
-		std::optional<int> mNumberOfMsaaSamples;
-
 	};
 
 	/** Different options on how to present the images in the back buffer on 
@@ -83,18 +73,4 @@ namespace cgb
 		triple_buffering
 	};
 
-	/** Parameters for the swap chain
-	 */
-	struct swap_chain_params
-	{
-		/** Parameters about the back buffer(s)
-		 */
-		framebuffer_params mFramebufferParams;
-
-		/** How to present the images in the back buffer on the surface.
-		 *	The default mode is context-specific. Immediate mode will not
-		 *	be chosen as the default but instead a more advanced one.
-		 */
-		std::optional<presentation_mode> mPresentationMode;
-	};
 }

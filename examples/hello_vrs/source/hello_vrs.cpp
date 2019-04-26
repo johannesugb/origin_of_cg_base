@@ -98,7 +98,7 @@ private:
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mMaterialResourceBundleLayout; // contains material properties staying same for all objects
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mMaterialObjectResourceBundleLayout; // contains material properties varying for each object
 
-	cgb::QuakeCamera mCamera;
+	cgb::quake_camera mCamera;
 
 	cgb::AmbientLight m_ambient_light;
 	cgb::DirectionalLight m_dir_light;
@@ -159,6 +159,14 @@ public:
 
 			mComputeVulkanPipeline->bake();
 			mVrsCasComputePipeline->bake();
+		}
+		if (cgb::input().key_pressed(cgb::key_code::tab)) {
+			if (mCamera.is_enabled()) {
+				mCamera.disable();
+			}
+			else {
+				mCamera.enable();
+			}
 		}
 	}
 
@@ -308,7 +316,7 @@ private:
 
 		UniformBufferObject ubo = {};
 		ubo.model = glm::mat4(1.0f);
-		ubo.model[1][1] *= -1;
+		//ubo.model[1][1] *= -1;
 		ubo.mvp = ubo.model;
 		renderObject2->update_uniform_buffer(0, ubo);
 		renderObject2->update_uniform_buffer(1, ubo);
@@ -371,14 +379,15 @@ private:
 			mResourceBundleGroup->allocate_resource_bundle(renderObject2->get_resource_bundles()[i].get());
 		}
 
-		mCamera.set_position(glm::vec3(-0.67, 0.53, 6.07));
-		mCamera.LookAlong(glm::vec3(0.0f, 0.0f, -1.0f));
-		mCamera.SetPerspectiveProjection(20.0f, cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
+		mCamera.set_translation(glm::vec3(-0.67, 0.53, 6.07));
+		//mCamera.LookAlong(glm::vec3(0.0f, 0.0f, -1.0f));
+		mCamera.set_perspective_projection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.5f, 100.0f);
+		//mQuakeCam.set_orthographic_projection(-5, 5, -5, 5, 0.5, 100);
 		cgb::current_composition().add_element(mCamera);
 
 		UniformBufferObject uboCam{};
 		uboCam.model = mesh.transformation_matrix();
-		uboCam.view = mCamera.CalculateViewMatrix();
+		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
 		uboCam.mv = ubo.view * ubo.model;
 		ubo.mvp = ubo.proj * ubo.view * ubo.model;
@@ -556,14 +565,20 @@ private:
 		ubo.model = glm::mat4(1.0f);
 		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), imagePresenter->get_swap_chain_extent().width / (float)imagePresenter->get_swap_chain_extent().height, 0.1f, 10.0f);
-		ubo.proj[1][1] *= -1;
+		//ubo.proj[1][1] *= -1;
+
+		// !ACHTUNG! Neu von JU:
+		ubo.model = glm::mat4(1.0f);
+		ubo.view = mCamera.view_matrix();
+		ubo.proj = mCamera.projection_matrix();
 		ubo.mvp = ubo.proj * ubo.view * ubo.model;
+
 		renderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, ubo);
 
 		UniformBufferObject uboCam{};
-		uboCam.view = mCamera.CalculateViewMatrix();
+		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = glm::perspective(glm::radians(45.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f); mCamera.projection_matrix();
-		uboCam.proj[1][1] *= -1;
+		//uboCam.proj[1][1] *= -1;
 
 		// update point light position with view matrix 
 		mDirLightBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&m_dir_light.GetGpuData(glm::mat3(uboCam.view)), sizeof(cgb::DirectionalLightGpuData));
@@ -586,8 +601,8 @@ private:
 			sponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
 		}
 
-		float nearPlane = mCamera.near_plane();
-		float farPlane = mCamera.far_plane();
+		float nearPlane = mCamera.near_plane_distance();
+		float farPlane = mCamera.far_plane_distance();
 		mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 
 		// start drawing, record draw commands, etc.
@@ -956,12 +971,10 @@ int main()
 		cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
 
 		// Create a window which we're going to use to render to
-		auto windowParams = cgb::window_params{
-			std::nullopt,
-			std::nullopt,
-			"Hello VRS World!"
-		};
-		auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
+		auto mainWnd = cgb::context().create_window("Hello VRS!");
+		mainWnd->set_resolution({ 1600, 900 });
+		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
+		mainWnd->open();
 
 		// Create a "behavior" which contains functionality of our program
 		auto vrsBehavior = vrs_behavior();
@@ -972,9 +985,7 @@ int main()
 		//  - an executor
 		//  - a window
 		//  - a behavior
-		auto hello = cgb::composition<cgb::varying_update_only_timer, cgb::sequential_executor>({
-				mainWnd
-				}, {
+		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
 					&vrsBehavior
 				});
 

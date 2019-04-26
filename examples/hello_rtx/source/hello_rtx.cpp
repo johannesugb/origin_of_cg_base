@@ -63,9 +63,8 @@ class hello_behavior : public cgb::cg_element
 	};
 
 public:
-	hello_behavior(cgb::window* pMainWnd) 
-		: mMainWnd(pMainWnd)
-		, mVertices({	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	hello_behavior() 
+		: mVertices({	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
 						{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
 						{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
 						{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
@@ -117,10 +116,10 @@ public:
 		cgb::copy(stagingBuffer, mIndexBuffer);
 	}
 
-	static void load_model(std::string inPath, std::unique_ptr<cgb::Model>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer)
+	static void load_model(std::string inPath, std::unique_ptr<cgb::Model>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer, int mesh_index)
 	{
 		outModel = cgb::Model::LoadFromFile(inPath, glm::mat4(1.0f));
-		auto& mesh = outModel->mesh_at(0);
+		auto& mesh = outModel->mesh_at(mesh_index);
 		
 		{
 			auto stagingBuffer = cgb::buffer::create(
@@ -562,7 +561,7 @@ public:
 	void initialize() override
 	{
 		cgb::context().create_sync_objects(); // <-- TODO
-		auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface, cgb::swap_chain_params{});
+		auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface);
 		cgb::context().mSurfSwap.emplace_back(std::make_unique<cgb::swap_chain_data>(std::move(swapChain)));
 
 		// temp:
@@ -574,15 +573,15 @@ public:
 
 		auto rtProps = cgb::context().get_ray_tracing_properties();
 
-		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(mMainWnd);
+		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(cgb::context().main_window());
 		assert(mSwapChainData);
 
 		// create the buffer and its memory
 		create_vertex_buffer();
 		create_index_buffer();
 
-		load_model("assets/chalet.obj", mModel, mModelVertices, mModelIndices);
-		load_model("assets/sphere.obj", mSphere, mSphereVertices, mSphereIndices);
+		load_model("assets/sponza_structure.obj", mModel, mModelVertices, mModelIndices, 2);
+		load_model("assets/sphere.obj", mSphere, mSphereVertices, mSphereIndices, 0);
 		create_texture_image();
 		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
 		mSampler = cgb::sampler::create();
@@ -613,13 +612,13 @@ public:
 
 			mPipeline = cgb::context().create_graphics_pipeline_for_window(
 				shaderInfos, 
-				mMainWnd, 
+				cgb::context().main_window(), 
 				cgb::image_format(mDepthImage->mInfo.format),
 				Vertex::binding_description(), 
 				vertexAttribDesc.size(), 
 				vertexAttribDesc.data(), 
 				{ mDescriptorSetLayout.mDescriptorSetLayout });
-			mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, mMainWnd, mDepthImageView);
+			mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, cgb::context().main_window(), mDepthImageView);
 			mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
 		}
 
@@ -674,12 +673,12 @@ public:
 				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height, 1,
 				cgb::context().dynamic_dispatch());
 
-			cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal));
-			cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eTransferRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal));
+			//cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal));
+			//cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eTransferRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal));
 
-			cmdbfr.copy_image(*mOffscreenImages[i], mSwapChainData->mSwapChainImages[i]);
+			//cmdbfr.copy_image(*mOffscreenImages[i], mSwapChainData->mSwapChainImages[i]);
 
-			cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlagBits::eTransferWrite, vk::AccessFlags(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR));
+			//cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlagBits::eTransferWrite, vk::AccessFlags(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR));
 	
 
 			cmdbfr.end_recording();
@@ -687,9 +686,9 @@ public:
 
 
 		// Add the camera to the composition (and let it handle the updates)
-		mQuakeCam.set_position(glm::vec3(-3.0f, 1.0f, 0.0f));
-		mQuakeCam.LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
-		mQuakeCam.SetPerspectiveProjection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f);
+		mQuakeCam.set_translation({ 0.0f, 0.0f, 0.0f });
+		mQuakeCam.set_perspective_projection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.5f, 100.0f);
+		//mQuakeCam.set_orthographic_projection(-5, 5, -5, 5, 0.5, 100);
 		cgb::current_composition().add_element(mQuakeCam);
 	}
 
@@ -697,6 +696,17 @@ public:
 	{
 		if (cgb::input().key_pressed(cgb::key_code::escape)) {
 			cgb::current_composition().stop();
+		}
+		if (cgb::input().key_pressed(cgb::key_code::c)) {
+			cgb::context().main_window()->set_cursor_pos({ 666.0, 100 });
+		}
+		if (cgb::input().key_pressed(cgb::key_code::tab)) {
+			if (mQuakeCam.is_enabled()) {
+				mQuakeCam.disable();
+			}
+			else {
+				mQuakeCam.enable();
+			}
 		}
 	}
 
@@ -726,8 +736,9 @@ public:
 			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
 
 		UniformBufferObject ubo{
-			glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
-			mQuakeCam.CalculateViewMatrix(),
+			//glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
+			glm::scale(glm::vec3(0.01f)),
+			mQuakeCam.view_matrix(),
 			mQuakeCam.projection_matrix()
 			//glm::rotate(glm::mat4(1.0f), cgb::time().frame_time() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 			//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
@@ -736,7 +747,7 @@ public:
 		// GLM was originally designed for OpenGL, where the Y coordinate of the clip coordinates is inverted. 
 		//The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in 
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
-		ubo.proj[1][1] *= -1;
+		//ubo.proj[1][1] *= -1;
 		mUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
 		mRtUniformBuffers[imageIndex][0].fill_host_coherent_memory(&ubo);
 		glm::vec4 color1(1.0, 1.0, 0.0, 0.0);
@@ -753,7 +764,7 @@ public:
 			.setPCommandBuffers(&mCmdBfrs[imageIndex].mCommandBuffer)
 			.setSignalSemaphoreCount(1u)
 			.setPSignalSemaphores(&cgb::context().render_finished_semaphore_current_frame());
-		// TODO: This only works because we are using cgb::varying_update_only_timer which makes a call to render() in each and every frame
+		// TODO: This only works because we are using cgb::varying_update_timer which makes a call to render() in each and every frame
 		cgb::context().graphics_queue().submit(1u, &submitInfo, cgb::context().fence_current_frame());
 
 		auto presentInfo = vk::PresentInfoKHR()
@@ -768,7 +779,6 @@ public:
 #endif
 
 private:
-	cgb::window* mMainWnd;
 	const std::vector<Vertex> mVertices;
 	const std::vector<uint16_t> mIndices;
 	std::unique_ptr<cgb::Model> mModel;
@@ -808,7 +818,7 @@ private:
 	std::vector<cgb::image_view> mOffscreenImageViews;
 #endif
 
-	cgb::QuakeCamera mQuakeCam;
+	cgb::quake_camera mQuakeCam;
 
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -831,15 +841,13 @@ int main()
 
 
 		// Create a window which we're going to use to render to
-		auto windowParams = cgb::window_params{
-			std::nullopt,
-			std::nullopt,
-			"Hello cg_base World!"
-		};
-		auto mainWnd = cgb::context().create_window(windowParams, cgb::swap_chain_params{});
+		auto mainWnd = cgb::context().create_window("Hello RTX!");
+		mainWnd->set_resolution({ 1600, 900 });
+		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
+		mainWnd->open();
 
 		// Create a "behavior" which contains functionality of our program
-		auto helloBehavior = hello_behavior(mainWnd);
+		auto helloBehavior = hello_behavior();
 
 		// Create a composition of all things that define the essence of 
 		// our program, which there are:
@@ -847,9 +855,7 @@ int main()
 		//  - an executor
 		//  - a window
 		//  - a behavior
-		auto hello = cgb::composition<cgb::varying_update_only_timer, cgb::sequential_executor>({
-				mainWnd 
-			}, {
+		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
 				&helloBehavior
 			});
 

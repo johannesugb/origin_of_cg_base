@@ -30,8 +30,8 @@ namespace cgb
 			mTimer(),
 			mExecutor(this),
 			mInputBuffers(),
-			mInputBufferUpdateIndex(0),
-			mInputBufferConsumerIndex(1),
+			mInputBufferForegroundIndex(0),
+			mInputBufferBackgroundIndex(1),
 			mShouldStop(false),
 			mShouldSwapInputBuffers(false),
 			mInputBufferGoodToGo(true),
@@ -39,13 +39,13 @@ namespace cgb
 		{
 		}
 
-		composition(std::initializer_list<window*> pWindows, std::initializer_list<cg_element*> pObjects) :
+		composition(std::initializer_list<cg_element*> pObjects) :
 			mElements(pObjects),
 			mTimer(),
 			mExecutor(this),
 			mInputBuffers(),
-			mInputBufferUpdateIndex(0),
-			mInputBufferConsumerIndex(1),
+			mInputBufferForegroundIndex(0),
+			mInputBufferBackgroundIndex(1),
 			mShouldStop(false),
 			mShouldSwapInputBuffers(false),
 			mInputBufferGoodToGo(true),
@@ -63,7 +63,12 @@ namespace cgb
 		 *	current user input data */
 		input_buffer& input() override
 		{
-			return mInputBuffers[mInputBufferConsumerIndex];
+			return mInputBuffers[mInputBufferForegroundIndex];
+		}
+
+		input_buffer& background_input_buffer() override
+		{
+			return mInputBuffers[mInputBufferBackgroundIndex];
 		}
 
 		/** Returns the @ref cg_element at the given index */
@@ -183,7 +188,10 @@ namespace cgb
 
 				wait_for_input_buffers_swapped(thiz);
 
-				// 2. fixed_update
+				// 2. check and possibly issue on_enable event handlers
+				thiz->mExecutor.execute_handle_enablings(thiz->mElements);
+
+				// 3. fixed_update
 				if ((frameType & timer_frame_type::fixed) != timer_frame_type::none)
 				{
 					thiz->mExecutor.execute_fixed_updates(thiz->mElements);
@@ -191,19 +199,19 @@ namespace cgb
 
 				if ((frameType & timer_frame_type::varying) != timer_frame_type::none)
 				{
-					// 3. update
+					// 4. update
 					thiz->mExecutor.execute_updates(thiz->mElements);
 
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
 					please_swap_input_buffers(thiz);
 
-					// 4. render
+					// 5. render
 					thiz->mExecutor.execute_renders(thiz->mElements);
 
-					// 5. render_gizmos
+					// 6. render_gizmos
 					thiz->mExecutor.execute_render_gizmos(thiz->mElements);
 					
-					// 6. render_gui
+					// 7. render_gui
 					thiz->mExecutor.execute_render_guis(thiz->mElements);
 				}
 				else
@@ -211,6 +219,9 @@ namespace cgb
 					// If not done from inside the positive if-branch, tell the main thread of our input buffer update desire here:
 					please_swap_input_buffers(thiz);
 				}
+
+				// 8. check and possibly issue on_disable event handlers
+				thiz->mExecutor.execute_handle_disablings(thiz->mElements);
 
 				// signal context
 				cgb::context().end_frame();
@@ -229,6 +240,7 @@ namespace cgb
 		void add_element_immediately(cg_element& pElement) override
 		{
 			mElements.push_back(&pElement);
+			// 1. initialize
 			pElement.initialize();
 			// Remove from mElementsToBeAdded container (if it was contained in it)
 			mElementsToBeAdded.erase(std::remove(std::begin(mElementsToBeAdded), std::end(mElementsToBeAdded), &pElement));
@@ -243,6 +255,7 @@ namespace cgb
 		{
 			if (!pIsBeingDestructed) {
 				assert(std::find(std::begin(mElements), std::end(mElements), &pElement) != mElements.end());
+				// 9. finalize
 				pElement.finalize();
 				// Remove from the actual elements-container
 				mElements.erase(std::remove(std::begin(mElements), std::end(mElements), &pElement));
@@ -271,13 +284,13 @@ namespace cgb
 			cgb::context().begin_composition();
 
 			// Enable receiving input
-			auto windows_for_input = context().select_windows([](auto * w) { return w->is_input_enabled(); });
+			auto windows_for_input = context().find_windows([](auto * w) { return w->is_input_enabled(); });
 			for (auto* w : windows_for_input)
 			{
 				w->set_is_in_use(true);
 				// Write into the buffer at mInputBufferUpdateIndex,
 				// let client-objects read from the buffer at mInputBufferConsumerIndex
-				context().start_receiving_input_from_window(*w, mInputBuffers[mInputBufferUpdateIndex]);
+				context().start_receiving_input_from_window(*w, mInputBuffers[mInputBufferForegroundIndex]);
 				mWindowsReceivingInputFrom.push_back(w);
 			}
 
@@ -289,12 +302,19 @@ namespace cgb
 			
 			while (!mShouldStop)
 			{
+				context().work_off_all_pending_main_thread_actions();
+
 				if (mShouldSwapInputBuffers)
 				{
 					auto* windowForCursorActions = context().window_in_focus();
-					std::swap(mInputBufferUpdateIndex, mInputBufferConsumerIndex);
-					mInputBuffers[mInputBufferUpdateIndex].prepare_for_next_frame(mInputBuffers[mInputBufferConsumerIndex], windowForCursorActions);
-					context().change_target_input_buffer(mInputBuffers[mInputBufferUpdateIndex]);
+					// The buffer which has been updated becomes the buffer which will be consumed in the next frame
+					//  update-buffer = previous frame, i.e. done
+					//  consumer-index = updated in the next frame, i.e. to be done
+					input_buffer::prepare_for_next_frame(
+						mInputBuffers[mInputBufferBackgroundIndex], 
+						mInputBuffers[mInputBufferForegroundIndex], 
+						windowForCursorActions);
+					std::swap(mInputBufferForegroundIndex, mInputBufferBackgroundIndex);
 					have_swapped_input_buffers();
 				}
 
@@ -316,7 +336,7 @@ namespace cgb
 			// Signal context before finalization
 			cgb::context().end_composition();
 
-			// 7. finalize
+			// 9. finalize
 			for (auto& o : mElements)
 			{
 				o->finalize();
@@ -344,8 +364,8 @@ namespace cgb
 		TTimer mTimer;
 		TExecutor mExecutor;
 		std::array<input_buffer, 2> mInputBuffers;
-		int32_t mInputBufferUpdateIndex;
-		int32_t mInputBufferConsumerIndex;
+		int32_t mInputBufferForegroundIndex;
+		int32_t mInputBufferBackgroundIndex;
 		std::atomic_bool mShouldStop;
 		std::atomic_bool mShouldSwapInputBuffers;
 		std::atomic_bool mInputBufferGoodToGo;

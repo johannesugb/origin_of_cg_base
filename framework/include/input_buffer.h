@@ -24,11 +24,6 @@ namespace cgb
 		 */
 		void reset(std::optional<window> pWindow = std::nullopt);
 
-		/** Prepares this input buffer for the next frame based on data of
-		 *	the previous frame. This means that key-down states are preserved.
-		 */
-		void prepare_for_next_frame(const input_buffer& pPreviousFrame, window* pWindow = nullptr);
-
 		/** @brief Keyboard key pressed-down?
 		 *
 		 *	True if the given keyboard key has been pressed down in the 
@@ -74,58 +69,68 @@ namespace cgb
 		 */
 		bool mouse_button_down(uint8_t);
 
-		/** @brief Cursor position in the last active window
-		 *
-		 *	Returns the position of the cursor in the window where it 
-		 *	last active.
-		 */
-		const glm::dvec2& cursor_position();
-
-		/** @brief Cursor position in the given window
-		 *
+		/** @brief Cursor position w.r.t. the window which is currently in focus
 		 *	Returns the position of the cursor w.r.t. the given window.
 		 */
-		glm::dvec2 cursor_position(const window&);
+		const glm::dvec2& cursor_position() const;
+
+		/** @brief The amount of how much the cursor position has changed w.r.t. 
+		 *	to the previous frame.
+		 */
+		const glm::dvec2& delta_cursor_position() const;
 
 		/** @brief Mouse wheel's scroll delta
-		 *
 		 *	Returns the accumulated scrolling delta performed with
 		 *	the mouse wheel during the current input frame.
 		 */
-		const glm::dvec2& scroll_delta();
+		const glm::dvec2& scroll_delta() const;
 
-		/** Sets whether or not the cursor should be hidden */
-		void set_cursor_hidden(bool pHidden);
+		/** Sets whether or not the cursor should be disabled */
+		void set_cursor_disabled(bool pDisabled);
 
 		/** Returns if the cursor is hidden or not */
-		bool is_cursor_hidden() const;
-
-		/** Sets the cursor position to the given coordinates */
-		void set_cursor_position(glm::dvec2 pPosition);
+		bool is_cursor_disabled() const;
 
 		/** Positions the cursor in the center of the screen */
-		void center_cursor_position(window& pWindow);
+		void center_cursor_position();
+
+		/** Positions the cursor at the new coordinates */
+		void set_cursor_position(glm::dvec2 pNewPosition);
+
+		/** Prepares this input buffer for the next frame based on data of
+		 *	the previous frame. This means that key-down states are preserved.
+		 */
+		static void prepare_for_next_frame(input_buffer& pFrontBufferToBe, input_buffer& pBackBufferToBe, window* pWindow = nullptr);
 
 	private:
 		/** Keyboard button states */
 		std::array<key_state, static_cast<size_t>(key_code::max_value)> mKeyboardKeys;
 
-		/** Position of the mouse cursor */
-		glm::dvec2 mCursorPosition;
-
 		/** Mouse button states */
 		std::array<key_state, 8> mMouseKeys;
 
+		/** The window which is in focus when this buffer is active. */
+		window* mWindow;
+
+		/** Position of the mouse cursor */
+		glm::dvec2 mCursorPosition;
+
+		/** How much the mouse cursor has moved w.r.t. the previous frame */
+		glm::dvec2 mDeltaCursorPosition;
+
 		/** Scrolling wheel position data */
-		glm::dvec2 mScrollPosition;
+		glm::dvec2 mScrollDelta;
 
-		/** True if the cursor is hidden, false otherwise */
-		bool mCursorHidden;
+		/** True if the cursor is disabled, false otherwise */
+		bool mCursorDisabled;
 
-		/** Has value if the cursor's visibility should be changed */
-		std::optional<bool> mSetCursorHidden;
+		/** Has value if the cursor's position should be cetered */
+		std::optional<bool> mCenterCursorPosition;
 
 		/** Has value if the cursor's position should be changed */
 		std::optional<glm::dvec2> mSetCursorPosition;
+
+		/** Has value if the cursor's mode should be changed */
+		std::optional<bool> mSetCursorDisabled;
 	};
 }

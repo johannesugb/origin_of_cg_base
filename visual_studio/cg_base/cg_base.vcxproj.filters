@@ -4,16 +4,10 @@
     <ClCompile Include="..\..\framework\src\composition_interface.cpp">
       <Filter>Source Files\general</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\window.cpp">
-      <Filter>Source Files\environment</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\log.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp">
-      <Filter>Source Files\timer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\framework\src\varying_update_only_timer.cpp">
       <Filter>Source Files\timer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\input_buffer.cpp">
@@ -151,6 +145,12 @@
     <ClCompile Include="..\..\framework\src_e186\TexInfo.cpp">
       <Filter>Source Files\e186</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\window_base.cpp">
+      <Filter>Source Files\environment</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\varying_update_timer.cpp">
+      <Filter>Source Files\timer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -165,9 +165,6 @@
     <ClInclude Include="..\..\framework\include\composition_interface.h">
       <Filter>Header Files\general</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\window.h">
-      <Filter>Header Files\environment</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\log.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
@@ -178,9 +175,6 @@
       <Filter>Header Files\timer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\timer_interface.h">
-      <Filter>Header Files\timer</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\varying_update_only_timer.h">
       <Filter>Header Files\timer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\input_buffer.h">
@@ -329,6 +323,12 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include_e186\VertexAttribLocation.h">
       <Filter>Header Files\e186</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\window_base.h">
+      <Filter>Header Files\environment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\varying_update_timer.h">
+      <Filter>Header Files\timer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,25 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <None Include="..\..\..\framework\shader\rt_09_first.rchit">
+    <None Include="..\..\..\framework\shaders\rt_09_first.rchit">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\framework\shader\rt_09_first.rgen">
+    <None Include="..\..\..\framework\shaders\rt_09_first.rgen">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\framework\shader\rt_09_first.rmiss">
+    <None Include="..\..\..\framework\shaders\rt_09_first.rmiss">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\framework\shader\rt_09_secondary.rchit">
+    <None Include="..\..\..\framework\shaders\rt_09_secondary.rchit">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\framework\shader\rt_09_secondary.rmiss">
+    <None Include="..\..\..\framework\shaders\rt_09_secondary.rmiss">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\framework\shader\shader.frag">
+    <None Include="..\..\..\framework\shaders\shader.frag">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\framework\shader\shader.vert">
+    <None Include="..\..\..\framework\shaders\shader.vert">
       <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\framework\assets\chalet\chalet.jpg">
@@ -34,7 +34,6 @@
     <None Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
       <Filter>assets</Filter>
     </None>
-    <None Include="C:\Users\Johi\Desktop\Sponza am Desktop\sponza_fabric.obj\sponza_structure2.obj" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="assets">
