@@ -55,15 +55,6 @@
     <ClCompile Include="..\precompiled_headers\src\cg_stdafx.cpp">
       <Filter>Source Files\precompiled_headers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\external\universal\src\imgui_draw.cpp">
-      <Filter>Source Files\external</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\universal\src\imgui_demo.cpp">
-      <Filter>Source Files\external</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\external\universal\src\imgui.cpp">
-      <Filter>Source Files\external</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\external\universal\src\format.cc">
       <Filter>Source Files\external</Filter>
     </ClCompile>
@@ -132,6 +123,18 @@
     </ClCompile>
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp">
       <Filter>Source Files\timer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_demo.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_draw.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_widgets.cpp">
+      <Filter>Source Files\external</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -388,6 +391,12 @@
     </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{15f8ac6c-d112-4381-ba3f-b40b491e5a90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ui">
+      <UniqueIdentifier>{f803aed2-06ab-4a2f-b409-9c74eb85a01b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{b3702408-1275-441e-96c8-274bca405c65}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

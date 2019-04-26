@@ -26,6 +26,9 @@ namespace cgb
 
 		/** Fill this vector with required device extensions, if required */
 		extern std::vector<const char*> gRequiredDeviceExtensions;
+
+		/** Set to true to not use IMGUI, i.e. not initialize it, nothing. */
+		extern bool gDisableImGui;
 	}
 
 #if defined(USE_OPENGL46_CONTEXT)

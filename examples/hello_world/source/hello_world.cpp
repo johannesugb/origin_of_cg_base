@@ -1,5 +1,3 @@
-// hello_world.cpp : Defines the entry point for the console application.
-//
 #include "cg_base.h"
 
 class hello_behavior : public cgb::cg_element
@@ -18,7 +16,6 @@ class hello_behavior : public cgb::cg_element
 	}
 
 };
-
 
 int main()
 {

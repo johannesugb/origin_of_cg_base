@@ -160,6 +160,60 @@ namespace cgb
 			context().mTmpMainWindow = &w;
 			context().mTmpSurface = surface;
 		});
+
+		if (!settings::gDisableImGui) {
+			// Init and wire-in IMGUI
+			wnd->mPostCreateActions.push_back([](cgb::window& w) {
+
+				if (0u == w.id() && w.handle()) { // Do this only once, i.e. when the first window has been created
+
+					// Setup Dear ImGui context
+					IMGUI_CHECKVERSION();
+					ImGui::CreateContext();
+					ImGuiIO& io = ImGui::GetIO(); (void)io;
+					//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+					//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+
+					// Setup Dear ImGui style
+					ImGui::StyleColorsDark();
+					//ImGui::StyleColorsClassic();
+
+					// Setup Platform/Renderer bindings
+					ImGui_ImplGlfw_InitForVulkan(w.handle()->mHandle, true);
+
+					//struct ImGui_ImplVulkan_InitInfo
+					//{
+					//	VkInstance          Instance;
+					//	VkPhysicalDevice    PhysicalDevice;
+					//	VkDevice            Device;
+					//	uint32_t            QueueFamily;
+					//	VkQueue             Queue;
+					//	VkPipelineCache     PipelineCache;
+					//	VkDescriptorPool    DescriptorPool;
+					//	uint32_t            MinImageCount;          // >= 2
+					//	uint32_t            ImageCount;             // >= MinImageCount
+					//	const VkAllocationCallbacks* Allocator;
+					//	void                (*CheckVkResultFn)(VkResult err);
+					//};
+
+					ImGui_ImplVulkan_InitInfo init_info = {};
+					init_info.Instance = context().vulkan_instance();
+					init_info.PhysicalDevice = context().physical_device();
+					init_info.Device = context().logical_device();;
+					init_info.QueueFamily = context().graphics_queue_index();
+					init_info.Queue = context().graphics_queue();
+					init_info.PipelineCache = VK_NULL_HANDLE;
+					init_info.DescriptorPool = context().get_descriptor_pool().mDescriptorPool;
+					init_info.Allocator = VK_NULL_HANDLE;
+					init_info.MinImageCount = sActualMaxFramesInFlight;
+					// TODO: proceed here
+					init_info.ImageCount = wd->ImageCount;
+					init_info.CheckVkResultFn = check_vk_result;
+					ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
+				}
+			});
+		}
+
 		return wnd;
 	}
 
@@ -1203,19 +1257,52 @@ namespace cgb
 			std::array poolSizes = {
 				vk::DescriptorPoolSize()
 					.setType(vk::DescriptorType::eUniformBuffer)
-					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+					.setDescriptorCount(1024u) // TODO: is that a good pool size? and what to do beyond that number?
 				,
 				vk::DescriptorPoolSize()
 					.setType(vk::DescriptorType::eCombinedImageSampler)
-					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+					.setDescriptorCount(1024u) // TODO: is that a good pool size? and what to do beyond that number?
 				,
 				vk::DescriptorPoolSize()
 					.setType(vk::DescriptorType::eStorageImage)
-					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+					.setDescriptorCount(1024u) // TODO: is that a good pool size? and what to do beyond that number?
 				,
 				vk::DescriptorPoolSize()
 					.setType(vk::DescriptorType::eAccelerationStructureNV)
-					.setDescriptorCount(128u) // TODO: is that a good pool size? and what to do beyond that number?
+					.setDescriptorCount(1024u) // TODO: is that a good pool size? and what to do beyond that number?
+				,
+				// Added because of IMGUI:
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eSampler)
+					.setDescriptorCount(1024u)
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eSampledImage)
+					.setDescriptorCount(1024u)
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eUniformTexelBuffer)
+					.setDescriptorCount(1024u)
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eStorageTexelBuffer)
+					.setDescriptorCount(1024u)
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eStorageBuffer)
+					.setDescriptorCount(1024u)
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eUniformBufferDynamic)
+					.setDescriptorCount(1024u)
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eStorageBufferDynamic)
+					.setDescriptorCount(1024u)
+				,
+				vk::DescriptorPoolSize()
+					.setType(vk::DescriptorType::eInputAttachment)
+					.setDescriptorCount(1024u)
 			};
 
 			auto poolInfo = vk::DescriptorPoolCreateInfo()

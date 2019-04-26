@@ -1,5 +1,6 @@
 #pragma once
 #include "context_generic_glfw_types.h"
+#include "imgui_impl_glfw.h"
 
 namespace cgb
 {

@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include "context_generic_glfw.h"
 #include "context_opengl46_types.h"
+#include "imgui_impl_opengl3.h"
 
 namespace cgb
 {

@@ -17,5 +17,7 @@ namespace cgb
 		};
 
 		std::vector<const char*> gRequiredDeviceExtensions;
+
+		bool gDisableImGui = false;
 	}
 }

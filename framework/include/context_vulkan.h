@@ -11,6 +11,7 @@
 #include <vulkan/vulkan.hpp>
 #include "context_vulkan_types.h"
 #include "context_generic_glfw.h"
+#include "imgui_impl_vulkan.h"
 
 namespace cgb
 {
