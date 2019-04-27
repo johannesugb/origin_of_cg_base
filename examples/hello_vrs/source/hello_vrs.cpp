@@ -315,6 +315,12 @@ private:
 		renderObject2 = new cgb::vulkan_render_object(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
 
 		UniformBufferObject ubo = {};
+
+		// -----> !ACHTUNG! Neu von JU <------
+		ubo.view = mCamera.view_matrix();
+		ubo.proj = mCamera.projection_matrix();
+		// -----------------------------------
+
 		ubo.model = glm::mat4(1.0f);
 		//ubo.model[1][1] *= -1;
 		ubo.mvp = ubo.model;
@@ -567,11 +573,12 @@ private:
 		ubo.proj = glm::perspective(glm::radians(45.0f), imagePresenter->get_swap_chain_extent().width / (float)imagePresenter->get_swap_chain_extent().height, 0.1f, 10.0f);
 		//ubo.proj[1][1] *= -1;
 
-		// !ACHTUNG! Neu von JU:
+		// -----> !ACHTUNG! Neu von JU <------
 		ubo.model = glm::mat4(1.0f);
 		ubo.view = mCamera.view_matrix();
 		ubo.proj = mCamera.projection_matrix();
 		ubo.mvp = ubo.proj * ubo.view * ubo.model;
+		// -----------------------------------
 
 		renderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, ubo);
 
@@ -579,6 +586,11 @@ private:
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = glm::perspective(glm::radians(45.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f); mCamera.projection_matrix();
 		//uboCam.proj[1][1] *= -1;
+
+		// -----> !ACHTUNG! Neu von JU <------
+		uboCam.view = mCamera.view_matrix();
+		uboCam.proj = mCamera.projection_matrix();
+		// -----------------------------------
 
 		// update point light position with view matrix 
 		mDirLightBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&m_dir_light.GetGpuData(glm::mat3(uboCam.view)), sizeof(cgb::DirectionalLightGpuData));

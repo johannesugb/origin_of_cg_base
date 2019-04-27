@@ -118,7 +118,7 @@ public:
 
 	static void load_model(std::string inPath, std::unique_ptr<cgb::Model>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer, int mesh_index)
 	{
-		outModel = cgb::Model::LoadFromFile(inPath, glm::mat4(1.0f));
+		outModel = cgb::Model::LoadFromFile(inPath, glm::mat4(1.0f), nullptr, cgb::ModelLoaderFlags::MOLF_default);
 		auto& mesh = outModel->mesh_at(mesh_index);
 		
 		{
