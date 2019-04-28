@@ -387,7 +387,7 @@ private:
 
 		mCamera.set_translation(glm::vec3(-0.67, 0.53, 6.07));
 		//mCamera.LookAlong(glm::vec3(0.0f, 0.0f, -1.0f));
-		mCamera.set_perspective_projection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.5f, 100.0f);
+		mCamera.set_perspective_projection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 100.0f);
 		//mQuakeCam.set_orthographic_projection(-5, 5, -5, 5, 0.5, 100);
 		cgb::current_composition().add_element(mCamera);
 
