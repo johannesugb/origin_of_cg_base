@@ -30,7 +30,7 @@ vec3 project(vec4 pos)
 vec3 NDCToWorld(vec3 posNDC)
 {
 	vec2 pos = posNDC.xy;
-	vec4 positionVS =  vec4(pos.xy * 2 - 1, 0, 1) * vec4(1, -1, 1, 1);
+	vec4 positionVS =  pushConst.invPMatrix * vec4(pos.xy * 2 - 1, 0, 1) * vec4(1, 1, 1, 1);
 	vec3 viewRay = vec3(positionVS.xy / positionVS.z, 1.0f) * 1.0; // view rays are facing to the camera due to negative z axis, inverting here solves the problem
 	float linearDepth = pushConst.projAScale.y / (posNDC.z - pushConst.projAScale.x);
 	vec3 position_vs = viewRay * linearDepth;
@@ -70,12 +70,14 @@ void main() {
 
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
 
-	float scaledVal = abs(clamp(frameVal.x * 8 * 2 - 0.75,-1,1));
+	float scaledVal = abs(clamp(frameVal.x * 2 - 0.75,-1,1));
 	float shadingRate = (scaledVal * scaledVal); // current texel diff
-	shadingRate = shadingRate * 12;
+	shadingRate = shadingRate * 12.0;
 	//shadingRate = (shadingRate * 2/4 + prevShadingRate.x * 2/4);
 	//shadingRate = 12;
-	imageStore(targetImage, uv, uvec4(shadingRate,0,0,0));
+	//shadingRate = shadingRate / (frameVal.y * frameVal.z * 16.0);
+	//shadingRate = (frameVal.y * frameVal.z) * 1000;
+	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 
 	imageStore(debugImage, uv, vec4(vec3(scaledVal * scaledVal + 0.5), 1.0));
 }

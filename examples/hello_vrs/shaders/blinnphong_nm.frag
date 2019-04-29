@@ -1,5 +1,6 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_NV_shading_rate_image : enable
 
 #define MAX_COUNT_POINT_LIGHTS 100
 #define PI 3.1415926535897932384626433832795
@@ -241,8 +242,10 @@ void main()
 	//oFragColor = vec4(CalcNormalizedNormalTS(), 1.0);
 	//oFragColor = vec4(normalize(texture(uNormalTexSampler, fs_in.texCoords).rgb * 2.0 - 1.0), 1.0);
 
-	//oFragColor = vec4(vec3(fwidth(fs_in.texCoords.y) + fwidth(fs_in.texCoords.x)), 1.0); 
-	oTexelDifferentials = vec4(vec3(fwidth(fs_in.texCoords.y) + fwidth(fs_in.texCoords.x)), gl_FragCoord.z);
+	//oFragColor = vec4(vec3(fwidth(fs_in.texCoords.y/gl_FragmentSizeNV.y) + fwidth(fs_in.texCoords.x/gl_FragmentSizeNV.x)), 1.0); 
+	oTexelDifferentials = vec4((fwidth(fs_in.texCoords.y) + fwidth(fs_in.texCoords.x)) * 8, gl_FragmentSizeNV.x/4.0, gl_FragmentSizeNV.y/4.0, gl_FragCoord.z);
+	oTexelDifferentials = vec4((fwidth(fs_in.texCoords.y/gl_FragmentSizeNV.y) + fwidth(fs_in.texCoords.x/gl_FragmentSizeNV.x)) * 8, gl_FragmentSizeNV.x/4.0, gl_FragmentSizeNV.y/4.0, gl_FragCoord.z);
+
 	//oTexelDifferentials = vec4(abs(fs_in.positionVS.xyz), gl_FragCoord.z);
 	float greyValue = dot(oFragColor.rgb, vec3(0.299, 0.587, 0.114));
 	//oTexelDifferentials = vec4(vec3(fwidthCoarse(greyValue)), 1.0); 
