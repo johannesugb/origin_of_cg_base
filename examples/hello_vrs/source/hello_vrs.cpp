@@ -322,7 +322,7 @@ private:
 		// -----------------------------------
 
 		ubo.model = glm::mat4(1.0f);
-		//ubo.model[1][1] *= -1;
+		ubo.model[1][1] *= -1;
 		ubo.mvp = ubo.model;
 		renderObject2->update_uniform_buffer(0, ubo);
 		renderObject2->update_uniform_buffer(1, ubo);
