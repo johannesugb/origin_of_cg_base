@@ -33,6 +33,13 @@
     <ClCompile Include="..\..\external\universal\src\imgui.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_demo.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_draw.cpp" />
+    <ClCompile Include="..\..\external\universal\src\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\..\external\universal\src\imgui_impl_opengl3.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_widgets.cpp" />
     <ClCompile Include="..\..\framework\src\camera.cpp" />
     <ClCompile Include="..\..\framework\src\cg_element.cpp" />
@@ -69,6 +76,7 @@
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\window_base.cpp" />
+    <ClCompile Include="..\..\framework\src\window_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src_stst\vulkan_attribute_description_binding.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
@@ -170,7 +178,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\camera.h" />
-    <ClInclude Include="..\..\framework\include\cg_base.h" />
+    <ClInclude Include="..\..\framework\include\cg_base.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\..\framework\include\cg_element.h" />
     <ClInclude Include="..\..\framework\include\composition.h" />
     <ClInclude Include="..\..\framework\include\composition_interface.h" />
@@ -216,6 +228,7 @@
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_timer.h" />
     <ClInclude Include="..\..\framework\include\window_base.h" />
+    <ClInclude Include="..\..\framework\include\window_vulkan.h" />
     <ClInclude Include="..\..\framework\include_stst\vulkan_attribute_description_binding.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>

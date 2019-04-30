@@ -85,6 +85,11 @@ namespace cgb
 		mInstance.destroy();
 	}
 
+	void vulkan::check_vk_result(VkResult err)
+	{
+		createResultValue(static_cast<vk::Result>(err), context().vulkan_instance(), "check_vk_result");
+	}
+
 	void vulkan::begin_composition()
 	{ 
 	}
@@ -163,7 +168,7 @@ namespace cgb
 
 		if (!settings::gDisableImGui) {
 			// Init and wire-in IMGUI
-			wnd->mPostCreateActions.push_back([](cgb::window& w) {
+			wnd->mPostCreateActions.push_back([this](cgb::window& w) {
 
 				if (0u == w.id() && w.handle()) { // Do this only once, i.e. when the first window has been created
 
@@ -206,10 +211,11 @@ namespace cgb
 					init_info.DescriptorPool = context().get_descriptor_pool().mDescriptorPool;
 					init_info.Allocator = VK_NULL_HANDLE;
 					init_info.MinImageCount = sActualMaxFramesInFlight;
-					// TODO: proceed here
-					init_info.ImageCount = wd->ImageCount;
+					init_info.ImageCount = sActualMaxFramesInFlight;
 					init_info.CheckVkResultFn = check_vk_result;
-					ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
+
+
+					//ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 				}
 			});
 		}
@@ -963,7 +969,7 @@ namespace cgb
 			.setPViewports(&viewport)
 			.setScissorCount(1u)
 			.setPScissors(&scissor);
-
+		
 		// RASTERIZATION STATE
 		auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
 			.setDepthClampEnable(VK_FALSE) // If depthClampEnable is set to VK_TRUE, then fragments that are beyond the near and far planes are clamped to them as opposed to discarding them. [4]

@@ -2,6 +2,27 @@
 
 class hello_behavior : public cgb::cg_element
 {
+	//void initialize() override
+	//{
+	//	cgb::context().create_sync_objects(); // <-- TODO
+	//	auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface);
+	//	cgb::context().mSurfSwap.emplace_back(std::make_unique<cgb::swap_chain_data>(std::move(swapChain)));
+
+	//	mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(cgb::context().main_window());
+	//	assert(mSwapChainData);
+
+	//	mPipeline = cgb::context().create_graphics_pipeline_for_window(
+	//		shaderInfos,
+	//		cgb::context().main_window(),
+	//		cgb::image_format(mDepthImage->mInfo.format),
+	//		Vertex::binding_description(),
+	//		vertexAttribDesc.size(),
+	//		vertexAttribDesc.data(),
+	//		{ mDescriptorSetLayout.mDescriptorSetLayout });
+	//	mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, cgb::context().main_window(), mDepthImageView);
+	//	mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
+	//}
+
 	void update() override
 	{
 		if (cgb::input().key_pressed(cgb::key_code::h)) {
@@ -14,6 +35,10 @@ class hello_behavior : public cgb::cg_element
 			cgb::current_composition().stop();
 		}
 	}
+
+private:
+	cgb::swap_chain_data* mSwapChainData;
+	cgb::pipeline mPipeline;
 
 };
 

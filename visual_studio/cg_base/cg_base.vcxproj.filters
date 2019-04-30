@@ -136,6 +136,18 @@
     <ClCompile Include="..\..\external\universal\src\imgui_widgets.cpp">
       <Filter>Source Files\external</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\window_vulkan.cpp">
+      <Filter>Source Files\context\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_impl_glfw.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\universal\src\imgui_impl_vulkan.cpp">
+      <Filter>Source Files\external</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -290,6 +302,9 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\varying_update_timer.h">
       <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\window_vulkan.h">
+      <Filter>Header Files\context\vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

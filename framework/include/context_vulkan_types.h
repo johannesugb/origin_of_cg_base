@@ -5,57 +5,6 @@
 
 namespace cgb
 {
-	class window : public window_base
-	{
-		friend class generic_glfw;
-		friend class vulkan;
-	public:
-		window();
-		~window();
-		window(const window&) = delete;
-		window(window&&) noexcept;
-		window& operator =(const window&) = delete;
-		window& operator =(window&&) noexcept;
-
-		/** Request a framebuffer for this window which is capable of sRGB formats */
-		void request_srgb_framebuffer(bool pRequestSrgb);
-
-		/** Sets the presentation mode for this window's swap chain. */
-		void set_presentaton_mode(cgb::presentation_mode pMode);
-
-		/** Sets the number of samples for MSAA */
-		void set_number_of_samples(int pNumSamples);
-
-		/** Creates or opens the window */
-		void open();
-
-		/** Gets the requested surface format for the given surface.
-		 *	A default value will be set if no other value has been configured.
-		 */
-		vk::SurfaceFormatKHR get_surface_format(const vk::SurfaceKHR& surface);
-
-		/** Gets the requested presentation mode for the given surface.
-		 *	A default value will be set if no other value has been configured.
-		 */
-		vk::PresentModeKHR get_presentation_mode(const vk::SurfaceKHR& surface);
-
-		/**	Gets the number of samples that has been configured.
-		 *	A default value will be set if no other value has been configured.
-		 */
-		vk::SampleCountFlagBits get_number_of_samples();
-
-		/** Gets the multisampling-related config info struct for the Vk-pipeline config.
-		 *	A default value will be set if no other value has been configured.
-		 */
-		vk::PipelineMultisampleStateCreateInfo get_multisample_state_create_info();
-
-	protected:
-		std::function<vk::SurfaceFormatKHR(const vk::SurfaceKHR&)> mSurfaceFormatSelector;
-		std::function<vk::PresentModeKHR(const vk::SurfaceKHR&)> mPresentationModeSelector;
-		std::function<vk::SampleCountFlagBits()> mNumberOfSamplesGetter;
-		std::function<vk::PipelineMultisampleStateCreateInfo()> mMultisampleCreateInfoBuilder;
-	};
-
 	/** Represents a native texture handle for the Vulkan context */
 	struct texture_handle
 	{

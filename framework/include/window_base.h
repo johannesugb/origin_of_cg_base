@@ -126,18 +126,16 @@ namespace cgb
 		// The requested window size which only has effect BEFORE the window was created 
 		window_size mRequestedSize;
 
+		// The position of the cursor
 		glm::dvec2 mCursorPosition;
 
+		// The scroll position
 		glm::dvec2 mScrollPosition;
 
+		// The window's resolution
 		glm::uvec2 mResultion;
 
+		// Whether or not the cursor is operating in disabled-mode
 		bool mIsCursorDisabled;
-
-		// Actions to be executed after the actual window (re-)creation
-		std::vector<std::function<void(window&)>> mPostCreateActions;
-
-		// Cleanup actions which are executed before the window will be destroyed
-		std::vector<std::function<void(window&)>> mCleanupActions;
 	};
 }

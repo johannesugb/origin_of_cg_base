@@ -9,6 +9,7 @@
 
 // INCLUDES:
 #include <vulkan/vulkan.hpp>
+#include "window_vulkan.h"
 #include "context_vulkan_types.h"
 #include "context_generic_glfw.h"
 #include "imgui_impl_vulkan.h"
@@ -45,6 +46,9 @@ namespace cgb
 		vulkan& operator=(vulkan&&) = delete;
 		virtual ~vulkan();
 
+		// Checks a VkResult return type and handles it according to the current Vulkan-Hpp config
+		static void check_vk_result(VkResult err);
+
 		vk::Instance& vulkan_instance() { return mInstance; }
 		vk::PhysicalDevice& physical_device() { return mPhysicalDevice; }
 		vk::Device& logical_device() { return mLogicalDevice; }
@@ -56,7 +60,7 @@ namespace cgb
 		vk::Queue& presentation_queue() { return mPresentQueue; }
 		vk::Queue& transfer_queue() { return mTransferQueue; }
 
-		window* create_window(const std::string&);
+		window* create_window(const std::string& pTitle);
 
 		texture_handle create_texture()
 		{
@@ -256,15 +260,9 @@ namespace cgb
 
 		vk::PhysicalDeviceRayTracingPropertiesNV get_ray_tracing_properties();
 
-		vk::SurfaceKHR& get_surface() { return mTmpSurface; }
-
 	public:
 		static std::vector<const char*> sRequiredDeviceExtensions;
-		static size_t sActualMaxFramesInFlight;
-		size_t mFrameCounter;
-		std::vector<vk::Semaphore> mImageAvailableSemaphores; // GPU-GPU synchronization
-		std::vector<vk::Semaphore> mRenderFinishedSemaphores; // GPU-GPU synchronization
-		std::vector<vk::Fence> mInFlightFences;  // CPU-GPU synchronization
+		
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
 		std::vector<swap_chain_data_ptr> mSurfSwap;
@@ -285,9 +283,14 @@ namespace cgb
 		std::vector<command_pool> mCommandPools;
 		std::vector<descriptor_pool> mDescriptorPools;
 
-	public:
-		window* mTmpMainWindow;
-		vk::SurfaceKHR mTmpSurface;
+	private:
+		/** Context event handler types are of type bool()
+		 *	Return true if the event handler shall remain then list of handlers.
+		 *  Return false to remove the event handler from the list of handlers.
+		 *  (Use the latter for, e.g., one-time handlers, the former for recurring handlers.)
+		 */
+		using event_handler_func = std::function<bool()>;
+		std::vector<event_handler_func> mContextEventHandlers;
 	};
 
 	// [1] Vulkan Tutorial, Depth buffering, https://vulkan-tutorial.com/Depth_buffering
