@@ -5,15 +5,15 @@ namespace cgb {
 	vulkan_framebuffer::vulkan_framebuffer(vk::SampleCountFlagBits msaaSamples, std::shared_ptr<vulkan_image> colorImage,
 		std::shared_ptr<vulkan_image> depthImage, vk::Format colorAttachmentFormat, std::vector<vk::ImageView> swapChainImageViews,
 		uint32_t width, uint32_t height) :
-		mMsaaSamples(msaaSamples), mDepthImage(depthImage), mColorAttachmentFormat(colorAttachmentFormat),
-		mSwapChainImageViews(swapChainImageViews)
+		mMsaaSamples(msaaSamples), mDepthImage(depthImage), mColorAttachmentFormat(colorAttachmentFormat)
 	{
 		mExtent.width = width;
 		mExtent.height = height;
+		mSwapChainImageCount = swapChainImageViews.size();
 
 		mClearValues = std::vector<vk::ClearValue>(2);
 		mClearValues[0].color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
-		mClearValues[1].depthStencil = { 1.0f, 0 };
+		mClearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 		vk::AttachmentDescription colorAttachment = {};
 		colorAttachment.format = colorImage->get_format();
@@ -37,8 +37,19 @@ namespace cgb {
 		colorAttachmentResolve.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 		mResolveColorAttachments.push_back(colorAttachmentResolve);
 
-		mColorAttachmentImages.push_back(colorImage);
+		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+		mColorAttachmentImages.push_back(colorImages);
 		mResolveColorAttachmentImages.push_back(swapChainImageViews);
+	}
+
+	vulkan_framebuffer::vulkan_framebuffer(uint32_t width, uint32_t height, 
+		size_t swapChainImageCount, vk::SampleCountFlagBits msaaSamples) :
+		mSwapChainImageCount(swapChainImageCount), mMsaaSamples(msaaSamples)
+	{
+		mExtent.width = width;
+		mExtent.height = height;
+
+		mDepthImage = nullptr;
 	}
 
 
@@ -56,7 +67,7 @@ namespace cgb {
 		createFramebuffers();
 	}
 
-	void cgb::vulkan_framebuffer::add_color_attachment(std::shared_ptr<vulkan_image> colorImage, vk::SampleCountFlagBits msaaSamples, 
+	void cgb::vulkan_framebuffer::add_color_attachment(std::shared_ptr<vulkan_image> colorImage, 
 		vk::ImageLayout finalLayout, vk::ImageLayout initialLayout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, 
 		vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp, std::array<float, 4> clearColor)
 	{
@@ -84,14 +95,52 @@ namespace cgb {
 			mClearValues.push_back(clearValue);
 		}
 
-		mColorAttachmentImages.push_back(colorImage);
+		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+		mColorAttachmentImages.push_back(colorImages);
+	}
+
+	void cgb::vulkan_framebuffer::add_dynamic_color_attachment(std::vector<std::shared_ptr<vulkan_image>> colorImages,
+		vk::ImageLayout finalLayout, vk::ImageLayout initialLayout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp,
+		vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp, std::array<float, 4> clearColor)
+	{
+		assert(colorImages.size() == mSwapChainImageCount);
+
+		vk::AttachmentDescription colorAttachment = {};
+		colorAttachment.format = colorImages[0]->get_format();
+		colorAttachment.samples = colorImages[0]->get_num_samples();
+		colorAttachment.loadOp = loadOp;
+		colorAttachment.storeOp = storeOp;
+		colorAttachment.stencilLoadOp = stencilLoadOp;
+		colorAttachment.stencilStoreOp = stencilStoreOp;
+		colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
+		colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		mColorAttachments.push_back(colorAttachment);
+
+		std::vector<vk::ImageView> imageViews(mSwapChainImageCount);
+		for (int i = 0; i < colorImages.size(); i++) {
+			imageViews[i] = colorImages[i]->get_image_view();
+		}
+		mColorAttachmentImages.push_back(imageViews);
+
+		vk::ClearValue clearValue = {};
+		clearValue.color = clearColor;
+
+		if (mClearValues.size() > 0) {
+			auto depthClearVal = mClearValues[mClearValues.size() - 1];
+			mClearValues.pop_back();
+			mClearValues.push_back(clearValue);
+			mClearValues.push_back(depthClearVal);
+		}
+		else {
+			mClearValues.push_back(clearValue);
+		}
 	}
 
 	void cgb::vulkan_framebuffer::add_dynamic_color_attachment(std::shared_ptr<vulkan_image> colorImage, std::vector<std::shared_ptr<vulkan_image>> resolveColorImages, 
 		vk::ImageLayout finalLayout, vk::ImageLayout initialLayout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, 
 		vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp, std::array<float, 4> clearColor)
 	{
-		assert(resolveColorImages.size() == vulkan_context::instance().dynamicRessourceCount);
+		assert(resolveColorImages.size() == mSwapChainImageCount);
 
 		vk::AttachmentDescription colorAttachment = {};
 		colorAttachment.format = colorImage->get_format();
@@ -115,7 +164,9 @@ namespace cgb {
 		colorAttachmentResolve.finalLayout = finalLayout;
 		mResolveColorAttachments.push_back(colorAttachmentResolve);
 
-		mColorAttachmentImages.push_back(colorImage);
+		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+		mColorAttachmentImages.push_back(colorImages);
+
 		std::vector<vk::ImageView> imageViews(resolveColorImages.size());
 		for (int i = 0; i < resolveColorImages.size(); i++) {
 			imageViews[i] = resolveColorImages[i]->get_image_view();
@@ -136,6 +187,98 @@ namespace cgb {
 		}
 	}
 
+	void cgb::vulkan_framebuffer::add_swapchain_color_attachment(std::shared_ptr<vulkan_image_presenter> imagePresenter,
+		std::shared_ptr<vulkan_image> colorImage,
+		vk::ImageLayout finalLayout, vk::ImageLayout initialLayout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp,
+		vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp, std::array<float, 4> clearColor)
+	{
+		if (colorImage) {
+			vk::AttachmentDescription colorAttachment = {};
+			colorAttachment.format = colorImage->get_format();
+			colorAttachment.samples = colorImage->get_num_samples();
+			colorAttachment.loadOp = loadOp;
+			colorAttachment.storeOp = storeOp;
+			colorAttachment.stencilLoadOp = stencilLoadOp;
+			colorAttachment.stencilStoreOp = stencilStoreOp;
+			colorAttachment.initialLayout = initialLayout;
+			colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+			mColorAttachments.push_back(colorAttachment);
+
+			vk::AttachmentDescription colorAttachmentResolve = {};
+			colorAttachmentResolve.format = imagePresenter->get_swap_chain_image_format();
+			colorAttachmentResolve.samples = vk::SampleCountFlagBits::e1;
+			colorAttachmentResolve.loadOp = vk::AttachmentLoadOp::eDontCare;
+			colorAttachmentResolve.storeOp = vk::AttachmentStoreOp::eDontCare;
+			colorAttachmentResolve.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+			colorAttachmentResolve.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+			colorAttachmentResolve.initialLayout = vk::ImageLayout::eUndefined;
+			colorAttachmentResolve.finalLayout = finalLayout;
+			mResolveColorAttachments.push_back(colorAttachmentResolve);
+
+			auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+			mColorAttachmentImages.push_back(colorImages);
+
+			auto resolveColorImages = imagePresenter->get_swap_chain_image_views();
+			std::vector<vk::ImageView> imageViews(resolveColorImages.size());
+			for (int i = 0; i < resolveColorImages.size(); i++) {
+				imageViews[i] = resolveColorImages[i];
+			}
+			mResolveColorAttachmentImages.push_back(imageViews);
+		}
+		else {
+			vk::AttachmentDescription colorAttachment = {};
+			colorAttachment.format = imagePresenter->get_swap_chain_image_format();
+			colorAttachment.samples = vk::SampleCountFlagBits::e1;
+			colorAttachment.loadOp = loadOp;
+			colorAttachment.storeOp = storeOp;
+			colorAttachment.stencilLoadOp = stencilLoadOp;
+			colorAttachment.stencilStoreOp = stencilStoreOp;
+			colorAttachment.initialLayout = initialLayout;
+			colorAttachment.finalLayout = finalLayout;
+			mColorAttachments.push_back(colorAttachment);
+
+			auto resolveColorImages = imagePresenter->get_swap_chain_image_views();
+			std::vector<vk::ImageView> imageViews(resolveColorImages.size());
+			for (int i = 0; i < resolveColorImages.size(); i++) {
+				imageViews[i] = resolveColorImages[i];
+			}
+			mColorAttachmentImages.push_back(imageViews);
+		}
+
+		vk::ClearValue clearValue = {};
+		clearValue.color = clearColor;
+
+		if (mClearValues.size() > 0) {
+			auto depthClearVal = mClearValues[mClearValues.size() - 1];
+			mClearValues.pop_back();
+			mClearValues.push_back(clearValue);
+			mClearValues.push_back(depthClearVal);
+		}
+		else {
+			mClearValues.push_back(clearValue);
+		}
+	}
+
+	void cgb::vulkan_framebuffer::set_depth_attachment(std::shared_ptr<vulkan_image> depthImage,
+		vk::ImageLayout finalLayout, vk::ImageLayout initialLayout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp,
+		vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp, float clearDepth, uint32_t cleaerStencil)
+	{
+		mDepthImage = depthImage;
+
+		mDepthAttachment.format = mDepthImage->get_format();
+		mDepthAttachment.samples = mMsaaSamples;
+		mDepthAttachment.loadOp = loadOp;
+		mDepthAttachment.storeOp = storeOp;
+		mDepthAttachment.stencilLoadOp = stencilLoadOp;
+		mDepthAttachment.stencilStoreOp = stencilStoreOp;
+		mDepthAttachment.initialLayout = initialLayout;
+		mDepthAttachment.finalLayout = finalLayout;
+
+		vk::ClearValue clearValue = {};
+		clearValue.depthStencil = vk::ClearDepthStencilValue(clearDepth, cleaerStencil);
+		mClearValues.push_back(clearValue);
+	}
+
 	void vulkan_framebuffer::createRenderPass() {
 		std::vector<vk::AttachmentDescription> attachments;
 		attachments.insert(attachments.end(), mColorAttachments.begin(), mColorAttachments.end());
@@ -150,29 +293,29 @@ namespace cgb {
 			colorAttachmentRefs[i] = colorAttachmentRef;
 		}
 
-		std::vector<vk::AttachmentReference> resolveColorAttachmentRefs(colorAttachmentSize);
+		int depthAttachmentOffset = 0;
+		vk::AttachmentReference depthAttachmentRef;
+		if (mDepthImage) {
+			attachments.push_back(mDepthAttachment);
+
+			depthAttachmentRef = {};
+			depthAttachmentRef.attachment = colorAttachmentSize;
+			depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+			depthAttachmentOffset++;
+		}
+
+		uint32_t resolveAttachmentSize = colorAttachmentSize;
+		if (mMsaaSamples == vk::SampleCountFlagBits::e1) {
+			resolveAttachmentSize = 0;
+		}
+		std::vector<vk::AttachmentReference> resolveColorAttachmentRefs(resolveAttachmentSize);
 
 		for (int i = 0; i < resolveColorAttachmentRefs.size(); i++) {
 			vk::AttachmentReference colorAttachmentRef = {};
-			colorAttachmentRef.attachment = i + 1 + colorAttachmentSize;
+			colorAttachmentRef.attachment = i + depthAttachmentOffset + colorAttachmentSize;
 			colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 			resolveColorAttachmentRefs[i] = colorAttachmentRef;
 		}
-
-		vk::AttachmentDescription depthAttachment = {};
-		depthAttachment.format = mDepthImage->get_format();
-		depthAttachment.samples = mMsaaSamples;
-		depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-		depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-		depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-		depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
-		depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		attachments.push_back(depthAttachment);
-
-		vk::AttachmentReference depthAttachmentRef = {};
-		depthAttachmentRef.attachment = colorAttachmentSize;
-		depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
 		attachments.insert(attachments.end(), mResolveColorAttachments.begin(), mResolveColorAttachments.end());
 
@@ -180,7 +323,7 @@ namespace cgb {
 		subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 		subpass.colorAttachmentCount = colorAttachmentRefs.size();
 		subpass.pColorAttachments = colorAttachmentRefs.data();
-		subpass.pDepthStencilAttachment = &depthAttachmentRef;
+		subpass.pDepthStencilAttachment = (mDepthImage) ? &depthAttachmentRef : nullptr;
 		subpass.pResolveAttachments = resolveColorAttachmentRefs.data();
 
 		vk::SubpassDependency dependency = {};
@@ -207,15 +350,17 @@ namespace cgb {
 	}
 
 	void vulkan_framebuffer::createFramebuffers() {
-		mSwapChainFramebuffers.resize(mSwapChainImageViews.size());
+		mSwapChainFramebuffers.resize(mSwapChainImageCount);
 
-		for (size_t i = 0; i < mSwapChainImageViews.size(); i++) {			
+		for (size_t i = 0; i < mSwapChainImageCount; i++) {
 			std::vector<vk::ImageView> attachments;
 
 			for (int j = 0; j < mColorAttachmentImages.size(); j++) {
-				attachments.push_back(mColorAttachmentImages[j]->get_image_view());
+				attachments.push_back(mColorAttachmentImages[j][i]);
 			}
-			attachments.push_back(mDepthImage->get_image_view());
+			if (mDepthImage) {
+				attachments.push_back(mDepthImage->get_image_view());
+			}
 			for (int j = 0; j < mResolveColorAttachmentImages.size(); j++) {
 				attachments.push_back(mResolveColorAttachmentImages[j][i]);
 			}

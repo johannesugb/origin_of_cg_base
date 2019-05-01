@@ -14,15 +14,15 @@ namespace cgb {
 	{
 	}
 
-	void vulkan_drawer::draw(std::vector<vulkan_render_object*> renderObjects)
+	void vulkan_drawer::draw(std::vector<vulkan_render_object*> renderObjects, std::shared_ptr<vulkan_framebuffer> framebuffer)
 	{
-		record_secondary_command_buffer(renderObjects);
+		record_secondary_command_buffer(renderObjects, framebuffer);
 	}
 
-	void vulkan_drawer::record_secondary_command_buffer(std::vector<vulkan_render_object*> renderObjects) {
+	void vulkan_drawer::record_secondary_command_buffer(std::vector<vulkan_render_object*> renderObjects, std::shared_ptr<vulkan_framebuffer> framebuffer) {
 		vk::CommandBufferInheritanceInfo inheritanceInfo = {};
-		inheritanceInfo.renderPass = vulkan_context::instance().vulkanFramebuffer->get_render_pass();
-		inheritanceInfo.framebuffer = vulkan_context::instance().vulkanFramebuffer->get_swapchain_framebuffer();
+		inheritanceInfo.renderPass = framebuffer->get_render_pass();
+		inheritanceInfo.framebuffer = framebuffer->get_swapchain_framebuffer();
 		inheritanceInfo.subpass = 0;
 		inheritanceInfo.occlusionQueryEnable = VK_FALSE;
 
@@ -34,7 +34,7 @@ namespace cgb {
 		// bind pipeline for this draw command
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline());
 
-		if (vulkan_context::instance().shadingRateImageSupported) {
+		if (vulkan_context::instance().shadingRateImageSupported && mVrsImages.size() > 0) {
 			commandBuffer.bindShadingRateImageNV(mVrsImages[vulkan_context::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vulkan_context::instance().dynamicDispatchInstanceDevice);
 			//commandBuffer.bindShadingRateImageNV(mVrsImages[0]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vulkan_context::instance().dynamicDispatchInstanceDevice);
 		}

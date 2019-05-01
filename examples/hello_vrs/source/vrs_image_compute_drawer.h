@@ -18,7 +18,7 @@ namespace cgb {
 			std::vector<std::shared_ptr<vulkan_image>> vrsDebugImages);
 		virtual ~vrs_image_compute_drawer();
 
-		virtual void draw(std::vector<vulkan_render_object*> renderObjects);
+		virtual void draw(std::vector<vulkan_render_object*> renderObjects, std::shared_ptr<cgb::vulkan_framebuffer> framebuffer);
 
 		void set_descriptor_sets(std::vector<vk::DescriptorSet> descriptorSets) { mDescriptorSets = descriptorSets; }
 		void set_width_height(int width, int height) { mWidth = width; mHeight = height; }

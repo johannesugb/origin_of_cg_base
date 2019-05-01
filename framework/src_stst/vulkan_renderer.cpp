@@ -16,6 +16,7 @@ namespace cgb {
 		mCurrentInFlightFence = nullptr;
 		mSubmitted = false;
 		create_sync_objects();
+		mVulkanFramebuffer = nullptr;
 	}
 
 
@@ -55,7 +56,7 @@ namespace cgb {
 			renderer->recordPrimaryCommandBuffer();
 			//mCurrentImageAvailableSemaphores.push_back(renderer->mRenderFinishedSemaphores[mCurrentFrame]);
 		}
-		drawer->draw(renderObjects);
+		drawer->draw(renderObjects, mVulkanFramebuffer);
 		mSubmitted = false;
 	}
 
@@ -107,16 +108,14 @@ namespace cgb {
 
 			// no render pass if this is a pure compute renderer (maybe better solution required) 
 			if (!mIsCompute) {
-				auto currentFramebuffer = vulkan_context::instance().vulkanFramebuffer;
-
 				vk::RenderPassBeginInfo renderPassInfo = {};
-				renderPassInfo.renderPass = currentFramebuffer->get_render_pass();
-				renderPassInfo.framebuffer = currentFramebuffer->get_swapchain_framebuffer();
+				renderPassInfo.renderPass = mVulkanFramebuffer->get_render_pass();
+				renderPassInfo.framebuffer = mVulkanFramebuffer->get_swapchain_framebuffer();
 
 				renderPassInfo.renderArea.offset = { 0, 0 };
-				renderPassInfo.renderArea.extent = currentFramebuffer->get_framebuffer_extent();
+				renderPassInfo.renderArea.extent = mVulkanFramebuffer->get_framebuffer_extent();
 
-				auto clearValues = currentFramebuffer->get_clear_values();
+				auto clearValues = mVulkanFramebuffer->get_clear_values();
 				renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 				renderPassInfo.pClearValues = clearValues.data();
 

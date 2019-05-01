@@ -9,6 +9,7 @@
 #include "vulkan_drawer.h"
 #include "vulkan_image_presenter.h"
 #include "vulkan_render_queue.h"
+#include "vulkan_framebuffer.h"
 
 namespace cgb {
 
@@ -18,6 +19,8 @@ namespace cgb {
 		vulkan_renderer(std::shared_ptr<vulkan_image_presenter> imagePresenter, std::shared_ptr<vulkan_render_queue> vulkanRenderQueue,
 			std::shared_ptr<vulkan_command_buffer_manager> drawCommandBufferManager, std::vector<std::shared_ptr<vulkan_renderer>> predecessors = {}, bool isCompute = false);
 		virtual ~vulkan_renderer();
+
+		void set_framebuffer(std::shared_ptr<vulkan_framebuffer> vulkanFramebuffer) { mVulkanFramebuffer = vulkanFramebuffer; };
 
 		void start_frame();
 		void render(std::vector<vulkan_render_object*> renderObjects, vulkan_drawer* drawer);
@@ -31,6 +34,8 @@ namespace cgb {
 		std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
 		std::shared_ptr<vulkan_command_buffer_manager> mDrawCommandBufferManager;
 		std::vector<std::shared_ptr<vulkan_renderer>> mPredecessors;
+
+		std::shared_ptr<vulkan_framebuffer> mVulkanFramebuffer;
 
 		// synchronization
 		std::vector<vk::Semaphore> mImageAvailableSemaphores;

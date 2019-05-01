@@ -19,7 +19,7 @@ namespace cgb {
 		vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDebugDescriptorPool);
 	}
 
-	void vrs_image_compute_drawer::draw(std::vector<vulkan_render_object*> renderObjects)
+	void vrs_image_compute_drawer::draw(std::vector<vulkan_render_object*> renderObjects, std::shared_ptr<cgb::vulkan_framebuffer> framebuffer)
 	{
 		vk::CommandBufferInheritanceInfo inheritanceInfo = {};
 		inheritanceInfo.occlusionQueryEnable = VK_FALSE;

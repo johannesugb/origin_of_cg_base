@@ -15,7 +15,7 @@ vrs_cas_compute_drawer::~vrs_cas_compute_drawer()
 }
 
 
-void vrs_cas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> renderObjects)
+void vrs_cas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> renderObjects, std::shared_ptr<cgb::vulkan_framebuffer> framebuffer)
 {
 	vk::CommandBufferInheritanceInfo inheritanceInfo = {};
 	inheritanceInfo.occlusionQueryEnable = VK_FALSE;

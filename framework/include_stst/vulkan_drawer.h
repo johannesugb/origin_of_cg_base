@@ -18,7 +18,7 @@ namespace cgb {
 		vulkan_drawer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<vulkan_pipeline> pipeline, std::vector<std::shared_ptr<vulkan_resource_bundle>> globalResourceBundles = {});
 		virtual ~vulkan_drawer();
 
-		virtual void draw(std::vector<vulkan_render_object*> renderObjects);
+		virtual void draw(std::vector<vulkan_render_object*> renderObjects, std::shared_ptr<vulkan_framebuffer> framebuffer);
 
 		void set_vrs_images(std::vector<std::shared_ptr<vulkan_image>> vrsImages) { mVrsImages = vrsImages; }
 	protected:
@@ -29,7 +29,7 @@ namespace cgb {
 
 		std::vector<std::shared_ptr<vulkan_resource_bundle>> mGlobalResourceBundles;
 
-		void record_secondary_command_buffer(std::vector<vulkan_render_object*> renderObjects);
+		void record_secondary_command_buffer(std::vector<vulkan_render_object*> renderObjects, std::shared_ptr<vulkan_framebuffer> framebuffer);
 
 		std::vector<vk::DescriptorSet> get_descriptor_sets(std::vector<std::shared_ptr<vulkan_resource_bundle>> mResourceBundles);
 	};

@@ -19,7 +19,7 @@ public:
 	std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages);
 	virtual ~vrs_cas_compute_drawer();
 
-	virtual void draw(std::vector<cgb::vulkan_render_object*> renderObjects);
+	virtual void draw(std::vector<cgb::vulkan_render_object*> renderObjects, std::shared_ptr<cgb::vulkan_framebuffer> framebuffer);
 
 	void set_width_height(int width, int height) { mWidth = width; mHeight = height; }
 
