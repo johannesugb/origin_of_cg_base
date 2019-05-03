@@ -28,6 +28,7 @@ namespace cgb
 	vulkan::vulkan()
 		: generic_glfw()
 		, mFrameCounter(0)
+		, mContextState(cgb::context_state::unknown)
 	{
 		// So it begins
 		create_instance();
@@ -42,10 +43,14 @@ namespace cgb
 
 		// NOTE: Vulkan-init is not finished yet!
 		//       Initialization will continue when the first window (and it's surface) is created.
+
+		mContextState = cgb::context_state::halfway_initialized;
 	}
 
 	vulkan::~vulkan()
 	{
+		mContextState = cgb::context_state::about_to_finalize;
+
 		// Destroy all descriptor pools before the queues and the device is destroyed
 		mDescriptorPools.clear();
 
@@ -83,6 +88,8 @@ namespace cgb
 
 		// Destroy everything
 		mInstance.destroy();
+	
+		mContextState = cgb::context_state::has_finalized;
 	}
 
 	void vulkan::check_vk_result(VkResult err)
@@ -92,15 +99,18 @@ namespace cgb
 
 	void vulkan::begin_composition()
 	{ 
+		mContextState = cgb::context_state::composition_beginning;
 	}
 
 	void vulkan::end_composition()
 	{
+		mContextState = cgb::context_state::composition_ending;
 		mLogicalDevice.waitIdle();
 	}
 
 	void vulkan::begin_frame()
 	{
+		mContextState = cgb::context_state::frame_begun;
 		mFrameCounter += 1;
 	
 		// Wait for the prev-prev frame (fence-ping-pong)
@@ -114,8 +124,14 @@ namespace cgb
 		//mLogicalDevice.resetFences(1u, &fence);
 	}
 
+	void vulkan::update_stage_done()
+	{
+		mContextState = cgb::context_state::frame_updates_done;
+	}
+
 	void vulkan::end_frame()
 	{
+		mContextState = cgb::context_state::frame_ended;
 	}
 
 	void vulkan::draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer)
@@ -154,6 +170,8 @@ namespace cgb
 				// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
 				sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
 				//create_sync_objects(); // <-- TODO
+
+				context().mContextState = cgb::context_state::fully_initialized;
 			}
 			// Continue tuple creation
 			//auto swapChain = create_swap_chain(wnd, surface, pSwapParams);

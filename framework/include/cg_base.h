@@ -50,6 +50,7 @@
 #endif
 
 // -------------------- CG-Base includes --------------------
+#include "context_state.h"
 #include "context_types.h"
 #include "context.h"
 #include "string_utils.h"

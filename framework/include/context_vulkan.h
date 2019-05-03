@@ -16,9 +16,6 @@
 
 namespace cgb
 {
-	// =============================== type aliases =================================
-	using swap_chain_data_ptr = std::unique_ptr<swap_chain_data>;
-
 	// ============================== VULKAN CONTEXT ================================
 	/**	@brief Context for Vulkan
 	 *
@@ -88,6 +85,13 @@ namespace cgb
 
 		/** Used to signal the context about the beginning of a new frame */
 		void begin_frame();
+
+		/** Used to signal the context about the point within a frame
+		 *	when all updates have been performed.
+		 *	This usually means that the main thread is about to be awoken
+		 *	(but hasn't been yet) in order to start handling input and stuff.
+		 */
+		void update_stage_done();
 
 		/** Used to signal the context about the end of a frame */
 		void end_frame();
@@ -285,12 +289,33 @@ namespace cgb
 
 	private:
 		/** Context event handler types are of type bool()
-		 *	Return true if the event handler shall remain then list of handlers.
+		 *	Return true if the event handler shall remain in the list of handlers.
 		 *  Return false to remove the event handler from the list of handlers.
-		 *  (Use the latter for, e.g., one-time handlers, the former for recurring handlers.)
+		 *  (Use the latter for one-time handlers, the former for recurring handlers.)
 		 */
 		using event_handler_func = std::function<bool()>;
+
+		/** These event handlers are called frequently at all kinds of 
+		 *	stages during the context runs;
+		 */
 		std::vector<event_handler_func> mContextEventHandlers;
+
+		/** These event handlers are called when a composition is teared down
+		 *	and possibly another composition is about to become active. 
+		 *	You can think of them as "scene switches".
+		 */
+		std::vector<event_handler_func> mCompositionTransitionHandlers;
+		
+		/** These event handlers are called when the whole context is teared
+		 *	down at the very end of this application's lifetime
+		 */
+		std::vector<event_handler_func> mContextCleanupHandlers;
+
+		// Which state the context is currently in
+		cgb::context_state mContextState;
+
+		// TODO: Make context stages enum
+		// TODO: Create functions to add event handlers
 	};
 
 	// [1] Vulkan Tutorial, Depth buffering, https://vulkan-tutorial.com/Depth_buffering

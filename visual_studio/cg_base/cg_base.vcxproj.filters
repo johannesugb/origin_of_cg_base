@@ -306,6 +306,9 @@
     <ClInclude Include="..\..\framework\include\window_vulkan.h">
       <Filter>Header Files\context\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include\context_state.h">
+      <Filter>Header Files\context</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

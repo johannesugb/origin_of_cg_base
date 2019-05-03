@@ -202,6 +202,9 @@ namespace cgb
 					// 4. update
 					thiz->mExecutor.execute_updates(thiz->mElements);
 
+					// signal context
+					cgb::context().update_stage_done();
+
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
 					please_swap_input_buffers(thiz);
 
@@ -216,6 +219,9 @@ namespace cgb
 				}
 				else
 				{
+					// signal context
+					cgb::context().update_stage_done();
+
 					// If not done from inside the positive if-branch, tell the main thread of our input buffer update desire here:
 					please_swap_input_buffers(thiz);
 				}
