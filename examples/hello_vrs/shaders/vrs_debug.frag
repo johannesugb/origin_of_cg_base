@@ -3,9 +3,6 @@
 #extension GL_NV_shading_rate_image : enable
 
 layout(binding = 1) uniform sampler2D texSampler;
-//layout(binding = 2) uniform sampler2D debugSampler;
-
-layout(location = 0) in vec3 fragColor;
 
 layout(location = 0) out vec4 outColor;
 
@@ -22,7 +19,7 @@ void main() {
 	float greenOrBlue = step(0.5, shadingRate);
 	float redToGreen = smoothstep(0, 0.5, shadingRate);
 	float greenToBlue = smoothstep(0.5, 1, shadingRate);
-	outColor = 0.1 * vec4(mix(mix(vec3(0,0,1), vec3(0,1,0), redToGreen), mix(vec3(0,1,0), vec3(1,0,0), greenToBlue), greenOrBlue), 0.5f);
+	//outColor = 0.1 * vec4(mix(mix(vec3(0,0,1), vec3(0,1,0), redToGreen), mix(vec3(0,1,0), vec3(1,0,0), greenToBlue), greenOrBlue), 0.5f);
 	//outColor = vec4(shadingRate);
 
 	//outColor = vec4(vec3(gl_InvocationsPerPixelNV / 16.0f), 0.5f);

@@ -83,15 +83,17 @@ namespace cgb {
 	class vulkan_render_object
 	{
 	public:
-		// simple standard constructor
+		// simple standard constructor, ATTENTION no resource (uniform buffers, textures, etc.) management
+		// do not call any of these methods (e.g. update_uniform_buffer)
+		vulkan_render_object(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<std::shared_ptr<vulkan_resource_bundle>> resourceBundles);
+
 		vulkan_render_object(std::vector<std::shared_ptr<vulkan_buffer>> vertexBuffers, std::shared_ptr<vulkan_buffer> indexBuffer, size_t indexCount,
 			std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
-			std::vector<std::shared_ptr<vulkan_resource_bundle>> resourceBundles, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
-
+			std::vector<std::shared_ptr<vulkan_resource_bundle>> resourceBundles);
 
 		vulkan_render_object(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
 			std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
-			std::shared_ptr<vulkan_texture> texture, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
+			std::shared_ptr<vulkan_texture> texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
 		virtual ~vulkan_render_object();
 
 		size_t get_index_count() { return mIndexCount; }
@@ -127,9 +129,11 @@ namespace cgb {
 		// this offers the most flexibility for the user of the framework, while still being easy to use
 		std::vector<std::shared_ptr<vulkan_resource_bundle>> mResourceBundles;
 
-		void create_uniform_buffer(std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager);
+		void create_uniform_buffer();
 		void create_descriptor_sets(std::shared_ptr<vulkan_resource_bundle_layout> resourceBundleLayout, std::shared_ptr<vulkan_resource_bundle_group> resourceBundleGroup,
 			std::shared_ptr<vulkan_texture> texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures);
+
+		void create_vertex_index_buffer();
 	};
 
 }

@@ -62,8 +62,7 @@ private:
 		app->framebufferResized = true;
 	}
 
-	std::shared_ptr<cgb::vulkan_render_object> renderObject;
-	std::shared_ptr<cgb::vulkan_render_object> renderObject2;
+	std::shared_ptr<cgb::vulkan_render_object> mVrsDebugFullscreenQuad;
 	std::shared_ptr<cgb::vulkan_texture> texture;
 	std::shared_ptr<cgb::vulkan_image> textureImage;
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> drawCommandBufferManager;
@@ -138,7 +137,7 @@ private:
 
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mPostProcImages;
 	std::vector<std::shared_ptr<cgb::vulkan_texture>> mPostProcTextures;
-	std::shared_ptr<cgb::vulkan_render_object> mPostProcFullScreenQuad;
+	std::array<std::shared_ptr<cgb::vulkan_render_object>, 2> mPostProcFullScreenQuads;
 
 	// TAA
 	std::vector<int> mTAAIndices;
@@ -340,41 +339,35 @@ private:
 			createVrsDescriptorSets();
 			mVrsCasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 		}
+		mVrsDebugFullscreenQuad = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, vrsDebugTextureImages);
 
-		renderObject = std::make_shared<cgb::vulkan_render_object>(verticesQuad, indicesQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
-		renderObject2 = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, vrsDebugTextureImages);
+		// post process objects
+		auto postProcResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
+		postProcResourceBundleLayout->add_binding(0, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
+		postProcResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
+		postProcResourceBundleLayout->bake();
+		auto postProcBundles = std::array<std::shared_ptr<cgb::vulkan_resource_bundle>, 2>{};
+		for (int i = 0; i < postProcBundles.size(); i++) {
+			postProcBundles[i]  = mResourceBundleGroup->create_resource_bundle(postProcResourceBundleLayout, true);
+		}
+		postProcBundles[0]->add_dynamic_image_resource(0, vk::ImageLayout::eShaderReadOnlyOptimal, mPostProcTextures);
+		postProcBundles[1]->add_dynamic_image_resource(0, vk::ImageLayout::eShaderReadOnlyOptimal, mPostProcTextures);
+		// add previous frame image	
+		postProcBundles[0]->add_dynamic_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, mTAATextures[1]);
+		postProcBundles[1]->add_dynamic_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, mTAATextures[0]);
 
-		UniformBufferObject ubo = {};
-
-		// -----> !ACHTUNG! Neu von JU <------
-		ubo.view = mCamera.view_matrix();
-		ubo.proj = mCamera.projection_matrix();
-		// -----------------------------------
-
-		ubo.model = glm::mat4(1.0f);
-		ubo.mvp = ubo.model;
-		renderObject2->update_uniform_buffer(0, ubo);
-		renderObject2->update_uniform_buffer(1, ubo);
-		renderObject2->update_uniform_buffer(2, ubo);
-
-
-		mPostProcFullScreenQuad = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, mPostProcTextures);
-		ubo = UniformBufferObject{};
-		ubo.view = mCamera.view_matrix();
-		ubo.proj = mCamera.projection_matrix();
-		ubo.model = glm::mat4(1.0f);
-		ubo.mvp = ubo.model;
-		mPostProcFullScreenQuad->update_uniform_buffer(0, ubo);
-		mPostProcFullScreenQuad->update_uniform_buffer(1, ubo);
-		mPostProcFullScreenQuad->update_uniform_buffer(2, ubo);
 
 		for (int i = 0; i < mTAAFullScreenQuads.size(); i++) {
-			mTAAFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, transferCommandBufferManager, mTAATextures[i]);
-
-			mTAAFullScreenQuads[i]->update_uniform_buffer(0, ubo);
-			mTAAFullScreenQuads[i]->update_uniform_buffer(1, ubo);
-			mTAAFullScreenQuads[i]->update_uniform_buffer(2, ubo);
+			mPostProcFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { postProcBundles[i] });
+			mTAAFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, mTAATextures[i]);
 		}
+
+		// Post processing
+		create_post_process_objects(viewport, scissor);
+
+		// TAA
+		create_TAA_objects(viewport, scissor, postProcResourceBundleLayout);
+
 
 		// initialize lights
 		PointLights pointLights;
@@ -426,18 +419,14 @@ private:
 
 		auto sponzaBinding = std::shared_ptr<vulkan_attribute_description_binding>(new vulkan_attribute_description_binding(mesh.GetOrCreateForVertexAttribConfig(attrib_config)));
 
-
-		for (int i = 0; i < renderObject->get_resource_bundles().size(); i++) {
-			mResourceBundleGroup->allocate_resource_bundle(renderObject->get_resource_bundles()[i].get());
-		}
-		for (int i = 0; i < renderObject2->get_resource_bundles().size(); i++) {
-			mResourceBundleGroup->allocate_resource_bundle(renderObject2->get_resource_bundles()[i].get());
-		}
-		for (int i = 0; i < mPostProcFullScreenQuad->get_resource_bundles().size(); i++) {
-			mResourceBundleGroup->allocate_resource_bundle(mPostProcFullScreenQuad->get_resource_bundles()[i].get());
+		for (int i = 0; i < mVrsDebugFullscreenQuad->get_resource_bundles().size(); i++) {
+			mResourceBundleGroup->allocate_resource_bundle(mVrsDebugFullscreenQuad->get_resource_bundles()[i].get());
 		}
 
 		for (int j = 0; j < mTAAFullScreenQuads.size(); j++) {
+			for (int i = 0; i < mPostProcFullScreenQuads[j]->get_resource_bundles().size(); i++) {
+				mResourceBundleGroup->allocate_resource_bundle(mPostProcFullScreenQuads[j]->get_resource_bundles()[i].get());
+			}
 			for (int i = 0; i < mTAAFullScreenQuads[j]->get_resource_bundles().size(); i++) {
 				mResourceBundleGroup->allocate_resource_bundle(mTAAFullScreenQuads[j]->get_resource_bundles()[i].get());
 			}
@@ -454,8 +443,7 @@ private:
 		uboCam.model = mesh.transformation_matrix();
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
-		uboCam.mv = ubo.view * ubo.model;
-		ubo.mvp = ubo.proj * ubo.view * ubo.model;
+		uboCam.mv = uboCam.view * uboCam.model;
 
 		for (auto sponzaRenderObject : mSponzaRenderObjects) {
 			for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
@@ -478,7 +466,7 @@ private:
 		}
 
 		// VRS Debug render, used with e.g. fullscreen quad
-		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
+		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mPostProcFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
 		mVrsDebugPipeline->add_attr_desc_binding(bind1);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/vrs_debug.frag.spv");
@@ -496,12 +484,6 @@ private:
 			mResourceBundleGroup->allocate_resource_bundle(vrsCasResourceBundle.get());
 			mResourceBundleGroup->allocate_resource_bundle(vrsDebugResourceBundle.get());
 		}
-
-		// Post processing
-		create_post_process_objects(viewport, scissor);
-
-		// TAA
-		create_TAA_objects(viewport, scissor);
 	}
 
 	void cleanup()
@@ -511,8 +493,7 @@ private:
 		mResourceBundleGroup.reset();
 		cgb::vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
 
-		renderObject.reset();
-		renderObject2.reset();
+		mVrsDebugFullscreenQuad.reset();
 		for (auto sponzaRenderObject : mSponzaRenderObjects) {
 			sponzaRenderObject.reset();
 		}
@@ -656,8 +637,6 @@ private:
 		ubo.mvp = ubo.proj * ubo.view * ubo.model;
 		// -----------------------------------
 
-		renderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, ubo);
-
 		UniformBufferObject uboCam{};
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = glm::perspective(glm::radians(45.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f); mCamera.projection_matrix();
@@ -712,7 +691,7 @@ private:
 
 		mTAARenderer->set_framebuffer(mTAAFramebuffers[tAAIndex]);
 		renderObjects.clear();
-		renderObjects.push_back(mPostProcFullScreenQuad.get());
+		renderObjects.push_back(mPostProcFullScreenQuads[tAAIndex].get());
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
 		// post processing pass
@@ -720,9 +699,9 @@ private:
 		renderObjects.push_back(mTAAFullScreenQuads[tAAIndex].get());
 		mPostProcRenderer->render(renderObjects, mPostProcDrawer.get());
 
-		//renderObjects.clear();
-		//renderObjects.push_back(renderObject2.get());
-		//mRenderer->render(renderObjects, mVrsDebugDrawer.get());
+		renderObjects.clear();
+		renderObjects.push_back(mVrsDebugFullscreenQuad.get());
+		mPostProcRenderer->render(renderObjects, mVrsDebugDrawer.get());
 
 		mPostProcRenderer->end_frame();
 		//cgb::vulkan_context::instance().device.waitIdle();
@@ -970,7 +949,7 @@ private:
 		mPostProcRenderer->set_framebuffer(mPostProcFramebuffer);
 	}
 
-	void create_TAA_objects(vk::Viewport viewport, vk::Rect2D scissor) {
+	void create_TAA_objects(vk::Viewport viewport, vk::Rect2D scissor, std::shared_ptr<cgb::vulkan_resource_bundle_layout> layout) {
 		mTAAIndices = std::vector<int>(imagePresenter->get_swap_chain_images_count(), 0);
 
 		for (int i = 0; i < mTAAFramebuffers.size(); i++) {
@@ -981,8 +960,8 @@ private:
 			mTAAFramebuffers[i]->bake();
 		}
 
-		// framebuffers are the same, therefore render passes are too and must be compatible!
-		mTAAPipeline = std::make_shared<cgb::vulkan_pipeline>(mTAAFramebuffers[0]->get_render_pass(), viewport, scissor, vk::SampleCountFlagBits::e1, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout });
+		// framebuffers are the same, therefore render passes are too and must be compatible! --> use render pass of first framebuffer
+		mTAAPipeline = std::make_shared<cgb::vulkan_pipeline>(mTAAFramebuffers[0]->get_render_pass(), viewport, scissor, vk::SampleCountFlagBits::e1, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { layout });
 
 		auto posAndUv = std::make_shared<vulkan_attribute_description_binding>(1, sizeof(Vertex), vk::VertexInputRate::eVertex);
 		posAndUv->add_attribute_description(0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos));
