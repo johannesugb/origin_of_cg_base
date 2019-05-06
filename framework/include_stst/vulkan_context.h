@@ -99,8 +99,6 @@ namespace cgb {
 
 		vulkan_memory_manager* memoryManager;
 
-		std::shared_ptr<vulkan_framebuffer> vulkanFramebuffer;
-
 		// updated per frame/pass
 		int currentFrame;
 		int dynamicRessourceCount;

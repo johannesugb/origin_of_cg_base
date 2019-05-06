@@ -112,8 +112,8 @@ namespace cgb {
 		colorAttachment.storeOp = storeOp;
 		colorAttachment.stencilLoadOp = stencilLoadOp;
 		colorAttachment.stencilStoreOp = stencilStoreOp;
-		colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-		colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		colorAttachment.initialLayout = initialLayout;
+		colorAttachment.finalLayout = finalLayout;
 		mColorAttachments.push_back(colorAttachment);
 
 		std::vector<vk::ImageView> imageViews(mSwapChainImageCount);
@@ -305,8 +305,11 @@ namespace cgb {
 		}
 
 		uint32_t resolveAttachmentSize = colorAttachmentSize;
-		if (mMsaaSamples == vk::SampleCountFlagBits::e1) {
+		if (mMsaaSamples == vk::SampleCountFlagBits::e1 && mResolveColorAttachments.size() == 0) {
 			resolveAttachmentSize = 0;
+		}
+		else {
+			assert(resolveAttachmentSize == mResolveColorAttachments.size());
 		}
 		std::vector<vk::AttachmentReference> resolveColorAttachmentRefs(resolveAttachmentSize);
 

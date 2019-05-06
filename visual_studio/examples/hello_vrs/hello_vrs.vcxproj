@@ -36,6 +36,8 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\passthrough.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\passthrough.vert" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\taa.frag" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\taa.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_cas_img.comp" />

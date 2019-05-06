@@ -28,7 +28,6 @@ namespace cgb {
 
 	vulkan_context::~vulkan_context()
 	{
-		vulkanFramebuffer.reset();
 		//vulkan_context::instance().device.destroy();
 		//if (enableValidationLayers) {
 		//	vkInstance.destroyDebugUtilsMessengerEXT(callback, nullptr, dynamicDispatchInstance);
