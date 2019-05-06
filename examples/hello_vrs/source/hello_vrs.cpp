@@ -152,6 +152,8 @@ private:
 	std::array<std::vector<std::shared_ptr<cgb::vulkan_texture>>, 2> mTAATextures;
 	std::array<std::shared_ptr<cgb::vulkan_render_object>, 2> mTAAFullScreenQuads;
 
+	std::vector<glm::vec2> jitter;
+
 
 public:
 	void initialize() override
@@ -617,34 +619,22 @@ private:
 
 	void drawFrame()
 	{
+		static auto frame = 0;
+
 		mPostProcRenderer->start_frame();
 		// update states, e.g. for animation
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		UniformBufferObject ubo = {};
-		//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.model = glm::mat4(1.0f);
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), imagePresenter->get_swap_chain_extent().width / (float)imagePresenter->get_swap_chain_extent().height, 0.1f, 10.0f);
-		//ubo.proj[1][1] *= -1;
-
-		// -----> !ACHTUNG! Neu von JU <------
-		ubo.model = glm::mat4(1.0f);
-		ubo.view = mCamera.view_matrix();
-		ubo.proj = mCamera.projection_matrix();
-		ubo.mvp = ubo.proj * ubo.view * ubo.model;
-		// -----------------------------------
 
 		UniformBufferObject uboCam{};
-		uboCam.view = mCamera.view_matrix();
-		uboCam.proj = glm::perspective(glm::radians(45.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 1000.0f); mCamera.projection_matrix();
-		//uboCam.proj[1][1] *= -1;
-
 		// -----> !ACHTUNG! Neu von JU <------
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
+		//uboCam.proj = glm::translate(glm::vec3(jitter[frame]/glm::vec2(imagePresenter->get_swap_chain_extent().width/4, imagePresenter->get_swap_chain_extent().height/4), 0))
+		//	* uboCam.proj;
+		uboCam.frameOffset = (jitter[frame] - glm::vec2(0.5))/glm::vec2(imagePresenter->get_swap_chain_extent().width/2, imagePresenter->get_swap_chain_extent().height/2);
 		// -----------------------------------
 
 		// update point light position with view matrix 
@@ -705,6 +695,8 @@ private:
 
 		mPostProcRenderer->end_frame();
 		//cgb::vulkan_context::instance().device.waitIdle();
+
+		frame = (frame + (2 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
 	}
 
 	void createDescriptorSetLayout()
@@ -974,9 +966,26 @@ private:
 
 		mTAADrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mTAAPipeline);
 		mTAARenderer->set_framebuffer(mTAAFramebuffers[0]);
+
+		jitter.resize(16);
+		for (int i = 0; i < jitter.size(); i++) {
+			jitter[i] = glm::vec2(halton(i, 2), halton(i, 3));
+		}
 	}
 
+	double halton(int index, int base) {
+		index++;
+		double f = 1.0;
+		double r = 0.0;
 
+		while (index > 0) {
+			f /= base;
+			r = r + f * (index % base);
+			index = glm::floor(index / base);
+		}
+
+		return r;
+	}
 
 	void load_model(std::string inPath, glm::mat4 transform, const unsigned int model_loader_flags, std::unique_ptr<cgb::Model>& outModel)
 	{

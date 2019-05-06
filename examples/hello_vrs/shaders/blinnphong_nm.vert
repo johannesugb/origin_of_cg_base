@@ -11,6 +11,7 @@ layout(set = 2, binding = 0) uniform UniformBufferObject {
     mat4 pMatrix;
 	mat4 mvp;
 	mat4 vmMatrix;
+	vec2 frameOffset;
 } trans;
 
 //layout(location = 140) uniform vec2 uTexCoordsScale = vec2(1, 1);
@@ -115,5 +116,5 @@ void main()
 	v_out.aTangent = aTangent;
 	v_out.aBitangent = aBitangent;
 
-	gl_Position = positionCS;
+	gl_Position = positionCS + vec4(trans.frameOffset, 0, 0) * 1.0;
 }

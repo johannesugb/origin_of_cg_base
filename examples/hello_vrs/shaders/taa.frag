@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(binding = 0) uniform sampler2D curFrame;
-layout(binding = 0) uniform sampler2D prevFrame;
+layout(binding = 1) uniform sampler2D prevFrame;
 
 
 layout(location = 0) in vec2 fragTexCoord;
@@ -13,5 +13,6 @@ void main() {
 	vec4 prevColor = texture(prevFrame, fragTexCoord);
 	vec4 curColor = texture(curFrame, fragTexCoord);
 
-    outColor = mix(prevColor, curColor, 15.0/16.0);
+    outColor = mix(prevColor, curColor, 1.0/16.0);
+    //outColor = curColor;
 }
