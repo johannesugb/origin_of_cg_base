@@ -13,6 +13,16 @@ namespace cgb
 	using window_ptr = std::unique_ptr<window>;
 	using dispatcher_action = void(void);
 
+	/** Context event handler types are of type bool()
+	*	The return value of an event handler means "handled?" or "done?".
+	*	I.e.: return true if the event handler is done with its work and can be removed.
+	*        Return false to indicate that the event handler is not done and shall remain
+	*        in the list of event handlers. I.e. it will be invoked again.
+	*  Example: For a one-time handler, just return true and have it removed after its first invocation.
+	*	Example: For a recurring handler, return false as long as it shall remain in the list of event handlers.
+	*/
+	using event_handler_func = std::function<bool()>;
+
 	// =========================== GLFW (PARTIAL) CONTEXT ===========================
 	/** @brief Provides generic GLFW-specific functionality
 	 */
@@ -135,6 +145,27 @@ namespace cgb
 		 */
 		void work_off_all_pending_main_thread_actions();
 
+		/** Add a context event handler function
+		*	@param	pHandler		The event handler function which does whatever it does.
+		*							Pay attention, however, to its return type: 
+		*							 * If the handler returns true, the handler will be removed from the list of event handlers
+		*							 * If the handler returns false, in will remain in the event handlers list
+		*	@param	pStage			If the handler shall be invoked at a certain context stage only,
+		*							specify that stage with this parameter. If it shall be invoked 
+		*							regardless of the context's stage, leave it at context_state::unknown.
+		*/
+		void add_event_handler(event_handler_func pHandler, context_state pStage = context_state::unknown);
+
+		/** Invoke all the event handlers which are assigned to the current context state or to unknown state
+		*/
+		void work_off_event_handlers();
+
+		// Waits for GLFW input events and pauses the current (=main) thread
+		inline void wait_for_input_events() const { glfwWaitEvents(); }
+
+		// Posts an event so that the waiting on the other thread is ended and the other thread continues
+		inline void signal_waiting_main_thread() const { glfwPostEmptyEvent(); }
+
 	protected:
 		static void glfw_error_callback(int error, const char* description);
 		static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
@@ -153,6 +184,19 @@ namespace cgb
 
 		static std::thread::id sMainThreadId;
 		static std::mutex sDispatchMutex;
+
+
 		std::vector<std::function<dispatcher_action>> mDispatchQueue;
+
+		/** Context event handlers, possible assigned to a certain context_state at 
+		*	which they shall be executed. If the cgb::context_state is set to unknown,
+		*	the associated event handler could possible be executed at any state.
+		*
+		*	Event handlers are always executed on the main thread.
+		*/
+		std::vector<std::tuple<event_handler_func, cgb::context_state>> mEventHandlers;
+
+		// Which state the context is currently in
+		cgb::context_state mContextState;
 	};
 }

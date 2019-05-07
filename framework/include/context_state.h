@@ -7,11 +7,11 @@ namespace cgb
 		unknown,
 		halfway_initialized,
 		fully_initialized,
-		composition_ending,
-		composition_beginning,
 		frame_begun,
 		frame_updates_done,
 		frame_ended,
+		composition_ending,
+		composition_beginning,
 		about_to_finalize,
 		has_finalized
 	};

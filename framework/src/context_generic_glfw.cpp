@@ -178,6 +178,8 @@ namespace cgb
 		// Insert in the back and return the newly created window
 		auto& back = mWindows.emplace_back(std::make_unique<window>());
 
+		context().add_event_handler()
+
 		// Set the focus callback
 		back->mPostCreateActions.push_back([](window& w) {
 			glfwSetWindowFocusCallback(w.handle()->mHandle, glfw_window_focus_callback);
@@ -400,10 +402,36 @@ namespace cgb
 
 	void generic_glfw::work_off_all_pending_main_thread_actions()
 	{
+		assert(are_we_on_the_main_thread());
 		std::scoped_lock<std::mutex> guard(sDispatchMutex);
 		for (auto& action : mDispatchQueue) {
 			action();
 		}
 		mDispatchQueue.clear();
+	}
+
+	void generic_glfw::add_event_handler(event_handler_func pHandler, context_state pStage)
+	{
+		dispatch_to_main_thread([handler = std::move(pHandler), stage = pStage]() {
+			context().mEventHandlers.emplace_back(std::move(handler), stage);
+		});
+	}
+
+	void generic_glfw::work_off_event_handlers()
+	{
+		assert(are_we_on_the_main_thread());
+		std::scoped_lock<std::mutex> guard(sDispatchMutex);
+		mEventHandlers.erase(
+			std::remove_if(
+				std::begin(mEventHandlers), std::end(mEventHandlers),
+				[curState = mContextState](const auto& tpl) {
+					auto targetState = std::get<cgb::context_state>(tpl);
+					if (targetState != cgb::context_state::unknown && targetState != curState) {
+						return false; // false => not done yet! Handler shall remain, because handler has not been invoked.
+					}
+					// Invoke the handler:
+					return std::get<event_handler_func>()(); // true => done, i.e. remove
+															 // false => not done yet, i.e. shall remain
+				}));
 	}
 }

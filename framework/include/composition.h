@@ -148,7 +148,7 @@ namespace cgb
 		{
 			thiz->mShouldSwapInputBuffers = true;
 			thiz->mInputBufferGoodToGo = false;
-			glfwPostEmptyEvent();
+			context().signal_waiting_main_thread();
 		}
 
 		/** Signal the rendering thread that input buffers have been swapped */
@@ -182,7 +182,8 @@ namespace cgb
 				thiz->add_pending_elements();
 
 				// signal context
-				cgb::context().begin_frame();
+				context().begin_frame();
+				context().signal_waiting_main_thread(); // Let the main thread do some work in the meantime
 
 				frameType = thiz->mTimer.tick();
 
@@ -203,7 +204,8 @@ namespace cgb
 					thiz->mExecutor.execute_updates(thiz->mElements);
 
 					// signal context
-					cgb::context().update_stage_done();
+					context().update_stage_done();
+					context().signal_waiting_main_thread(); // Let the main thread do some work in the meantime
 
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
 					please_swap_input_buffers(thiz);
@@ -220,7 +222,8 @@ namespace cgb
 				else
 				{
 					// signal context
-					cgb::context().update_stage_done();
+					context().update_stage_done();
+					context().signal_waiting_main_thread(); // Let the main thread do some work in the meantime
 
 					// If not done from inside the positive if-branch, tell the main thread of our input buffer update desire here:
 					please_swap_input_buffers(thiz);
@@ -230,7 +233,8 @@ namespace cgb
 				thiz->mExecutor.execute_handle_disablings(thiz->mElements);
 
 				// signal context
-				cgb::context().end_frame();
+				context().end_frame();
+				context().signal_waiting_main_thread(); // Let the main thread do some work in the meantime
 
 				thiz->remove_pending_elements();
 			}
@@ -287,7 +291,7 @@ namespace cgb
 			}
 
 			// Signal context after initialization
-			cgb::context().begin_composition();
+			context().begin_composition();
 
 			// Enable receiving input
 			auto windows_for_input = context().find_windows([](auto * w) { return w->is_input_enabled(); });
@@ -324,7 +328,7 @@ namespace cgb
 					have_swapped_input_buffers();
 				}
 
-				glfwWaitEvents();
+				context().wait_for_input_events();
 			}
 
 			renderThread.join();
@@ -340,7 +344,7 @@ namespace cgb
 			mWindowsReceivingInputFrom.clear();
 
 			// Signal context before finalization
-			cgb::context().end_composition();
+			context().end_composition();
 
 			// 9. finalize
 			for (auto& o : mElements)

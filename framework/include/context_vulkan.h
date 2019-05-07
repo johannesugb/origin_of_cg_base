@@ -34,6 +34,7 @@ namespace cgb
 		friend struct command_pool;
 		friend struct command_buffer;
 	public:
+		
 		static size_t sSettingMaxFramesInFlight;
 
 		vulkan();
@@ -128,9 +129,6 @@ namespace cgb
 
 		/** Set up the debug callbacks, i.e. hook into vk to have @ref vk_debug_callback called */
 		void setup_vk_debug_callback();
-
-		/** Creates a surface for the given window */
-		vk::SurfaceKHR create_surface_for_window(const window* pWindow);
 
 		/** 
 		 *	@return Pointer to the tuple or nullptr if not found
@@ -260,8 +258,6 @@ namespace cgb
 
 		bool is_format_supported(vk::Format pFormat, vk::ImageTiling pTiling, vk::FormatFeatureFlags pFormatFeatures);
 
-
-
 		vk::PhysicalDeviceRayTracingPropertiesNV get_ray_tracing_properties();
 
 	public:
@@ -286,36 +282,7 @@ namespace cgb
 
 		std::vector<command_pool> mCommandPools;
 		std::vector<descriptor_pool> mDescriptorPools;
-
-	private:
-		/** Context event handler types are of type bool()
-		 *	Return true if the event handler shall remain in the list of handlers.
-		 *  Return false to remove the event handler from the list of handlers.
-		 *  (Use the latter for one-time handlers, the former for recurring handlers.)
-		 */
-		using event_handler_func = std::function<bool()>;
-
-		/** These event handlers are called frequently at all kinds of 
-		 *	stages during the context runs;
-		 */
-		std::vector<event_handler_func> mContextEventHandlers;
-
-		/** These event handlers are called when a composition is teared down
-		 *	and possibly another composition is about to become active. 
-		 *	You can think of them as "scene switches".
-		 */
-		std::vector<event_handler_func> mCompositionTransitionHandlers;
 		
-		/** These event handlers are called when the whole context is teared
-		 *	down at the very end of this application's lifetime
-		 */
-		std::vector<event_handler_func> mContextCleanupHandlers;
-
-		// Which state the context is currently in
-		cgb::context_state mContextState;
-
-		// TODO: Make context stages enum
-		// TODO: Create functions to add event handlers
 	};
 
 	// [1] Vulkan Tutorial, Depth buffering, https://vulkan-tutorial.com/Depth_buffering

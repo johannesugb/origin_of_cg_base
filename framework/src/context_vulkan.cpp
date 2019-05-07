@@ -27,8 +27,8 @@ namespace cgb
 
 	vulkan::vulkan()
 		: generic_glfw()
-		, mFrameCounter(0)
 		, mContextState(cgb::context_state::unknown)
+		, mEventHandlers()
 	{
 		// So it begins
 		create_instance();
@@ -36,20 +36,43 @@ namespace cgb
 		// Setup debug callback and enable all validation layers configured in global settings 
 		setup_vk_debug_callback();
 
-		// The window surface needs to be created right after the instance creation, because it can actually influence the physical device selection.
-
-		// Select the best suitable physical device which supports all requested extensions
-		pick_physical_device();
-
-		// NOTE: Vulkan-init is not finished yet!
-		//       Initialization will continue when the first window (and it's surface) is created.
+		// The window surface needs to be created right after the instance creation 
+		// and before physical device selection, because it can actually influence 
+		// the physical device selection.
 
 		mContextState = cgb::context_state::halfway_initialized;
+		// NOTE: Vulkan-init is not finished yet!
+		//       Initialization will continue after the first window (and it's surface) have been created.
+
+		add_event_handler([]() {
+			// Just get any window:
+			auto* window = context().find_window([]() { return true; });
+
+			// Do we have a window with a handle?
+			if (nullptr == window || !window->handle().has_value()) { 
+				return false; // Nope => not done
+			}
+
+			// We need a SURFACE to create the logical device => do it after the first window has been created
+			
+			// Select the best suitable physical device which supports all requested extensions
+			context().pick_physical_device();
+
+			context().create_and_assign_logical_device(surface);
+
+			// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
+			sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
+			//create_sync_objects(); // <-- TODO
+
+			context().mContextState = cgb::context_state::fully_initialized;
+
+		}, cgb::context_state::halfway_initialized);
 	}
 
 	vulkan::~vulkan()
 	{
 		mContextState = cgb::context_state::about_to_finalize;
+		work_off_event_handlers();
 
 		// Destroy all descriptor pools before the queues and the device is destroyed
 		mDescriptorPools.clear();
@@ -90,6 +113,7 @@ namespace cgb
 		mInstance.destroy();
 	
 		mContextState = cgb::context_state::has_finalized;
+		work_off_event_handlers();
 	}
 
 	void vulkan::check_vk_result(VkResult err)
@@ -99,18 +123,27 @@ namespace cgb
 
 	void vulkan::begin_composition()
 	{ 
-		mContextState = cgb::context_state::composition_beginning;
+		dispatch_to_main_thread([]() {
+			context().mContextState = cgb::context_state::composition_beginning;
+			context().work_off_event_handlers();
+		});
 	}
 
 	void vulkan::end_composition()
 	{
-		mContextState = cgb::context_state::composition_ending;
-		mLogicalDevice.waitIdle();
+		dispatch_to_main_thread([]() {
+			context().mContextState = cgb::context_state::composition_ending;
+			context().work_off_event_handlers();
+			context().mLogicalDevice.waitIdle();
+		});
 	}
 
 	void vulkan::begin_frame()
 	{
-		mContextState = cgb::context_state::frame_begun;
+		dispatch_to_main_thread([]() {
+			context().mContextState = cgb::context_state::frame_begun;
+			context().work_off_event_handlers();
+		});
 		mFrameCounter += 1;
 	
 		// Wait for the prev-prev frame (fence-ping-pong)
@@ -126,12 +159,18 @@ namespace cgb
 
 	void vulkan::update_stage_done()
 	{
-		mContextState = cgb::context_state::frame_updates_done;
+		dispatch_to_main_thread([]() {
+			context().mContextState = cgb::context_state::frame_updates_done;
+			context().work_off_event_handlers();
+		});
 	}
 
 	void vulkan::end_frame()
 	{
-		mContextState = cgb::context_state::frame_ended;
+		dispatch_to_main_thread([]() {
+			context().mContextState = cgb::context_state::frame_ended;
+			context().work_off_event_handlers();
+		});
 	}
 
 	void vulkan::draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer)
@@ -157,22 +196,22 @@ namespace cgb
 
 	window* vulkan::create_window(const std::string& pTitle)
 	{
+		work_off_event_handlers();
+
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		auto* wnd = generic_glfw::prepare_window();
 
-		wnd->mPostCreateActions.push_back([](cgb::window& w) {
+		add_event_handler([wnd]() -> bool {
 			// Create a surface and tie it to the window // TODO: tie surface to the window!
-			auto surface = context().create_surface_for_window(&w);
-			// Vulkan init completion?
-			if (0u == w.id() && w.handle()) { // We need a surface to create the logical device => do it after the first window has been created
-				// This finishes Vulkan initialization:
-				context().create_and_assign_logical_device(surface);
-				// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
-				sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
-				//create_sync_objects(); // <-- TODO
-
-				context().mContextState = cgb::context_state::fully_initialized;
+			VkSurfaceKHR surface;
+			if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mHandle, nullptr, &surface)) {
+				throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->title()));
 			}
+		});
+
+		wnd->mPostCreateActions.push_back([](cgb::window& w) {
+			auto surface = context().create_surface_for_window(&w);
+			
 			// Continue tuple creation
 			//auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
 
@@ -414,17 +453,6 @@ namespace cgb
 			throw std::runtime_error("Failed to vkGetInstanceProcAddr for vkCreateDebugUtilsMessengerEXT.");
 		}
 #endif
-	}
-
-	vk::SurfaceKHR vulkan::create_surface_for_window(const window* pWindow)
-	{
-		assert(pWindow);
-		assert(pWindow->handle());
-		VkSurfaceKHR surface;
-		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mHandle, nullptr, &surface)) {
-			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->title()));
-		}
-		return surface;
 	}
 
 	swap_chain_data* vulkan::get_surf_swap_tuple_for_window(const window* pWindow)
@@ -1378,6 +1406,7 @@ namespace cgb
 		mPhysicalDevice.getProperties2(&props2);
 		return rtProps;
 	}
+
 
 	// REFERENCES:
 	// [1] Vulkan Tutorial, Logical device and queues, https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues
