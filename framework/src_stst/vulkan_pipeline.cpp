@@ -24,8 +24,11 @@ namespace cgb {
 		return buffer;
 	}
 
-	vulkan_pipeline::vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout) :
-		mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mResourceBundleLayouts(resourceBundleLayout)
+	vulkan_pipeline::vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples,
+		std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayout, size_t pushConstantsSize,
+		ShaderStageFlagBits pushConstantsStageFlags) :
+		mRenderPass(renderPass), mViewport(viewport), mScissor(scissor), mMsaaSamples(msaaSamples), mResourceBundleLayouts(resourceBundleLayout),
+		mPushConstantsSize(pushConstantsSize), mPushConstantsStageFlags(pushConstantsStageFlags)
 	{
 		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState{};
 		colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -261,10 +264,14 @@ namespace cgb {
 		dynamicState.pDynamicStates = dynamicStates;
 
 		// TODO replace with ressource
-		vk::PushConstantRange pushConstantRange = {};
-		pushConstantRange.offset = 0;
-		pushConstantRange.size = sizeof(PushUniforms);
-		pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		mPushConstantRanges.clear();
+		if (mPushConstantsSize > 0) {
+			vk::PushConstantRange pushConstantRange = {};
+			pushConstantRange.offset = 0;
+			pushConstantRange.size = mPushConstantsSize;
+			pushConstantRange.stageFlags = static_cast<vk::ShaderStageFlagBits>(mPushConstantsStageFlags);
+			mPushConstantRanges.push_back(pushConstantRange);
+		}
 
 		std::vector<vk::DescriptorSetLayout> layouts(mResourceBundleLayouts.size());
 		std::transform(mResourceBundleLayouts.begin(), mResourceBundleLayouts.end(), layouts.begin(), [](auto rBLayout) { return rBLayout->get_descriptor_set_layout(); });
@@ -272,8 +279,8 @@ namespace cgb {
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		pipelineLayoutInfo.setLayoutCount = layouts.size(); // Optional
 		pipelineLayoutInfo.pSetLayouts = layouts.data(); // Optional
-		pipelineLayoutInfo.pushConstantRangeCount = 1; // Optional
-		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange; // Optional
+		pipelineLayoutInfo.pushConstantRangeCount = mPushConstantRanges.size(); // Optional
+		pipelineLayoutInfo.pPushConstantRanges = mPushConstantRanges.data(); // Optional
 
 		if (vulkan_context::instance().device.createPipelineLayout(&pipelineLayoutInfo, nullptr, &mPipelineLayout) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to create pipeline layout!");

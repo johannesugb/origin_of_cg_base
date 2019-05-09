@@ -5,6 +5,15 @@
 
 // ################# UNIFORM DATA ###############
 
+layout(push_constant) uniform PushUniforms
+{
+    mat4 vPMatrix;
+	mat4 invPMatrix;
+	mat4 invVMatrix;
+	vec2 projAScale;
+	vec2 imgSize;
+} prevFrameData;
+
 layout(set = 2, binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
@@ -116,5 +125,5 @@ void main()
 	v_out.aTangent = aTangent;
 	v_out.aBitangent = aBitangent;
 
-	gl_Position = positionCS + vec4(trans.frameOffset, 0, 0) * 1.0;
+	gl_Position = positionCS + vec4(trans.frameOffset, 0, 0) * 4.0;
 }

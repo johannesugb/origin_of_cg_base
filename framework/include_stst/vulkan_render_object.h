@@ -106,11 +106,12 @@ namespace cgb {
 		vk::Buffer get_index_buffer() { return mIndexBuffer->get_vk_buffer(); }
 		//void setIndexBuffer(vk::Buffer indexBuffer) { _indexBuffer = indexBuffer; }
 
-		PushUniforms get_push_uniforms() { return mPushUniforms; }
+		void* get_push_uniforms() { return mPushConstData.get(); }
 
 		std::vector<std::shared_ptr<vulkan_resource_bundle>> get_resource_bundles() { return mResourceBundles; }
 
 		void update_uniform_buffer(uint32_t currentImage, UniformBufferObject ubo);
+		void update_push_constant(std::shared_ptr<void> pushConstData);
 
 	private:
 		std::vector<Vertex> mVertices;
@@ -122,7 +123,7 @@ namespace cgb {
 
 		std::vector<std::shared_ptr<vulkan_buffer>> mUniformBuffers;
 
-		PushUniforms mPushUniforms;
+		std::shared_ptr<void> mPushConstData;
 		// TODO PERFORMANCE use multiple descriptor sets / per render pass, e.g. shadow pass does not use textures
 		// or like suggested for AMD Hardware, use one large descriptor set for everything and index into Texture arrays and uniforms
 		// suggestion: use an array of descriptor sets, the drawer then can decide, which descriptor set to use, 

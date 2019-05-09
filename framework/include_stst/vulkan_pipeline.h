@@ -31,7 +31,9 @@ namespace cgb {
 	class vulkan_pipeline
 	{
 	public:
-		vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> resourceBundleLayouts);
+		vulkan_pipeline(vk::RenderPass renderPass, vk::Viewport viewport, vk::Rect2D scissor, vk::SampleCountFlagBits msaaSamples, 
+			std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> resourceBundleLayouts, size_t pushConstantsSize = 0, 
+			ShaderStageFlagBits pushConstantsStageFlags = ShaderStageFlagBits::eVertex);
 
 		vulkan_pipeline(std::vector<std::shared_ptr<vulkan_resource_bundle_layout>> resourceBundleLayouts = {}, size_t pushConstantsSize = 0);
 		virtual ~vulkan_pipeline();
@@ -58,7 +60,10 @@ namespace cgb {
 
 		vk::PipelineColorBlendStateCreateInfo& get_color_blend_state() { return mColorBlending; }
 		vk::PipelineColorBlendAttachmentState& get_color_blend_attachment_state(int i) { return mColorBlendAttachments[i]; }
-		void add_color_blend_attachment_state(vk::PipelineColorBlendAttachmentState attach) { return mColorBlendAttachments.push_back(attach); }
+		void add_color_blend_attachment_state(vk::PipelineColorBlendAttachmentState attach) { mColorBlendAttachments.push_back(attach); }
+
+		size_t get_push_constant_size() { return mPushConstantsSize; }
+		ShaderStageFlagBits get_push_constant_stage_flags() { return mPushConstantsStageFlags; }
 
 	private:
 		vk::Pipeline mPipeline;
@@ -72,6 +77,7 @@ namespace cgb {
 		// pipeline config
 		std::vector<vk::PushConstantRange> mPushConstantRanges;
 		size_t mPushConstantsSize;
+		ShaderStageFlagBits mPushConstantsStageFlags;
 
 		vk::RenderPass mRenderPass;
 

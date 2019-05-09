@@ -54,12 +54,14 @@ namespace cgb {
 			auto descriptorSets = get_descriptor_sets(renderObject->get_resource_bundles());
 			commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), globalDescriptorSets.size(), descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 
-			commandBuffer.pushConstants(
-				mPipeline->get_pipeline_layout(),
-				vk::ShaderStageFlagBits::eVertex,
-				0,
-				sizeof(PushUniforms),
-				&(renderObject->get_push_uniforms()));
+			if (mPipeline->get_push_constant_size() > 0) {
+				commandBuffer.pushConstants(
+					mPipeline->get_pipeline_layout(),
+					static_cast<vk::ShaderStageFlagBits>(mPipeline->get_push_constant_stage_flags()),
+					0,
+					mPipeline->get_push_constant_size(),
+					renderObject->get_push_uniforms());
+			}
 
 			commandBuffer.drawIndexed(static_cast<uint32_t>(renderObject->get_index_count()), 1, 0, 0, 0);
 		}

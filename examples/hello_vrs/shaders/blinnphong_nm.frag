@@ -83,6 +83,7 @@ layout(location = 0) in VertexData
 // ################## OUTPUT DATA ###############
 layout(location = 0) out vec4 oFragColor;
 layout(location = 1) out vec4 oTexelDifferentials;
+layout(location = 2) out vec2 oMotionVector;
 // ----------------------------------------------
 
 // ############### HELPER FUNCTIONS #############

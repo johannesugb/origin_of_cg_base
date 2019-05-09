@@ -7,6 +7,14 @@ vrs_cas_compute_drawer::vrs_cas_compute_drawer(std::shared_ptr<cgb::vulkan_comma
 	std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages) : vulkan_drawer(commandBufferManager, pipeline, globalResourceBundles),
 	mVrsPrevRenderImages(mVrsPrevRenderImages), mVrsPrevRenderBlitImages(vrsPrevRenderBlitImages)
 {
+	mCurrPushConstData = vrs_cas_comp_data{};
+	int mWidth = -1;
+	int mHeight = -1;
+
+	mCamData = UniformBufferObject{};
+	mPrevCamData = UniformBufferObject{};
+	mNearPlane - 1;
+	mFarPlane = -1;
 }
 
 
@@ -44,14 +52,14 @@ void vrs_cas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> render
 	imgMemBarrier.subresourceRange.levelCount = 1;
 	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eShadingRateImageNV, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
 
-	auto data = vrs_cas_comp_data{};
-	data.vPMatrix = mCamData.proj * mCamData.view;
-	data.invPMatrix = glm::inverse(mPrevCamData.proj);
-	data.invVMatrix = glm::inverse(mPrevCamData.view);
-	data.projAScale = glm::vec2(mFarPlane / (mFarPlane - mNearPlane), -mFarPlane * mNearPlane / (mFarPlane - mNearPlane));
-	data.imgSize = glm::vec2(mWidth, mHeight);
+	mCurrPushConstData = vrs_cas_comp_data{};
+	mCurrPushConstData.vPMatrix = mPrevCamData.proj * mPrevCamData.view;
+	mCurrPushConstData.invPMatrix = glm::inverse(mCamData.proj);
+	mCurrPushConstData.invVMatrix = glm::inverse(mCamData.view);
+	mCurrPushConstData.projAScale = glm::vec2(mFarPlane / (mFarPlane - mNearPlane), -mFarPlane * mNearPlane / (mFarPlane - mNearPlane));
+	mCurrPushConstData.imgSize = glm::vec2(mWidth, mHeight);
 
-	auto arr = vk::ArrayProxy<const vrs_cas_comp_data>(data);
+	auto arr = vk::ArrayProxy<const vrs_cas_comp_data>(mCurrPushConstData);
 	commandBuffer.pushConstants(mPipeline->get_pipeline_layout(), vk::ShaderStageFlagBits::eCompute, 0, arr);
 
 	auto globalDescriptorSets = get_descriptor_sets(mGlobalResourceBundles);

@@ -4,7 +4,7 @@ namespace cgb {
 
 	vulkan_render_object::vulkan_render_object(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<std::shared_ptr<vulkan_resource_bundle>> resourceBundles) 
 		: mVertices(vertices), mIndices(indices), mIndexCount(indices.size()) {
-		mPushUniforms = PushUniforms();
+		mPushConstData = std::make_shared<PushUniforms>();
 		mResourceBundles.insert(mResourceBundles.end(), resourceBundles.begin(), resourceBundles.end());
 		create_vertex_index_buffer();
 	}
@@ -14,7 +14,7 @@ namespace cgb {
 		std::vector<std::shared_ptr<vulkan_resource_bundle>> resourceBundles) :
 	mVertexBuffers(vertexBuffers), mIndexBuffer(indexBuffer), mIndexCount(indexCount)
 	{
-		mPushUniforms = PushUniforms();
+		mPushConstData = std::make_shared<PushUniforms>();
 		create_uniform_buffer();
 		mResourceBundles.insert(mResourceBundles.end(), resourceBundles.begin(), resourceBundles.end());
 		create_descriptor_sets(resourceBundleLayout, resourceBundleGroup, nullptr, {});
@@ -25,7 +25,7 @@ namespace cgb {
 		std::shared_ptr<vulkan_texture> texture, std::vector<std::shared_ptr<vulkan_texture>> debugTextures)
 		:  mVertices(vertices), mIndices(indices), mIndexCount(indices.size())
 	{
-		mPushUniforms = PushUniforms();
+		mPushConstData = std::make_shared<PushUniforms>();
 		create_vertex_index_buffer();
 
 		create_uniform_buffer();
@@ -64,15 +64,14 @@ namespace cgb {
 	}
 
 	void vulkan_render_object::update_uniform_buffer(uint32_t currentImage, UniformBufferObject ubo) {
-
-		mPushUniforms.model = ubo.model;
-		mPushUniforms.view = ubo.view;
-		mPushUniforms.proj = ubo.proj;
-		mPushUniforms.mvp = ubo.mvp;
-
 		if (mUniformBuffers.size() > 0) {
 			mUniformBuffers[currentImage]->update_buffer(&ubo, sizeof(ubo));
 		}
+	}
+
+	void cgb::vulkan_render_object::update_push_constant(std::shared_ptr<void> pushConstData)
+	{
+		mPushConstData = pushConstData;
 	}
 
 	void vulkan_render_object::create_vertex_index_buffer() {
