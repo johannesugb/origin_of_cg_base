@@ -205,7 +205,7 @@ namespace cgb
 
 					// signal context
 					context().update_stage_done();
-					context().signal_waiting_main_thread(); // Let the main thread do some work in the meantime
+					context().signal_waiting_main_thread(); // Let the main thread work concurrently
 
 					// Tell the main thread that we'd like to have the new input buffers from A) here:
 					please_swap_input_buffers(thiz);
@@ -223,9 +223,10 @@ namespace cgb
 				{
 					// signal context
 					context().update_stage_done();
-					context().signal_waiting_main_thread(); // Let the main thread do some work in the meantime
+					context().signal_waiting_main_thread(); // Let the main thread work concurrently
 
-					// If not done from inside the positive if-branch, tell the main thread of our input buffer update desire here:
+					// If not performed from inside the positive if-branch, tell the main thread of our 
+					// input buffer update desire here:
 					please_swap_input_buffers(thiz);
 				}
 
@@ -234,7 +235,7 @@ namespace cgb
 
 				// signal context
 				context().end_frame();
-				context().signal_waiting_main_thread(); // Let the main thread do some work in the meantime
+				context().signal_waiting_main_thread(); // Let the main thread work concurrently
 
 				thiz->remove_pending_elements();
 			}
@@ -313,6 +314,7 @@ namespace cgb
 			while (!mShouldStop)
 			{
 				context().work_off_all_pending_main_thread_actions();
+				context().work_off_event_handlers();
 
 				if (mShouldSwapInputBuffers)
 				{

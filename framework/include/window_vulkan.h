@@ -49,6 +49,13 @@ namespace cgb
 		 */
 		vk::PipelineMultisampleStateCreateInfo get_multisample_state_create_info();
 
+		const vk::SurfaceKHR& surface() const { return mSurface; }
+		const vk::SwapchainKHR& swap_chain() const { return mSwapChain; }
+		const image_format& swap_chain_image_format() const { return mSwapChainImageFormat; }
+		vk::Extent2D swap_chain_extent() const { return mSwapChainExtent; }
+		const vk::Image& swap_chain_image_at_index(size_t pIdx) { return mSwapChainImages[pIdx]; }
+		const vk::ImageView& swap_chain_image_view_at_index(size_t pIdx) { return mSwapChainImageViews[pIdx]; }
+
 	protected:
 		// A function which returns the surface format for this window's surface
 		std::function<vk::SurfaceFormatKHR(const vk::SurfaceKHR&)> mSurfaceFormatSelector;

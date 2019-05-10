@@ -2,8 +2,8 @@
 
 namespace cgb
 {
-	size_t vulkan::sSettingMaxFramesInFlight = 2;
-	size_t vulkan::sActualMaxFramesInFlight = 2;
+	//size_t vulkan::sSettingMaxFramesInFlight = 2;
+	//size_t vulkan::sActualMaxFramesInFlight = 2;
 
 	std::vector<const char*> vulkan::sRequiredDeviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -27,8 +27,6 @@ namespace cgb
 
 	vulkan::vulkan()
 		: generic_glfw()
-		, mContextState(cgb::context_state::unknown)
-		, mEventHandlers()
 	{
 		// So it begins
 		create_instance();
@@ -41,32 +39,87 @@ namespace cgb
 		// the physical device selection.
 
 		mContextState = cgb::context_state::halfway_initialized;
+
 		// NOTE: Vulkan-init is not finished yet!
 		//       Initialization will continue after the first window (and it's surface) have been created.
-
 		add_event_handler([]() {
 			// Just get any window:
-			auto* window = context().find_window([]() { return true; });
+			auto* window = context().find_window([](auto* w) { 
+				return nullptr != w && !w->handle().has_value();
+			});
 
 			// Do we have a window with a handle?
-			if (nullptr == window || !window->handle().has_value()) { 
+			if (nullptr == window) { 
 				return false; // Nope => not done
 			}
 
 			// We need a SURFACE to create the logical device => do it after the first window has been created
-			
+			auto surface = window->surface();
+
 			// Select the best suitable physical device which supports all requested extensions
 			context().pick_physical_device();
 
 			context().create_and_assign_logical_device(surface);
 
-			// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
-			sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
-			//create_sync_objects(); // <-- TODO
+			//// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
+			//sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
+			////create_sync_objects(); // <-- TODO
 
 			context().mContextState = cgb::context_state::fully_initialized;
 
 		}, cgb::context_state::halfway_initialized);
+
+		// We're still not done yet with our initial setup efforts if we need ImGui,
+		// but we're going to set that up at an even later point -> when we have the 
+		// context fully initiylized:
+		if (!settings::gDisableImGui) {
+			// Init and wire-in IMGUI
+			context().add_event_handler([]() -> bool {
+
+				IMGUI_CHECKVERSION();
+				ImGui::CreateContext();
+				ImGuiIO& io = ImGui::GetIO(); (void)io;
+				//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+				//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+
+				// Setup Dear ImGui style
+				ImGui::StyleColorsDark();
+				//ImGui::StyleColorsClassic();
+
+				// Setup Platform/Renderer bindings
+				ImGui_ImplGlfw_InitForVulkan(w.handle()->mHandle, true);
+
+				//struct ImGui_ImplVulkan_InitInfo
+				//{
+				//	VkInstance          Instance;
+				//	VkPhysicalDevice    PhysicalDevice;
+				//	VkDevice            Device;
+				//	uint32_t            QueueFamily;
+				//	VkQueue             Queue;
+				//	VkPipelineCache     PipelineCache;
+				//	VkDescriptorPool    DescriptorPool;
+				//	uint32_t            MinImageCount;          // >= 2
+				//	uint32_t            ImageCount;             // >= MinImageCount
+				//	const VkAllocationCallbacks* Allocator;
+				//	void                (*CheckVkResultFn)(VkResult err);
+				//};
+
+				ImGui_ImplVulkan_InitInfo init_info = {};
+				init_info.Instance = context().vulkan_instance();
+				init_info.PhysicalDevice = context().physical_device();
+				init_info.Device = context().logical_device();;
+				init_info.QueueFamily = context().graphics_queue_index();
+				init_info.Queue = context().graphics_queue();
+				init_info.PipelineCache = VK_NULL_HANDLE;
+				init_info.DescriptorPool = context().get_descriptor_pool().mDescriptorPool;
+				init_info.Allocator = VK_NULL_HANDLE;
+				//init_info.MinImageCount = sActualMaxFramesInFlight; // <---- TODO
+				//init_info.ImageCount = sActualMaxFramesInFlight; // <---- TODO
+				init_info.CheckVkResultFn = check_vk_result;
+
+				// TODO: Hmm, or do we have to do this per swap chain? 
+			});
+		}
 	}
 
 	vulkan::~vulkan()
@@ -80,20 +133,20 @@ namespace cgb
 		// Destroy all command pools before the queues and the device is destroyed
 		mCommandPools.clear();
 
-		// Destroy all:
-		//  - swap chains,
-		//  - surfaces,
-		//  - and windows
-		for (auto& ptrToSwapChainData : mSurfSwap) {
-			// Unlike images, the image views were explicitly created by us, so we need to add a similar loop to destroy them again at the end of the program [3]
-			for (auto& imageView : ptrToSwapChainData->mSwapChainImageViews) {
-				mLogicalDevice.destroyImageView(imageView);
-			}
-			mLogicalDevice.destroySwapchainKHR(ptrToSwapChainData->mSwapChain);
-			mInstance.destroySurfaceKHR(ptrToSwapChainData->mSurface);
-			generic_glfw::close_window(*ptrToSwapChainData->mWindow);
-		}
-		mSurfSwap.clear();
+		//// Destroy all:
+		////  - swap chains,
+		////  - surfaces,
+		////  - and windows
+		//for (auto& ptrToSwapChainData : mSurfSwap) {
+		//	// Unlike images, the image views were explicitly created by us, so we need to add a similar loop to destroy them again at the end of the program [3]
+		//	for (auto& imageView : ptrToSwapChainData->mSwapChainImageViews) {
+		//		mLogicalDevice.destroyImageView(imageView);
+		//	}
+		//	mLogicalDevice.destroySwapchainKHR(ptrToSwapChainData->mSwapChain);
+		//	mInstance.destroySurfaceKHR(ptrToSwapChainData->mSurface);
+		//	generic_glfw::close_window(*ptrToSwapChainData->mWindow);
+		//}
+		//mSurfSwap.clear();
 
 		// Destroy the semaphores
 		//cleanup_sync_objects(); <-- TODO
@@ -144,7 +197,7 @@ namespace cgb
 			context().mContextState = cgb::context_state::frame_begun;
 			context().work_off_event_handlers();
 		});
-		mFrameCounter += 1;
+		//mFrameCounter += 1;
 	
 		// Wait for the prev-prev frame (fence-ping-pong)
 		// TODO: We should only wait for fences if some were submitted 
@@ -201,81 +254,15 @@ namespace cgb
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		auto* wnd = generic_glfw::prepare_window();
 
-		add_event_handler([wnd]() -> bool {
-			// Create a surface and tie it to the window // TODO: tie surface to the window!
-			VkSurfaceKHR surface;
-			if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, pWindow->handle()->mHandle, nullptr, &surface)) {
-				throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", pWindow->title()));
-			}
-		});
-
-		wnd->mPostCreateActions.push_back([](cgb::window& w) {
-			auto surface = context().create_surface_for_window(&w);
-			
-			// Continue tuple creation
-			//auto swapChain = create_swap_chain(wnd, surface, pSwapParams);
-
-			// Insert at the back
-			//auto& back = mSurfSwap.emplace_back(std::make_unique<swap_chain_data>(std::move(swapChain)));
-			//return back->mWindow;
-
-			context().mTmpMainWindow = &w;
-			context().mTmpSurface = surface;
-		});
-
-		if (!settings::gDisableImGui) {
-			// Init and wire-in IMGUI
-			wnd->mPostCreateActions.push_back([this](cgb::window& w) {
-
-				if (0u == w.id() && w.handle()) { // Do this only once, i.e. when the first window has been created
-
-					// Setup Dear ImGui context
-					IMGUI_CHECKVERSION();
-					ImGui::CreateContext();
-					ImGuiIO& io = ImGui::GetIO(); (void)io;
-					//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-					//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-
-					// Setup Dear ImGui style
-					ImGui::StyleColorsDark();
-					//ImGui::StyleColorsClassic();
-
-					// Setup Platform/Renderer bindings
-					ImGui_ImplGlfw_InitForVulkan(w.handle()->mHandle, true);
-
-					//struct ImGui_ImplVulkan_InitInfo
-					//{
-					//	VkInstance          Instance;
-					//	VkPhysicalDevice    PhysicalDevice;
-					//	VkDevice            Device;
-					//	uint32_t            QueueFamily;
-					//	VkQueue             Queue;
-					//	VkPipelineCache     PipelineCache;
-					//	VkDescriptorPool    DescriptorPool;
-					//	uint32_t            MinImageCount;          // >= 2
-					//	uint32_t            ImageCount;             // >= MinImageCount
-					//	const VkAllocationCallbacks* Allocator;
-					//	void                (*CheckVkResultFn)(VkResult err);
-					//};
-
-					ImGui_ImplVulkan_InitInfo init_info = {};
-					init_info.Instance = context().vulkan_instance();
-					init_info.PhysicalDevice = context().physical_device();
-					init_info.Device = context().logical_device();;
-					init_info.QueueFamily = context().graphics_queue_index();
-					init_info.Queue = context().graphics_queue();
-					init_info.PipelineCache = VK_NULL_HANDLE;
-					init_info.DescriptorPool = context().get_descriptor_pool().mDescriptorPool;
-					init_info.Allocator = VK_NULL_HANDLE;
-					init_info.MinImageCount = sActualMaxFramesInFlight;
-					init_info.ImageCount = sActualMaxFramesInFlight;
-					init_info.CheckVkResultFn = check_vk_result;
-
-
-					//ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
-				}
-			});
+		VkSurfaceKHR surface;
+		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, wnd->handle()->mHandle, nullptr, &surface)) {
+			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", wnd->title()));
 		}
+		
+		// Continue with swap chain creation after the context has completely initialized
+		context().add_event_handler([wnd]() -> bool {
+			context().create_swap_chain_for_window(wnd);
+		}, context_state::fully_initialized);
 
 		return wnd;
 	}
@@ -453,46 +440,6 @@ namespace cgb
 			throw std::runtime_error("Failed to vkGetInstanceProcAddr for vkCreateDebugUtilsMessengerEXT.");
 		}
 #endif
-	}
-
-	swap_chain_data* vulkan::get_surf_swap_tuple_for_window(const window* pWindow)
-	{
-		assert(pWindow);
-		auto pos = std::find_if(
-			std::begin(mSurfSwap), std::end(mSurfSwap),
-			[pWindow](const swap_chain_data_ptr& ptr_to_tpl) {
-				return pWindow == ptr_to_tpl->mWindow;
-			});
-		if (pos != mSurfSwap.end()) {
-			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
-		}
-		return nullptr;
-	}
-
-	swap_chain_data* vulkan::get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface)
-	{
-		auto pos = std::find_if(
-			std::begin(mSurfSwap), std::end(mSurfSwap),
-			[&pSurface](const swap_chain_data_ptr& ptr_to_tpl) {
-				return pSurface == ptr_to_tpl->mSurface;
-			});
-		if (pos != mSurfSwap.end()) {
-			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
-		}
-		return nullptr;
-	}
-
-	swap_chain_data* vulkan::get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain)
-	{
-		auto pos = std::find_if(
-			std::begin(mSurfSwap), std::end(mSurfSwap),
-			[&pSwapChain](const swap_chain_data_ptr& ptr_to_tpl) {
-				return pSwapChain == ptr_to_tpl->mSwapChain;
-			});
-		if (pos != mSurfSwap.end()) {
-			return (*pos).get(); // Dereference iterator to unique_ptr of tuple
-		}
-		return nullptr;
 	}
 
 	std::vector<const char*> vulkan::get_all_required_device_extensions()
@@ -773,9 +720,9 @@ namespace cgb
 		}
 	}
 
-	swap_chain_data vulkan::create_swap_chain(window* pWindow, const vk::SurfaceKHR& pSurface)
+	void vulkan::create_swap_chain_for_window(window* pWindow)
 	{
-		auto srfCaps = mPhysicalDevice.getSurfaceCapabilitiesKHR(pSurface);
+		auto srfCaps = mPhysicalDevice.getSurfaceCapabilitiesKHR(pWindow->surface());
 
 		// Vulkan tells us to match the resolution of the window by setting the width and height in the 
 		// currentExtent member. However, some window managers do allow us to differ here and this is 
@@ -798,11 +745,11 @@ namespace cgb
 			imageCount = glm::min(imageCount, srfCaps.maxImageCount);
 		}
 
-		auto surfaceFormat = pWindow->get_surface_format(pSurface);
+		auto surfaceFormat = pWindow->get_surface_format(pWindow->surface());
 
 		// With all settings gathered, create the swap chain!
 		auto createInfo = vk::SwapchainCreateInfoKHR()
-			.setSurface(pSurface)
+			.setSurface(pWindow->surface())
 			.setMinImageCount(imageCount)
 			.setImageFormat(surfaceFormat.format)
 			.setImageColorSpace(surfaceFormat.colorSpace)
@@ -811,14 +758,14 @@ namespace cgb
 			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
 			.setPreTransform(srfCaps.currentTransform) // To specify that you do not want any transformation, simply specify the current transformation. [2]
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // => no blending with other windows
-			.setPresentMode(pWindow->get_presentation_mode(pSurface))
+			.setPresentMode(pWindow->get_presentation_mode(pWindow->surface()))
 			.setClipped(VK_TRUE) // we don't care about the color of pixels that are obscured, for example because another window is in front of them.  [2]
 			.setOldSwapchain({}); // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
 
 		auto nope = vk::QueueFlags();
 
 		// See if we can find a queue family which satisfies both criteria: graphics AND presentation (on the given surface)
-		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pSurface);
+		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pWindow->surface());
 		std::vector<uint32_t> queueFamilyIndices;
 		if (allInclFamilies.size() != 0) {
 			// Found a queue family which supports both!
@@ -830,7 +777,7 @@ namespace cgb
 		}
 		else {
 			auto graphicsFamily = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, std::nullopt);
-			auto presentFamily = find_queue_families_for_criteria(nope, nope, pSurface);
+			auto presentFamily = find_queue_families_for_criteria(nope, nope, pWindow->surface());
 			assert(graphicsFamily.size() > 0);
 			assert(presentFamily.size() > 0);
 			queueFamilyIndices.push_back(std::get<0>(graphicsFamily[0]));
@@ -844,24 +791,20 @@ namespace cgb
 		}
 
 		// Finally, create the swap chain prepare a struct which stores all relevant data (for further use)
-		auto swapChainData = swap_chain_data
-		{
-			const_cast<window*>(pWindow),
-			pSurface,
-			mLogicalDevice.createSwapchainKHR(createInfo),
-			surfaceFormat,
-			vk::Extent2D(extent.x, extent.y),
-			{}, // std::vector<vk::Image> mSwapChainImages
-			{}  // std::vector<vk::ImageView> mSwapChainImageViews
-		};
-		auto swapChainImages = mLogicalDevice.getSwapchainImagesKHR(swapChainData.mSwapChain);
+		pWindow->mSwapChain = mLogicalDevice.createSwapchainKHR(createInfo);
+		pWindow->mSwapChainImageFormat = surfaceFormat;
+		pWindow->mSwapChainExtent = vk::Extent2D(extent.x, extent.y);
+		pWindow->mSwapChainImages = {}; // Soon...
+		pWindow->mSwapChainImageViews = {}; // Soon...
+
+		auto swapChainImages = mLogicalDevice.getSwapchainImagesKHR(pWindow->swap_chain());
 		// Store the images,
 		std::copy(std::begin(swapChainImages), std::end(swapChainImages),
-				  std::back_inserter(swapChainData.mSwapChainImages));
+				  std::back_inserter(pWindow->mSwapChainImages));
 		// and create one image view per image
-		std::transform(std::begin(swapChainData.mSwapChainImages), std::end(swapChainData.mSwapChainImages),
-					   std::back_inserter(swapChainData.mSwapChainImageViews),
-					   [&swapChainData, this](const auto& image) {
+		std::transform(std::begin(pWindow->mSwapChainImages), std::end(pWindow->mSwapChainImages),
+					   std::back_inserter(pWindow->mSwapChainImageViews),
+					   [](const auto& image) {
 						   auto viewCreateInfo = vk::ImageViewCreateInfo()
 							   .setImage(image)
 							   .setViewType(vk::ImageViewType::e2D)
@@ -881,8 +824,6 @@ namespace cgb
 						   auto imageView = mLogicalDevice.createImageView(viewCreateInfo);
 						   return imageView;
 					   });
-
-		return swapChainData;
 	}
 
 	vk::RenderPass vulkan::create_render_pass(image_format pImageFormat, image_format pDepthFormat)

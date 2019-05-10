@@ -175,34 +175,58 @@ namespace cgb
 
 	window* generic_glfw::prepare_window()
 	{
+		assert(are_we_on_the_main_thread());
+
 		// Insert in the back and return the newly created window
 		auto& back = mWindows.emplace_back(std::make_unique<window>());
 
-		context().add_event_handler()
+		// Continue initialization later, after this window has gotten a handle:
+		context().add_event_handler(
+			[wnd = back.get()]() -> bool {
+				// We can't be sure whether it still exists
+				auto* exists = context().find_window([wnd](const auto* w) -> bool {
+					return wnd == w;
+				});
 
-		// Set the focus callback
-		back->mPostCreateActions.push_back([](window& w) {
-			glfwSetWindowFocusCallback(w.handle()->mHandle, glfw_window_focus_callback);
-			if (nullptr == sWindowInFocus) {
-				sWindowInFocus = &w;
-			}
-			
-			int width, height;
-			glfwGetWindowSize(w.handle()->mHandle, &width, &height);
-			w.mResultion = glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
-			glfwSetWindowSizeCallback(w.handle()->mHandle, glfw_window_size_callback);
+				// but it does!
+				if (wnd->handle().has_value()) {
+					auto handle = wnd->handle()->mHandle;
 
-			w.mIsCursorDisabled = glfwGetInputMode(w.handle()->mHandle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
-		});
+					// finish initialization of this window
+					glfwSetWindowFocusCallback(handle, glfw_window_focus_callback);
+					if (nullptr == sWindowInFocus) {
+						sWindowInFocus = wnd;
+					}
 
-		// Make sure to cleanup 
-		back->mCleanupActions.push_back([](window & w) {
-			glfwSetWindowFocusCallback(w.handle()->mHandle, nullptr);
-			glfwSetWindowSizeCallback(w.handle()->mHandle, nullptr);
-		});
+					int width, height;
+					glfwGetWindowSize(handle, &width, &height);
+					wnd->mResultion = glm::uvec2(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+					glfwSetWindowSizeCallback(handle, glfw_window_size_callback);
+
+					wnd->mIsCursorDisabled = glfwGetInputMode(handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
+
+					return true; // done
+				}
+				return false; // not done yet
+			}); // execute handler asap
+
+		// Also add an event handler which will run at the end of the application for cleanup:
+		context().add_event_handler(
+			[wnd = back.get()]() -> bool {
+				// We can't be sure whether it still exists
+				auto* exists = context().find_window([wnd](const auto* w) -> bool {
+					return wnd == w;
+				});
+
+				if (nullptr == exists) { // Doesn't exist anymore
+					return true;
+				}
+
+				// Okay, it exists => close it!
+				context().close_window(*wnd);
+			}, context_state::about_to_finalize);
 		
 		return back.get();
-
 	}
 
 	void generic_glfw::close_window(window& wnd)
@@ -218,12 +242,22 @@ namespace cgb
 		}
 
 		context().dispatch_to_main_thread([&wnd]() {
-			for (auto& fu : wnd.mCleanupActions) {
-				fu(wnd);
-			}
-
-			glfwDestroyWindow(wnd.handle()->mHandle);
+			auto handle = wnd.handle()->mHandle;
 			wnd.mHandle = std::nullopt;
+
+			// unregister callbacks:
+			glfwSetWindowFocusCallback(handle, nullptr);
+			glfwSetWindowSizeCallback(handle, nullptr);
+
+			context().mWindows.erase(
+				std::remove_if(
+					std::begin(context().mWindows), 
+					std::end(context().mWindows),
+					[&wnd](const auto& inQuestion) -> bool {
+						return inQuestion.get() == wnd.get();
+					}));
+
+			glfwDestroyWindow(handle);
 		});
 	}
 

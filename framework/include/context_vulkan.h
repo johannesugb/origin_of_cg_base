@@ -130,21 +130,6 @@ namespace cgb
 		/** Set up the debug callbacks, i.e. hook into vk to have @ref vk_debug_callback called */
 		void setup_vk_debug_callback();
 
-		/** 
-		 *	@return Pointer to the tuple or nullptr if not found
-		 */
-		swap_chain_data* get_surf_swap_tuple_for_window(const window* pWindow);
-		
-		/**
-		 *	@return Pointer to the tuple or nullptr if not found
-		 */
-		swap_chain_data* get_surf_swap_tuple_for_surface(const vk::SurfaceKHR& pSurface);
-
-		/**
-		 *	@return Pointer to the tuple or nullptr if not found
-		 */
-		swap_chain_data* get_surf_swap_tuple_for_swap_chain(const vk::SwapchainKHR& pSwapChain);
-
 		/** Returns a vector containing all elements from @ref sRequiredDeviceExtensions
 		 *  and settings::gRequiredDeviceExtensions
 		 */
@@ -190,9 +175,8 @@ namespace cgb
 		 *	@param pWindow		[in] The window to create the swap chain for
 		 *	@param pSurface		[in] the surface to create the swap chain for
 		 *	@param pParams		[in] swap chain creation parameters
-		 *	@return				A newly created swap chain
 		 */
-		swap_chain_data create_swap_chain(window* pWindow, const vk::SurfaceKHR& pSurface);
+		void create_swap_chain_for_window(window* pWindow);
 
 		/** TODO: TBD */
 		vk::RenderPass create_render_pass(image_format pImageFormat, image_format pDepthFormat);
@@ -228,17 +212,17 @@ namespace cgb
 		std::vector<command_buffer> create_command_buffers_for_transfer(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 		std::vector<command_buffer> create_command_buffers_for_presentation(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlags());
 		
-		/** Calculates the semaphore index of the current frame */
-		size_t sync_index_curr_frame() const { return mFrameCounter % sActualMaxFramesInFlight; }
+		///** Calculates the semaphore index of the current frame */
+		//size_t sync_index_curr_frame() const { return mFrameCounter % sActualMaxFramesInFlight; }
 
-		/** Calculates the semaphore index of the previous frame */
-		size_t sync_index_prev_frame() const { return (mFrameCounter - 1) % sActualMaxFramesInFlight; }
+		///** Calculates the semaphore index of the previous frame */
+		//size_t sync_index_prev_frame() const { return (mFrameCounter - 1) % sActualMaxFramesInFlight; }
 
-		vk::Semaphore& image_available_semaphore_current_frame() { return mImageAvailableSemaphores[sync_index_curr_frame()]; }
+		//vk::Semaphore& image_available_semaphore_current_frame() { return mImageAvailableSemaphores[sync_index_curr_frame()]; }
 
-		vk::Semaphore& render_finished_semaphore_current_frame() { return mRenderFinishedSemaphores[sync_index_curr_frame()]; }
+		//vk::Semaphore& render_finished_semaphore_current_frame() { return mRenderFinishedSemaphores[sync_index_curr_frame()]; }
 
-		vk::Fence& fence_current_frame() { return mInFlightFences[sync_index_curr_frame()]; }
+		//vk::Fence& fence_current_frame() { return mInFlightFences[sync_index_curr_frame()]; }
 
 		/** Find (index of) memory with parameters
 		 *	@param pMemoryTypeBits		Bit field of the memory types that are suitable for the buffer. [9]
@@ -265,7 +249,7 @@ namespace cgb
 		
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
-		std::vector<swap_chain_data_ptr> mSurfSwap;
+		//std::vector<swap_chain_data_ptr> mSurfSwap;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mLogicalDevice;
 		vk::DispatchLoaderDynamic mDynamicDispatch;
