@@ -58,6 +58,11 @@ namespace cgb
 		vk::Queue& presentation_queue() { return mPresentQueue; }
 		vk::Queue& transfer_queue() { return mTransferQueue; }
 
+		/**	Creates a new window, but doesn't open it. Set the window's parameters
+		 *	according to your requirements before opening it!
+		 *
+		 *  @thread_safety This function must only be called from the main thread.
+		 */
 		window* create_window(const std::string& pTitle);
 
 		texture_handle create_texture()
@@ -184,15 +189,7 @@ namespace cgb
 		/** TODO: TBD */
 		pipeline create_graphics_pipeline_for_window(
 			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, 
-			const window* pWindow, 
-			image_format pDepthFormat,
-			const vk::VertexInputBindingDescription& pBindingDesc, 
-			size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
-			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
-		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_swap_chain(
-			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, 
-			swap_chain_data& pSwapChainData, 
+			window* pWindow, 
 			image_format pDepthFormat,
 			const vk::VertexInputBindingDescription& pBindingDesc, 
 			size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
@@ -202,8 +199,7 @@ namespace cgb
 			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
 			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
-		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow, const image_view& pDepthImageView);
-		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData, const image_view& pDepthImageView);
+		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view& pDepthImageView);
 
 		command_pool& get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex);
 

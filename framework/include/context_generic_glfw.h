@@ -82,7 +82,7 @@ namespace cgb
 		window* window_by_id(uint32_t pId) const;
 
 		/** Select multiple windows and return a vector of pointers to them.
-		 *  Example: To select all windows, pass the lambda [](auto* w){ return true; }
+		 *  Example: To select any window, pass the lambda [](cgb::window* w){ return true; }
 		 */
 		template <typename T>
 		window* find_window(T selector)
@@ -97,7 +97,7 @@ namespace cgb
 		}
 
 		/** Select multiple windows and return a vector of pointers to them.
-		 *  Example: To select all windows, pass the lambda [](auto* w){ return true; }
+		 *  Example: To select all windows, pass the lambda [](cgb::window* w){ return true; }
 		 */
 		template <typename T>
 		std::vector<window*> find_windows(T selector)
@@ -154,11 +154,13 @@ namespace cgb
 		*							specify that stage with this parameter. If it shall be invoked 
 		*							regardless of the context's stage, leave it at context_state::unknown.
 		*/
-		void add_event_handler(event_handler_func pHandler, context_state pStage = context_state::unknown);
+		void add_event_handler(event_handler_func pHandler, context_state pStage = context_state::anytime);
 
 		/** Invoke all the event handlers which are assigned to the current context state or to unknown state
-		*/
-		void work_off_event_handlers();
+		 *	
+		 *	@return The number of event handlers that have been removed from the list of event handlers
+		 */
+		uint32_t work_off_event_handlers();
 
 		// Waits for GLFW input events and pauses the current (=main) thread
 		inline void wait_for_input_events() const { glfwWaitEvents(); }
@@ -183,8 +185,8 @@ namespace cgb
 		static std::array<key_code, GLFW_KEY_LAST + 1> sGlfwToKeyMapping;
 
 		static std::thread::id sMainThreadId;
+		// Protects the mDispatchQueue
 		static std::mutex sDispatchMutex;
-
 
 		std::vector<std::function<dispatcher_action>> mDispatchQueue;
 

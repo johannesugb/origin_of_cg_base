@@ -193,10 +193,10 @@ namespace cgb
 		}
 		pChild->mParent = nullptr;
 		pParent->mChilds.erase(std::remove(
-			std::begin(pParent->mChilds),
-			std::end(pParent->mChilds),
-			pChild
-		));
+				std::begin(pParent->mChilds), std::end(pParent->mChilds),
+				pChild
+			), 
+			std::end(pParent->mChilds));
 	}
 
 	glm::vec3 front_wrt(const transform& pTransform, glm::mat4 pReference)

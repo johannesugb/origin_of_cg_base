@@ -41,11 +41,21 @@ namespace cgb
 		mContextState = cgb::context_state::halfway_initialized;
 
 		// NOTE: Vulkan-init is not finished yet!
-		//       Initialization will continue after the first window (and it's surface) have been created.
-		add_event_handler([]() {
+		// Initialization will continue after the first window (and it's surface) have been created.
+		// Only after the first window's surface has been created, the vulkan context can complete
+		//   initialization and enter the context state of fully_initialized.
+		//
+		// Attention: May not use the `add_event_handler`-method here, because it would internally
+		//   make use of `cgb::context()` which would refer to this static instance, which has not 
+		//   yet finished initialization => would deadlock; Instead, modify data structure directly. 
+		//   This constructor is the only exception, in all other cases, it's safe to use `add_event_handler`
+		//   
+		mEventHandlers.emplace_back([]() -> bool {
+			LOG_INFO("Running vulkan fully_init event handler");
+
 			// Just get any window:
-			auto* window = context().find_window([](auto* w) { 
-				return nullptr != w && !w->handle().has_value();
+			auto* window = context().find_window([](cgb::window* w) { 
+				return w->handle().has_value() && static_cast<bool>(w->surface());
 			});
 
 			// Do we have a window with a handle?
@@ -54,7 +64,7 @@ namespace cgb
 			}
 
 			// We need a SURFACE to create the logical device => do it after the first window has been created
-			auto surface = window->surface();
+			auto& surface = window->surface();
 
 			// Select the best suitable physical device which supports all requested extensions
 			context().pick_physical_device();
@@ -74,7 +84,24 @@ namespace cgb
 		// context fully initiylized:
 		if (!settings::gDisableImGui) {
 			// Init and wire-in IMGUI
-			context().add_event_handler([]() -> bool {
+			//
+			// Attention: May not use the `add_event_handler`-method here, because it would internally
+			//   make use of `cgb::context()` which would refer to this static instance, which has not 
+			//   yet finished initialization => would deadlock; Instead, modify data structure directly. 
+			//   This constructor is the only exception, in all other cases, it's safe to use `add_event_handler`
+			//   
+			mEventHandlers.emplace_back([]() -> bool {
+				LOG_INFO("Running IMGUI setup event handler");
+
+				// Just get any window:
+				auto* window = context().find_window([](cgb::window* w) { 
+					return w->handle().has_value();
+				});
+
+				// Do we have a window with a handle?
+				if (nullptr == window) { 
+					return false; // Nope => not done
+				}
 
 				IMGUI_CHECKVERSION();
 				ImGui::CreateContext();
@@ -87,7 +114,7 @@ namespace cgb
 				//ImGui::StyleColorsClassic();
 
 				// Setup Platform/Renderer bindings
-				ImGui_ImplGlfw_InitForVulkan(w.handle()->mHandle, true);
+				ImGui_ImplGlfw_InitForVulkan(window->handle()->mHandle, true); // TODO: Don't install callbacks
 
 				//struct ImGui_ImplVulkan_InitInfo
 				//{
@@ -118,14 +145,14 @@ namespace cgb
 				init_info.CheckVkResultFn = check_vk_result;
 
 				// TODO: Hmm, or do we have to do this per swap chain? 
-			});
+			}, cgb::context_state::fully_initialized);
 		}
 	}
 
 	vulkan::~vulkan()
 	{
 		mContextState = cgb::context_state::about_to_finalize;
-		work_off_event_handlers();
+		while (work_off_event_handlers() > 0u);
 
 		// Destroy all descriptor pools before the queues and the device is destroyed
 		mDescriptorPools.clear();
@@ -166,7 +193,7 @@ namespace cgb
 		mInstance.destroy();
 	
 		mContextState = cgb::context_state::has_finalized;
-		work_off_event_handlers();
+		while (work_off_event_handlers() > 0u);
 	}
 
 	void vulkan::check_vk_result(VkResult err)
@@ -178,7 +205,7 @@ namespace cgb
 	{ 
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::composition_beginning;
-			context().work_off_event_handlers();
+			while (context().work_off_event_handlers() > 0u);
 		});
 	}
 
@@ -186,7 +213,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::composition_ending;
-			context().work_off_event_handlers();
+			while (context().work_off_event_handlers() > 0u);
 			context().mLogicalDevice.waitIdle();
 		});
 	}
@@ -195,7 +222,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::frame_begun;
-			context().work_off_event_handlers();
+			while (context().work_off_event_handlers() > 0u);
 		});
 		//mFrameCounter += 1;
 	
@@ -214,7 +241,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::frame_updates_done;
-			context().work_off_event_handlers();
+			while (context().work_off_event_handlers() > 0u);
 		});
 	}
 
@@ -222,7 +249,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::frame_ended;
-			context().work_off_event_handlers();
+			while (context().work_off_event_handlers() > 0u);
 		});
 	}
 
@@ -249,20 +276,52 @@ namespace cgb
 
 	window* vulkan::create_window(const std::string& pTitle)
 	{
-		work_off_event_handlers();
+		assert(are_we_on_the_main_thread());
+		while (work_off_event_handlers() > 0u);
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		auto* wnd = generic_glfw::prepare_window();
 
-		VkSurfaceKHR surface;
-		if (VK_SUCCESS != glfwCreateWindowSurface(mInstance, wnd->handle()->mHandle, nullptr, &surface)) {
-			throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", wnd->title()));
-		}
-		
-		// Continue with swap chain creation after the context has completely initialized
+		// Wait for the window to receive a valid handle before creating its surface
 		context().add_event_handler([wnd]() -> bool {
+			LOG_INFO("Running window surface creator event handler");
+			
+			// Make sure it is the right window
+			auto* window = context().find_window([wnd](cgb::window* w) { 
+				return w == wnd && w->handle().has_value();
+			});
+
+			if (nullptr == window) { // not yet
+				return false;
+			}
+
+			VkSurfaceKHR surface;
+			if (VK_SUCCESS != glfwCreateWindowSurface(context().vulkan_instance(), wnd->handle()->mHandle, nullptr, &surface)) {
+				throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", wnd->title()));
+			}
+			window->mSurface = surface;
+			return true;
+		}, context_state::halfway_initialized | context_state::anytime_after_init_before_finalize);
+
+		// Continue with swap chain creation after the context has completely initialized
+		//   and the window's handle and surface have been created
+		context().add_event_handler([wnd]() -> bool {
+			LOG_INFO("Running swap chain creator event handler");
+
+			// Make sure it is the right window
+			auto* window = context().find_window([wnd](cgb::window* w) { 
+				return w == wnd && w->handle().has_value() && static_cast<bool>(w->surface());
+			});
+
+			if (nullptr == window) {
+				return false;
+			}
+			// Okay, the window has a surface and vulkan has initialized. 
+			// Let's create more stuff for this window!
+
 			context().create_swap_chain_for_window(wnd);
-		}, context_state::fully_initialized);
+			return true;
+		}, context_state::anytime_after_init_before_finalize);
 
 		return wnd;
 	}
@@ -301,40 +360,41 @@ namespace cgb
 		mInstance = vk::createInstance(instCreateInfo);
 	}
 
+	// TODO: Sync objects
 	void vulkan::create_sync_objects()
 	{
-		auto semaphoreInfo = vk::SemaphoreCreateInfo();
-		for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
-			mImageAvailableSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
-		}
-		for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
-			mRenderFinishedSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
-		}
+		//auto semaphoreInfo = vk::SemaphoreCreateInfo();
+		//for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
+		//	mImageAvailableSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
+		//}
+		//for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
+		//	mRenderFinishedSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
+		//}
 
-		auto fenceInfo = vk::FenceCreateInfo()
-			.setFlags(vk::FenceCreateFlagBits::eSignaled);
-		for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
-			mInFlightFences.push_back(mLogicalDevice.createFence(fenceInfo));
-		}
+		//auto fenceInfo = vk::FenceCreateInfo()
+		//	.setFlags(vk::FenceCreateFlagBits::eSignaled);
+		//for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
+		//	mInFlightFences.push_back(mLogicalDevice.createFence(fenceInfo));
+		//}
 
 	}
 
 	void vulkan::cleanup_sync_objects()
 	{
-		for (auto& fen : mInFlightFences) {
-			mLogicalDevice.destroyFence(fen);
-		}
-		mInFlightFences.clear();
+		//for (auto& fen : mInFlightFences) {
+		//	mLogicalDevice.destroyFence(fen);
+		//}
+		//mInFlightFences.clear();
 
-		for (auto& sem : mRenderFinishedSemaphores) {
-			mLogicalDevice.destroySemaphore(sem);
-		}
-		mRenderFinishedSemaphores.clear();
+		//for (auto& sem : mRenderFinishedSemaphores) {
+		//	mLogicalDevice.destroySemaphore(sem);
+		//}
+		//mRenderFinishedSemaphores.clear();
 
-		for (auto& sem : mImageAvailableSemaphores) {
-			mLogicalDevice.destroySemaphore(sem);
-		}
-		mImageAvailableSemaphores.clear();
+		//for (auto& sem : mImageAvailableSemaphores) {
+		//	mLogicalDevice.destroySemaphore(sem);
+		//}
+		//mImageAvailableSemaphores.clear();
 	}
 
 	bool vulkan::is_validation_layer_supported(const char* pName)
@@ -804,11 +864,11 @@ namespace cgb
 		// and create one image view per image
 		std::transform(std::begin(pWindow->mSwapChainImages), std::end(pWindow->mSwapChainImages),
 					   std::back_inserter(pWindow->mSwapChainImageViews),
-					   [](const auto& image) {
+					   [wnd=pWindow](const auto& image) {
 						   auto viewCreateInfo = vk::ImageViewCreateInfo()
 							   .setImage(image)
 							   .setViewType(vk::ImageViewType::e2D)
-							   .setFormat(swapChainData.mSwapChainImageFormat.mFormat)
+							   .setFormat(wnd->swap_chain_image_format().mFormat)
 							   .setComponents(vk::ComponentMapping() // The components field allows you to swizzle the color channels around. In our case we'll stick to the default mapping. [3]
 											  .setR(vk::ComponentSwizzle::eIdentity)
 											  .setG(vk::ComponentSwizzle::eIdentity)
@@ -821,7 +881,7 @@ namespace cgb
 													.setBaseArrayLayer(0u)
 													.setLayerCount(1u));
 						   // Note:: If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers. You could then create multiple image views for each image representing the views for the left and right eyes by accessing different layers. [3]
-						   auto imageView = mLogicalDevice.createImageView(viewCreateInfo);
+						   auto imageView = context().logical_device().createImageView(viewCreateInfo);
 						   return imageView;
 					   });
 	}
@@ -894,20 +954,7 @@ namespace cgb
 
 	pipeline vulkan::create_graphics_pipeline_for_window(
 		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
-		const window* pWindow,
-		image_format pDepthFormat,
-		const vk::VertexInputBindingDescription& pBindingDesc,
-		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
-		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
-	{
-		auto data = get_surf_swap_tuple_for_window(pWindow);
-		assert(data);
-		return create_graphics_pipeline_for_swap_chain(pShaderInfos, *data, pDepthFormat, pBindingDesc, pNumAttributeDesc, pAttributeDescDataPtr, pDescriptorSetLayouts);
-	}
-
-	pipeline vulkan::create_graphics_pipeline_for_swap_chain(
-		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
-		swap_chain_data& pSwapChainData,
+		window* pWindow,
 		image_format pDepthFormat,
 		const vk::VertexInputBindingDescription& pBindingDesc,
 		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
@@ -937,19 +984,19 @@ namespace cgb
 			.setPrimitiveRestartEnable(VK_FALSE);
 
 		// VIEWPORT AND SCISSORS
+		auto scExtent = pWindow->swap_chain_extent();
 		auto viewport = vk::Viewport()
 			.setX(0.0f)
 			.setY(0.0f)
 			// Remember that the size of the swap chain and its images may differ from the WIDTH and HEIGHT of the window.The swap chain images will be used as framebuffers later on, so we should stick to their size. [4]
-			.setWidth(static_cast<float>(pSwapChainData.mSwapChainExtent.width))
-			.setHeight(static_cast<float>(pSwapChainData.mSwapChainExtent.height))
+			.setWidth(static_cast<float>(scExtent.width))
+			.setHeight(static_cast<float>(scExtent.height))
 			// These values must be within the [0.0f, 1.0f] range, but minDepth may be higher than maxDepth. If you aren't doing anything special, then you should stick to the standard values of 0.0f and 1.0f. [4]
 			.setMinDepth(0.0f)
 			.setMaxDepth(1.0f);
-
 		auto scissor = vk::Rect2D()
 			.setOffset(vk::Offset2D(0, 0))
-			.setExtent(pSwapChainData.mSwapChainExtent);
+			.setExtent(scExtent);
 
 		auto viewportInfo = vk::PipelineViewportStateCreateInfo()
 			.setViewportCount(1u)
@@ -1007,7 +1054,7 @@ namespace cgb
 
 
 		// CREATE RENDER PASS (for sure, this is the wrong place to do so => refactor!)
-		auto renderPass = create_render_pass(pSwapChainData.mSwapChainImageFormat, pDepthFormat);
+		auto renderPass = create_render_pass(pWindow->swap_chain_image_format(), pDepthFormat);
 
 
 		// DEPTH AND STENCIL STATE
@@ -1023,7 +1070,7 @@ namespace cgb
 			.setBack(vk::StencilOpState());
 
 		// MULTISAMPLING
-		auto multisamplingInfo = pSwapChainData.mWindow->get_multisample_state_create_info();
+		auto multisamplingInfo = pWindow->get_multisample_state_create_info();
 
 		// PIPELINE CREATION
 		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()
@@ -1135,24 +1182,18 @@ namespace cgb
 				context().dynamic_dispatch()));	// dynamic dispatch for extension
 	}
 
-	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const window* pWindow, const image_view& pDepthImageView)
-	{
-		auto data = get_surf_swap_tuple_for_window(pWindow);
-		assert(data);
-		return create_framebuffers(renderPass, *data, pDepthImageView);
-	}
-
-	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, const swap_chain_data& pSwapChainData, const image_view& pDepthImageView)
+	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view& pDepthImageView)
 	{
 		std::vector<framebuffer> framebuffers;
-		for (auto& imageView : pSwapChainData.mSwapChainImageViews) {
+		auto extent = pWindow->swap_chain_extent();
+		for (const auto& imageView : pWindow->swap_chain_image_views()) {
 			std::array attachments = { imageView, pDepthImageView.mImageView };
 			auto framebufferInfo = vk::FramebufferCreateInfo()
 				.setRenderPass(renderPass)
 				.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
 				.setPAttachments(attachments.data())
-				.setWidth(pSwapChainData.mSwapChainExtent.width)
-				.setHeight(pSwapChainData.mSwapChainExtent.height)
+				.setWidth(extent.width)
+				.setHeight(extent.height)
 				.setLayers(1u); // number of layers in image arrays [6]
 
 			framebuffers.push_back(framebuffer{ mLogicalDevice.createFramebuffer( framebufferInfo ) });

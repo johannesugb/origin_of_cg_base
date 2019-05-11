@@ -19,15 +19,18 @@ namespace cgb
 		/** Fill this vector with further required instance extensions, if required */
 		extern std::vector<const char*> gRequiredInstanceExtensions;
 
-		/** Modify this vector according to your needs. 
-		 *  It will be initialized with a default validation layer name already.
+		/** Modify this vector or strings according to your needs. 
+		 *  By default, it will be initialized with a default validation layer name.
 		 */
 		extern std::vector<const char*> gValidationLayersToBeActivated;
 
 		/** Fill this vector with required device extensions, if required */
 		extern std::vector<const char*> gRequiredDeviceExtensions;
 
-		/** Set to true to not use IMGUI, i.e. not initialize it, nothing. */
+		/** Set this flag to true to opt out of using IMGUI, 
+		 *	i.e. if true => not initialize it, not display it, nothing. 
+		 *	The default for this flag is false, i.e. IMGUI is enabled.
+		 */
 		extern bool gDisableImGui;
 	}
 

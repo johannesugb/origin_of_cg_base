@@ -14,8 +14,6 @@ namespace cgb
 		, mCursorPosition{ 0.0, 0.0 }
 		, mResultion{ 0, 0 }
 		, mIsCursorDisabled{ false }
-		, mPostCreateActions()
-		, mCleanupActions()
 	{
 	}
 
@@ -33,8 +31,6 @@ namespace cgb
 		, mCursorPosition(std::move(other.mCursorPosition))
 		, mResultion(std::move(other.mResultion))
 		, mIsCursorDisabled(std::move(other.mIsCursorDisabled))
-		, mPostCreateActions(std::move(other.mPostCreateActions))
-		, mCleanupActions(std::move(other.mCleanupActions))
 	{
 		other.mIsInUse = false;
 		other.mWindowId = 0u;
@@ -59,8 +55,6 @@ namespace cgb
 		mCursorPosition = std::move(other.mCursorPosition);
 		mResultion = std::move(other.mResultion);
 		mIsCursorDisabled = std::move(other.mIsCursorDisabled);
-		mPostCreateActions = std::move(other.mPostCreateActions);
-		mCleanupActions = std::move(other.mCleanupActions);
 
 		other.mIsInUse = false;
 		other.mWindowId = 0u;

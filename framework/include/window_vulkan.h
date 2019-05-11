@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
-#include "context_generic_glfw_types.h"
+#include "window_vulkan.h"
+#include "context_vulkan_types.h"
+#include "context_generic_glfw.h"
 #include "window_base.h"
 
 namespace cgb
@@ -54,7 +56,9 @@ namespace cgb
 		const image_format& swap_chain_image_format() const { return mSwapChainImageFormat; }
 		vk::Extent2D swap_chain_extent() const { return mSwapChainExtent; }
 		const vk::Image& swap_chain_image_at_index(size_t pIdx) { return mSwapChainImages[pIdx]; }
+		const std::vector<vk::Image>& swap_chain_images() { return mSwapChainImages; }
 		const vk::ImageView& swap_chain_image_view_at_index(size_t pIdx) { return mSwapChainImageViews[pIdx]; }
+		const std::vector<vk::ImageView>& swap_chain_image_views() { return mSwapChainImageViews; }
 
 	protected:
 		// A function which returns the surface format for this window's surface

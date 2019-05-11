@@ -108,7 +108,6 @@ namespace cgb {
 		bool checkValidationLayerSupport();
 		std::vector<const char*> getRequiredExtensions();
 		void setupDebugCallback();
-		void createSurface();
 		void pickPhysicalDevice();
 		bool isDeviceSuitable(vk::PhysicalDevice device);
 		bool checkDeviceExtensionSupport(vk::PhysicalDevice device);

@@ -183,6 +183,7 @@ namespace cgb
 		// Continue initialization later, after this window has gotten a handle:
 		context().add_event_handler(
 			[wnd = back.get()]() -> bool {
+				LOG_INFO("Running event handler which sets up windows focus callbacks");
 				// We can't be sure whether it still exists
 				auto* exists = context().find_window([wnd](const auto* w) -> bool {
 					return wnd == w;
@@ -213,6 +214,7 @@ namespace cgb
 		// Also add an event handler which will run at the end of the application for cleanup:
 		context().add_event_handler(
 			[wnd = back.get()]() -> bool {
+				LOG_INFO("Running window cleanup event handler");
 				// We can't be sure whether it still exists
 				auto* exists = context().find_window([wnd](const auto* w) -> bool {
 					return wnd == w;
@@ -251,11 +253,11 @@ namespace cgb
 
 			context().mWindows.erase(
 				std::remove_if(
-					std::begin(context().mWindows), 
-					std::end(context().mWindows),
+					std::begin(context().mWindows), std::end(context().mWindows),
 					[&wnd](const auto& inQuestion) -> bool {
-						return inQuestion.get() == wnd.get();
-					}));
+						return inQuestion.get() == &wnd;
+					}),
+				std::end(context().mWindows));
 
 			glfwDestroyWindow(handle);
 		});
@@ -424,12 +426,12 @@ namespace cgb
 
 	void generic_glfw::dispatch_to_main_thread(std::function<dispatcher_action> pAction)
 	{
-		std::scoped_lock<std::mutex> guard(sDispatchMutex);
 		// Are we on the main thread?
 		if (are_we_on_the_main_thread()) {
 			pAction();
 		}
 		else {
+			std::scoped_lock<std::mutex> guard(sDispatchMutex);
 			mDispatchQueue.push_back(std::move(pAction));
 		}
 	}
@@ -447,25 +449,34 @@ namespace cgb
 	void generic_glfw::add_event_handler(event_handler_func pHandler, context_state pStage)
 	{
 		dispatch_to_main_thread([handler = std::move(pHandler), stage = pStage]() {
+			// No need to lock anything here, everything is happening on the main thread only
 			context().mEventHandlers.emplace_back(std::move(handler), stage);
+
+			// This newly added event handler might have changed something, so let's process 
+			// the events for as long as nothing changes anymore:
+			while (context().work_off_event_handlers() > 0u);
 		});
 	}
 
-	void generic_glfw::work_off_event_handlers()
+	uint32_t generic_glfw::work_off_event_handlers()
 	{
 		assert(are_we_on_the_main_thread());
-		std::scoped_lock<std::mutex> guard(sDispatchMutex);
+		// No need to lock anything here, everything is happening on the main thread only
+		auto numBefore = mEventHandlers.size();
 		mEventHandlers.erase(
 			std::remove_if(
 				std::begin(mEventHandlers), std::end(mEventHandlers),
 				[curState = mContextState](const auto& tpl) {
-					auto targetState = std::get<cgb::context_state>(tpl);
-					if (targetState != cgb::context_state::unknown && targetState != curState) {
+					auto targetStates = std::get<cgb::context_state>(tpl);
+					if ((curState & targetStates) != curState) {
 						return false; // false => not done yet! Handler shall remain, because handler has not been invoked.
 					}
 					// Invoke the handler:
-					return std::get<event_handler_func>()(); // true => done, i.e. remove
-															 // false => not done yet, i.e. shall remain
-				}));
+					return std::get<event_handler_func>(tpl)();	// true => done, i.e. remove
+																// false => not done yet, i.e. shall remain
+				}),
+			std::end(mEventHandlers));
+		auto numAfter = mEventHandlers.size();
+		return static_cast<uint32_t>(numAfter - numBefore);
 	}
 }

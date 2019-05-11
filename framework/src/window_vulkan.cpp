@@ -164,25 +164,27 @@ namespace cgb
 
 	void window::open()
 	{
-		// Note: No pre-create actions for Vk required
+		context().dispatch_to_main_thread([this]() {
+			while (context().work_off_event_handlers() > 0u);
 
-		// Share the graphics context between all windows
-		auto* sharedContex = context().get_window_for_shared_context();
-		// Bring window into existance:
-		auto* handle = glfwCreateWindow(mRequestedSize.mWidth, mRequestedSize.mHeight,
-			mTitle.c_str(),
-			mMonitor.has_value() ? mMonitor->mHandle : nullptr,
-			sharedContex);
-		if (nullptr == handle) {
-			// No point in continuing
-			throw new std::runtime_error("Failed to create window with the title '" + mTitle + "'");
-		}
-		mHandle = window_handle{ handle };
+			// Share the graphics context between all windows
+			auto* sharedContex = context().get_window_for_shared_context();
+			// Bring window into existance:
+			auto* handle = glfwCreateWindow(mRequestedSize.mWidth, mRequestedSize.mHeight,
+				mTitle.c_str(),
+				mMonitor.has_value() ? mMonitor->mHandle : nullptr,
+				sharedContex);
+			if (nullptr == handle) {
+				// No point in continuing
+				throw new std::runtime_error("Failed to create window with the title '" + mTitle + "'");
+			}
+			mHandle = window_handle{ handle };
 
-		// Finish initialization of the window, and also initialization of the Vulkan context
-		for (const auto& action : mPostCreateActions) {
-			action(*this);
-		}
+			// There will be some pending work regarding this newly created window stored within the
+			// context's events, like creating a swap chain and so on. 
+			// Why wait? Invoke them now!
+			while (context().work_off_event_handlers() > 0u);
+		});
 	}
 
 	vk::SurfaceFormatKHR window::get_surface_format(const vk::SurfaceKHR & surface)

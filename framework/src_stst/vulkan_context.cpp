@@ -43,8 +43,7 @@ namespace cgb {
 		shadingRateImageSupported = std::find(deviceExtensions.begin(), deviceExtensions.end(), VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME) != deviceExtensions.end();
 
 		createInstance();
-		//setupDebugCallback();
-		createSurface();
+		setupDebugCallback();
 		pickPhysicalDevice();
 		createLogicalDevice();
 	}
@@ -153,17 +152,7 @@ namespace cgb {
 			throw std::runtime_error("failed to set up debug callback!");
 		}
 	}
-
-	void vulkan_context::createSurface() {
-		//VkSurfaceKHR tempSurface;
-		//if (glfwCreateWindowSurface(vkInstance, window, nullptr, &tempSurface) != VK_SUCCESS) {
-		//	throw std::runtime_error("failed to create window surface!");
-		//}
-		//surface = vk::SurfaceKHR(tempSurface);
-
-		surface = cgb::context().get_surface();
-	}
-
+	
 	void vulkan_context::pickPhysicalDevice() {
 		//std::vector<vk::PhysicalDevice> devices = vkInstance.enumeratePhysicalDevices();
 		//if (devices.size() == 0) {

@@ -254,7 +254,7 @@ namespace cgb
 			// 1. initialize
 			pElement.initialize();
 			// Remove from mElementsToBeAdded container (if it was contained in it)
-			mElementsToBeAdded.erase(std::remove(std::begin(mElementsToBeAdded), std::end(mElementsToBeAdded), &pElement));
+			mElementsToBeAdded.erase(std::remove(std::begin(mElementsToBeAdded), std::end(mElementsToBeAdded), &pElement), std::end(mElementsToBeAdded));
 		}
 
 		void remove_element(cg_element& pElement) override
@@ -269,9 +269,9 @@ namespace cgb
 				// 9. finalize
 				pElement.finalize();
 				// Remove from the actual elements-container
-				mElements.erase(std::remove(std::begin(mElements), std::end(mElements), &pElement));
+				mElements.erase(std::remove(std::begin(mElements), std::end(mElements), &pElement), std::end(mElements));
 				// ...and from mElementsToBeRemoved
-				mElementsToBeRemoved.erase(std::remove(std::begin(mElementsToBeRemoved), std::end(mElementsToBeRemoved), &pElement));
+				mElementsToBeRemoved.erase(std::remove(std::begin(mElementsToBeRemoved), std::end(mElementsToBeRemoved), &pElement), std::end(mElementsToBeRemoved));
 			}
 			else {
 				LOG_DEBUG(fmt::format("Removing element with name[{}] and address[{}] issued from cg_element's destructor",
@@ -282,6 +282,8 @@ namespace cgb
 
 		void start() override
 		{
+			while (context().work_off_event_handlers() > 0u);
+
 			// Make myself the current composition_interface
 			composition_interface::set_current(this);
 
@@ -293,6 +295,7 @@ namespace cgb
 
 			// Signal context after initialization
 			context().begin_composition();
+			while (context().work_off_event_handlers() > 0u);
 
 			// Enable receiving input
 			auto windows_for_input = context().find_windows([](auto * w) { return w->is_input_enabled(); });
@@ -314,7 +317,7 @@ namespace cgb
 			while (!mShouldStop)
 			{
 				context().work_off_all_pending_main_thread_actions();
-				context().work_off_event_handlers();
+				while (context().work_off_event_handlers() > 0u);
 
 				if (mShouldSwapInputBuffers)
 				{
