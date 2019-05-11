@@ -38,6 +38,10 @@ namespace cgb {
 			commandBuffer.bindShadingRateImageNV(mVrsImages[vulkan_context::instance().currentFrame]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vulkan_context::instance().dynamicDispatchInstanceDevice);
 			//commandBuffer.bindShadingRateImageNV(mVrsImages[0]->get_image_view(), vk::ImageLayout::eShadingRateOptimalNV, vulkan_context::instance().dynamicDispatchInstanceDevice);
 		}
+		else {
+			// default, currently not supported by validation layers
+			//commandBuffer.bindShadingRateImageNV(nullptr, vk::ImageLayout::eShadingRateOptimalNV, vulkan_context::instance().dynamicDispatchInstanceDevice);
+		}
 
 		auto globalDescriptorSets = get_descriptor_sets(mGlobalResourceBundles);
 		if (mGlobalResourceBundles.size() > 0) {

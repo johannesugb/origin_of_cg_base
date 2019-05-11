@@ -14,8 +14,9 @@ namespace cgb {
 		create_texture_image_view();
 	}
 
-	vulkan_image::vulkan_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
-		vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) : mCommandBufferManager(commandBufferManager), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels),
+	vulkan_image::vulkan_image(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+		vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) : 
+		mCommandBufferManager(commandBufferManager), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels), mTtexChannels(texChannels), 
 		mNumSamples(numSamples), mFormat(format), mTiling(tiling), mUsage(usage), mMemoryProperties(properties), mAspects(aspects)
 	{
 		create_image(mTexWidth, mTexHeight, mMipLevels, numSamples, format, tiling, usage, properties, mImage, mImageMemory);
@@ -31,17 +32,16 @@ namespace cgb {
 	}
 
 	void vulkan_image::create_texture_image(void* pixels, int texWidth, int texHeight, int texChannels) {
-		vk::DeviceSize imageSize = texWidth * texHeight * 4;
 		mMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
 		if (!pixels) {
 			throw std::runtime_error("failed to load texture image!");
 		}
 
-		vulkan_buffer stagingBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, mCommandBufferManager);
-		stagingBuffer.update_buffer(pixels, imageSize);
+		
 
-		auto format = vk::Format::eR8G8B8A8Unorm;
+		mFormat = vk::Format::eR8G8B8A8Unorm;
+		mTtexChannels = 4; // currently default to this due to format
 		/*switch (texChannels) {
 		case 3:
 			format = vk::Format::eR8G8B8Unorm;
@@ -54,14 +54,13 @@ namespace cgb {
 			break;
 		}*/
 
-		create_image(texWidth, texHeight, mMipLevels, vk::SampleCountFlagBits::e1, format, vk::ImageTiling::eOptimal,
+		create_image(texWidth, texHeight, mMipLevels, vk::SampleCountFlagBits::e1, mFormat, vk::ImageTiling::eOptimal,
 			vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mImageMemory);
 
-		transition_image_layout(format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mMipLevels);
-		copy_buffer_to_image(stagingBuffer, mImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		update_pixels(pixels);
 
-		if (format == vk::Format::eR8G8B8A8Unorm) {
-			generate_mipmaps(format, texWidth, texHeight, mMipLevels);
+		if (mFormat == vk::Format::eR8G8B8A8Unorm) {
+			generate_mipmaps(mFormat, texWidth, texHeight, mMipLevels);
 		}
 	}
 
@@ -193,6 +192,15 @@ namespace cgb {
 		mCommandBufferManager->end_single_time_commands(commandBuffer);
 	}
 
+	void vulkan_image::update_pixels(void* pixels) {
+		vk::DeviceSize imageSize = mTexWidth * mTexHeight * mTtexChannels;
+		vulkan_buffer stagingBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, mCommandBufferManager);
+		stagingBuffer.update_buffer(pixels, imageSize);
+
+		transition_image_layout(mFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mMipLevels);
+		copy_buffer_to_image(stagingBuffer, mImage, static_cast<uint32_t>(mTexWidth), static_cast<uint32_t>(mTexHeight));
+	}
+
 	bool vulkan_image::has_stencil_component(vk::Format format) {
 		return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
 	}
@@ -204,7 +212,6 @@ namespace cgb {
 		region.bufferOffset = 0;
 		region.bufferRowLength = 0;
 		region.bufferImageHeight = 0;
-
 		region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 		region.imageSubresource.mipLevel = 0;
 		region.imageSubresource.baseArrayLayer = 0;

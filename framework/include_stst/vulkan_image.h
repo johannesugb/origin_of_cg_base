@@ -11,7 +11,7 @@ namespace cgb {
 	public:
 		vulkan_image(void* pixels, int texWidth, int texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
 
-		vulkan_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
+		vulkan_image(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
 			vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
 
 		virtual ~vulkan_image();
@@ -28,6 +28,7 @@ namespace cgb {
 		vk::ImageAspectFlags get_aspects() { return mAspects; }
 
 		void transition_image_layout(vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, uint32_t mipLevels);
+		void update_pixels(void* pixels);
 
 		int get_width() { return mTexWidth; }
 		int get_height() { return mTexHeight; }

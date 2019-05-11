@@ -8,9 +8,6 @@
 layout(push_constant) uniform PushUniforms
 {
     mat4 vPMatrix;
-	mat4 invPMatrix;
-	mat4 invVMatrix;
-	vec2 projAScale;
 	vec2 imgSize;
 } prevFrameData;
 
@@ -45,6 +42,7 @@ layout(location = 0) out VertexData
 	vec3 aNormal;
 	vec3 aTangent;
 	vec3 aBitangent;
+	vec4 aPrevPositionProj;
 } v_out;
 // ----------------------------------------------
 
@@ -125,5 +123,7 @@ void main()
 	v_out.aTangent = aTangent;
 	v_out.aBitangent = aBitangent;
 
-	gl_Position = positionCS + vec4(trans.frameOffset, 0, 0) * 4.0;
+	gl_Position = positionCS;// + vec4(trans.frameOffset, 0, 0) * 4.0;
+	v_out.aPrevPositionProj = prevFrameData.vPMatrix * trans.model * positionOS;
+	v_out.aPrevPositionProj.xy += v_out.aPrevPositionProj.w * 2.0 * trans.frameOffset * 2.0;
 }

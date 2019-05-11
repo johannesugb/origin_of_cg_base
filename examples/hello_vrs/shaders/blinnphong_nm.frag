@@ -7,6 +7,12 @@
 
 // ################# UNIFORM DATA ###############
 
+layout(push_constant) uniform PushUniforms
+{
+    mat4 vPMatrix;
+	vec2 imgSize;
+} prevFrameData;
+
 // Material data:
 layout(set = 1, binding = 0) uniform MaterialDataBufferObject {
 	vec4 uDiffuseReflectivity3Opacity1;
@@ -77,6 +83,7 @@ layout(location = 0) in VertexData
 	centroid vec3 aNormal;
 	centroid vec3 aTangent;
 	centroid vec3 aBitangent;
+	centroid vec4 aPrevPositionProj;
 } fs_in;
 // ----------------------------------------------
 
@@ -222,6 +229,21 @@ vec3 CalculateDiffuseAndSpecularIlluminationInTS(vec3 diff_tex_color)
 	return diffuse_and_specular;
 }
 
+vec3 project(vec4 pos)
+{
+	float s = sign(pos.z);
+	pos = pos/pos.w;
+	return vec3(pos.x, pos.y, pos.z * s);
+}
+
+vec2 calcMotionVector() {
+	vec2 prevCoord = project(fs_in.aPrevPositionProj).xy * 0.5 + 0.5;
+
+	vec2 curCoord = gl_FragCoord.xy/prevFrameData.imgSize;
+
+	return curCoord - prevCoord; //motion vector in direction of new coord
+}
+
 void main()
 {
 	// Sample the diffuse color 
@@ -252,5 +274,7 @@ void main()
 	//oTexelDifferentials = vec4(vec3(fwidthCoarse(greyValue)), 1.0); 
 	//oTexelDifferentials = vec4(vec3(dFdxCoarse(greyValue)), 1.0);
 	
+	oMotionVector = calcMotionVector();
+	//oFragColor = vec4(oMotionVector.y, 0, -oMotionVector.y, 0);
 }
 // ----------------------------------------------

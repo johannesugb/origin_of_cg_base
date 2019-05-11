@@ -192,7 +192,8 @@ namespace cgb {
 		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
 		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer1X2Pixels);
 		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X1Pixels);
-		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel);
+		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+		//shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel);
 		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e2InvocationsPerPixel);
 		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e4InvocationsPerPixel);
 		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e8InvocationsPerPixel);
