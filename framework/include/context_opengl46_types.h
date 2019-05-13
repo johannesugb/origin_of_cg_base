@@ -25,6 +25,9 @@ namespace cgb
 		/** Sets the number of samples for MSAA */
 		void set_number_of_samples(int pNumSamples);
 
+		/** Attention: Not supported by the OpenGL context */
+		void set_number_of_presentable_images(uint32_t pNumImages);
+
 		/** Creates or opens the window */
 		void open();
 

@@ -181,7 +181,7 @@ namespace cgb
 		auto& back = mWindows.emplace_back(std::make_unique<window>());
 
 		// Continue initialization later, after this window has gotten a handle:
-		context().add_event_handler(
+		context().add_event_handler(context_state::anytime, // execute handler asap
 			[wnd = back.get()]() -> bool {
 				LOG_INFO("Running event handler which sets up windows focus callbacks");
 				// We can't be sure whether it still exists
@@ -209,10 +209,10 @@ namespace cgb
 					return true; // done
 				}
 				return false; // not done yet
-			}); // execute handler asap
+			}); 
 
 		// Also add an event handler which will run at the end of the application for cleanup:
-		context().add_event_handler(
+		context().add_event_handler(context_state::about_to_finalize,
 			[wnd = back.get()]() -> bool {
 				LOG_INFO("Running window cleanup event handler");
 				// We can't be sure whether it still exists
@@ -226,7 +226,7 @@ namespace cgb
 
 				// Okay, it exists => close it!
 				context().close_window(*wnd);
-			}, context_state::about_to_finalize);
+			});
 		
 		return back.get();
 	}
@@ -446,7 +446,7 @@ namespace cgb
 		mDispatchQueue.clear();
 	}
 
-	void generic_glfw::add_event_handler(event_handler_func pHandler, context_state pStage)
+	void generic_glfw::add_event_handler(context_state pStage, event_handler_func pHandler)
 	{
 		dispatch_to_main_thread([handler = std::move(pHandler), stage = pStage]() {
 			// No need to lock anything here, everything is happening on the main thread only

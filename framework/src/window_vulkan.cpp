@@ -162,6 +162,28 @@ namespace cgb
 		}
 	}
 
+	void window::set_number_of_presentable_images(uint32_t pNumImages)
+	{
+		mNumberOfPresentableImagesGetter = [numImages = pNumImages]() { return numImages; };
+
+		// If the window has already been created, the new setting can't 
+		// be applied unless the window is being recreated.
+		if (is_alive()) {
+			mRecreationRequired = true;
+		}
+	}
+
+	void window::set_number_of_concurrent_frames(uint32_t pNumConcurrent)
+	{
+		mNumberOfConcurrentFramesGetter = [numConcurrent = pNumConcurrent]() { return numConcurrent; };
+
+		// If the window has already been created, the new setting can't 
+		// be applied unless the window is being recreated.
+		if (is_alive()) {
+			mRecreationRequired = true;
+		}
+	}
+
 	void window::open()
 	{
 		context().dispatch_to_main_thread([this]() {
@@ -187,7 +209,7 @@ namespace cgb
 		});
 	}
 
-	vk::SurfaceFormatKHR window::get_surface_format(const vk::SurfaceKHR & surface)
+	vk::SurfaceFormatKHR window::get_config_surface_format(const vk::SurfaceKHR & surface)
 	{
 		if (!mSurfaceFormatSelector) {
 			// Set the default:
@@ -197,7 +219,7 @@ namespace cgb
 		return mSurfaceFormatSelector(surface);
 	}
 
-	vk::PresentModeKHR window::get_presentation_mode(const vk::SurfaceKHR & surface)
+	vk::PresentModeKHR window::get_config_presentation_mode(const vk::SurfaceKHR & surface)
 	{
 		if (!mPresentationModeSelector) {
 			// Set the default:
@@ -207,7 +229,7 @@ namespace cgb
 		return mPresentationModeSelector(surface);
 	}
 
-	vk::SampleCountFlagBits window::get_number_of_samples()
+	vk::SampleCountFlagBits window::get_config_number_of_samples()
 	{
 		if (!mNumberOfSamplesGetter) {
 			// Set the default:
@@ -217,7 +239,7 @@ namespace cgb
 		return mNumberOfSamplesGetter();
 	}
 
-	vk::PipelineMultisampleStateCreateInfo window::get_multisample_state_create_info()
+	vk::PipelineMultisampleStateCreateInfo window::get_config_multisample_state_create_info()
 	{
 		if (!mMultisampleCreateInfoBuilder) {
 			// Set the default:
@@ -226,4 +248,26 @@ namespace cgb
 		// Get the config struct:
 		return mMultisampleCreateInfoBuilder();
 	}
+
+	uint32_t window::get_config_number_of_presentable_images()
+	{
+		if (!mNumberOfPresentableImagesGetter) {
+			auto srfCaps = context().physical_device().getSurfaceCapabilitiesKHR(surface());
+			auto imageCount = srfCaps.minImageCount + 1u;
+			if (srfCaps.maxImageCount > 0) { // A value of 0 for maxImageCount means that there is no limit
+				imageCount = glm::min(imageCount, srfCaps.maxImageCount);
+			}
+			return imageCount;
+		}
+		return mNumberOfPresentableImagesGetter();
+	}
+
+	uint32_t window::get_config_number_of_concurrent_frames()
+	{
+		if (!mNumberOfConcurrentFramesGetter) {
+			return get_config_number_of_presentable_images();
+		}
+		return mNumberOfConcurrentFramesGetter();
+	}
+
 }

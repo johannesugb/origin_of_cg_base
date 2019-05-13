@@ -2,9 +2,6 @@
 
 namespace cgb
 {
-	//size_t vulkan::sSettingMaxFramesInFlight = 2;
-	//size_t vulkan::sActualMaxFramesInFlight = 2;
-
 	std::vector<const char*> vulkan::sRequiredDeviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
@@ -70,10 +67,6 @@ namespace cgb
 			context().pick_physical_device();
 
 			context().create_and_assign_logical_device(surface);
-
-			//// Now that we've got the logical device, get the settings parameter and create the correct number of semaphores
-			//sActualMaxFramesInFlight = sSettingMaxFramesInFlight;
-			////create_sync_objects(); // <-- TODO
 
 			context().mContextState = cgb::context_state::fully_initialized;
 
@@ -283,7 +276,7 @@ namespace cgb
 		auto* wnd = generic_glfw::prepare_window();
 
 		// Wait for the window to receive a valid handle before creating its surface
-		context().add_event_handler([wnd]() -> bool {
+		context().add_event_handler(context_state::halfway_initialized | context_state::anytime_after_init_before_finalize, [wnd]() -> bool {
 			LOG_INFO("Running window surface creator event handler");
 			
 			// Make sure it is the right window
@@ -301,11 +294,11 @@ namespace cgb
 			}
 			window->mSurface = surface;
 			return true;
-		}, context_state::halfway_initialized | context_state::anytime_after_init_before_finalize);
+		});
 
 		// Continue with swap chain creation after the context has completely initialized
 		//   and the window's handle and surface have been created
-		context().add_event_handler([wnd]() -> bool {
+		context().add_event_handler(context_state::anytime_after_init_before_finalize, [wnd]() -> bool {
 			LOG_INFO("Running swap chain creator event handler");
 
 			// Make sure it is the right window
@@ -321,7 +314,7 @@ namespace cgb
 
 			context().create_swap_chain_for_window(wnd);
 			return true;
-		}, context_state::anytime_after_init_before_finalize);
+		});
 
 		return wnd;
 	}
@@ -363,19 +356,7 @@ namespace cgb
 	// TODO: Sync objects
 	void vulkan::create_sync_objects()
 	{
-		//auto semaphoreInfo = vk::SemaphoreCreateInfo();
-		//for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
-		//	mImageAvailableSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
-		//}
-		//for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
-		//	mRenderFinishedSemaphores.push_back(mLogicalDevice.createSemaphore(semaphoreInfo));
-		//}
 
-		//auto fenceInfo = vk::FenceCreateInfo()
-		//	.setFlags(vk::FenceCreateFlagBits::eSignaled);
-		//for (auto i = 0; i < sActualMaxFramesInFlight; ++i) {
-		//	mInFlightFences.push_back(mLogicalDevice.createFence(fenceInfo));
-		//}
 
 	}
 
@@ -767,12 +748,12 @@ namespace cgb
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
 		// Create a dynamic dispatch loader for extensions
-		mDynamicDispatch = vk::DispatchLoaderDynamic(mInstance, mLogicalDevice);
+		mDynamicDispatch = vk::DispatchLoaderDynamic(mInstance, logical_device());
 
-		mGraphicsQueue = mLogicalDevice.getQueue(mGraphicsQueueIndex, 0u);
-		mPresentQueue = mLogicalDevice.getQueue(mPresentQueueIndex, 0u);
-		mTransferQueue = mLogicalDevice.getQueue(mTransferQueueIndex, 0u);
-		mComputeQueue = mLogicalDevice.getQueue(mComputeQueueIndex, 0u);
+		mGraphicsQueue = logical_device().getQueue(mGraphicsQueueIndex, 0u);
+		mPresentQueue = logical_device().getQueue(mPresentQueueIndex, 0u);
+		mTransferQueue = logical_device().getQueue(mTransferQueueIndex, 0u);
+		mComputeQueue = logical_device().getQueue(mComputeQueueIndex, 0u);
 
 		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueueIndex);
 		if (mGraphicsQueueIndex != mTransferQueueIndex) {
@@ -795,22 +776,12 @@ namespace cgb
 						 glm::uvec2(srfCaps.maxImageExtent.width, srfCaps.maxImageExtent.height))
 			: glm::uvec2(srfCaps.currentExtent.width, srfCaps.currentExtent.height);
 
-
-
-		
-		// Select the number of images. 
-		// TODO: Should this depend on the selected presentation mode?
-		auto imageCount = srfCaps.minImageCount + 1u;
-		if (srfCaps.maxImageCount > 0) { // A value of 0 for maxImageCount means that there is no limit
-			imageCount = glm::min(imageCount, srfCaps.maxImageCount);
-		}
-
-		auto surfaceFormat = pWindow->get_surface_format(pWindow->surface());
+		auto surfaceFormat = pWindow->get_config_surface_format(pWindow->surface());
 
 		// With all settings gathered, create the swap chain!
 		auto createInfo = vk::SwapchainCreateInfoKHR()
 			.setSurface(pWindow->surface())
-			.setMinImageCount(imageCount)
+			.setMinImageCount(pWindow->get_config_number_of_presentable_images())
 			.setImageFormat(surfaceFormat.format)
 			.setImageColorSpace(surfaceFormat.colorSpace)
 			.setImageExtent(vk::Extent2D(extent.x, extent.y))
@@ -818,7 +789,7 @@ namespace cgb
 			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
 			.setPreTransform(srfCaps.currentTransform) // To specify that you do not want any transformation, simply specify the current transformation. [2]
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // => no blending with other windows
-			.setPresentMode(pWindow->get_presentation_mode(pWindow->surface()))
+			.setPresentMode(pWindow->get_config_presentation_mode(pWindow->surface()))
 			.setClipped(VK_TRUE) // we don't care about the color of pixels that are obscured, for example because another window is in front of them.  [2]
 			.setOldSwapchain({}); // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
 
@@ -851,13 +822,15 @@ namespace cgb
 		}
 
 		// Finally, create the swap chain prepare a struct which stores all relevant data (for further use)
-		pWindow->mSwapChain = mLogicalDevice.createSwapchainKHR(createInfo);
+		pWindow->mSwapChain = logical_device().createSwapchainKHR(createInfo);
 		pWindow->mSwapChainImageFormat = surfaceFormat;
 		pWindow->mSwapChainExtent = vk::Extent2D(extent.x, extent.y);
 		pWindow->mSwapChainImages = {}; // Soon...
 		pWindow->mSwapChainImageViews = {}; // Soon...
+		pWindow->mCurrentFrame = 0; // Start af frame 0
 
-		auto swapChainImages = mLogicalDevice.getSwapchainImagesKHR(pWindow->swap_chain());
+		auto swapChainImages = logical_device().getSwapchainImagesKHR(pWindow->swap_chain());
+		assert(swapChainImages.size() == pWindow->get_config_number_of_presentable_images());
 		// Store the images,
 		std::copy(std::begin(swapChainImages), std::end(swapChainImages),
 				  std::back_inserter(pWindow->mSwapChainImages));
@@ -884,6 +857,23 @@ namespace cgb
 						   auto imageView = context().logical_device().createImageView(viewCreateInfo);
 						   return imageView;
 					   });
+
+
+		// ============= SYNCHRONIZATION OBJECTS ===========
+		// Create them here, already.
+		pWindow->mFences = {};
+		pWindow->mImageAvailableSemaphores = {};
+		pWindow->mRenderFinishedSemaphores = {};
+		auto numSyncObjects = pWindow->get_config_number_of_concurrent_frames();
+
+		auto fenceInfo = vk::FenceCreateInfo()
+			.setFlags(vk::FenceCreateFlagBits::eSignaled);
+		auto semaphoreInfo = vk::SemaphoreCreateInfo();
+		for (uint32_t i = 0; i < numSyncObjects; ++i) {
+			pWindow->mFences.push_back(logical_device().createFence(fenceInfo));
+			pWindow->mImageAvailableSemaphores.push_back(logical_device().createSemaphore(semaphoreInfo));
+			pWindow->mRenderFinishedSemaphores.push_back(logical_device().createSemaphore(semaphoreInfo));
+		}
 	}
 
 	vk::RenderPass vulkan::create_render_pass(image_format pImageFormat, image_format pDepthFormat)
@@ -1070,7 +1060,7 @@ namespace cgb
 			.setBack(vk::StencilOpState());
 
 		// MULTISAMPLING
-		auto multisamplingInfo = pWindow->get_multisample_state_create_info();
+		auto multisamplingInfo = pWindow->get_config_multisample_state_create_info();
 
 		// PIPELINE CREATION
 		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()

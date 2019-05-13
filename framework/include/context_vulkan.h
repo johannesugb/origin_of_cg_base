@@ -35,8 +35,6 @@ namespace cgb
 		friend struct command_buffer;
 	public:
 		
-		static size_t sSettingMaxFramesInFlight;
-
 		vulkan();
 		vulkan(const vulkan&) = delete;
 		vulkan(vulkan&&) = delete;

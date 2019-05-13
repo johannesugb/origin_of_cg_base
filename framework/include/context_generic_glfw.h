@@ -152,9 +152,9 @@ namespace cgb
 		*							 * If the handler returns false, in will remain in the event handlers list
 		*	@param	pStage			If the handler shall be invoked at a certain context stage only,
 		*							specify that stage with this parameter. If it shall be invoked 
-		*							regardless of the context's stage, leave it at context_state::unknown.
+		*							regardless of the context's stage, set it to context_state::anytime.
 		*/
-		void add_event_handler(event_handler_func pHandler, context_state pStage = context_state::anytime);
+		void add_event_handler(context_state pStage, event_handler_func pHandler);
 
 		/** Invoke all the event handlers which are assigned to the current context state or to unknown state
 		 *	

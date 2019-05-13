@@ -52,6 +52,12 @@ namespace cgb
 		}
 	}
 
+	void set_number_of_presentable_images(uint32_t pNumImages)
+	{
+		// NOP
+		LOG_WARNING("set_number_of_presentable_images is not supported by the OpenGL context.");
+	}
+
 	void window::set_presentaton_mode(cgb::presentation_mode pMode)
 	{
 		switch (pMode) {
