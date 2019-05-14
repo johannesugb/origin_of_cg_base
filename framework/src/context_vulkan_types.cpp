@@ -368,15 +368,15 @@ namespace cgb
 	}
 
 	shader_handle::shader_handle() noexcept 
-		: mShaderModule()
+		: mShaderModule{}
 	{ }
 
 	shader_handle::shader_handle(const vk::ShaderModule& shaderModule) noexcept
-		: mShaderModule(shaderModule)
+		: mShaderModule{ shaderModule }
 	{ }
 
 	shader_handle::shader_handle(shader_handle&& other) noexcept
-		: mShaderModule(std::move(other.mShaderModule))
+		: mShaderModule{ std::move(other.mShaderModule) }
 	{
 		other.mShaderModule = nullptr;
 	}
@@ -434,21 +434,21 @@ namespace cgb
 	}
 
 	pipeline::pipeline() noexcept
-		: mRenderPass()
-		, mPipelineLayout()
-		, mPipeline()
+		: mRenderPass{}
+		, mPipelineLayout{}
+		, mPipeline{}
 	{ }
 
 	pipeline::pipeline(const vk::PipelineLayout& pPipelineLayout, const vk::Pipeline& pPipeline, vk::RenderPass pRenderPass) noexcept
-		: mRenderPass(pRenderPass)
-		, mPipelineLayout(pPipelineLayout)
-		, mPipeline(pPipeline)
+		: mRenderPass{ pRenderPass }
+		, mPipelineLayout{ pPipelineLayout }
+		, mPipeline{ pPipeline }
 	{ }
 
 	pipeline::pipeline(pipeline&& other) noexcept
-		: mRenderPass(std::move(other.mRenderPass))
-		, mPipelineLayout(std::move(other.mPipelineLayout))
-		, mPipeline(std::move(other.mPipeline))
+		: mRenderPass{ std::move(other.mRenderPass) }
+		, mPipelineLayout{ std::move(other.mPipelineLayout) }
+		, mPipeline{ std::move(other.mPipeline) }
 	{ 
 		other.mRenderPass = nullptr;
 		other.mPipelineLayout = nullptr;
@@ -514,28 +514,34 @@ namespace cgb
 	}
 
 	command_pool::command_pool() noexcept
-		: mQueueFamilyIndex(0u)
-		, mCommandPool()
+		: mQueueFamilyIndex{ 0 }
+		, mCreateInfo{}
+		, mCommandPool{ nullptr }
 	{ }
 
-	command_pool::command_pool(uint32_t pQueueFamilyIndex, const vk::CommandPool& pCommandPool) noexcept
-		: mQueueFamilyIndex(pQueueFamilyIndex)
-		, mCommandPool(pCommandPool)
+	command_pool::command_pool(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo, const vk::CommandPool& pPool) noexcept
+		: mQueueFamilyIndex{ pQueueFamilyIndex }
+		, mCreateInfo{ pCreateInfo }
+		, mCommandPool{ pPool }
 	{ }
 
 	command_pool::command_pool(command_pool&& other) noexcept
-		: mQueueFamilyIndex(std::move(other.mQueueFamilyIndex))
-		, mCommandPool(std::move(other.mCommandPool))
+		: mQueueFamilyIndex{ std::move(other.mQueueFamilyIndex) }
+		, mCreateInfo{ std::move(other.mCreateInfo) }
+		, mCommandPool{ std::move(other.mCommandPool) }
 	{
-		other.mQueueFamilyIndex = 0u;
+		other.mQueueFamilyIndex = 0;
+		other.mCreateInfo = {};
 		other.mCommandPool = nullptr;
 	}
 
 	command_pool& command_pool::operator=(command_pool&& other) noexcept
 	{
 		mQueueFamilyIndex = std::move(other.mQueueFamilyIndex);
+		mCreateInfo = std::move(other.mCreateInfo);
 		mCommandPool = std::move(other.mCommandPool);
 		other.mQueueFamilyIndex = 0u;
+		other.mCreateInfo = {};
 		other.mCommandPool = nullptr;
 		return *this;
 	}
@@ -543,9 +549,18 @@ namespace cgb
 	command_pool::~command_pool()
 	{
 		if (mCommandPool) {
-			context().mLogicalDevice.destroyCommandPool(mCommandPool);
+			context().logical_device().destroyCommandPool(mCommandPool);
 			mCommandPool = nullptr;
 		}
+	}
+
+	command_pool command_pool::create(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo)
+	{
+		return command_pool{
+			pQueueFamilyIndex,
+			pCreateInfo,
+			context().logical_device().createCommandPool(pCreateInfo)
+		};
 	}
 
 
@@ -615,11 +630,19 @@ namespace cgb
 	}
 
 	buffer::buffer() noexcept
-		: mSize{ 0u }, mBufferFlags(), mBuffer(nullptr), mMemoryProperties(), mMemory(nullptr)
+		: mSize{ 0u }
+		, mBufferFlags{}
+		, mBuffer{ nullptr }
+		, mMemoryProperties{}
+		, mMemory{ nullptr }
 	{ }
 
 	buffer::buffer(size_t pSize, const vk::BufferUsageFlags& pBufferFlags, const vk::Buffer& pBuffer, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory) noexcept
-		: mSize{ pSize }, mBufferFlags(pBufferFlags), mBuffer{ pBuffer }, mMemoryProperties(pMemoryProperties), mMemory{ pMemory }
+		: mSize{ pSize }
+		, mBufferFlags{ pBufferFlags }
+		, mBuffer{ pBuffer }
+		, mMemoryProperties{ pMemoryProperties }
+		, mMemory{ pMemory }
 	{ }
 
 	buffer::buffer(buffer&& other) noexcept
@@ -629,10 +652,10 @@ namespace cgb
 		, mMemoryProperties{ std::move(other.mMemoryProperties) }
 		, mMemory{ std::move(other.mMemory) }
 	{ 
-		other.mSize = 0u;
-		other.mBufferFlags = vk::BufferUsageFlags();
+		other.mSize = 0;
+		other.mBufferFlags = {};
 		other.mBuffer = nullptr;
-		other.mMemoryProperties = vk::MemoryPropertyFlags();
+		other.mMemoryProperties = {};
 		other.mMemory = nullptr;
 	}
 
@@ -644,9 +667,9 @@ namespace cgb
 		mMemoryProperties = std::move(other.mMemoryProperties);
 		mMemory = std::move(other.mMemory);
 		other.mSize = 0u;
-		other.mBufferFlags = vk::BufferUsageFlags();
+		other.mBufferFlags = {};
 		other.mBuffer = nullptr;
-		other.mMemoryProperties = vk::MemoryPropertyFlags();
+		other.mMemoryProperties = {};
 		other.mMemory = nullptr;
 		return *this;
 	}
@@ -696,7 +719,13 @@ namespace cgb
 		// If memory allocation was successful, then we can now associate this memory with the buffer
 		cgb::context().logical_device().bindBufferMemory(vkBuffer, vkMemory, 0);
 
-		return buffer(pBufferSize, pUsageFlags, vkBuffer, pMemoryProperties, vkMemory);
+		return buffer{
+			pBufferSize,
+			pUsageFlags,
+			vkBuffer,
+			pMemoryProperties,
+			vkMemory
+		};
 	}
 
 	void buffer::fill_host_coherent_memory(const void* pData, std::optional<size_t> pSize)
@@ -715,7 +744,7 @@ namespace cgb
 		// Immediately start recording the command buffer:
 		commandBuffer[0].begin_recording();
 
-		auto copyRegion = vk::BufferCopy()
+		auto copyRegion = vk::BufferCopy{}
 			.setSrcOffset(0u)
 			.setDstOffset(0u)
 			.setSize(static_cast<vk::DeviceSize>(pSource.mSize));
@@ -724,7 +753,7 @@ namespace cgb
 		// That's all
 		commandBuffer[0].end_recording();
 
-		auto submitInfo = vk::SubmitInfo()
+		auto submitInfo = vk::SubmitInfo{}
 			.setCommandBufferCount(1u)
 			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
 		cgb::context().transfer_queue().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
@@ -1408,6 +1437,93 @@ namespace cgb
 		auto sbt = shader_binding_table();
 		static_cast<buffer&>(sbt) = std::move(b);
 		return sbt;
+	}
+
+	fence::fence() noexcept
+		: mCreateInfo{}
+		, mFence{nullptr}
+	{ }
+
+	fence::fence(const vk::FenceCreateInfo& pCreateInfo, const vk::Fence& pFence) noexcept
+		: mCreateInfo{pCreateInfo}
+		, mFence{pFence}
+	{ }
+
+	fence::fence(fence&& other) noexcept
+		: mCreateInfo{ std::move(other.mCreateInfo) }
+		, mFence{ std::move(other.mFence) }
+	{ 
+		other.mCreateInfo = {};
+		other.mFence = nullptr;
+	}
+
+	fence& fence::operator=(fence&& other) noexcept
+	{ 
+		mCreateInfo = std::move(other.mCreateInfo);
+		mFence = std::move(other.mFence);
+		other.mCreateInfo = {};
+		other.mFence = nullptr;
+		return *this;
+	}
+
+	fence::~fence()
+	{ 
+		if (mFence) {
+			context().logical_device().destroyFence(mFence);
+			mFence = nullptr;
+		}
+	}
+
+	fence fence::create(const vk::FenceCreateInfo& pCreateInfo)
+	{ 
+		return fence{
+			pCreateInfo,
+			context().logical_device().createFence(pCreateInfo)
+		};
+	}
+
+
+	semaphore::semaphore() noexcept
+		: mCreateInfo{}
+		, mSemaphore{nullptr}
+	{ }
+
+	semaphore::semaphore(const vk::SemaphoreCreateInfo& pCreateInfo, const vk::Semaphore& pSemaphore) noexcept
+		: mCreateInfo{pCreateInfo}
+		, mSemaphore{pSemaphore}
+	{ }
+
+	semaphore::semaphore(semaphore&& other) noexcept
+		: mCreateInfo{ std::move(other.mCreateInfo) }
+		, mSemaphore{ std::move(other.mSemaphore) }
+	{ 
+		other.mCreateInfo = {};
+		other.mSemaphore = nullptr;
+	}
+
+	semaphore& semaphore::operator=(semaphore&& other) noexcept
+	{ 
+		mCreateInfo = std::move(other.mCreateInfo);
+		mSemaphore = std::move(other.mSemaphore);
+		other.mCreateInfo = {};
+		other.mSemaphore = nullptr;
+		return *this;
+	}
+
+	semaphore::~semaphore()
+	{ 
+		if (mSemaphore) {
+			context().logical_device().destroySemaphore(mSemaphore);
+			mSemaphore = nullptr;
+		}
+	}
+
+	semaphore semaphore::create(const vk::SemaphoreCreateInfo& pCreateInfo)
+	{ 
+		return semaphore{
+			pCreateInfo,
+			context().logical_device().createFence(pCreateInfo)
+		};
 	}
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation

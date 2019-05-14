@@ -238,6 +238,12 @@ namespace cgb
 
 		vk::PhysicalDeviceRayTracingPropertiesNV get_ray_tracing_properties();
 
+		template<typename... CommandBuffers>
+		void submit_command_buffers(CommandBuffers... pCommandBuffers)
+		{
+
+		}
+
 	public:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		

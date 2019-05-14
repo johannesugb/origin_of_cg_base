@@ -353,29 +353,23 @@ namespace cgb
 		mInstance = vk::createInstance(instCreateInfo);
 	}
 
-	// TODO: Sync objects
-	void vulkan::create_sync_objects()
-	{
-
-
-	}
-
+	
 	void vulkan::cleanup_sync_objects()
 	{
-		//for (auto& fen : mInFlightFences) {
-		//	mLogicalDevice.destroyFence(fen);
-		//}
-		//mInFlightFences.clear();
+		for (auto& fen : mInFlightFences) {
+			mLogicalDevice.destroyFence(fen);
+		}
+		mInFlightFences.clear();
 
-		//for (auto& sem : mRenderFinishedSemaphores) {
-		//	mLogicalDevice.destroySemaphore(sem);
-		//}
-		//mRenderFinishedSemaphores.clear();
+		for (auto& sem : mRenderFinishedSemaphores) {
+			mLogicalDevice.destroySemaphore(sem);
+		}
+		mRenderFinishedSemaphores.clear();
 
-		//for (auto& sem : mImageAvailableSemaphores) {
-		//	mLogicalDevice.destroySemaphore(sem);
-		//}
-		//mImageAvailableSemaphores.clear();
+		for (auto& sem : mImageAvailableSemaphores) {
+			mLogicalDevice.destroySemaphore(sem);
+		}
+		mImageAvailableSemaphores.clear();
 	}
 
 	bool vulkan::is_validation_layer_supported(const char* pName)
@@ -868,7 +862,7 @@ namespace cgb
 
 		auto fenceInfo = vk::FenceCreateInfo()
 			.setFlags(vk::FenceCreateFlagBits::eSignaled);
-		auto semaphoreInfo = vk::SemaphoreCreateInfo();
+		auto semaphoreInfo = vk::SemaphoreCreateInfo().setFlags(vk::SemaphoreCreateFlagBits::;
 		for (uint32_t i = 0; i < numSyncObjects; ++i) {
 			pWindow->mFences.push_back(logical_device().createFence(fenceInfo));
 			pWindow->mImageAvailableSemaphores.push_back(logical_device().createSemaphore(semaphoreInfo));

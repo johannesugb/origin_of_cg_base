@@ -158,6 +158,9 @@ namespace cgb
 		vk::Pipeline mPipeline;
 	};
 
+	/** Represents a Vulkan framebuffer, holds the native handle and takes
+	 *	care about lifetime management of the native handles.
+	 */
 	struct framebuffer
 	{
 		framebuffer() noexcept;
@@ -171,20 +174,35 @@ namespace cgb
 		vk::Framebuffer mFramebuffer;
 	};
 
+	/** Represents a Vulkan command pool, holds the native handle and takes
+	 *	care about lifetime management of the native handles.
+	 *	Also contains the queue family index it has been created for and is 
+	 *  intended to be used with:
+	 *	"All command buffers allocated from this command pool must be submitted 
+	 *	 on queues from the same queue family." [+]
+	 *	
+	 *	[+]: https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkCommandPoolCreateInfo.html
+	 */
 	struct command_pool
 	{
 		command_pool() noexcept;
-		command_pool(uint32_t, const vk::CommandPool&) noexcept;
+		command_pool(uint32_t, const vk::CommandPoolCreateInfo&, const vk::CommandPool&) noexcept;
 		command_pool(const command_pool&) = delete;
 		command_pool(command_pool&&) noexcept;
 		command_pool& operator=(const command_pool&) = delete;
 		command_pool& operator=(command_pool&&) noexcept;
 		~command_pool();
 
+		static command_pool create(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo);
+
 		uint32_t mQueueFamilyIndex;
+		vk::CommandPoolCreateInfo mCreateInfo;
 		vk::CommandPool mCommandPool;
 	};
 
+	/** Represents a Vulkan buffer along with its assigned memory, holds the 
+	 *	native handle and takes care about lifetime management of the native handles.
+	 */
 	struct buffer
 	{
 		buffer() noexcept;
@@ -399,5 +417,37 @@ namespace cgb
 		~shader_binding_table();
 
 		static shader_binding_table create(const pipeline& pRtPipeline);
+	};
+
+	struct fence
+	{
+		fence() noexcept;
+		fence(const vk::FenceCreateInfo&, const vk::Fence&) noexcept;
+		fence(const fence&) = delete;
+		fence(fence&&) noexcept;
+		fence& operator=(const fence&) = delete;
+		fence& operator=(fence&&) noexcept;
+		~fence();
+
+		static fence create(const vk::FenceCreateInfo& pCreateInfo);
+
+		vk::FenceCreateInfo mCreateInfo;
+		vk::Fence mFence;
+	};
+
+	struct semaphore
+	{
+		semaphore() noexcept;
+		semaphore(const vk::SemaphoreCreateInfo&, const vk::Semaphore&) noexcept;
+		semaphore(const semaphore&) = delete;
+		semaphore(semaphore&&) noexcept;
+		semaphore& operator=(const semaphore&) = delete;
+		semaphore& operator=(semaphore&&) noexcept;
+		~semaphore();
+
+		static semaphore create(const vk::SemaphoreCreateInfo& pCreateInfo);
+
+		vk::SemaphoreCreateInfo mCreateInfo;
+		vk::Semaphore mSemaphore;
 	};
 }
