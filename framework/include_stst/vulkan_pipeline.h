@@ -65,6 +65,8 @@ namespace cgb {
 		size_t get_push_constant_size() { return mPushConstantsSize; }
 		ShaderStageFlagBits get_push_constant_stage_flags() { return mPushConstantsStageFlags; }
 
+		void disable_shading_rate_image() { mEnableShadingRate = false; }
+
 	private:
 		vk::Pipeline mPipeline;
 		vk::PipelineLayout mPipelineLayout;
@@ -98,6 +100,8 @@ namespace cgb {
 
 		// private temporary variables, for filling structures
 		std::vector<vk::DescriptorSetLayout> mTempLayouts;
+
+		bool mEnableShadingRate = true;
 	};
 }
 

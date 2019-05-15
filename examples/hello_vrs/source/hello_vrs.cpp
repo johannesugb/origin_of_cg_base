@@ -23,6 +23,7 @@
 
 #include "vrs_image_compute_drawer.h"
 #include "vrs_cas_compute_drawer.h"
+#include "vrs_mas_compute_drawer.h"
 
 #include "eyetracking_interface.h"
 
@@ -30,6 +31,10 @@
 #include "AmbientLight.h"
 #include "DirectionalLight.h"
 #include "PointLight.h"
+
+#define VRS_EYE 0
+#define VRS_CAS 0
+#define VRS_MAS 1
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -127,9 +132,15 @@ private:
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderBlitImages;
 	std::vector<std::shared_ptr<cgb::vulkan_texture>> mVrsPrevRenderBlitTextures;
 
-
 	std::unique_ptr<vrs_cas_compute_drawer> mVrsCasComputeDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mVrsCasComputePipeline;
+
+	// VRS: motion adaptive shading
+	std::unique_ptr<vrs_mas_compute_drawer> mVrsMasComputeDrawer;
+	std::shared_ptr<cgb::vulkan_pipeline> mVrsMasComputePipeline;
+
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsMasMotionVecBlitImages;
+	std::vector<std::shared_ptr<cgb::vulkan_texture>> mVrsMasMotionVecBlitTextures;
 
 	// Post Processing (currently only passthrough into swapchain image)
 	std::shared_ptr<cgb::vulkan_framebuffer> mPostProcFramebuffer;
@@ -196,6 +207,7 @@ public:
 
 			mComputeVulkanPipeline->bake();
 			mVrsCasComputePipeline->bake();
+			mVrsMasComputePipeline->bake();
 
 			mPostProcPipeline->bake();
 			mTAAPipeline->bake();
@@ -306,6 +318,7 @@ private:
 		mRenderVulkanPipeline->add_color_blend_attachment_state(mRenderVulkanPipeline->get_color_blend_attachment_state(0));
 		mRenderVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/triangle.vert.spv");
 		mRenderVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/triangle.frag.spv");
+		mRenderVulkanPipeline->disable_shading_rate_image();
 
 		mRenderVulkanPipeline->bake();
 		drawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mRenderVulkanPipeline);
@@ -321,6 +334,14 @@ private:
 		vrsCasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
 		//vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitImages);
 		vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitTextures);
+
+		auto vrsMasResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
+		vrsMasResourceBundleLayout->add_binding(0, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
+		vrsMasResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
+		vrsMasResourceBundleLayout->bake();
+		auto vrsMasResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsMasResourceBundleLayout, true);
+		vrsMasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
+		vrsMasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsMasMotionVecBlitTextures);
 
 		auto vrsDebugResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
 		vrsDebugResourceBundleLayout->add_binding(0, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
@@ -342,7 +363,7 @@ private:
 			mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 			mVrsImageComputeDrawer->set_eye_inf(eyeInf);
 
-
+			// CAS
 			mVrsCasComputePipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { vrsCasResourceBundleLayout, vrsDebugResourceBundleLayout }, sizeof(vrs_cas_comp_data));
 			mVrsCasComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_cas_img.comp.spv");
 			mVrsCasComputePipeline->bake();
@@ -351,9 +372,19 @@ private:
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages);
 			mVrsCasComputeDrawer->set_vrs_images(vrsImages);
 
+			// MAS
+			mVrsMasComputePipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { vrsMasResourceBundleLayout, vrsDebugResourceBundleLayout }, sizeof(vrs_cas_comp_data));
+			mVrsMasComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_mas_img.comp.spv");
+			mVrsMasComputePipeline->bake();
+
+			mVrsMasComputeDrawer = std::make_unique<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsMasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsMasResourceBundle, vrsDebugResourceBundle },
+				mMotionVectorImages, mVrsMasMotionVecBlitImages);
+			mVrsMasComputeDrawer->set_vrs_images(vrsImages);
+
 			createVrsComputeDescriptorPool();
 			createVrsDescriptorSets();
 			mVrsCasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
+			mVrsMasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 		}
 		mVrsDebugFullscreenQuad = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, vrsDebugTextureImages);
 
@@ -496,13 +527,13 @@ private:
 		colorBlend.blendEnable = VK_TRUE;
 		colorBlend.dstColorBlendFactor = vk::BlendFactor::eOne;
 		//mVrsDebugPipeline->add_color_blend_attachment_state(colorBlend);
-
-
+		//mVrsDebugPipeline->disable_shading_rate_image();
 		mVrsDebugPipeline->bake();
 		mVrsDebugDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mVrsDebugPipeline);
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			mVrsDebugDrawer->set_vrs_images(vrsImages);
 			mResourceBundleGroup->allocate_resource_bundle(vrsCasResourceBundle.get());
+			mResourceBundleGroup->allocate_resource_bundle(vrsMasResourceBundle.get());
 			mResourceBundleGroup->allocate_resource_bundle(vrsDebugResourceBundle.get());
 		}
 	}
@@ -552,12 +583,14 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			mVrsImageComputeDrawer.reset();
 			mVrsCasComputeDrawer.reset();
+			mVrsMasComputeDrawer.reset();
 		}
 		mMaterialDrawer.reset();
 		mVrsDebugDrawer.reset();
 		mRenderVulkanPipeline.reset();
 		mComputeVulkanPipeline.reset();
 		mVrsCasComputePipeline.reset();
+		mVrsMasComputePipeline.reset();
 		mVrsDebugPipeline.reset();
 		mVulkanFramebuffer.reset();
 
@@ -685,8 +718,13 @@ private:
 
 		// start drawing, record draw commands, etc.
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-			//mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsImageComputeDrawer.get());
+#if VRS_EYE
+			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsImageComputeDrawer.get());
+#elif VRS_CAS
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsCasComputeDrawer.get());
+#elif VRS_MAS
+			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsMasComputeDrawer.get());
+#endif
 		}
 
 		std::vector<cgb::vulkan_render_object*> renderObjects;
@@ -707,6 +745,7 @@ private:
 		mTAADrawer->set_vrs_images(vrsDefaultImage);
 		mPostProcDrawer->set_vrs_images(vrsDefaultImage);
 		mVrsDebugDrawer->set_vrs_images(vrsDefaultImage);
+		//mMaterialDrawer->set_vrs_images(vrsDefaultImage);
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
 		// post processing pass
@@ -927,6 +966,8 @@ private:
 
 		vk::Format colorFormatDebug = vk::Format::eR8G8B8A8Unorm;
 		vk::Format colorFormatVrsPrevImg = vk::Format::eR16G16B16A16Unorm;
+		vk::Format colorFormatMotionVectorImg = mMotionVectorImages[0]->get_format();
+
 
 		vrsImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
 		vrsDefaultImage.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
@@ -935,6 +976,8 @@ private:
 		vrsDebugTextureImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
 		mVrsPrevRenderBlitImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
 		mVrsPrevRenderBlitTextures.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
+		mVrsMasMotionVecBlitImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
+		mVrsMasMotionVecBlitTextures.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
 
 		std::vector clearPixels = std::vector<uint8_t>(width * height, 7);
 
@@ -950,9 +993,13 @@ private:
 			
 			mVrsPrevRenderBlitImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 4, vk::SampleCountFlagBits::e1, colorFormatVrsPrevImg, vk::ImageTiling::eOptimal,
 				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-			mVrsPrevRenderBlitImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, 1); // vk::ImageLayout::eShadingRateOptimalNV
-
+			mVrsPrevRenderBlitImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, 1);
 			mVrsPrevRenderBlitTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsPrevRenderBlitImages[i]);
+
+			mVrsMasMotionVecBlitImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 2, vk::SampleCountFlagBits::e1, colorFormatMotionVectorImg, vk::ImageTiling::eOptimal,
+				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			mVrsMasMotionVecBlitImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, 1);
+			mVrsMasMotionVecBlitTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsMasMotionVecBlitImages[i]);
 
 			// Debug image
 			vrsDebugImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 4, vk::SampleCountFlagBits::e1, colorFormatDebug, vk::ImageTiling::eOptimal, 
@@ -999,6 +1046,7 @@ private:
 		mPostProcPipeline->add_attr_desc_binding(posAndUv);
 		mPostProcPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/passthrough.vert.spv");
 		mPostProcPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/passthrough.frag.spv");
+		mPostProcPipeline->disable_shading_rate_image();
 		mPostProcPipeline->bake();
 
 		mPostProcDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mPostProcPipeline);
@@ -1026,6 +1074,7 @@ private:
 		mTAAPipeline->add_attr_desc_binding(posAndUv);
 		mTAAPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/taa.vert.spv");
 		mTAAPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/taa.frag.spv");
+		mTAAPipeline->disable_shading_rate_image();
 		mTAAPipeline->bake();
 
 		mTAADrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mTAAPipeline);

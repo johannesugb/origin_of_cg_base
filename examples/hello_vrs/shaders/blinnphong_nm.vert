@@ -125,5 +125,5 @@ void main()
 
 	gl_Position = positionCS;// + vec4(trans.frameOffset, 0, 0) * 4.0;
 	v_out.aPrevPositionProj = prevFrameData.vPMatrix * trans.model * positionOS;
-	v_out.aPrevPositionProj.xy += v_out.aPrevPositionProj.w * 2.0 * trans.frameOffset * 2.0;
+	v_out.aPrevPositionProj.xy += v_out.aPrevPositionProj.w * 2.0 * trans.frameOffset;
 }

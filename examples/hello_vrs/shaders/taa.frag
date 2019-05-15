@@ -83,7 +83,7 @@ vec3 YCgCoToRGB(vec3 YCgCo)
     return vec3(r, g, b);
 }
 
-const float cColorBoxSigma = 6;
+const float cColorBoxSigma = 0.5;
 const float cAlpha = 0.1;
 
 void main() {
@@ -178,6 +178,7 @@ void main() {
 	vec4 curColor = texture(curFrame, fragTexCoord);
     //outColor = curColor;
 	//outColor = vec4(texture(prevFrame, fragTexCoord - motion).rgb, 0);
+	//outColor = vec4(motion.x);
 	//outColor = vec4(YCgCoToRGB(history), 0);
 }
 

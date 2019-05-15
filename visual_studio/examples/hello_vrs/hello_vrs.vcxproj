@@ -44,6 +44,7 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_img.comp" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_mas_img.comp" />
     <None Include="packages.config" />
     <None Include="Tobii\API-Reference.pdf" />
     <None Include="Tobii\SDK-License_en.pdf" />
@@ -54,11 +55,13 @@
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_mas_compute_drawer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_mas_compute_drawer.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\framework\assets\chalet\chalet.jpg" />
