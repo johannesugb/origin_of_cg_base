@@ -238,8 +238,8 @@ namespace cgb
 
 		vk::PhysicalDeviceRayTracingPropertiesNV get_ray_tracing_properties();
 
-		template<typename... CommandBuffers>
-		void submit_command_buffers(CommandBuffers... pCommandBuffers)
+		template<typename... CommandBufferT>
+		void submit_command_buffers(CommandBufferT... pCommandBuffers)
 		{
 
 		}
@@ -254,14 +254,10 @@ namespace cgb
 		vk::Device mLogicalDevice;
 		vk::DispatchLoaderDynamic mDynamicDispatch;
 
-		vk::Queue mGraphicsQueue;
-		uint32_t mGraphicsQueueIndex;
-		vk::Queue mPresentQueue;
-		uint32_t mPresentQueueIndex;
-		vk::Queue mTransferQueue;
-		uint32_t mTransferQueueIndex;
-		vk::Queue mComputeQueue;
-		uint32_t mComputeQueueIndex;
+		queue mGraphicsQueue;
+		queue mPresentQueue;
+		queue mTransferQueue;
+		queue mComputeQueue;
 		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
 
 		std::vector<command_pool> mCommandPools;

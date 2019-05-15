@@ -199,6 +199,44 @@ namespace cgb
 		vk::CommandPoolCreateInfo mCreateInfo;
 		vk::CommandPool mCommandPool;
 	};
+	
+	// Forward declare:
+	struct queue_submit_proxy;
+
+	/** Represents a Vulkan queue, providing the queue itself and its index.
+	*/
+	struct queue
+	{
+		// C++TODO: Use homogeneous pack as soon as it becomes available, i.e. all CommandBuffersT must be of the same type
+		template <typename... CommandBuffersT>
+		queue_submit_proxy submit_command_buffers(CommandBuffersT... pCmdBfrs)
+		{
+			queue_submit_proxy proxy;
+
+			mQueue.submit({pCmdBfrs...}, nullptr)
+		}
+
+		static queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex = 0);
+
+		uint32_t mQueueFamilyIndex;
+		uint32_t mQueueIndex;
+		vk::Queue mQueue;
+	};
+
+	struct queue_submit_proxy
+	{
+		queue_submit_proxy() = default;
+		queue_submit_proxy(const queue_submit_proxy&) = delete;
+		queue_submit_proxy(queue_submit_proxy&&) = delete;
+		queue_submit_proxy& operator=(const queue_submit_proxy&) = delete;
+		queue_submit_proxy& operator=(queue_submit_proxy&&) = delete;
+
+		queue& mQueue;
+		vk::SubmitInfo mSubmitInfo;
+		std::vector<command_buffer> mCommandBuffers;
+		std::vector<semaphore> mWaitSemaphores;
+		std::vector<semaphore> mSignalSemaphores;
+	};
 
 	/** Represents a Vulkan buffer along with its assigned memory, holds the 
 	 *	native handle and takes care about lifetime management of the native handles.

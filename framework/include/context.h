@@ -58,8 +58,8 @@ namespace cgb
 	 *	Example: Create a context-specific function to select a format depending on the context used:
 	 *
 	 *	 auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
-	 *								.SET_VULKAN_FUNCTION([]() { return cgb::image_format{ vk::Format::eR8G8B8Unorm }; })
-	 *								.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB }; });
+	 *								.VK_FUNC([]() { return cgb::image_format{ vk::Format::eR8G8B8Unorm }; })
+	 *								.GL_FUNC([]() { return cgb::image_format{ GL_RGB }; });
 	 */
 	template<typename T>
 	struct context_specific_function
@@ -87,15 +87,15 @@ namespace cgb
 	};
 
 #if defined(USE_OPENGL46_CONTEXT)
-#define EXECUTE_OPENGL46_ONLY(x) x
-#define EXECUTE_VULKAN_ONLY(x) 
-#define SET_OPENGL46_FUNCTION(x) set_function(x)
-#define SET_VULKAN_FUNCTION(x) do_nothing()
+#define GL_ONLY(x) x
+#define VK_ONLY(x) 
+#define GL_FUNC(x) set_function(x)
+#define VK_FUNC(x) do_nothing()
 #elif defined(USE_VULKAN_CONTEXT)
-#define EXECUTE_OPENGL46_ONLY(x)
-#define EXECUTE_VULKAN_ONLY(x) x
-#define SET_OPENGL46_FUNCTION(x) do_nothing()
-#define SET_VULKAN_FUNCTION(x) set_function(x)
+#define GL_ONLY(x)
+#define VK_ONLY(x) x
+#define GL_FUNC(x) do_nothing()
+#define VK_FUNC(x) set_function(x)
 #endif
 
 }

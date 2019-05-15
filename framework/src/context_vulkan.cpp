@@ -22,8 +22,7 @@ namespace cgb
 		return supportedValidationLayers;
 	}
 
-	vulkan::vulkan()
-		: generic_glfw()
+	vulkan::vulkan() : generic_glfw()
 	{
 		// So it begins
 		create_instance();
@@ -652,24 +651,25 @@ namespace cgb
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
 		auto nope = vk::QueueFlags();
 		
+		uint32_t graphicsQueueIndex, computeQueueIndex, presentQueueIndex, transferQueueIndex;
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 		// find everything:
 		auto everything = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, nope, pSurface);
 		if (everything.size() != 0) {
-			queueCreateInfos = compile_create_infos_and_assign_members(everything, { mGraphicsQueueIndex, mComputeQueueIndex, mPresentQueueIndex });
+			queueCreateInfos = compile_create_infos_and_assign_members(everything, { graphicsQueueIndex, computeQueueIndex, presentQueueIndex });
 		}
 		else {
 			// can we have graphics and present?
 			auto g_and_p = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pSurface);
 			if (g_and_p.size() != 0) {
-				queueCreateInfos = compile_create_infos_and_assign_members(g_and_p, { mGraphicsQueueIndex, mPresentQueueIndex });
+				queueCreateInfos = compile_create_infos_and_assign_members(g_and_p, { graphicsQueueIndex, presentQueueIndex });
 
 				// we also need compute support
 				auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, std::nullopt);
 				if (c_only.size() == 0) {
 					throw std::runtime_error("Couldn't find queue families (problem with c_only)");
 				}
-				auto tmp = compile_create_infos_and_assign_members(c_only, { mComputeQueueIndex });
+				auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
 				queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
 			}
 			else {
@@ -678,7 +678,7 @@ namespace cgb
 				auto p_only = find_queue_families_for_criteria(nope, nope, pSurface);
 				auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, nope, std::nullopt);
 				if (g_only.size() > 0) {
-					auto tmp = compile_create_infos_and_assign_members(g_only, { mGraphicsQueueIndex });
+					auto tmp = compile_create_infos_and_assign_members(g_only, { graphicsQueueIndex });
 					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
 				} 
 				else {
@@ -686,7 +686,7 @@ namespace cgb
 				}
 				
 				if (p_only.size() > 0) {
-					auto tmp = compile_create_infos_and_assign_members(p_only, { mPresentQueueIndex });
+					auto tmp = compile_create_infos_and_assign_members(p_only, { presentQueueIndex });
 					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
 				}
 				else {
@@ -694,7 +694,7 @@ namespace cgb
 				}
 				
 				if (c_only.size() > 0) {
-					auto tmp = compile_create_infos_and_assign_members(c_only, { mComputeQueueIndex });
+					auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
 					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
 				}
 				else {
@@ -705,11 +705,11 @@ namespace cgb
 		// Handle transfer queue separately
 		auto t_only = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute), std::nullopt);
 		if (t_only.size() > 0) {
-			auto tmp = compile_create_infos_and_assign_members(t_only, { mTransferQueueIndex });
+			auto tmp = compile_create_infos_and_assign_members(t_only, { transferQueueIndex });
 			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
 		}
 		else {
-			mTransferQueueIndex = mGraphicsQueueIndex;
+			transferQueueIndex = graphicsQueueIndex;
 		}
 		
 		// Get the same validation layers as for the instance!
@@ -744,14 +744,14 @@ namespace cgb
 		// Create a dynamic dispatch loader for extensions
 		mDynamicDispatch = vk::DispatchLoaderDynamic(mInstance, logical_device());
 
-		mGraphicsQueue = logical_device().getQueue(mGraphicsQueueIndex, 0u);
-		mPresentQueue = logical_device().getQueue(mPresentQueueIndex, 0u);
-		mTransferQueue = logical_device().getQueue(mTransferQueueIndex, 0u);
-		mComputeQueue = logical_device().getQueue(mComputeQueueIndex, 0u);
+		mGraphicsQueue = queue::create(graphicsQueueIndex, 0u);
+		mPresentQueue = queue::create(presentQueueIndex, 0u);
+		mTransferQueue = queue::create(transferQueueIndex, 0u);
+		mComputeQueue = queue::create(computeQueueIndex, 0u);
 
-		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueueIndex);
-		if (mGraphicsQueueIndex != mTransferQueueIndex) {
-			mTransferAndGraphicsQueueIndices.push_back(mTransferQueueIndex);
+		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueue.mQueueFamilyIndex);
+		if (mGraphicsQueue.mQueueFamilyIndex != mTransferQueue.mQueueFamilyIndex) {
+			mTransferAndGraphicsQueueIndices.push_back(mTransferQueue.mQueueFamilyIndex);
 		}
 	}
 

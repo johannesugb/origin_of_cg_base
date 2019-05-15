@@ -563,6 +563,15 @@ namespace cgb
 		};
 	}
 
+	queue queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
+	{
+		return queue{
+			pQueueFamilyIndex,
+			pQueueIndex,
+			context().logical_device().getQueue(pQueueFamilyIndex, pQueueIndex)
+		};
+	}
+
 
 	void command_buffer::begin_recording()
 	{
@@ -1082,7 +1091,7 @@ namespace cgb
 
 		// That's all
 		commandBuffer[0].end_recording();
-
+		vkDestroySemaphore
 		auto submitInfo = vk::SubmitInfo()
 			.setCommandBufferCount(1u)
 			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
@@ -1522,7 +1531,7 @@ namespace cgb
 	{ 
 		return semaphore{
 			pCreateInfo,
-			context().logical_device().createFence(pCreateInfo)
+			context().logical_device().createSemaphore(pCreateInfo)
 		};
 	}
 
