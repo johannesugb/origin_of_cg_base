@@ -222,13 +222,31 @@ namespace cgb
 		// All the image views of the swap chain
 		std::vector<vk::ImageView> mSwapChainImageViews;
 		// The frame counter/frame id/frame index/current frame number
-		size_t mCurrentFrame;
+		uint64_t mCurrentFrame;
 		// Fences to synchronize between frames (CPU-GPU synchronization)
-		std::vector<vk::Fence> mFences; 
+		std::vector<fence> mFences; 
 		// Semaphores to wait for an image to become available (GPU-GPU synchronization) // TODO: true?
-		std::vector<vk::Semaphore> mImageAvailableSemaphores; 
+		std::vector<semaphore> mImageAvailableSemaphores; 
 		// Semaphores to wait for rendering to finish (GPU-GPU synchronization) // TODO: true?
-		std::vector<vk::Semaphore> mRenderFinishedSemaphores; 
+		std::vector<semaphore> mRenderFinishedSemaphores; 
+
+#pragma region Extra dependencies, i.e. Semaphores
+		// Extra semaphores for frames.
+		// The first element in the tuple refers to the frame id which is affected.
+		// The second element in the is the semaphore to wait on.
+		// Extra dependency semaphores will be waited on along with the mImageAvailableSemaphores
+		std::vector<std::tuple<uint64_t, semaphore>> mExtraDependencySemaphores;
+		 
+		// Number of extra semaphores to generate per frame upon fininshing the rendering of a frame
+		uint32_t mNumExtraRenderFinishedSemaphoresPerFrame;
+
+		// Contains the extra semaphores to be signalled per frame
+		// The length of this vector will be: number_of_concurrent_frames() * mNumExtraSemaphoresPerFrame
+		// These semaphores will be signalled together with the mRenderFinishedSemaphores
+		std::vector<semaphore> mExtraRenderFinishedSemaphores;
+#pragma endregion
+
+
 
 		// The backbuffer of this window
 		framebuffer mBackBuffer;
