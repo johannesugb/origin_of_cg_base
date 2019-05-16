@@ -127,6 +127,7 @@ namespace cgb
 			if (file_path_or_null != nullptr) {
 				GatherMaterialData(scene, *file_path_or_null);
 			}
+
 			return retval;
 		}
 		else
@@ -875,6 +876,37 @@ namespace cgb
 		return m_meshes[meshIndex];
 	}
 
+	void Model::create_render_objects(std::shared_ptr<cgb::vulkan_resource_bundle_layout> materialObjectResourceBundleLayout)
+	{
+		auto meshes = SelectAllMeshes();
+		for (cgb::Mesh& mesh : meshes)
+		{
+			mesh.m_material_data->set_roughness(0.1f);
+			mesh.m_material_data->set_albedo(glm::vec3(0.95f, 0.64f, 0.54f));
+			mesh.m_material_data->set_metallic(1.0f);
+			mesh.m_material_data->update_material_buffer();
+		}
 
+		for (cgb::Mesh& mesh : meshes) {
+			auto outVertexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(),
+				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, mesh.m_vertex_data.data());
+			auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
+				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
+
+			auto resourceBundle = mesh.mMaterialResourceBundle;
+
+			auto sponzaRenderObject = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({ outVertexBuffer }), outIndexBuffer, mesh.m_indices.size(), materialObjectResourceBundleLayout, mResourceBundleGroup, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> {resourceBundle});
+
+			mRenderObjects.push_back(sponzaRenderObject);
+		}
+	}
+
+	void Model::allocate_render_object_data() {
+		for (auto renderObject : mRenderObjects) {
+			for (int i = 0; i < renderObject->get_resource_bundles().size(); i++) {
+				mResourceBundleGroup->allocate_resource_bundle(renderObject->get_resource_bundles()[i].get());
+			}
+		}
+	}
 
 }

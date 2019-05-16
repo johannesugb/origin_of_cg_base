@@ -7,6 +7,7 @@
 #include "vulkan_resource_bundle_group.h"
 #include "vulkan_resource_bundle.h"
 #include "vulkan_attribute_description_binding.h"
+#include <vulkan_render_object.h>
 
 namespace cgb
 {
@@ -232,7 +233,9 @@ namespace cgb
 		static const float kDefaultReflectivity;
 
 		std::vector<Mesh> m_meshes;
-		std::shared_ptr<cgb::vulkan_resource_bundle_group> mResourceBundleGroup;
+		std::shared_ptr<cgb::vulkan_resource_bundle_group> mResourceBundleGroup;	
+		
+		std::vector<std::shared_ptr<cgb::vulkan_render_object>> mRenderObjects;
 
 #ifdef false
 		std::vector<Animator*> m_animators;
@@ -331,6 +334,9 @@ namespace cgb
 
 		Mesh& mesh_at(unsigned int meshIndex);
 
+		std::vector<std::shared_ptr<cgb::vulkan_render_object>>& get_render_objects() { return mRenderObjects; }
+		void create_render_objects(std::shared_ptr<cgb::vulkan_resource_bundle_layout> materialObjectResourceBundleLayout);
+		void allocate_render_object_data();
 	};
 
 }

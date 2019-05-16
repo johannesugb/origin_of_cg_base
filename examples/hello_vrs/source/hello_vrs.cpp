@@ -94,9 +94,9 @@ private:
 
 	std::shared_ptr<eyetracking_interface> eyeInf;
 
-	std::unique_ptr<cgb::Model> mModel;
+	std::unique_ptr<cgb::Model> mSponzaModel;
+	std::unique_ptr<cgb::Model> mParallelPipesModel;
 
-	std::vector<std::shared_ptr<cgb::vulkan_render_object>> mSponzaRenderObjects;
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mGlobalResourceBundleLayout; // contains lights and global flags
 	std::shared_ptr<cgb::vulkan_resource_bundle> mGlobalResourceBundle;
 
@@ -173,7 +173,7 @@ private:
 	std::vector<std::shared_ptr<cgb::vulkan_texture>> mMotionVectorTextures;
 
 	struct prev_frame_data {
-		glm::mat4 vPMatrix;
+		glm::mat4 mvpMatrix;
 		glm::vec2 imgSize;
 	};
 
@@ -220,6 +220,16 @@ public:
 				mCamera.enable();
 			}
 		}
+
+		auto time = cgb::time().absolute_time();
+
+		const auto kSpeed = 10.0f;
+		const auto kDistanceX = -0.23f;
+		const auto kDistanceY = 1.0f;
+		mParallelPipesModel->mesh_at(0).m_scene_transformation_matrix = glm::translate(glm::vec3(
+			kDistanceX * glm::sin(kSpeed * time),
+			kDistanceY * glm::sin(kSpeed * time),
+			0.0f));
 	}
 
 	void render() override
@@ -279,7 +289,7 @@ private:
 			mImagePresenter->get_swap_chain_images_count(), cgb::vulkan_context::instance().msaaSamples);
 		mVulkanFramebuffer->add_dynamic_color_attachment(colorImage, mPostProcImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 		mVulkanFramebuffer->set_depth_attachment(depthImage);
-		mVulkanFramebuffer->add_dynamic_color_attachment(mVrsPrevRenderMsaaImage, mVrsPrevRenderImages, vk::ImageLayout::eTransferSrcOptimal);
+		mVulkanFramebuffer->add_dynamic_color_attachment(mVrsPrevRenderMsaaImage, mVrsPrevRenderImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 		mVulkanFramebuffer->add_dynamic_color_attachment(mMotionVectorMsaaImage, mMotionVectorImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 		mVulkanFramebuffer->bake();
 		mRenderer->set_framebuffer(mVulkanFramebuffer);
@@ -393,6 +403,7 @@ private:
 		postProcResourceBundleLayout->add_binding(0, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		postProcResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		postProcResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
+		postProcResourceBundleLayout->add_binding(3, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		postProcResourceBundleLayout->bake();
 		auto postProcBundles = std::array<std::shared_ptr<cgb::vulkan_resource_bundle>, 2>{};
 		for (int i = 0; i < postProcBundles.size(); i++) {
@@ -406,6 +417,8 @@ private:
 
 		postProcBundles[0]->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, mMotionVectorTextures);
 		postProcBundles[1]->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, mMotionVectorTextures);
+		postProcBundles[0]->add_dynamic_image_resource(3, vk::ImageLayout::eShaderReadOnlyOptimal, mVrsPrevRenderTextures);
+		postProcBundles[1]->add_dynamic_image_resource(3, vk::ImageLayout::eShaderReadOnlyOptimal, mVrsPrevRenderTextures);
 
 
 		for (int i = 0; i < mTAAFullScreenQuads.size(); i++) {
@@ -456,11 +469,11 @@ private:
 		mMaterialObjectResourceBundleLayout->add_binding(0, vk::DescriptorType::eUniformBuffer, cgb::ShaderStageFlagBits::eVertex | cgb::ShaderStageFlagBits::eFragment);
 		mMaterialObjectResourceBundleLayout->bake();
 
-		load_model("assets/models/sponza/sponza_structure.obj", glm::scale(glm::vec3(0.01f)), cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace, mModel);
+		load_models();
 
 
 		//Atribute description bindings
-		auto& mesh = mModel->mesh_at(0);
+		auto& mesh = mSponzaModel->mesh_at(0);
 		auto attrib_config = cgb::VertexAttribData::Nothing;
 		attrib_config = attrib_config | cgb::VertexAttribData::Position;
 		attrib_config = attrib_config | cgb::VertexAttribData::Tex2D;
@@ -496,7 +509,12 @@ private:
 		uboCam.proj = mCamera.projection_matrix();
 		uboCam.mv = uboCam.view * uboCam.model;
 
-		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
+			for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
+				sponzaRenderObject->update_uniform_buffer(i, uboCam);
+			}
+		}
+		for (auto sponzaRenderObject : mParallelPipesModel->get_render_objects()) {
 			for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
 				sponzaRenderObject->update_uniform_buffer(i, uboCam);
 			}
@@ -546,7 +564,10 @@ private:
 		cgb::vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
 
 		mVrsDebugFullscreenQuad.reset();
-		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
+			sponzaRenderObject.reset();
+		}
+		for (auto sponzaRenderObject : mParallelPipesModel->get_render_objects()) {
 			sponzaRenderObject.reset();
 		}
 		texture.reset();
@@ -672,6 +693,7 @@ private:
 	void drawFrame()
 	{
 		static auto prevFrameData = std::make_shared<prev_frame_data>();
+		static auto prevFrameModel = glm::mat4();
 		static auto frame = 0;
 		// update states, e.g. for animation
 		static auto startTime = std::chrono::high_resolution_clock::now();
@@ -704,16 +726,28 @@ private:
 		float farPlane = mCamera.far_plane_distance();
 		mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 
-		for (int i = 0; i < mSponzaRenderObjects.size(); i++) {
-			auto sponzaRenderObject = mSponzaRenderObjects[i];
-			uboCam.model = mModel->transformation_matrix();
-			uboCam.model = glm::scale(glm::vec3(0.01f)) * mModel->mesh_at(i).transformation_matrix();
-			//uboCam.model = mModel->transformation_matrix(i);
+		for (int i = 0; i < mSponzaModel->get_render_objects().size(); i++) {
+			auto sponzaRenderObject = mSponzaModel->get_render_objects()[i];
+			uboCam.model = mSponzaModel->transformation_matrix() * mSponzaModel->mesh_at(i).transformation_matrix();
 			uboCam.mv = uboCam.view * uboCam.model;
-			uboCam.mvp = uboCam.proj * uboCam.view * uboCam.model;
+			uboCam.mvp = uboCam.proj * uboCam.mv;
 
+			auto prevDynamicData = *prevFrameData.get();
+			prevDynamicData.mvpMatrix *= uboCam.model;
 			sponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
-			sponzaRenderObject->update_push_constant(prevFrameData);
+			sponzaRenderObject->update_push_constant(std::make_shared<prev_frame_data>(prevDynamicData));
+		}
+		auto prevDynamicData = *prevFrameData.get();
+		prevDynamicData.mvpMatrix *= prevFrameModel;
+		for (int i = 0; i < mParallelPipesModel->get_render_objects().size(); i++) {
+			auto mParallelPipesObj = mParallelPipesModel->get_render_objects()[i];
+			uboCam.model = mParallelPipesModel->transformation_matrix() * mParallelPipesModel->mesh_at(i).transformation_matrix();
+			uboCam.mv = uboCam.view * uboCam.model;
+			uboCam.mvp = uboCam.proj * uboCam.mv;
+			prevFrameModel = uboCam.model;
+
+			mParallelPipesObj->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
+			mParallelPipesObj->update_push_constant(std::make_shared<prev_frame_data>(prevDynamicData));
 		}
 
 		// start drawing, record draw commands, etc.
@@ -728,8 +762,11 @@ private:
 		}
 
 		std::vector<cgb::vulkan_render_object*> renderObjects;
-		for (auto sponzaRenderObject : mSponzaRenderObjects) {
+		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
 			renderObjects.push_back(sponzaRenderObject.get());
+		}
+		for (auto parallelPipesRenderObject : mParallelPipesModel->get_render_objects()) {
+			renderObjects.push_back(parallelPipesRenderObject.get());
 		}
 		mRenderer->render({ renderObjects }, mMaterialDrawer.get());
 
@@ -762,7 +799,7 @@ private:
 
 		frame = (frame + int(2 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
 		prevFrameData->imgSize = glm::vec2(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height);
-		prevFrameData->vPMatrix = uboCam.proj * uboCam.view;
+		prevFrameData->mvpMatrix = uboCam.proj * uboCam.view;
 	}
 
 	void createDescriptorSetLayout()
@@ -1022,7 +1059,7 @@ private:
 			mVrsPrevRenderImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 4, vk::SampleCountFlagBits::e1, colorFormatVrsPrevImg,
 				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
 				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-			mVrsPrevRenderImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal, 1);			
+			mVrsPrevRenderImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 1);			
 			mVrsPrevRenderTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsPrevRenderImages[i]);
 		}
 	}
@@ -1101,37 +1138,36 @@ private:
 		return r;
 	}
 
-	void load_model(std::string inPath, glm::mat4 transform, const unsigned int model_loader_flags, std::unique_ptr<cgb::Model>& outModel)
+	void load_models()
 	{
-		outModel = cgb::Model::LoadFromFile(inPath, transform, mResourceBundleGroup, model_loader_flags);
+		auto path = "assets/models/sponza/sponza_structure.obj";
+		auto transform = glm::scale(glm::vec3(0.01f));
+		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace; 
+		mSponzaModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
+		mSponzaModel->create_render_objects(mMaterialObjectResourceBundleLayout);
+		
+		path = "assets/models/parallelepiped.obj";
+		transform = glm::rotate(3.1415f / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(0.7f));
+		mParallelPipesModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
 
-		auto meshes = outModel->SelectAllMeshes();
-		for (cgb::Mesh& mesh : meshes)
+		if (mParallelPipesModel)
 		{
-			mesh.m_material_data->set_roughness(0.1f);
-			mesh.m_material_data->set_albedo(glm::vec3(0.95f, 0.64f, 0.54f));
-			mesh.m_material_data->set_metallic(1.0f);
-			mesh.m_material_data->update_material_buffer();
-		}
-
-		for (cgb::Mesh& mesh : meshes) {
-			auto outVertexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(),
-				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, mesh.m_vertex_data.data());
-			auto outIndexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
-				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, mesh.m_indices.data());
-
-			auto resourceBundle = mesh.mMaterialResourceBundle;
-
-			auto sponzaRenderObject = std::make_shared<cgb::vulkan_render_object>(std::vector< std::shared_ptr<cgb::vulkan_buffer>>({ outVertexBuffer }), outIndexBuffer, mesh.m_indices.size(), mMaterialObjectResourceBundleLayout, mResourceBundleGroup, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> {resourceBundle});
-
-			mSponzaRenderObjects.push_back(sponzaRenderObject);
-		}
-		for (auto sponzaRenderObject : mSponzaRenderObjects) {
-		//outModel->AllocateMaterialData();
-			for (int i = 0; i < sponzaRenderObject->get_resource_bundles().size(); i++) {
-				mResourceBundleGroup->allocate_resource_bundle(sponzaRenderObject->get_resource_bundles()[i].get());
+			// If the parallelepiped has been loaded, just assign it sponza's "floor" material (I'm sure, we can find it)
+			for (cgb::Mesh& mesh : mSponzaModel->SelectAllMeshes())
+			{
+				if (mesh.m_material_data->name().find("floor") != std::string::npos)
+				{
+					mParallelPipesModel->mesh_at(0).m_material_data = mesh.m_material_data;
+					//mParallelPipesModel->mesh_at(0).mMaterialResourceBundle = mesh.m_material_data->create_resource_bundle(mResourceBundleGroup);
+					mParallelPipesModel->mesh_at(0).mMaterialResourceBundle = mesh.mMaterialResourceBundle;
+				}
 			}
 		}
+
+		mParallelPipesModel->create_render_objects(mMaterialObjectResourceBundleLayout);
+
+		mSponzaModel->allocate_render_object_data();
+		mParallelPipesModel->allocate_render_object_data();
 	}
 
 	/*! Position of the first/second point light, or the rotation origin when animating its position. */

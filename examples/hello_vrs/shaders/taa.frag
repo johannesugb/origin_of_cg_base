@@ -10,6 +10,7 @@ layout(binding = 0) uniform sampler2D curFrame;
 layout(binding = 1) uniform sampler2D prevFrame;
 
 layout(binding = 2) uniform sampler2D motionVecTex;
+layout(binding = 3) uniform sampler2D shadingRateTex;
 
 layout(push_constant) uniform PushUniforms
 {
@@ -83,7 +84,7 @@ vec3 YCgCoToRGB(vec3 YCgCo)
     return vec3(r, g, b);
 }
 
-const float cColorBoxSigma = 0.5;
+const float cColorBoxSigma = 0.1;
 const float cAlpha = 0.1;
 
 void main() {
@@ -137,9 +138,13 @@ void main() {
     colorAvg *= oneOverNine;
     colorVar *= oneOverNine;
 
+	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
+	float colorBoxSigma = cColorBoxSigma * shadingRate.x * (-3 + shadingRate.y * 4 * 2);
+	//colorBoxSigma = cColorBoxSigma;
+
     vec3 sigma = sqrt(max(vec3(0.0f), colorVar - colorAvg * colorAvg));
-    vec3 colorMin = colorAvg - cColorBoxSigma * sigma;
-    vec3 colorMax = colorAvg + cColorBoxSigma * sigma;    
+    vec3 colorMin = colorAvg - colorBoxSigma * sigma;
+    vec3 colorMax = colorAvg + colorBoxSigma * sigma;    
 
     // Find the longest motion vector
     vec2 motion = texelFetch(motionVecTex, ipos, 0).xy;
@@ -159,6 +164,8 @@ void main() {
     motion = dot(m, m) > dot(motion, motion) ? m : motion;
 	m = texelFetchOffset(motionVecTex, ipos, 0, offset[7]).rg;
     motion = dot(m, m) > dot(motion, motion) ? m : motion;
+
+	motion += shadingRate * 4;
 
     // Use motion vector to fetch previous frame color (history)
     vec3 history = bicubicSampleCatmullRom(prevFrame, (fragTexCoord - motion));
@@ -180,6 +187,7 @@ void main() {
 	//outColor = vec4(texture(prevFrame, fragTexCoord - motion).rgb, 0);
 	//outColor = vec4(motion.x);
 	//outColor = vec4(YCgCoToRGB(history), 0);
+	//outColor = vec4(shadingRate.x, 0, 0, 0);
 }
 
 
