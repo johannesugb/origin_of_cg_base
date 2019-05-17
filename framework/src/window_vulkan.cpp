@@ -270,4 +270,19 @@ namespace cgb
 		return mNumberOfConcurrentFramesGetter();
 	}
 
+	void window::set_extra_semaphore_dependency_for_frame(semaphore pSemaphore, uint64_t pFrameId)
+	{
+		if (pFrameId < mCurrentFrame)
+	}
+
+	std::vector<semaphore> window::remove_all_extra_semaphore_dependencies_for_frame(uint64_t pFrameId)
+	{
+
+	}
+
+	std::vector<semaphore> window::set_num_extra_semaphores_to_generate_per_frame(uint32_t pNumExtraSemaphores)
+	{
+
+	}
+
 }

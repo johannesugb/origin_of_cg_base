@@ -12,6 +12,15 @@ namespace cgb
 		friend class generic_glfw;
 		friend class vulkan;
 	public:
+		struct frame_sync_data
+		{
+			fence& mFence;
+			semaphore& mImageAvailableSemaphore;
+			semaphore& mRenderFinishedSemaphore;
+
+		};
+
+
 		window();
 		~window();
 		window(const window&) = delete;
@@ -111,12 +120,6 @@ namespace cgb
 			return mFences.size(); 
 		}
 
-		/** Increments the internal frame counter and returns the new frame index.
-		 *	@return Returns the already incremented current frame index (i.e. the "index of the next frame")
-		 */
-		auto increment_current_frame() { 
-			return ++mCurrentFrame; 
-		}
 		/** Gets the current frame index. */
 		auto current_frame() const { 
 			return mCurrentFrame; 
@@ -187,7 +190,16 @@ namespace cgb
 			return mRenderFinishedSemaphores[sync_index_for_frame(pCurrentFrameOffset)];
 		}
 
+		void set_extra_semaphore_dependency_for_frame(semaphore pSemaphore, uint64_t pFrameId);
+
+		std::vector<semaphore> remove_all_extra_semaphore_dependencies_for_frame(uint64_t pFrameId);
+
+		std::vector<semaphore> set_num_extra_semaphores_to_generate_per_frame(uint32_t pNumExtraSemaphores);
+
 	protected:
+		
+
+#pragma region configuration properties
 		// A function which returns the surface format for this window's surface
 		std::function<vk::SurfaceFormatKHR(const vk::SurfaceKHR&)> mSurfaceFormatSelector;
 
@@ -206,8 +218,11 @@ namespace cgb
 		// A function which returns the number of images which can be rendered into concurrently
 		// According to this number, the number of semaphores and fences will be determined.
 		std::function<uint32_t()> mNumberOfConcurrentFramesGetter;
+#pragma endregion
 
-	protected: /* Data for this window */
+#pragma region swap chain data for this window's surface
+		// The frame counter/frame id/frame index/current frame number
+		uint64_t mCurrentFrame;
 
 		// The window's surface
 		vk::SurfaceKHR mSurface;
@@ -221,21 +236,23 @@ namespace cgb
 		std::vector<vk::Image> mSwapChainImages;
 		// All the image views of the swap chain
 		std::vector<vk::ImageView> mSwapChainImageViews;
-		// The frame counter/frame id/frame index/current frame number
-		uint64_t mCurrentFrame;
+#pragma endregion
+
+#pragma region indispensable sync elements
 		// Fences to synchronize between frames (CPU-GPU synchronization)
 		std::vector<fence> mFences; 
 		// Semaphores to wait for an image to become available (GPU-GPU synchronization) // TODO: true?
 		std::vector<semaphore> mImageAvailableSemaphores; 
 		// Semaphores to wait for rendering to finish (GPU-GPU synchronization) // TODO: true?
 		std::vector<semaphore> mRenderFinishedSemaphores; 
+#pragma endregion
 
-#pragma region Extra dependencies, i.e. Semaphores
+#pragma region extra sync elements, i.e. exta semaphores
 		// Extra semaphores for frames.
 		// The first element in the tuple refers to the frame id which is affected.
 		// The second element in the is the semaphore to wait on.
 		// Extra dependency semaphores will be waited on along with the mImageAvailableSemaphores
-		std::vector<std::tuple<uint64_t, semaphore>> mExtraDependencySemaphores;
+		std::vector<std::tuple<uint64_t, semaphore>> mExtraSemaphoreDependencies;
 		 
 		// Number of extra semaphores to generate per frame upon fininshing the rendering of a frame
 		uint32_t mNumExtraRenderFinishedSemaphoresPerFrame;
@@ -245,8 +262,6 @@ namespace cgb
 		// These semaphores will be signalled together with the mRenderFinishedSemaphores
 		std::vector<semaphore> mExtraRenderFinishedSemaphores;
 #pragma endregion
-
-
 
 		// The backbuffer of this window
 		framebuffer mBackBuffer;
