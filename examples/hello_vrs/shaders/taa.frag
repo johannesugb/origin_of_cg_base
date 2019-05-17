@@ -84,15 +84,39 @@ vec3 YCgCoToRGB(vec3 YCgCo)
     return vec3(r, g, b);
 }
 
-const float cColorBoxSigma = 0.1;
+const float cColorBoxSigma = 1;
 const float cAlpha = 0.1;
 
 void main() {
-	vec4 motionVec = texture(motionVecTex, fragTexCoord);
-    outColor = vec4(motionVec.x, 0, -motionVec.x, 0);
-
 	ivec2 texDim = textureSize(curFrame, 0);
     ivec2 ipos = ivec2(fragTexCoord * texDim);
+
+	 // Find the longest motion vector
+    vec2 motion = texelFetch(motionVecTex, ipos, 0).xy;
+    vec2 m = texelFetchOffset(motionVecTex, ipos, 0, offset[0]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(motionVecTex, ipos, 0, offset[1]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(motionVecTex, ipos, 0, offset[2]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(motionVecTex, ipos, 0, offset[3]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(motionVecTex, ipos, 0, offset[4]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(motionVecTex, ipos, 0, offset[5]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(motionVecTex, ipos, 0, offset[6]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(motionVecTex, ipos, 0, offset[7]).rg;
+    motion = dot(m, m) > dot(motion, motion) ? m : motion;
+	
+	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
+	motion += shadingRate * 4;
+
+	//ipos -= ivec2(motion *  + 0.5);
+	//vec3 colorOrig = bicubicSampleCatmullRom(curFrame, (fragTexCoord - motion)); texture(curFrame, fragTexCoord + 0 * motion).rgb;
+    //colorOrig = RGBToYCgCo(colorOrig);
+
 
     // Fetch the current pixel color and compute the color bounding box
     // Details here: http://www.gdcvault.com/play/1023521/From-the-Lab-Bench-Real
@@ -138,34 +162,12 @@ void main() {
     colorAvg *= oneOverNine;
     colorVar *= oneOverNine;
 
-	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
-	float colorBoxSigma = cColorBoxSigma * shadingRate.x * (-3 + shadingRate.y * 4 * 2);
-	//colorBoxSigma = cColorBoxSigma;
+	//float colorBoxSigma = cColorBoxSigma  * (-3 + shadingRate.y * shadingRate.x * 4 * 2);
+	float colorBoxSigma = cColorBoxSigma;// *shadingRate.y * shadingRate.x ;
 
     vec3 sigma = sqrt(max(vec3(0.0f), colorVar - colorAvg * colorAvg));
     vec3 colorMin = colorAvg - colorBoxSigma * sigma;
     vec3 colorMax = colorAvg + colorBoxSigma * sigma;    
-
-    // Find the longest motion vector
-    vec2 motion = texelFetch(motionVecTex, ipos, 0).xy;
-    vec2 m = texelFetchOffset(motionVecTex, ipos, 0, offset[0]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-	m = texelFetchOffset(motionVecTex, ipos, 0, offset[1]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-	m = texelFetchOffset(motionVecTex, ipos, 0, offset[2]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-	m = texelFetchOffset(motionVecTex, ipos, 0, offset[3]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-	m = texelFetchOffset(motionVecTex, ipos, 0, offset[4]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-	m = texelFetchOffset(motionVecTex, ipos, 0, offset[5]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-	m = texelFetchOffset(motionVecTex, ipos, 0, offset[6]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-	m = texelFetchOffset(motionVecTex, ipos, 0, offset[7]).rg;
-    motion = dot(m, m) > dot(motion, motion) ? m : motion;
-
-	motion += shadingRate * 4;
 
     // Use motion vector to fetch previous frame color (history)
     vec3 history = bicubicSampleCatmullRom(prevFrame, (fragTexCoord - motion));
@@ -179,7 +181,7 @@ void main() {
     float alpha = clamp((cAlpha * distToClamp) / (distToClamp + colorMax.x - colorMin.x), 0.0f, 1.0f);
 
     history = clamp(history, colorMin, colorMax);
-    vec3 result = YCgCoToRGB(mix(history, color, alpha));
+    vec3 result = YCgCoToRGB(mix(history, color, cAlpha));
 	outColor = vec4(result, 0);
 
 	vec4 curColor = texture(curFrame, fragTexCoord);

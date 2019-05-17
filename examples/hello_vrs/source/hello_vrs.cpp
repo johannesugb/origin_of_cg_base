@@ -707,8 +707,8 @@ private:
 		// -----> !ACHTUNG! Neu von JU <------
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
-		//uboCam.proj = glm::translate(glm::vec3(jitter[frame]/glm::vec2(imagePresenter->get_swap_chain_extent().width/4, imagePresenter->get_swap_chain_extent().height/4), 0))
-		//	* uboCam.proj;
+		uboCam.proj = glm::translate(glm::vec3((jitter[frame] - glm::vec2(0.5)) / glm::vec2(mImagePresenter->get_swap_chain_extent().width * 1, mImagePresenter->get_swap_chain_extent().height * 1), 0))
+			* uboCam.proj;
 		uboCam.frameOffset = (jitter[frame] - glm::vec2(0.5))/glm::vec2(mImagePresenter->get_swap_chain_extent().width/2, mImagePresenter->get_swap_chain_extent().height/2);
 		// -----------------------------------
 
@@ -799,7 +799,7 @@ private:
 
 		frame = (frame + int(2 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
 		prevFrameData->imgSize = glm::vec2(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height);
-		prevFrameData->mvpMatrix = uboCam.proj * uboCam.view;
+		prevFrameData->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
 	}
 
 	void createDescriptorSetLayout()
