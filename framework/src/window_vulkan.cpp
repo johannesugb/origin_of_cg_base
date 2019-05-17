@@ -272,7 +272,7 @@ namespace cgb
 
 	void window::set_extra_semaphore_dependency_for_frame(semaphore pSemaphore, uint64_t pFrameId)
 	{
-		if (pFrameId < mCurrentFrame)
+		
 	}
 
 	std::vector<semaphore> window::remove_all_extra_semaphore_dependencies_for_frame(uint64_t pFrameId)

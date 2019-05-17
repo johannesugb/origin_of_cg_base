@@ -196,6 +196,46 @@ namespace cgb
 
 		std::vector<semaphore> set_num_extra_semaphores_to_generate_per_frame(uint32_t pNumExtraSemaphores);
 
+		template<typename CBT, typename... CommandBufferT>
+		void render_frame(CBT pCommandBuffer, CommandBufferT... pCommandBuffers)
+		{
+			auto& fence = fence_for_frame();
+			cgb::context().logical_device().waitForFences(1u, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+			cgb::context().logical_device().resetFences(1u, &fence);
+
+			uint32_t imageIndex;
+			cgb::context().logical_device().acquireNextImageKHR(
+				swap_chain().m_swapchainKHR, // the swap chain from which we wish to acquire an image [1]
+				std::numeric_limits<uint64_t>::max(), // a timeout in nanoseconds for an image to become available. Using the maximum value of a 64 bit unsigned integer disables the timeout. [1]
+				image_available_semaphore_for_frame(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
+				nullptr,
+				&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
+
+			std::array<CBT, sizeof...(pCommandBuffers) + 1> cmdBuffers = { pCommandBuffer, pCommandBuffers... };
+
+			std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+			auto submitInfo = vk::SubmitInfo()
+				.setWaitSemaphoreCount(1u)
+				.setPWaitSemaphores(image_available_semaphore_for_frame())
+				.setPWaitDstStageMask(waitStages.data())
+				.setCommandBufferCount(cmdBuffers.size())
+				.setPCommandBuffers(&cmdBuffers[0].mCommandBuffer)
+				.setSignalSemaphoreCount(1u)
+				.setPSignalSemaphores(render_finished_semaphore_for_frame());
+			// TODO: This only works because we are using cgb::varying_update_timer which makes a call to render() in each and every frame
+			cgb::context().graphics_queue().submit(1u, &submitInfo, fence_for_frame());
+
+			auto presentInfo = vk::PresentInfoKHR()
+				.setWaitSemaphoreCount(1u)
+				.setPWaitSemaphores(render_finished_semaphore_for_frame())
+				.setSwapchainCount(1u)
+				.setPSwapchains(swap_chain().m_swapchainKHR)
+				.setPImageIndices(&imageIndex)
+				.setPResults(nullptr);
+			cgb::context().presentation_queue().presentKHR(presentInfo);
+			// TODO: das ist alles sicher ganz ganz falsch, vermutlich, aber das konzept wäre quasi so richtig, vielleicht
+		}
+
 	protected:
 		
 
