@@ -266,7 +266,7 @@ private:
 
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
 		cgb::vulkan_context::instance().dynamicRessourceCount = mImagePresenter->get_swap_chain_images_count();
-		drawCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(mImagePresenter->get_swap_chain_images_count(), commandPool, cgb::vulkan_context::instance().graphicsQueue);
+		drawCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(cgb::vulkan_context::instance().dynamicRessourceCount, commandPool, cgb::vulkan_context::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<cgb::vulkan_render_queue>(cgb::vulkan_context::instance().graphicsQueue);
 
 		std::vector<std::shared_ptr<cgb::vulkan_renderer>> dependentRenderers = {};
@@ -286,7 +286,7 @@ private:
 		}
 
 		mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height,
-			mImagePresenter->get_swap_chain_images_count(), cgb::vulkan_context::instance().msaaSamples);
+			cgb::vulkan_context::instance().dynamicRessourceCount, cgb::vulkan_context::instance().msaaSamples);
 		mVulkanFramebuffer->add_dynamic_color_attachment(colorImage, mPostProcImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 		mVulkanFramebuffer->set_depth_attachment(depthImage);
 		mVulkanFramebuffer->add_dynamic_color_attachment(mVrsPrevRenderMsaaImage, mVrsPrevRenderImages, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -705,11 +705,12 @@ private:
 
 		UniformBufferObject uboCam{};
 		// -----> !ACHTUNG! Neu von JU <------
+		uboCam.frameOffset = (jitter[frame] - glm::vec2(0.5)) / glm::vec2(mImagePresenter->get_swap_chain_extent().width / 2, mImagePresenter->get_swap_chain_extent().height / 2);
+
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
-		uboCam.proj = glm::translate(glm::vec3((jitter[frame] - glm::vec2(0.5)) / glm::vec2(mImagePresenter->get_swap_chain_extent().width * 1, mImagePresenter->get_swap_chain_extent().height * 1), 0))
-			* uboCam.proj;
-		uboCam.frameOffset = (jitter[frame] - glm::vec2(0.5))/glm::vec2(mImagePresenter->get_swap_chain_extent().width/2, mImagePresenter->get_swap_chain_extent().height/2);
+		uboCam.proj = glm::translate(glm::vec3(uboCam.frameOffset.x * 2.0f, uboCam.frameOffset.y * 2.0f, 0.0f))	* uboCam.proj;
+		
 		// -----------------------------------
 
 		// update point light position with view matrix 
@@ -838,12 +839,12 @@ private:
 	{
 		std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
 		poolSizes[0].type = vk::DescriptorType::eStorageImage;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(mImagePresenter->get_swap_chain_images_count());
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(cgb::vulkan_context::instance().dynamicRessourceCount);
 
 		vk::DescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(mImagePresenter->get_swap_chain_images_count());
+		poolInfo.maxSets = static_cast<uint32_t>(cgb::vulkan_context::instance().dynamicRessourceCount);
 
 		if (cgb::vulkan_context::instance().device.createDescriptorPool(&poolInfo, nullptr, &vrsComputeDescriptorPool) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to create vrs compute descriptor pool!");
@@ -852,18 +853,18 @@ private:
 
 	void createVrsDescriptorSets()
 	{
-		std::vector<vk::DescriptorSetLayout> layouts(mImagePresenter->get_swap_chain_images_count(), vrsComputeDescriptorSetLayout);
+		std::vector<vk::DescriptorSetLayout> layouts(cgb::vulkan_context::instance().dynamicRessourceCount, vrsComputeDescriptorSetLayout);
 		vk::DescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.descriptorPool = vrsComputeDescriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(mImagePresenter->get_swap_chain_images_count());
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(cgb::vulkan_context::instance().dynamicRessourceCount);
 		allocInfo.pSetLayouts = layouts.data();
 
-		mVrsComputeDescriptorSets.resize(mImagePresenter->get_swap_chain_images_count());
+		mVrsComputeDescriptorSets.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
 		if (cgb::vulkan_context::instance().device.allocateDescriptorSets(&allocInfo, mVrsComputeDescriptorSets.data()) != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
-		for (size_t i = 0; i < mImagePresenter->get_swap_chain_images_count(); i++) {
+		for (size_t i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
 			vk::DescriptorImageInfo imageInfo = {};
 			imageInfo.imageLayout = vk::ImageLayout::eGeneral;
 			imageInfo.imageView = vrsImages[i]->get_image_view();
@@ -1091,12 +1092,12 @@ private:
 	}
 
 	void create_TAA_objects(vk::Viewport viewport, vk::Rect2D scissor, std::shared_ptr<cgb::vulkan_resource_bundle_layout> layout) {
-		mTAAIndices = std::vector<int>(mImagePresenter->get_swap_chain_images_count(), 0);
+		mTAAIndices = std::vector<int>(cgb::vulkan_context::instance().dynamicRessourceCount, 0);
 
 		for (int i = 0; i < mTAAFramebuffers.size(); i++) {
 			mTAAFramebuffers[i] = std::make_shared<cgb::vulkan_framebuffer>(
 				mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height,
-				mImagePresenter->get_swap_chain_images_count(), vk::SampleCountFlagBits::e1);
+				cgb::vulkan_context::instance().dynamicRessourceCount, vk::SampleCountFlagBits::e1);
 			mTAAFramebuffers[i]->add_dynamic_color_attachment(mTAAImages[i], vk::ImageLayout::eShaderReadOnlyOptimal);
 			mTAAFramebuffers[i]->bake();
 		}

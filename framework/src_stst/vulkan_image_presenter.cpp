@@ -57,7 +57,8 @@ namespace cgb {
 		else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
-		vulkan_context::instance().currentFrame = imageIndex;
+		vulkan_context::instance().currentFrame = std::min(imageIndex, (uint32_t)vulkan_context::instance().dynamicRessourceCount - 1);
+		vulkan_context::instance().currentSwapChainIndex = imageIndex;
 		mImageIndex = imageIndex;
 
 	}

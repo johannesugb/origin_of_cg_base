@@ -111,7 +111,7 @@ void main() {
     motion = dot(m, m) > dot(motion, motion) ? m : motion;
 	
 	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
-	motion += shadingRate * 4;
+	//motion += shadingRate * 4;
 
 	//ipos -= ivec2(motion *  + 0.5);
 	//vec3 colorOrig = bicubicSampleCatmullRom(curFrame, (fragTexCoord - motion)); texture(curFrame, fragTexCoord + 0 * motion).rgb;

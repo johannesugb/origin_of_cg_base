@@ -102,6 +102,7 @@ namespace cgb {
 		// updated per frame/pass
 		int currentFrame;
 		int dynamicRessourceCount;
+		int currentSwapChainIndex;
 
 		bool shadingRateImageSupported;
 		VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateImageProperties;

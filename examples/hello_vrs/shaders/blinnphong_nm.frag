@@ -41,6 +41,7 @@ layout(set = 2, binding = 0) uniform UniformBufferObject {
     mat4 pMatrix;
 	mat4 mvp;
 	mat4 vmMatrix;
+	vec2 frameOffset;
 } trans;
 
 //uniform float uNormalMappingStrength = 1.0;
@@ -276,5 +277,6 @@ void main()
 	
 	oMotionVector = calcMotionVector();
 	//oFragColor = vec4(oMotionVector.y, 0, -oMotionVector.y, 0);
+	//oFragColor = vec4(abs(trans.frameOffset.x) * 1600, 0, 0, 0);
 }
 // ----------------------------------------------

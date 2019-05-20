@@ -19,7 +19,14 @@ namespace cgb {
 		void bake();
 
 		vk::RenderPass get_render_pass() { return mRenderPass; }
-		vk::Framebuffer get_swapchain_framebuffer() { return mSwapChainFramebuffers[vulkan_context::instance().currentFrame]; }
+		vk::Framebuffer get_swapchain_framebuffer() {
+			if (m_is_swapchain_framebuffer) {
+				return mSwapChainFramebuffers[vulkan_context::instance().currentSwapChainIndex];
+			}
+			else {
+				return mSwapChainFramebuffers[vulkan_context::instance().currentFrame];
+			}
+		}
 
 		vk::Extent2D get_framebuffer_extent() { return mExtent; }
 
@@ -56,6 +63,8 @@ namespace cgb {
 			float clearDepth = 1.0f, uint32_t cleaerStencil = 0);
 
 	private:
+		bool m_is_swapchain_framebuffer = false;
+
 		vk::RenderPass mRenderPass;
 		std::vector<vk::Framebuffer> mSwapChainFramebuffers;
 

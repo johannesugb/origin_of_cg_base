@@ -53,7 +53,7 @@ void main() {
 	float scaledVal = 1 - dot(-prevFrameVal.xy,-prevFrameVal.xy) * 10000;
 	float shadingRate = scaledVal; // current texel diff
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
-	//shadingRate = 12;
+	shadingRate = 0;
 
 	newUV = ivec2((xySSC + 1 * prevFrameMotion.xy) * pushConst.imgSize + pixelSize);
 	imageStore(targetImage, newUV, uvec4(clamp(shadingRate, 0, 11),0,0,0));

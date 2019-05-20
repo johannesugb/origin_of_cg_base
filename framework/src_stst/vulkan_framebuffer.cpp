@@ -40,6 +40,7 @@ namespace cgb {
 		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
 		mColorAttachmentImages.push_back(colorImages);
 		mResolveColorAttachmentImages.push_back(swapChainImageViews);
+		m_is_swapchain_framebuffer = true;
 	}
 
 	vulkan_framebuffer::vulkan_framebuffer(uint32_t width, uint32_t height, 
@@ -257,6 +258,8 @@ namespace cgb {
 		else {
 			mClearValues.push_back(clearValue);
 		}
+
+		m_is_swapchain_framebuffer = true;
 	}
 
 	void cgb::vulkan_framebuffer::set_depth_attachment(std::shared_ptr<vulkan_image> depthImage,
