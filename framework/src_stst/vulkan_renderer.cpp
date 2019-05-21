@@ -15,7 +15,6 @@ namespace cgb {
 	{
 		mCurrentInFlightFence = nullptr;
 		mSubmitted = false;
-		create_sync_objects();
 	}
 
 
@@ -79,26 +78,6 @@ namespace cgb {
 
 		// maybe trim command pool each minute or so
 		// vkTrimCommandPool
-	}
-
-	void vulkan_renderer::create_sync_objects() {
-		mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		mInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-
-		vk::SemaphoreCreateInfo semaphoreInfo = {};
-
-		vk::FenceCreateInfo fenceInfo = {};
-		fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			if (vulkan_context::instance().device.createSemaphore(&semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != vk::Result::eSuccess ||
-				vulkan_context::instance().device.createSemaphore(&semaphoreInfo, nullptr, &mRenderFinishedSemaphores[i]) != vk::Result::eSuccess ||
-				vulkan_context::instance().device.createFence(&fenceInfo, nullptr, &mInFlightFences[i]) != vk::Result::eSuccess) {
-
-				throw std::runtime_error("failed to create synchronization objects for a frame!");
-			}
-		}
 	}
 
 	void vulkan_renderer::recordPrimaryCommandBuffer() {

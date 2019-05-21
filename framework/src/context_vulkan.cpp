@@ -167,9 +167,6 @@ namespace cgb
 		//}
 		//mSurfSwap.clear();
 
-		// Destroy the semaphores
-		//cleanup_sync_objects(); <-- TODO
-
 		// Destroy logical device
 		mLogicalDevice.destroy();
 
@@ -310,7 +307,6 @@ namespace cgb
 			}
 			// Okay, the window has a surface and vulkan has initialized. 
 			// Let's create more stuff for this window!
-
 			context().create_swap_chain_for_window(wnd);
 			return true;
 		});
@@ -350,25 +346,6 @@ namespace cgb
 			.setPpEnabledLayerNames(supportedValidationLayers.data());
 		// Create it, errors will result in an exception.
 		mInstance = vk::createInstance(instCreateInfo);
-	}
-
-	
-	void vulkan::cleanup_sync_objects()
-	{
-		for (auto& fen : mInFlightFences) {
-			mLogicalDevice.destroyFence(fen);
-		}
-		mInFlightFences.clear();
-
-		for (auto& sem : mRenderFinishedSemaphores) {
-			mLogicalDevice.destroySemaphore(sem);
-		}
-		mRenderFinishedSemaphores.clear();
-
-		for (auto& sem : mImageAvailableSemaphores) {
-			mLogicalDevice.destroySemaphore(sem);
-		}
-		mImageAvailableSemaphores.clear();
 	}
 
 	bool vulkan::is_validation_layer_supported(const char* pName)
@@ -862,11 +839,11 @@ namespace cgb
 
 		auto fenceInfo = vk::FenceCreateInfo()
 			.setFlags(vk::FenceCreateFlagBits::eSignaled);
-		auto semaphoreInfo = vk::SemaphoreCreateInfo().setFlags(vk::SemaphoreCreateFlagBits::;
+		auto semaphoreInfo = vk::SemaphoreCreateInfo();
 		for (uint32_t i = 0; i < numSyncObjects; ++i) {
-			pWindow->mFences.push_back(logical_device().createFence(fenceInfo));
-			pWindow->mImageAvailableSemaphores.push_back(logical_device().createSemaphore(semaphoreInfo));
-			pWindow->mRenderFinishedSemaphores.push_back(logical_device().createSemaphore(semaphoreInfo));
+			pWindow->mFences.push_back(fence::create(fenceInfo));
+			pWindow->mImageAvailableSemaphores.push_back(semaphore::create(semaphoreInfo));
+			pWindow->mRenderFinishedSemaphores.push_back(semaphore::create(semaphoreInfo));
 		}
 	}
 
@@ -1198,7 +1175,8 @@ namespace cgb
 			// Possible values for the flags [7]
 			//  - VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
 			//  - VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
-			return mCommandPools.emplace_back(pQueueFamilyIndex, mLogicalDevice.createCommandPool(commandPoolInfo));
+			mCommandPools.push_back(command_pool::create(pQueueFamilyIndex, commandPoolInfo));
+			return mCommandPools.back();
 		}
 		return *it;
 	}
@@ -1258,7 +1236,7 @@ namespace cgb
 
 	void vulkan::set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo)
 	{
-		if (mGraphicsQueueIndex == mTransferQueueIndex) {
+		if (graphics_queue_index() == transfer_queue_index()) {
 			pCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
 		}
 		else {

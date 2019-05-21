@@ -560,10 +560,6 @@ public:
 
 	void initialize() override
 	{
-		cgb::context().create_sync_objects(); // <-- TODO
-		auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface);
-		cgb::context().mSurfSwap.emplace_back(std::make_unique<cgb::swap_chain_data>(std::move(swapChain)));
-
 		// temp:
 		ResourceBase::Init(
 			(VkPhysicalDevice)cgb::context().physical_device(),
@@ -572,9 +568,6 @@ public:
 			(VkQueue)cgb::context().transfer_queue());
 
 		auto rtProps = cgb::context().get_ray_tracing_properties();
-
-		mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(cgb::context().main_window());
-		assert(mSwapChainData);
 
 		// create the buffer and its memory
 		create_vertex_buffer();
@@ -716,24 +709,7 @@ public:
 
 	void render() override
 	{
-		// Wait for the prev-prev frame (fence-ping-pong)
-		// TODO: We should only wait for fences if some were submitted 
-		//       ...during the last RENDER-call!!!
-
-		// TODO: auskommentiert während StSt-Meeting
-
-		auto& fence = cgb::context().fence_current_frame();
-		cgb::context().logical_device().waitForFences(1u, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
-		cgb::context().logical_device().resetFences(1u, &fence);
-
-
-		uint32_t imageIndex;
-		cgb::context().logical_device().acquireNextImageKHR(
-			mSwapChainData->mSwapChain, // the swap chain from which we wish to acquire an image [1]
-			std::numeric_limits<uint64_t>::max(), // a timeout in nanoseconds for an image to become available. Using the maximum value of a 64 bit unsigned integer disables the timeout. [1]
-			cgb::context().image_available_semaphore_current_frame(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
-			nullptr,
-			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
+		auto* wnd = cgb::context().main_window();
 
 		UniformBufferObject ubo{
 			//glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * scale(glm::vec3(1.0f)),
@@ -748,33 +724,15 @@ public:
 		//The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in 
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
 		//ubo.proj[1][1] *= -1;
-		mUniformBuffers[imageIndex].fill_host_coherent_memory(&ubo);
-		mRtUniformBuffers[imageIndex][0].fill_host_coherent_memory(&ubo);
+		auto bufferIndex = wnd->current_frame();
+		mUniformBuffers[bufferIndex].fill_host_coherent_memory(&ubo);
+		mRtUniformBuffers[bufferIndex][0].fill_host_coherent_memory(&ubo);
 		glm::vec4 color1(1.0, 1.0, 0.0, 0.0);
 		glm::vec4 color2(1.0, 0.0, 0.0, 0.0);
-		mRtUniformBuffers[imageIndex][1].fill_host_coherent_memory(&color1);
-		mRtUniformBuffers[imageIndex][2].fill_host_coherent_memory(&color2);
+		mRtUniformBuffers[bufferIndex][1].fill_host_coherent_memory(&color1);
+		mRtUniformBuffers[bufferIndex][2].fill_host_coherent_memory(&color2);
 
-		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-		auto submitInfo = vk::SubmitInfo()
-			.setWaitSemaphoreCount(1u)
-			.setPWaitSemaphores(&cgb::context().image_available_semaphore_current_frame())
-			.setPWaitDstStageMask(waitStages.data())
-			.setCommandBufferCount(1u)
-			.setPCommandBuffers(&mCmdBfrs[imageIndex].mCommandBuffer)
-			.setSignalSemaphoreCount(1u)
-			.setPSignalSemaphores(&cgb::context().render_finished_semaphore_current_frame());
-		// TODO: This only works because we are using cgb::varying_update_timer which makes a call to render() in each and every frame
-		cgb::context().graphics_queue().submit(1u, &submitInfo, cgb::context().fence_current_frame());
-
-		auto presentInfo = vk::PresentInfoKHR()
-			.setWaitSemaphoreCount(1u)
-			.setPWaitSemaphores(&cgb::context().render_finished_semaphore_current_frame())
-			.setSwapchainCount(1u)
-			.setPSwapchains(&mSwapChainData->mSwapChain)
-			.setPImageIndices(&imageIndex)
-			.setPResults(nullptr);
-		cgb::context().presentation_queue().presentKHR(presentInfo);
+		wnd->render_frame(mCmdBfrs[bufferIndex]);
 	}
 #endif
 
@@ -830,10 +788,6 @@ private:
 int main()
 {
 	//try {
-		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
-			.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm); })
-			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
-
 		cgb::settings::gApplicationName = "Hello World";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
 		cgb::settings::gRequiredDeviceExtensions.push_back("VK_NV_ray_tracing");

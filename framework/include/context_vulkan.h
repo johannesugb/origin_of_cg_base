@@ -49,12 +49,12 @@ namespace cgb
 		vk::PhysicalDevice& physical_device() { return mPhysicalDevice; }
 		vk::Device& logical_device() { return mLogicalDevice; }
 		vk::DispatchLoaderDynamic& dynamic_dispatch() { return mDynamicDispatch; }
-		uint32_t graphics_queue_index() const { return mGraphicsQueueIndex; }
-		uint32_t presentation_queue_index() const { return mPresentQueueIndex; }
-		uint32_t transfer_queue_index() const { return mTransferQueueIndex; }
-		vk::Queue& graphics_queue() { return mGraphicsQueue; }
-		vk::Queue& presentation_queue() { return mPresentQueue; }
-		vk::Queue& transfer_queue() { return mTransferQueue; }
+		uint32_t graphics_queue_index() const { return mGraphicsQueue.mQueueIndex; }
+		uint32_t presentation_queue_index() const { return mPresentQueue.mQueueIndex; }
+		uint32_t transfer_queue_index() const { return mTransferQueue.mQueueIndex; }
+		vk::Queue& graphics_queue() { return mGraphicsQueue.mQueue; }
+		vk::Queue& presentation_queue() { return mPresentQueue.mQueue; }
+		vk::Queue& transfer_queue() { return mTransferQueue.mQueue; }
 
 		/**	Creates a new window, but doesn't open it. Set the window's parameters
 		 *	according to your requirements before opening it!
@@ -117,15 +117,6 @@ namespace cgb
 		 *	also set the required instance extensions which GLFW demands.
 		 */
 		void create_instance();
-
-		/** Create semaphores and fences according to the sActualMaxFramesInFlight parameter,
-		 *	(which is set to sSettingMaxFramesInFlight in the constructor)
-		 */
-		void create_sync_objects();
-
-		/** Cleans up all the semaphores and fences
-		 */
-		void cleanup_sync_objects();
 
 		/** Method which handles debug callbacks from the validation layers */
 		static VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*, void*);
@@ -238,12 +229,7 @@ namespace cgb
 
 		vk::PhysicalDeviceRayTracingPropertiesNV get_ray_tracing_properties();
 
-		template<typename... CommandBufferT>
-		void submit_command_buffers(CommandBufferT... pCommandBuffers)
-		{
-
-		}
-
+		
 	public:
 		static std::vector<const char*> sRequiredDeviceExtensions;
 		

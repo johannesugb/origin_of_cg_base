@@ -43,7 +43,6 @@ namespace cgb {
 		bool mSubmitted;
 		static vk::CommandBuffer mPrimCmdBuffer;
 
-		void create_sync_objects();
 		void recordPrimaryCommandBuffer();
 
 		// no render pass if this is a pure compute renderer (TODO maybe better solution required)

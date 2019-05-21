@@ -556,11 +556,11 @@ namespace cgb
 
 	command_pool command_pool::create(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo)
 	{
-		return command_pool{
+		return command_pool(
 			pQueueFamilyIndex,
 			pCreateInfo,
 			context().logical_device().createCommandPool(pCreateInfo)
-		};
+		);
 	}
 
 	queue queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
@@ -1091,7 +1091,7 @@ namespace cgb
 
 		// That's all
 		commandBuffer[0].end_recording();
-		vkDestroySemaphore
+		
 		auto submitInfo = vk::SubmitInfo()
 			.setCommandBufferCount(1u)
 			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);

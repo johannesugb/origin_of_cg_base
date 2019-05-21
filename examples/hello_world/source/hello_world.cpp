@@ -46,11 +46,6 @@ int main()
 {
 	try {
 
-		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
-			.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm); })
-			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
-
-
 		cgb::settings::gApplicationName = "Hello World";
 
 		// Create a window which we're going to use to render to
