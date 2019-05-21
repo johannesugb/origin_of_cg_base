@@ -832,9 +832,6 @@ namespace cgb
 
 		// ============= SYNCHRONIZATION OBJECTS ===========
 		// Create them here, already.
-		pWindow->mFences = {};
-		pWindow->mImageAvailableSemaphores = {};
-		pWindow->mRenderFinishedSemaphores = {};
 		auto numSyncObjects = pWindow->get_config_number_of_concurrent_frames();
 
 		auto fenceInfo = vk::FenceCreateInfo()

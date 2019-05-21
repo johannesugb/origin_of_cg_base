@@ -332,8 +332,9 @@ public:
 			}
 		}
 
+		auto extent = cgb::context().main_window()->swap_chain_extent();
 		mDepthImage = std::make_shared<cgb::image>(std::move(cgb::image::create2D(
-			mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height,
+			extent.width, extent.height,
 			selectedFormat,
 			vk::ImageTiling::eOptimal,
 			vk::ImageUsageFlagBits::eDepthStencilAttachment,
@@ -474,12 +475,15 @@ public:
 
 	void create_rt_descriptor_set()
 	{
+		auto extent = cgb::context().main_window()->swap_chain_extent();
+		auto format = cgb::context().main_window()->swap_chain_image_format();
+
 		// create an offscreen image for each one:
 		for (int i = 0; i < mFrameBuffers.size(); ++i) {
 			// image
 			auto img = cgb::image::create2D(
-				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height,
-				mSwapChainData->mSwapChainImageFormat.mFormat,
+				extent.width, extent.height,
+				format.mFormat,
 				vk::ImageTiling::eOptimal, 
 				vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc,
 				vk::MemoryPropertyFlagBits::eDeviceLocal);
@@ -640,10 +644,12 @@ public:
 		create_descriptor_sets();
 		create_rt_descriptor_set();
 
+		auto extent = cgb::context().main_window()->swap_chain_extent();
+
 		for (auto i = 0; i < mCmdBfrs.size(); ++i) { // TODO: WTF, this must be abstracted somehow!
 			auto& cmdbfr = mCmdBfrs[i];
 			cmdbfr.begin_recording();
-			cmdbfr.begin_render_pass(mPipeline.mRenderPass, mFrameBuffers[i].mFramebuffer, { 0, 0 }, mSwapChainData->mSwapChainExtent);
+			cmdbfr.begin_render_pass(mPipeline.mRenderPass, mFrameBuffers[i].mFramebuffer, { 0, 0 }, extent);
 			cmdbfr.mCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline.mPipelineLayout, 0u, { mDescriptorSets[i].mDescriptorSet }, {});
 			//cgb::context().draw_triangle(mPipeline, cmdbfr);
 			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
@@ -663,7 +669,7 @@ public:
 				mShaderBindingTable.mBuffer, 3 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
 				mShaderBindingTable.mBuffer, 1 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
 				nullptr, 0, 0,
-				mSwapChainData->mSwapChainExtent.width, mSwapChainData->mSwapChainExtent.height, 1,
+				extent.width, extent.height, 1,
 				cgb::context().dynamic_dispatch());
 
 			//cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal));
@@ -724,7 +730,7 @@ public:
 		//The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in 
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
 		//ubo.proj[1][1] *= -1;
-		auto bufferIndex = wnd->current_frame();
+		auto bufferIndex = wnd->image_index_for_frame();
 		mUniformBuffers[bufferIndex].fill_host_coherent_memory(&ubo);
 		mRtUniformBuffers[bufferIndex][0].fill_host_coherent_memory(&ubo);
 		glm::vec4 color1(1.0, 1.0, 0.0, 0.0);
@@ -732,7 +738,7 @@ public:
 		mRtUniformBuffers[bufferIndex][1].fill_host_coherent_memory(&color1);
 		mRtUniformBuffers[bufferIndex][2].fill_host_coherent_memory(&color2);
 
-		wnd->render_frame(mCmdBfrs[bufferIndex]);
+		wnd->render_frame({ mCmdBfrs[bufferIndex] });
 	}
 #endif
 
@@ -750,7 +756,6 @@ private:
 	cgb::index_buffer mIndexBuffer;
 	std::vector<cgb::uniform_buffer> mUniformBuffers;
 	std::vector<std::vector<cgb::uniform_buffer>> mRtUniformBuffers;
-	cgb::swap_chain_data* mSwapChainData;
 	cgb::descriptor_set_layout mDescriptorSetLayout;
 	cgb::descriptor_set_layout mRtDescriptorSetLayout;
 	cgb::pipeline mPipeline;
