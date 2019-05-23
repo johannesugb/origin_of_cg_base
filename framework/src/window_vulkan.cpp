@@ -81,7 +81,7 @@ namespace cgb
 			auto presModes = context().physical_device().getSurfacePresentModesKHR(pSurface);
 
 			// Select a presentation mode:
-			decltype(presModes)::iterator selPresModeItr = presModes.end();
+			auto selPresModeItr = presModes.end();
 			switch (presMode) {
 			case cgb::presentation_mode::immediate:
 				selPresModeItr = std::find(std::begin(presModes), std::end(presModes), vk::PresentModeKHR::eImmediate);

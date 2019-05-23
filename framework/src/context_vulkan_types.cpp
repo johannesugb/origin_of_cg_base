@@ -563,6 +563,19 @@ namespace cgb
 		);
 	}
 
+	queue queue::get_new_queue(
+		vk::QueueFlags pFlagsRequired,
+		queue_selection_strategy pSelectionStrategy,
+		std::optional<vk::SurfaceKHR> pSupportForSurface)
+	{
+		auto families = context().find_best_queue_family_for(pFlagsRequired, pSelectionStrategy, pSupportForSurface);
+		if (families.size() == 0) {
+			throw std::runtime_error("Couldn't find queue families meeting the given criteria.");
+		}
+
+		// TODO: take code from vulkan::compile_create_infos_and_assign_members and move here, delete the vermaledeite andere funktion!
+	}
+
 	queue queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
 	{
 		return queue{

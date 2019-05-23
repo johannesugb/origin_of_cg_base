@@ -563,11 +563,14 @@ namespace cgb
 		mPhysicalDevice = *currentSelection;
 	}
 
-	auto vulkan::find_queue_families_for_criteria(vk::QueueFlags pRequiredFlags, vk::QueueFlags pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface)
+	auto vulkan::find_queue_families_for_criteria(
+		vk::QueueFlags pRequiredFlags, 
+		vk::QueueFlags pForbiddenFlags, 
+		std::optional<vk::SurfaceKHR> pSurface)
 	{
 		assert(mPhysicalDevice);
 		// All queue families:
-		auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
+		auto queueFamilies = physical_device().getQueueFamilyProperties();
 		std::vector<std::tuple<uint32_t, decltype(queueFamilies)::value_type>> indexedQueueFamilies;
 		std::transform(std::begin(queueFamilies), std::end(queueFamilies),
 					   std::back_inserter(indexedQueueFamilies),
@@ -582,22 +585,54 @@ namespace cgb
 		std::copy_if(std::begin(indexedQueueFamilies), std::end(indexedQueueFamilies),
 					 std::back_inserter(selection),
 					 [pRequiredFlags, pForbiddenFlags, pSurface, this](const std::tuple<uint32_t, decltype(queueFamilies)::value_type>& tpl) {
-						 bool requirements_met = true;
+						 bool requirementsMet = true;
 						 if (pRequiredFlags) {
-							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & pRequiredFlags) == pRequiredFlags);
+							 requirementsMet = requirementsMet && ((std::get<1>(tpl).queueFlags & pRequiredFlags) == pRequiredFlags);
 						 }
 						 if (pForbiddenFlags) {
-							 requirements_met = requirements_met && ((std::get<1>(tpl).queueFlags & pForbiddenFlags) != pForbiddenFlags);
+							 requirementsMet = requirementsMet && ((std::get<1>(tpl).queueFlags & pForbiddenFlags) != pForbiddenFlags);
 						 }
 						 if (pSurface) {
-							 requirements_met = requirements_met && (mPhysicalDevice.getSurfaceSupportKHR(std::get<0>(tpl), *pSurface));
+							 requirementsMet = requirementsMet && (mPhysicalDevice.getSurfaceSupportKHR(std::get<0>(tpl), *pSurface));
 						 }
-						 return requirements_met;
+						 return requirementsMet;
 					 });
 		return selection;
 	}
 
-	const float vulkan::sQueuePriority = 1.0f;
+	auto vulkan::find_best_queue_family_for(vk::QueueFlags pRequiredFlags, queue_selection_strategy pSelectionStrategy, std::optional<vk::SurfaceKHR> pSurface)
+	{
+		static std::array queueTypes = {
+			vk::QueueFlagBits::eGraphics,
+			vk::QueueFlagBits::eCompute,
+			vk::QueueFlagBits::eTransfer,
+			vk::QueueFlagBits::eSparseBinding,
+		};
+
+		decltype(std::declval<vulkan>().find_queue_families_for_criteria(vk::QueueFlags(), vk::QueueFlags(), std::nullopt)) selection;
+		auto forbiddenFlags = static_cast<vk::QueueFlags>(vk::FlagTraits<vk::QueueFlagBits>::allFlags) & ~pRequiredFlags;
+		int32_t loosenIndex = 0;
+		
+		switch (pSelectionStrategy) {
+		case cgb::queue_selection_strategy::prefer_separate_queues:
+			while (loosenIndex < queueTypes.size()) { // might result in returning an empty selection
+				selection = find_queue_families_for_criteria(pRequiredFlags, forbiddenFlags, pSurface);
+				if (selection.size() > 0) {
+					break;
+				}
+				forbiddenFlags = forbiddenFlags & ~queueTypes[loosenIndex++]; // gradually loosen restrictions
+			};
+			break;
+		case cgb::queue_selection_strategy::prefer_fewer_queues:
+			// Nothing is forbidden
+			selection = find_queue_families_for_criteria(pRequiredFlags, vk::QueueFlags(), pSurface);
+			break;
+		}
+
+		return selection;
+	}
+
+
 	std::vector<vk::DeviceQueueCreateInfo> vulkan::compile_create_infos_and_assign_members(
 		std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> pProps,
 		std::vector<std::reference_wrapper<uint32_t>> pAssign)

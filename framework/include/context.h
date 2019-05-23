@@ -32,6 +32,13 @@ namespace cgb
 		 *	The default for this flag is false, i.e. IMGUI is enabled.
 		 */
 		extern bool gDisableImGui;
+
+		/** Configure how the queues should be selected.
+		 *	Shall there be one queue for everything or rather
+		 *	separate queues for everything? 
+		 *  The default is `prefer_separate_queues`
+		 */
+		extern queue_selection_strategy gQueueSelectionPreference;
 	}
 
 #if defined(USE_OPENGL46_CONTEXT)

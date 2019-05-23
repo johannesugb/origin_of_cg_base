@@ -155,7 +155,8 @@ namespace cgb
 		 */
 		auto find_queue_families_for_criteria(vk::QueueFlags pRequiredFlags, vk::QueueFlags pForbiddenFlags, std::optional<vk::SurfaceKHR> pSurface);
 
-		static const float sQueuePriority;
+		auto find_best_queue_family_for(vk::QueueFlags pRequiredFlags, queue_selection_strategy pSelectionStrategy, std::optional<vk::SurfaceKHR> pSurface);
+
 		std::vector<vk::DeviceQueueCreateInfo> compile_create_infos_and_assign_members(
 			std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> pProps, 
 			std::vector<std::reference_wrapper<uint32_t>> pAssign);
@@ -241,9 +242,10 @@ namespace cgb
 		vk::DispatchLoaderDynamic mDynamicDispatch;
 
 		queue mGraphicsQueue;
-		queue mPresentQueue;
-		queue mTransferQueue;
 		queue mComputeQueue;
+		queue mTransferQueue;
+		queue mSparseBindingQueue;
+		queue mPresentQueue;
 		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
 
 		std::vector<command_pool> mCommandPools;

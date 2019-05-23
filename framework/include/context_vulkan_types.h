@@ -452,7 +452,11 @@ namespace cgb
 		vk::Semaphore mSemaphore;
 	};
 
-
+	enum struct queue_selection_strategy
+	{
+		prefer_separate_queues,
+		prefer_fewer_queues,
+	};
 
 	// Forward declare:
 	struct queue_submit_proxy;
@@ -461,7 +465,10 @@ namespace cgb
 	*/
 	struct queue
 	{
-
+		static queue get_new_queue(
+			vk::QueueFlags pFlagsRequired,
+			queue_selection_strategy pSelectionStrategy,
+			std::optional<vk::SurfaceKHR> pSupportForSurface);
 		static queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex = 0);
 
 		uint32_t mQueueFamilyIndex;
