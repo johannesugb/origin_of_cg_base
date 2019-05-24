@@ -563,9 +563,9 @@ namespace cgb
 		);
 	}
 
-	queue queue::get_new_queue(
+	device_queue device_queue::get_new_queue(
 		vk::QueueFlags pFlagsRequired,
-		queue_selection_strategy pSelectionStrategy,
+		device_queue_selection_strategy pSelectionStrategy,
 		std::optional<vk::SurfaceKHR> pSupportForSurface)
 	{
 		auto families = context().find_best_queue_family_for(pFlagsRequired, pSelectionStrategy, pSupportForSurface);
@@ -573,17 +573,25 @@ namespace cgb
 			throw std::runtime_error("Couldn't find queue families meeting the given criteria.");
 		}
 
+		// Just take the first queue family, I guess:
+		//std::get<1>(families[0]).
+/*
+		auto createInfo = vk::DeviceQueueCreateInfo{}
+			.setQueueFamilyIndex(std::get<0>(pProps[i]))
+			.setQueueCount(1u)
+			.setPQueuePriorities(&sQueuePriority);
+*/
 		// TODO: take code from vulkan::compile_create_infos_and_assign_members and move here, delete the vermaledeite andere funktion!
 	}
 
-	queue queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
-	{
-		return queue{
-			pQueueFamilyIndex,
-			pQueueIndex,
-			context().logical_device().getQueue(pQueueFamilyIndex, pQueueIndex)
-		};
-	}
+	//device_queue device_queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
+	//{
+	//	return device_queue{
+	//		pQueueFamilyIndex,
+	//		pQueueIndex,
+	//		context().logical_device().getQueue(pQueueFamilyIndex, pQueueIndex)
+	//	};
+	//}
 
 
 	void command_buffer::begin_recording()

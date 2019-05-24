@@ -563,7 +563,7 @@ namespace cgb
 		mPhysicalDevice = *currentSelection;
 	}
 
-	auto vulkan::find_queue_families_for_criteria(
+	std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> vulkan::find_queue_families_for_criteria(
 		vk::QueueFlags pRequiredFlags, 
 		vk::QueueFlags pForbiddenFlags, 
 		std::optional<vk::SurfaceKHR> pSurface)
@@ -571,7 +571,7 @@ namespace cgb
 		assert(mPhysicalDevice);
 		// All queue families:
 		auto queueFamilies = physical_device().getQueueFamilyProperties();
-		std::vector<std::tuple<uint32_t, decltype(queueFamilies)::value_type>> indexedQueueFamilies;
+		std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> indexedQueueFamilies;
 		std::transform(std::begin(queueFamilies), std::end(queueFamilies),
 					   std::back_inserter(indexedQueueFamilies),
 					   [index = uint32_t(0)](const decltype(queueFamilies)::value_type& input) mutable {
@@ -580,7 +580,7 @@ namespace cgb
 						   return tpl;
 					   });
 		// Subset to which the criteria applies:
-		decltype(indexedQueueFamilies) selection;
+		std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> selection;
 		// Select the subset
 		std::copy_if(std::begin(indexedQueueFamilies), std::end(indexedQueueFamilies),
 					 std::back_inserter(selection),
@@ -600,7 +600,7 @@ namespace cgb
 		return selection;
 	}
 
-	auto vulkan::find_best_queue_family_for(vk::QueueFlags pRequiredFlags, queue_selection_strategy pSelectionStrategy, std::optional<vk::SurfaceKHR> pSurface)
+	std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> vulkan::find_best_queue_family_for(vk::QueueFlags pRequiredFlags, device_queue_selection_strategy pSelectionStrategy, std::optional<vk::SurfaceKHR> pSurface)
 	{
 		static std::array queueTypes = {
 			vk::QueueFlagBits::eGraphics,
@@ -614,7 +614,7 @@ namespace cgb
 		int32_t loosenIndex = 0;
 		
 		switch (pSelectionStrategy) {
-		case cgb::queue_selection_strategy::prefer_separate_queues:
+		case cgb::device_queue_selection_strategy::prefer_separate_queues:
 			while (loosenIndex < queueTypes.size()) { // might result in returning an empty selection
 				selection = find_queue_families_for_criteria(pRequiredFlags, forbiddenFlags, pSurface);
 				if (selection.size() > 0) {
@@ -623,7 +623,7 @@ namespace cgb
 				forbiddenFlags = forbiddenFlags & ~queueTypes[loosenIndex++]; // gradually loosen restrictions
 			};
 			break;
-		case cgb::queue_selection_strategy::prefer_fewer_queues:
+		case cgb::device_queue_selection_strategy::prefer_fewer_queues:
 			// Nothing is forbidden
 			selection = find_queue_families_for_criteria(pRequiredFlags, vk::QueueFlags(), pSurface);
 			break;
@@ -633,29 +633,27 @@ namespace cgb
 	}
 
 
-	std::vector<vk::DeviceQueueCreateInfo> vulkan::compile_create_infos_and_assign_members(
-		std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> pProps,
-		std::vector<std::reference_wrapper<uint32_t>> pAssign)
-	{
-		assert(pProps.size() == pAssign.size() || (pProps.size() == 1 && pAssign.size() >= 1));
-		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-		for (size_t i = 0; i < pProps.size(); ++i) {
-			queueCreateInfos.emplace_back()
-				.setQueueFamilyIndex(std::get<0>(pProps[i]))
-				.setQueueCount(1u)
-				.setPQueuePriorities(&sQueuePriority);
+	//std::vector<vk::DeviceQueueCreateInfo> vulkan::compile_create_infos_and_assign_members(
+	//	std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> pProps,
+	//	std::vector<std::reference_wrapper<uint32_t>> pAssign)
+	//{
+	//	assert(pProps.size() == pAssign.size() || (pProps.size() == 1 && pAssign.size() >= 1));
+	//	std::vector<> queueCreateInfos;
+	//	for (size_t i = 0; i < pProps.size(); ++i) {
+	//		queueCreateInfos.emplace_back()
+	//			
 
-			if (pProps.size() == pAssign.size()) {
-				pAssign[i].get() = std::get<0>(pProps[i]);
-			}
-			else {
-				for (auto& assign : pAssign) {
-					assign.get() = std::get<0>(pProps[i]);
-				}
-			}
-		}
-		return queueCreateInfos;
-	}
+	//		if (pProps.size() == pAssign.size()) {
+	//			pAssign[i].get() = std::get<0>(pProps[i]);
+	//		}
+	//		else {
+	//			for (auto& assign : pAssign) {
+	//				assign.get() = std::get<0>(pProps[i]);
+	//			}
+	//		}
+	//	}
+	//	return queueCreateInfos;
+	//}
 
 	void vulkan::create_and_assign_logical_device(vk::SurfaceKHR pSurface)
 	{
@@ -663,66 +661,66 @@ namespace cgb
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
 		auto nope = vk::QueueFlags();
 		
-		uint32_t graphicsQueueIndex, computeQueueIndex, presentQueueIndex, transferQueueIndex;
-		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-		// find everything:
-		auto everything = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, nope, pSurface);
-		if (everything.size() != 0) {
-			queueCreateInfos = compile_create_infos_and_assign_members(everything, { graphicsQueueIndex, computeQueueIndex, presentQueueIndex });
-		}
-		else {
-			// can we have graphics and present?
-			auto g_and_p = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pSurface);
-			if (g_and_p.size() != 0) {
-				queueCreateInfos = compile_create_infos_and_assign_members(g_and_p, { graphicsQueueIndex, presentQueueIndex });
+		//uint32_t graphicsQueueIndex, computeQueueIndex, presentQueueIndex, transferQueueIndex;
+		//std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+		//// find everything:
+		//auto everything = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, nope, pSurface);
+		//if (everything.size() != 0) {
+		//	queueCreateInfos = compile_create_infos_and_assign_members(everything, { graphicsQueueIndex, computeQueueIndex, presentQueueIndex });
+		//}
+		//else {
+		//	// can we have graphics and present?
+		//	auto g_and_p = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pSurface);
+		//	if (g_and_p.size() != 0) {
+		//		queueCreateInfos = compile_create_infos_and_assign_members(g_and_p, { graphicsQueueIndex, presentQueueIndex });
 
-				// we also need compute support
-				auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, std::nullopt);
-				if (c_only.size() == 0) {
-					throw std::runtime_error("Couldn't find queue families (problem with c_only)");
-				}
-				auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
-				queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-			}
-			else {
-				// Everything on their own queue!
-				auto g_only = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, std::nullopt);
-				auto p_only = find_queue_families_for_criteria(nope, nope, pSurface);
-				auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, nope, std::nullopt);
-				if (g_only.size() > 0) {
-					auto tmp = compile_create_infos_and_assign_members(g_only, { graphicsQueueIndex });
-					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-				} 
-				else {
-					throw std::runtime_error("Couldn't find queue families (problem with g_only)");
-				}
-				
-				if (p_only.size() > 0) {
-					auto tmp = compile_create_infos_and_assign_members(p_only, { presentQueueIndex });
-					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-				}
-				else {
-					throw std::runtime_error("Couldn't find queue families (problem with p_only)");
-				}
-				
-				if (c_only.size() > 0) {
-					auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
-					queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-				}
-				else {
-					throw std::runtime_error("Couldn't find queue families (problem with c_only)");
-				}
-			}
-		}
-		// Handle transfer queue separately
-		auto t_only = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute), std::nullopt);
-		if (t_only.size() > 0) {
-			auto tmp = compile_create_infos_and_assign_members(t_only, { transferQueueIndex });
-			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-		}
-		else {
-			transferQueueIndex = graphicsQueueIndex;
-		}
+		//		// we also need compute support
+		//		auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, std::nullopt);
+		//		if (c_only.size() == 0) {
+		//			throw std::runtime_error("Couldn't find queue families (problem with c_only)");
+		//		}
+		//		auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
+		//		queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+		//	}
+		//	else {
+		//		// Everything on their own queue!
+		//		auto g_only = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, std::nullopt);
+		//		auto p_only = find_queue_families_for_criteria(nope, nope, pSurface);
+		//		auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, nope, std::nullopt);
+		//		if (g_only.size() > 0) {
+		//			auto tmp = compile_create_infos_and_assign_members(g_only, { graphicsQueueIndex });
+		//			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+		//		} 
+		//		else {
+		//			throw std::runtime_error("Couldn't find queue families (problem with g_only)");
+		//		}
+		//		
+		//		if (p_only.size() > 0) {
+		//			auto tmp = compile_create_infos_and_assign_members(p_only, { presentQueueIndex });
+		//			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+		//		}
+		//		else {
+		//			throw std::runtime_error("Couldn't find queue families (problem with p_only)");
+		//		}
+		//		
+		//		if (c_only.size() > 0) {
+		//			auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
+		//			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+		//		}
+		//		else {
+		//			throw std::runtime_error("Couldn't find queue families (problem with c_only)");
+		//		}
+		//	}
+		//}
+		//// Handle transfer queue separately
+		//auto t_only = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute), std::nullopt);
+		//if (t_only.size() > 0) {
+		//	auto tmp = compile_create_infos_and_assign_members(t_only, { transferQueueIndex });
+		//	queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
+		//}
+		//else {
+		//	transferQueueIndex = graphicsQueueIndex;
+		//}
 		
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
@@ -756,10 +754,10 @@ namespace cgb
 		// Create a dynamic dispatch loader for extensions
 		mDynamicDispatch = vk::DispatchLoaderDynamic(mInstance, logical_device());
 
-		mGraphicsQueue = queue::create(graphicsQueueIndex, 0u);
-		mPresentQueue = queue::create(presentQueueIndex, 0u);
-		mTransferQueue = queue::create(transferQueueIndex, 0u);
-		mComputeQueue = queue::create(computeQueueIndex, 0u);
+		//mGraphicsQueue = device_queue::create(graphicsQueueIndex, 0u);
+		//mPresentQueue = device_queue::create(presentQueueIndex, 0u);
+		//mTransferQueue = device_queue::create(transferQueueIndex, 0u);
+		//mComputeQueue = device_queue::create(computeQueueIndex, 0u);
 
 		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueue.mQueueFamilyIndex);
 		if (mGraphicsQueue.mQueueFamilyIndex != mTransferQueue.mQueueFamilyIndex) {

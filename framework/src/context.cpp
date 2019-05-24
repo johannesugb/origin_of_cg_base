@@ -20,6 +20,6 @@ namespace cgb
 
 		bool gDisableImGui = false;
 
-		queue_selection_strategy gQueueSelectionPreference = queue_selection_strategy::prefer_separate_queues;
+		device_queue_selection_strategy gQueueSelectionPreference = device_queue_selection_strategy::prefer_separate_queues;
 	}
 }

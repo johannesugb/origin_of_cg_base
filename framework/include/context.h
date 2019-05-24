@@ -38,7 +38,7 @@ namespace cgb
 		 *	separate queues for everything? 
 		 *  The default is `prefer_separate_queues`
 		 */
-		extern queue_selection_strategy gQueueSelectionPreference;
+		extern device_queue_selection_strategy gQueueSelectionPreference;
 	}
 
 #if defined(USE_OPENGL46_CONTEXT)

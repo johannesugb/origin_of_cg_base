@@ -452,7 +452,7 @@ namespace cgb
 		vk::Semaphore mSemaphore;
 	};
 
-	enum struct queue_selection_strategy
+	enum struct device_queue_selection_strategy
 	{
 		prefer_separate_queues,
 		prefer_fewer_queues,
@@ -461,18 +461,27 @@ namespace cgb
 	// Forward declare:
 	struct queue_submit_proxy;
 
-	/** Represents a Vulkan queue, providing the queue itself and its index.
+	/** Represents a device queue, storing the queue itself, 
+	 *	the queue family's index, and the queue's index.
 	*/
-	struct queue
+	struct device_queue
 	{
-		static queue get_new_queue(
-			vk::QueueFlags pFlagsRequired,
-			queue_selection_strategy pSelectionStrategy,
-			std::optional<vk::SurfaceKHR> pSupportForSurface);
-		static queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex = 0);
+		struct queue_indices
+		{
+			uint32_t mQueueFamilyIndex;
+			uint32_t mQueueIndex;
+		};
 
-		uint32_t mQueueFamilyIndex;
-		uint32_t mQueueIndex;
+		// TODO: use this to keep track of which queue indices on which queues are already in use:
+		static std::shared_ptr<queue_indices> sIndicesInUse;
+
+		static device_queue get_new_queue(
+			vk::QueueFlags pFlagsRequired,
+			device_queue_selection_strategy pSelectionStrategy,
+			std::optional<vk::SurfaceKHR> pSupportForSurface);
+		//static device_queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex = 0);
+
+		queue_indices mIndices;
 		vk::Queue mQueue;
 	};
 
@@ -484,7 +493,7 @@ namespace cgb
 		queue_submit_proxy& operator=(const queue_submit_proxy&) = delete;
 		queue_submit_proxy& operator=(queue_submit_proxy&&) = delete;
 
-		queue& mQueue;
+		device_queue& mQueue;
 		vk::SubmitInfo mSubmitInfo;
 		std::vector<command_buffer> mCommandBuffers;
 		std::vector<semaphore> mWaitSemaphores;
