@@ -39,6 +39,13 @@ namespace cgb
 		 *  The default is `prefer_separate_queues`
 		 */
 		extern device_queue_selection_strategy gQueueSelectionPreference;
+
+		/** Regardless of the `gQueueSelectionPreference` setting,
+		 *	state that the same queue is preferred for graphics and present.
+		 *	The default value is `true`, i.e. ignore the `gQueueSelectionPreference` setting.
+		 */
+		extern bool gPreferSameQueueForGraphicsAndPresent;
+
 	}
 
 #if defined(USE_OPENGL46_CONTEXT)

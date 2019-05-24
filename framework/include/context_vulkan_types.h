@@ -466,22 +466,28 @@ namespace cgb
 	*/
 	struct device_queue
 	{
-		struct queue_indices
-		{
-			uint32_t mQueueFamilyIndex;
-			uint32_t mQueueIndex;
-		};
+		/** Contains all the prepared queues which will be passed to logical device creation. */
+		static std::vector<std::unique_ptr<device_queue>> sPreparedQueues;
 
-		// TODO: use this to keep track of which queue indices on which queues are already in use:
-		static std::shared_ptr<queue_indices> sIndicesInUse;
-
-		static device_queue get_new_queue(
+		/** Prepare another queue and eventually add it to `sPreparedQueues`. */
+		static device_queue* prepare(
 			vk::QueueFlags pFlagsRequired,
 			device_queue_selection_strategy pSelectionStrategy,
 			std::optional<vk::SurfaceKHR> pSupportForSurface);
-		//static device_queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex = 0);
 
-		queue_indices mIndices;
+		/** Create a new queue on the logical device. */
+		static device_queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex);
+		/** Create a new queue on the logical device. */
+		static device_queue create(const device_queue& pPreparedQueue);
+
+		/** Gets the queue family index of this queue */
+		uint32_t family_index() const { return mQueueFamilyIndex; }
+		/** Gets queue index (inside the queue family) of this queue. */
+		uint32_t queue_index() const { return mQueueIndex; }
+
+		uint32_t mQueueFamilyIndex;
+		uint32_t mQueueIndex;
+		float mPriority;
 		vk::Queue mQueue;
 	};
 

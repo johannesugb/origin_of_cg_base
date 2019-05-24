@@ -563,35 +563,84 @@ namespace cgb
 		);
 	}
 
-	device_queue device_queue::get_new_queue(
+	std::vector<std::unique_ptr<device_queue>> device_queue::sPreparedQueues;
+
+	device_queue* device_queue::prepare(
 		vk::QueueFlags pFlagsRequired,
 		device_queue_selection_strategy pSelectionStrategy,
 		std::optional<vk::SurfaceKHR> pSupportForSurface)
 	{
 		auto families = context().find_best_queue_family_for(pFlagsRequired, pSelectionStrategy, pSupportForSurface);
 		if (families.size() == 0) {
-			throw std::runtime_error("Couldn't find queue families meeting the given criteria.");
+			throw std::runtime_error("Couldn't find queue families satisfying the given criteria.");
 		}
 
-		// Just take the first queue family, I guess:
-		//std::get<1>(families[0]).
-/*
-		auto createInfo = vk::DeviceQueueCreateInfo{}
-			.setQueueFamilyIndex(std::get<0>(pProps[i]))
-			.setQueueCount(1u)
-			.setPQueuePriorities(&sQueuePriority);
-*/
-		// TODO: take code from vulkan::compile_create_infos_and_assign_members and move here, delete the vermaledeite andere funktion!
+		// Default to the first ones, each
+		uint32_t familyIndex = std::get<0>(families[0]);
+		uint32_t queueIndex = 0;
+
+		for (auto& family : families) {
+			for (uint32_t qi = 0; qi < std::get<1>(family).queueCount; ++qi) {
+
+				auto alreadyInUse = std::find_if(
+					std::begin(sPreparedQueues), 
+					std::end(sPreparedQueues), 
+					[familyIndexInQuestion = std::get<0>(family), queueIndexInQuestion = qi](const auto& pq) {
+					return pq->family_index() == familyIndexInQuestion
+						&& pq->queue_index() == queueIndexInQuestion;
+					});
+
+				// Pay attention to different selection strategies:
+				switch (pSelectionStrategy)
+				{
+				case cgb::device_queue_selection_strategy::prefer_separate_queues:
+					if (sPreparedQueues.end() == alreadyInUse) {
+						// didn't find combination, that's good
+						familyIndex = std::get<0>(family);
+						queueIndex = qi;
+						goto found_indices;
+					}
+					break;
+				case cgb::device_queue_selection_strategy::prefer_fewer_queues:
+					if (sPreparedQueues.end() != alreadyInUse) {
+						// find combination, that's good in this case
+						familyIndex = std::get<0>(family);
+						queueIndex = qi;
+						goto found_indices;
+					}
+					break;
+				}
+			}
+		}
+		
+	found_indices:
+		return sPreparedQueues.emplace_back(new device_queue{
+			familyIndex, 
+			queueIndex,
+			0.5f, // default priority of 0.5
+			nullptr
+		}).get();
 	}
 
-	//device_queue device_queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
-	//{
-	//	return device_queue{
-	//		pQueueFamilyIndex,
-	//		pQueueIndex,
-	//		context().logical_device().getQueue(pQueueFamilyIndex, pQueueIndex)
-	//	};
-	//}
+	device_queue device_queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
+	{
+		return device_queue{
+			pQueueFamilyIndex, 
+			pQueueIndex,
+			0.5f, // default priority of 0.5f
+			context().logical_device().getQueue(pQueueFamilyIndex, pQueueIndex)
+		};
+	}
+
+	device_queue device_queue::create(const device_queue& pPreparedQueue)
+	{
+		return device_queue{
+			pPreparedQueue.family_index(),
+			pPreparedQueue.queue_index(),
+			pPreparedQueue.mPriority,
+			context().logical_device().getQueue(pPreparedQueue.family_index(), pPreparedQueue.queue_index())
+		};
+	}
 
 
 	void command_buffer::begin_recording()

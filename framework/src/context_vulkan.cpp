@@ -632,96 +632,19 @@ namespace cgb
 		return selection;
 	}
 
-
-	//std::vector<vk::DeviceQueueCreateInfo> vulkan::compile_create_infos_and_assign_members(
-	//	std::vector<std::tuple<uint32_t, vk::QueueFamilyProperties>> pProps,
-	//	std::vector<std::reference_wrapper<uint32_t>> pAssign)
-	//{
-	//	assert(pProps.size() == pAssign.size() || (pProps.size() == 1 && pAssign.size() >= 1));
-	//	std::vector<> queueCreateInfos;
-	//	for (size_t i = 0; i < pProps.size(); ++i) {
-	//		queueCreateInfos.emplace_back()
-	//			
-
-	//		if (pProps.size() == pAssign.size()) {
-	//			pAssign[i].get() = std::get<0>(pProps[i]);
-	//		}
-	//		else {
-	//			for (auto& assign : pAssign) {
-	//				assign.get() = std::get<0>(pProps[i]);
-	//			}
-	//		}
-	//	}
-	//	return queueCreateInfos;
-	//}
-
 	void vulkan::create_and_assign_logical_device(vk::SurfaceKHR pSurface)
 	{
 		assert(mPhysicalDevice);
-		// Determine which queue families we have, i.e. what the different queue families support and what they don't
-		auto nope = vk::QueueFlags();
-		
-		//uint32_t graphicsQueueIndex, computeQueueIndex, presentQueueIndex, transferQueueIndex;
-		//std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-		//// find everything:
-		//auto everything = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, nope, pSurface);
-		//if (everything.size() != 0) {
-		//	queueCreateInfos = compile_create_infos_and_assign_members(everything, { graphicsQueueIndex, computeQueueIndex, presentQueueIndex });
-		//}
-		//else {
-		//	// can we have graphics and present?
-		//	auto g_and_p = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pSurface);
-		//	if (g_and_p.size() != 0) {
-		//		queueCreateInfos = compile_create_infos_and_assign_members(g_and_p, { graphicsQueueIndex, presentQueueIndex });
 
-		//		// we also need compute support
-		//		auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, std::nullopt);
-		//		if (c_only.size() == 0) {
-		//			throw std::runtime_error("Couldn't find queue families (problem with c_only)");
-		//		}
-		//		auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
-		//		queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-		//	}
-		//	else {
-		//		// Everything on their own queue!
-		//		auto g_only = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, std::nullopt);
-		//		auto p_only = find_queue_families_for_criteria(nope, nope, pSurface);
-		//		auto c_only = find_queue_families_for_criteria(vk::QueueFlagBits::eCompute, nope, std::nullopt);
-		//		if (g_only.size() > 0) {
-		//			auto tmp = compile_create_infos_and_assign_members(g_only, { graphicsQueueIndex });
-		//			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-		//		} 
-		//		else {
-		//			throw std::runtime_error("Couldn't find queue families (problem with g_only)");
-		//		}
-		//		
-		//		if (p_only.size() > 0) {
-		//			auto tmp = compile_create_infos_and_assign_members(p_only, { presentQueueIndex });
-		//			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-		//		}
-		//		else {
-		//			throw std::runtime_error("Couldn't find queue families (problem with p_only)");
-		//		}
-		//		
-		//		if (c_only.size() > 0) {
-		//			auto tmp = compile_create_infos_and_assign_members(c_only, { computeQueueIndex });
-		//			queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-		//		}
-		//		else {
-		//			throw std::runtime_error("Couldn't find queue families (problem with c_only)");
-		//		}
-		//	}
-		//}
-		//// Handle transfer queue separately
-		//auto t_only = find_queue_families_for_criteria(vk::QueueFlagBits::eTransfer, (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute), std::nullopt);
-		//if (t_only.size() > 0) {
-		//	auto tmp = compile_create_infos_and_assign_members(t_only, { transferQueueIndex });
-		//	queueCreateInfos.insert(std::end(queueCreateInfos), std::begin(tmp), std::end(tmp));
-		//}
-		//else {
-		//	transferQueueIndex = graphicsQueueIndex;
-		//}
-		
+		// Determine which queue families we have, i.e. what the different queue families support and what they don't
+		auto presentQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gQueueSelectionPreference, pSurface);
+		auto graphicsQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gPreferSameQueueForGraphicsAndPresent 
+																							  ? device_queue_selection_strategy::prefer_fewer_queues
+																							  : settings::gQueueSelectionPreference, std::nullopt);
+		auto computeQueue		= device_queue::prepare(vk::QueueFlagBits::eCompute,		settings::gQueueSelectionPreference, std::nullopt);
+		auto transferQueue		= device_queue::prepare(vk::QueueFlagBits::eTransfer,		settings::gQueueSelectionPreference, std::nullopt);
+		auto sparseBindingQueue	= device_queue::prepare(vk::QueueFlagBits::eSparseBinding,	settings::gQueueSelectionPreference, std::nullopt);
+
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		
@@ -731,12 +654,38 @@ namespace cgb
 			.setShadingRateCoarseSampleOrder(VK_TRUE);
 		auto activateShadingRateImage = shading_rate_image_extension_requested() && supports_shading_rate_image(mPhysicalDevice);
 
+		// Gather all the queue create infos:
+		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+		std::vector<std::vector<float>> queuePriorities;
+		for (const auto& pq : device_queue::sPreparedQueues) {
+			bool handled = false;
+			for (auto i = 0; i < queueCreateInfos.size(); ++i) {
+				if (queueCreateInfos[i].queueFamilyIndex == pq->family_index()) {
+					// found, i.e. increase count
+					queueCreateInfos[i].queueCount += 1;
+					queuePriorities[i].push_back(pq->mPriority);
+					handled = true; 
+					break; // done
+				}
+			}
+			if (!handled) { // => must be a new entry
+				queueCreateInfos.emplace_back()
+					.setQueueFamilyIndex(pq->family_index())
+					.setQueueCount(1u);
+				queuePriorities.push_back({ pq->mPriority });
+			}
+		}
+		// Iterate over all vk::DeviceQueueCreateInfo entries and set the queue priorities pointers properly
+		for (auto i = 0; i < queueCreateInfos.size(); ++i) {
+			queueCreateInfos[i].setPQueuePriorities(queuePriorities[i].data());
+		}
+
 		// Enable certain device features:
 		auto deviceFeatures = vk::PhysicalDeviceFeatures2()
 			.setFeatures(vk::PhysicalDeviceFeatures()
-						 .setSamplerAnisotropy(VK_TRUE)
-						 .setVertexPipelineStoresAndAtomics(VK_TRUE)
-						 .setShaderStorageImageExtendedFormats(VK_TRUE))
+				.setSamplerAnisotropy(VK_TRUE)
+				.setVertexPipelineStoresAndAtomics(VK_TRUE)
+				.setShaderStorageImageExtendedFormats(VK_TRUE))
 			.setPNext(activateShadingRateImage ? &shadingRateImageFeatureNV : nullptr);
 
 		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
@@ -754,10 +703,12 @@ namespace cgb
 		// Create a dynamic dispatch loader for extensions
 		mDynamicDispatch = vk::DispatchLoaderDynamic(mInstance, logical_device());
 
-		//mGraphicsQueue = device_queue::create(graphicsQueueIndex, 0u);
-		//mPresentQueue = device_queue::create(presentQueueIndex, 0u);
-		//mTransferQueue = device_queue::create(transferQueueIndex, 0u);
-		//mComputeQueue = device_queue::create(computeQueueIndex, 0u);
+		// Create the queues which have been prepared in the beginning of this method:
+		mPresentQueue		= device_queue::create(*presentQueue);
+		mGraphicsQueue		= device_queue::create(*graphicsQueue);
+		mComputeQueue		= device_queue::create(*computeQueue);
+		mTransferQueue		= device_queue::create(*transferQueue);
+		mSparseBindingQueue	= device_queue::create(*sparseBindingQueue);
 
 		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueue.mQueueFamilyIndex);
 		if (mGraphicsQueue.mQueueFamilyIndex != mTransferQueue.mQueueFamilyIndex) {

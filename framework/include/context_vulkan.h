@@ -241,11 +241,11 @@ namespace cgb
 		vk::Device mLogicalDevice;
 		vk::DispatchLoaderDynamic mDynamicDispatch;
 
+		device_queue mPresentQueue;
 		device_queue mGraphicsQueue;
 		device_queue mComputeQueue;
 		device_queue mTransferQueue;
 		device_queue mSparseBindingQueue;
-		device_queue mPresentQueue;
 
 		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
 
