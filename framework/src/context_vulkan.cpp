@@ -606,18 +606,24 @@ namespace cgb
 			vk::QueueFlagBits::eGraphics,
 			vk::QueueFlagBits::eCompute,
 			vk::QueueFlagBits::eTransfer,
-			vk::QueueFlagBits::eSparseBinding,
 		};
+		// sparse binding and protected bits are ignored, for now
 
 		decltype(std::declval<vulkan>().find_queue_families_for_criteria(vk::QueueFlags(), vk::QueueFlags(), std::nullopt)) selection;
-		auto forbiddenFlags = static_cast<vk::QueueFlags>(vk::FlagTraits<vk::QueueFlagBits>::allFlags) & ~pRequiredFlags;
+		
+		vk::QueueFlags forbiddenFlags = {};
+		for (auto f : queueTypes) {
+			forbiddenFlags |= f;
+		}
+		forbiddenFlags &= ~pRequiredFlags;
+
 		int32_t loosenIndex = 0;
 		
 		switch (pSelectionStrategy) {
 		case cgb::device_queue_selection_strategy::prefer_separate_queues:
-			while (loosenIndex < queueTypes.size()) { // might result in returning an empty selection
+			while (loosenIndex <= queueTypes.size()) { // might result in returning an empty selection
 				selection = find_queue_families_for_criteria(pRequiredFlags, forbiddenFlags, pSurface);
-				if (selection.size() > 0) {
+				if (selection.size() > 0 || loosenIndex == queueTypes.size()) {
 					break;
 				}
 				forbiddenFlags = forbiddenFlags & ~queueTypes[loosenIndex++]; // gradually loosen restrictions
@@ -643,7 +649,6 @@ namespace cgb
 																							  : settings::gQueueSelectionPreference, std::nullopt);
 		auto computeQueue		= device_queue::prepare(vk::QueueFlagBits::eCompute,		settings::gQueueSelectionPreference, std::nullopt);
 		auto transferQueue		= device_queue::prepare(vk::QueueFlagBits::eTransfer,		settings::gQueueSelectionPreference, std::nullopt);
-		auto sparseBindingQueue	= device_queue::prepare(vk::QueueFlagBits::eSparseBinding,	settings::gQueueSelectionPreference, std::nullopt);
 
 		// Get the same validation layers as for the instance!
 		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
@@ -708,7 +713,6 @@ namespace cgb
 		mGraphicsQueue		= device_queue::create(*graphicsQueue);
 		mComputeQueue		= device_queue::create(*computeQueue);
 		mTransferQueue		= device_queue::create(*transferQueue);
-		mSparseBindingQueue	= device_queue::create(*sparseBindingQueue);
 
 		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueue.mQueueFamilyIndex);
 		if (mGraphicsQueue.mQueueFamilyIndex != mTransferQueue.mQueueFamilyIndex) {

@@ -245,7 +245,6 @@ namespace cgb
 		device_queue mGraphicsQueue;
 		device_queue mComputeQueue;
 		device_queue mTransferQueue;
-		device_queue mSparseBindingQueue;
 
 		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
 
