@@ -17,8 +17,7 @@ layout(push_constant) uniform PushUniforms
     mat4 vPMatrix;
 	mat4 invPMatrix;
 	mat4 invVMatrix;
-	vec2 projAScale;
-	vec2 imgSize;
+	vec2 jitter;
 } pushConst;
 
 layout(location = 0) in vec2 fragTexCoord;
@@ -111,7 +110,7 @@ void main() {
     motion = dot(m, m) > dot(motion, motion) ? m : motion;
 	
 	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
-	//motion += shadingRate * 4;
+	//motion *= shadingRate * 4;
 
 	//ipos -= ivec2(motion *  + 0.5);
 	//vec3 colorOrig = bicubicSampleCatmullRom(curFrame, (fragTexCoord - motion)); texture(curFrame, fragTexCoord + 0 * motion).rgb;
@@ -180,11 +179,12 @@ void main() {
     float distToClamp = min(abs(colorMin.x - history.x), abs(colorMax.x - history.x));
     float alpha = clamp((cAlpha * distToClamp) / (distToClamp + colorMax.x - colorMin.x), 0.0f, 1.0f);
 
+	//color =  RGBToYCgCo(bicubicSampleCatmullRom(prevFrame, (fragTexCoord + 1 * pushConst.jitter)));
     history = clamp(history, colorMin, colorMax);
-    vec3 result = YCgCoToRGB(mix(history, color, cAlpha));
+    vec3 result = YCgCoToRGB(mix(history, color, alpha));
 	outColor = vec4(result, 0);
 
-	vec4 curColor = texture(curFrame, fragTexCoord);
+	vec4 curColor = texture(curFrame, fragTexCoord + 1 * pushConst.jitter);
     //outColor = curColor;
 	//outColor = vec4(texture(prevFrame, fragTexCoord - motion).rgb, 0);
 	//outColor = vec4(motion.x);

@@ -20,11 +20,19 @@ namespace cgb {
 
 		vk::RenderPass get_render_pass() { return mRenderPass; }
 		vk::Framebuffer get_swapchain_framebuffer() {
-			if (m_is_swapchain_framebuffer) {
-				return mSwapChainFramebuffers[vulkan_context::instance().currentSwapChainIndex];
+			if (mSwapChainFramebuffers.size() < 1) {
+				return nullptr;
+			}
+			else if (mSwapChainFramebuffers.size() == 1) {
+				return mSwapChainFramebuffers[0];
 			}
 			else {
-				return mSwapChainFramebuffers[vulkan_context::instance().currentFrame];
+				if (m_is_swapchain_framebuffer) {
+					return mSwapChainFramebuffers[vulkan_context::instance().currentSwapChainIndex];
+				}
+				else {
+					return mSwapChainFramebuffers[vulkan_context::instance().currentFrame];
+				}
 			}
 		}
 
