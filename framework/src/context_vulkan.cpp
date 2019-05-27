@@ -629,7 +629,7 @@ namespace cgb
 				forbiddenFlags = forbiddenFlags & ~queueTypes[loosenIndex++]; // gradually loosen restrictions
 			};
 			break;
-		case cgb::device_queue_selection_strategy::prefer_fewer_queues:
+		case cgb::device_queue_selection_strategy::prefer_everything_on_single_queue:
 			// Nothing is forbidden
 			selection = find_queue_families_for_criteria(pRequiredFlags, vk::QueueFlags(), pSurface);
 			break;
@@ -645,7 +645,7 @@ namespace cgb
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
 		auto presentQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gQueueSelectionPreference, pSurface);
 		auto graphicsQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gPreferSameQueueForGraphicsAndPresent 
-																							  ? device_queue_selection_strategy::prefer_fewer_queues
+																							  ? device_queue_selection_strategy::prefer_everything_on_single_queue
 																							  : settings::gQueueSelectionPreference, std::nullopt);
 		auto computeQueue		= device_queue::prepare(vk::QueueFlagBits::eCompute,		settings::gQueueSelectionPreference, std::nullopt);
 		auto transferQueue		= device_queue::prepare(vk::QueueFlagBits::eTransfer,		settings::gQueueSelectionPreference, std::nullopt);
