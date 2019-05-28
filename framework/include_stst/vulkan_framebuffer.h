@@ -20,6 +20,8 @@ namespace cgb {
 
 		vk::RenderPass get_render_pass() { return mRenderPass; }
 		vk::Framebuffer get_swapchain_framebuffer() {
+
+			return mSwapChainFramebuffers[vulkan_context::instance().currentSwapChainIndex];
 			if (mSwapChainFramebuffers.size() < 1) {
 				return nullptr;
 			}

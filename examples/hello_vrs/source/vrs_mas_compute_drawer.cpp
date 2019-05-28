@@ -13,8 +13,8 @@ vrs_mas_compute_drawer::vrs_mas_compute_drawer(std::shared_ptr<cgb::vulkan_comma
 	int mWidth = -1;
 	int mHeight = -1;
 
-	mCamData = UniformBufferObject{};
-	mPrevCamData = UniformBufferObject{};
+	mCamData = std::vector<UniformBufferObject>(cgb::vulkan_context::instance().dynamicRessourceCount);
+	mPrevCamData = std::vector<UniformBufferObject>(cgb::vulkan_context::instance().dynamicRessourceCount);
 	mNearPlane - 1;
 	mFarPlane = -1;
 }
@@ -55,9 +55,9 @@ void vrs_mas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> render
 	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eShadingRateImageNV, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
 
 	mCurrPushConstData = vrs_mas_comp_data{};
-	mCurrPushConstData.vPMatrix = mCamData.proj * mCamData.view;
-	mCurrPushConstData.invPMatrix = glm::inverse(mPrevCamData.proj);
-	mCurrPushConstData.invVMatrix = glm::inverse(mPrevCamData.view);
+	mCurrPushConstData.vPMatrix = mCamData[cgb::vulkan_context::instance().currentFrame].proj * mCamData[cgb::vulkan_context::instance().currentFrame].view;
+	mCurrPushConstData.invPMatrix = glm::inverse(mPrevCamData[cgb::vulkan_context::instance().currentFrame].proj);
+	mCurrPushConstData.invVMatrix = glm::inverse(mPrevCamData[cgb::vulkan_context::instance().currentFrame].view);
 	mCurrPushConstData.projAScale = glm::vec2(mFarPlane / (mFarPlane - mNearPlane), -mFarPlane * mNearPlane / (mFarPlane - mNearPlane));
 	mCurrPushConstData.imgSize = glm::vec2(mWidth, mHeight);
 
@@ -184,6 +184,6 @@ void vrs_mas_compute_drawer::blit_image(vk::CommandBuffer & commandBuffer)
 void vrs_mas_compute_drawer::set_cam_data(UniformBufferObject camData, float nearPlane, float farPlane) {
 	mNearPlane = nearPlane;
 	mFarPlane = farPlane;
-	mPrevCamData = mCamData;
-	mCamData = camData;
+	mPrevCamData[cgb::vulkan_context::instance().currentFrame] = mCamData[cgb::vulkan_context::instance().currentFrame];
+	mCamData[cgb::vulkan_context::instance().currentFrame] = camData;
 }

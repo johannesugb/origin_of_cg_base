@@ -172,6 +172,7 @@ private:
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mMotionVectorImages;
 	std::vector<std::shared_ptr<cgb::vulkan_texture>> mMotionVectorTextures;
 
+
 	struct prev_frame_data {
 		glm::mat4 mvpMatrix;
 		glm::vec2 imgSize;
@@ -184,6 +185,8 @@ private:
 		glm::mat4 invVMatrix;
 		glm::vec2 jitter;
 	};
+
+	std::vector<std::shared_ptr<prev_frame_data>> mPrevFrameData;
 
 
 public:
@@ -433,7 +436,7 @@ private:
 
 		for (int i = 0; i < mTAAFullScreenQuads.size(); i++) {
 			mPostProcFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { postProcBundles[i] });
-			mTAAFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, mTAATextures[i]);
+			mTAAFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, mPostProcTextures);
 		}
 
 		// Post processing
@@ -549,6 +552,7 @@ private:
 		// VRS Debug render, used with e.g. fullscreen quad
 		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mPostProcFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
 		mVrsDebugPipeline->add_attr_desc_binding(bind1);
+		mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/vrs_debug.frag.spv");
 
@@ -564,6 +568,11 @@ private:
 			mResourceBundleGroup->allocate_resource_bundle(vrsCasResourceBundle.get());
 			mResourceBundleGroup->allocate_resource_bundle(vrsMasResourceBundle.get());
 			mResourceBundleGroup->allocate_resource_bundle(vrsDebugResourceBundle.get());
+		}
+
+		mPrevFrameData.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+		for (int i = 0; i < mPrevFrameData.size(); i++) {
+			mPrevFrameData[i] = std::make_shared<prev_frame_data>();
 		}
 	}
 
@@ -703,7 +712,6 @@ private:
 
 	void drawFrame()
 	{
-		static auto prevFrameData = std::make_shared<prev_frame_data>();
 		static auto prevFrameModel = glm::mat4();
 		static auto frame = 0;
 		// update states, e.g. for animation
@@ -739,19 +747,18 @@ private:
 		pointLights.count = mPointLights.size();
 		mPointLightsBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&pointLights, sizeof(pointLights));
 
-
 		for (int i = 0; i < mSponzaModel->get_render_objects().size(); i++) {
 			auto sponzaRenderObject = mSponzaModel->get_render_objects()[i];
 			uboCam.model = mSponzaModel->transformation_matrix() * mSponzaModel->mesh_at(i).transformation_matrix();
 			uboCam.mv = uboCam.view * uboCam.model;
 			uboCam.mvp = uboCam.proj * uboCam.mv;
 
-			auto prevDynamicData = *prevFrameData.get();
+			auto prevDynamicData = *mPrevFrameData[cgb::vulkan_context::instance().currentFrame].get();
 			prevDynamicData.mvpMatrix *= uboCam.model;
 			sponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
 			sponzaRenderObject->update_push_constant(std::make_shared<prev_frame_data>(prevDynamicData));
 		}
-		auto prevDynamicData = *prevFrameData.get();
+		auto prevDynamicData = *mPrevFrameData[cgb::vulkan_context::instance().currentFrame].get();
 		prevDynamicData.mvpMatrix *= prevFrameModel;
 		for (int i = 0; i < mParallelPipesModel->get_render_objects().size(); i++) {
 			auto mParallelPipesObj = mParallelPipesModel->get_render_objects()[i];
@@ -763,6 +770,9 @@ private:
 			mParallelPipesObj->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
 			mParallelPipesObj->update_push_constant(std::make_shared<prev_frame_data>(prevDynamicData));
 		}
+
+		//auto oldFrameIdx = cgb::vulkan_context::instance().currentFrame;
+		//cgb::vulkan_context::instance().currentFrame = 0;
 
 		// start drawing, record draw commands, etc.
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
@@ -782,14 +792,17 @@ private:
 		for (auto parallelPipesRenderObject : mParallelPipesModel->get_render_objects()) {
 			renderObjects.push_back(parallelPipesRenderObject.get());
 		}
-		mRenderer->render({ renderObjects }, mMaterialDrawer.get());
+		mRenderer->render({ renderObjects }, mMaterialDrawer.get());		
+		
+		//cgb::vulkan_context::instance().currentFrame = oldFrameIdx;
+
 
 		// TAA pass
-		int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
+		int tAAIndex = 0; mTAAIndices[cgb::vulkan_context::instance().currentFrame];
 		mTAAIndices[cgb::vulkan_context::instance().currentFrame] = (tAAIndex + 1) % 2; // switch index for the correct frame
 
 		auto prevData = taa_prev_frame_data{};
-		prevData.vPMatrix = prevFrameData->mvpMatrix;
+		prevData.vPMatrix = mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->mvpMatrix;
 		prevData.invPMatrix = glm::inverse(mCamera.projection_matrix());
 		prevData.invVMatrix = glm::inverse(uboCam.view);
 		prevData.jitter = uboCam.frameOffset;
@@ -802,6 +815,7 @@ private:
 		//mPostProcDrawer->set_vrs_images(vrsDefaultImage);
 		//mVrsDebugDrawer->set_vrs_images(vrsDefaultImage);
 		//mMaterialDrawer->set_vrs_images(vrsDefaultImage);
+		
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
 		// post processing pass
@@ -818,8 +832,10 @@ private:
 
 		//frame = (frame + int(0 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
 		frame = (frame + 1) % jitter.size();
-		prevFrameData->imgSize = glm::vec2(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height);
-		prevFrameData->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
+		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->imgSize = glm::vec2(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height);
+		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
+
+		Sleep(280);
 	}
 
 	void createDescriptorSetLayout()

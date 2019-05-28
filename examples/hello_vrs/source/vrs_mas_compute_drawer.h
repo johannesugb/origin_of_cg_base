@@ -34,8 +34,8 @@ private:
 	int mWidth;
 	int mHeight;
 
-	UniformBufferObject mCamData;
-	UniformBufferObject mPrevCamData;
+	std::vector<UniformBufferObject> mCamData;
+	std::vector<UniformBufferObject> mPrevCamData;
 	float mNearPlane;
 	float mFarPlane;
 

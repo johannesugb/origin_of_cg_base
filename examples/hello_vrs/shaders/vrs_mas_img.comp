@@ -74,7 +74,7 @@ void main() {
 	vec4 prevFrameVal = texture(texelDiffsAndDepthImage, xySSC);
 	vec3 posWorld = NDCToWorld(vec3(xySSC, prevFrameVal.w));
 	vec3 newPosNDC = (project(vec4(posWorld, 1)) + 1.0) / 2.0f;
-	newUV = ivec2(newPosNDC.xy  * pushConst.imgSize);
+	//newUV = ivec2(newPosNDC.xy  * pushConst.imgSize);
 	vec4 frameVal = texture(texelDiffsAndDepthImage, newPosNDC.xy);
 
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
@@ -84,10 +84,11 @@ void main() {
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	//shadingRate = 4;
 
-	//shadingRate = abs(1 - newPosNDC.z) * 100;
+	shadingRate = abs(1 - newPosNDC.z) * 100;
+	shadingRate = abs(posWorld.z);
 
 	imageStore(targetImage, newUV, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 
 	// debug image
-	imageStore(debugImage, uv, vec4(vec3(scaledVal * scaledVal + 0.5), 1.0));
+	imageStore(debugImage, uv, vec4(vec3(shadingRate / 12.0), 0.9));
 }

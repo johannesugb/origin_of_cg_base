@@ -68,13 +68,13 @@ namespace cgb {
 
 	void vulkan_command_buffer_manager::reset_command_buffers()
 	{
-		auto &freePrimCmdBuffer = mPrimaryCmdBuffers.mFreeCommandBuffers[vulkan_context::instance().currentFrame];
-		auto &finishedPrimCmdBuffer = mPrimaryCmdBuffers.mSubmittedCommandBuffers[vulkan_context::instance().currentFrame];
+		auto &freePrimCmdBuffer = mPrimaryCmdBuffers.mFreeCommandBuffers[vulkan_context::instance().currentSwapChainIndex];
+		auto &finishedPrimCmdBuffer = mPrimaryCmdBuffers.mSubmittedCommandBuffers[vulkan_context::instance().currentSwapChainIndex];
 		freePrimCmdBuffer.insert(freePrimCmdBuffer.end(), finishedPrimCmdBuffer.begin(), finishedPrimCmdBuffer.end());
 		finishedPrimCmdBuffer.clear();
 
-		auto &freeSecCmdBuffer = mSecondaryCmdBuffers.mFreeCommandBuffers[vulkan_context::instance().currentFrame];
-		auto &finishedSecCmdBuffer = mSecondaryCmdBuffers.mSubmittedCommandBuffers[vulkan_context::instance().currentFrame];
+		auto &freeSecCmdBuffer = mSecondaryCmdBuffers.mFreeCommandBuffers[vulkan_context::instance().currentSwapChainIndex];
+		auto &finishedSecCmdBuffer = mSecondaryCmdBuffers.mSubmittedCommandBuffers[vulkan_context::instance().currentSwapChainIndex];
 		freeSecCmdBuffer.insert(freeSecCmdBuffer.end(), finishedSecCmdBuffer.begin(), finishedSecCmdBuffer.end());
 		finishedSecCmdBuffer.clear();
 	}
@@ -111,7 +111,7 @@ namespace cgb {
 
 	vk::CommandBuffer vulkan_command_buffer_manager::get_or_create_command_buffer(command_buffer_system &cmdBufferSystem, vk::CommandBufferLevel bufferLevel, vk::CommandBufferBeginInfo &beginInfo)
 	{
-		auto &freeBuffersForFrame = cmdBufferSystem.mFreeCommandBuffers[vulkan_context::instance().currentFrame];
+		auto &freeBuffersForFrame = cmdBufferSystem.mFreeCommandBuffers[vulkan_context::instance().currentSwapChainIndex];
 		if (freeBuffersForFrame.empty()) {
 			auto newCmdBuffers = std::vector<vk::CommandBuffer>(mImageCount);
 
@@ -129,17 +129,17 @@ namespace cgb {
 		}
 		auto ret = freeBuffersForFrame.back();
 		freeBuffersForFrame.pop_back();
-		cmdBufferSystem.mRecordedCommandBuffers[vulkan_context::instance().currentFrame].push_back(ret);
+		cmdBufferSystem.mRecordedCommandBuffers[vulkan_context::instance().currentSwapChainIndex].push_back(ret);
 
 		return ret;
 	}
 
 	std::vector<vk::CommandBuffer> vulkan_command_buffer_manager::get_recorded_command_buffers(command_buffer_system & cmdBufferSystem)
 	{
-		auto &submittedBuffersForFrame = cmdBufferSystem.mSubmittedCommandBuffers[vulkan_context::instance().currentFrame];
-		auto recordedBuffersForFrame = cmdBufferSystem.mRecordedCommandBuffers[vulkan_context::instance().currentFrame];
+		auto &submittedBuffersForFrame = cmdBufferSystem.mSubmittedCommandBuffers[vulkan_context::instance().currentSwapChainIndex];
+		auto recordedBuffersForFrame = cmdBufferSystem.mRecordedCommandBuffers[vulkan_context::instance().currentSwapChainIndex];
 		submittedBuffersForFrame.insert(submittedBuffersForFrame.end(), recordedBuffersForFrame.begin(), recordedBuffersForFrame.end());
-		cmdBufferSystem.mRecordedCommandBuffers[vulkan_context::instance().currentFrame].clear();
+		cmdBufferSystem.mRecordedCommandBuffers[vulkan_context::instance().currentSwapChainIndex].clear();
 
 		return recordedBuffersForFrame;
 	}
