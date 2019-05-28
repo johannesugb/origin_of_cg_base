@@ -1,4 +1,9 @@
 #include "log.h"
+#if defined(_WIN32) && defined (_DEBUG) && defined (PRINT_STACKTRACE)
+#include <Windows.h>
+#include <DbgHelp.h>
+#include <sstream>
+#endif
 
 namespace cgb
 {
@@ -81,6 +86,85 @@ namespace cgb
 #endif // WIN32
 	}
 
+	void set_console_output_color_for_stacktrace(cgb::log_type level, cgb::log_importance importance)
+	{
+#ifdef _WIN32
+		static auto std_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		switch (level) {
+		case cgb::log_type::error:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xC7); 
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x4);
+				break;
+			}
+			break;
+		case cgb::log_type::warning:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xE7); 
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x6); 
+				break;
+			}
+			break;
+		case cgb::log_type::verbose:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0x87); 
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x7); 
+				break;
+			}
+			break;
+		case cgb::log_type::debug:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xA2);
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x2); 
+				break;
+			}
+			break;
+		case cgb::log_type::debug_verbose:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0x28); 
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x8);
+				break;
+			}
+			break;
+		case cgb::log_type::system:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xD7); 
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0x5); 
+				break;
+			}
+			break;
+		default:
+			switch (importance) {
+			case cgb::log_importance::important:
+				SetConsoleTextAttribute(std_output_handle, 0xF8); 
+				break;
+			default:
+				SetConsoleTextAttribute(std_output_handle, 0xF7); 
+				break;
+			}
+			break;
+		}
+#endif // WIN32
+	}
+
 	void reset_console_output_color()
 	{
 #ifdef _WIN32
@@ -129,6 +213,10 @@ namespace cgb
 						// ACTUAL LOGGING:
 						cgb::set_console_output_color(front.mLogType, front.mLogImportance);
 						fmt::print(front.mMessage);
+						if (!front.mStacktrace.empty()) {
+							cgb::set_console_output_color_for_stacktrace(front.mLogType, front.mLogImportance);
+							fmt::print(front.mStacktrace);
+						}
 						cgb::reset_console_output_color();
 
 						// 2nd lock => get correct empty-value
@@ -144,7 +232,7 @@ namespace cgb
 
 				// No more messages => wait
 				{
-					// Do not take 100% of the CPU
+					// Do not occupy 100% of the CPU
 					std::unique_lock<std::mutex> lock(sLogMutex);
 					sCondVar.wait(lock);
 				}
@@ -168,6 +256,11 @@ namespace cgb
 
 		// Enqueue the message and wake the logger thread
 		std::scoped_lock<std::mutex> guard(sLogMutex);
+#if defined(_WIN32) && defined (_DEBUG) && defined (PRINT_STACKTRACE)
+		if (pToBeLogged.mLogType == log_type::error) {
+			pToBeLogged.mStacktrace = get_current_callstack();
+		}
+#endif
 		sLogQueue.push(pToBeLogged);
 		sCondVar.notify_all();
 	}
@@ -176,6 +269,12 @@ namespace cgb
 	{
 		cgb::set_console_output_color(pToBeLogged.mLogType, pToBeLogged.mLogImportance);
 		fmt::print(pToBeLogged.mMessage);
+#if defined(_WIN32) && defined (_DEBUG) && defined (PRINT_STACKTRACE)
+		if (pToBeLogged.mLogType == log_type::error) {
+			set_console_output_color_for_stacktrace(pToBeLogged.mLogType, pToBeLogged.mLogImportance);
+			fmt::print(get_current_callstack());
+		}
+#endif
 		cgb::reset_console_output_color();
 	}
 #endif
@@ -265,5 +364,41 @@ namespace cgb
 
 		fourccBuf[4] = 0;
 		return std::string(fourccBuf);
+	}
+
+	std::string get_current_callstack()
+	{
+#if defined(_WIN32) && defined (_DEBUG) && defined (PRINT_STACKTRACE)
+		void         * stack[100];
+
+		HANDLE process = GetCurrentProcess();
+
+		SymInitialize(process, nullptr, TRUE);
+
+		unsigned short frames = CaptureStackBackTrace(0, 100, stack, nullptr);
+		SYMBOL_INFO * symbol = static_cast<SYMBOL_INFO *>(calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1));
+		symbol->MaxNameLen = 255;
+		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+		auto callstack = std::string();
+		for (unsigned int i = 0; i < frames; i++)
+		{
+			SymFromAddr(process, reinterpret_cast<DWORD64>(stack[i]), nullptr, symbol);
+
+			std::stringstream ss;
+			ss << frames - i - 1 << ": " << symbol->Name << " (0x" << std::hex << symbol->Address << ")" << std::endl;
+			callstack += ss.str();
+
+			if (strcmp(symbol->Name, "main") == 0)
+			{
+				break;
+			}
+		}
+
+		free(symbol);
+		return callstack;
+#else
+		return std::string();
+#endif
 	}
 }

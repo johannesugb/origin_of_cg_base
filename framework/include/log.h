@@ -3,7 +3,10 @@
 namespace cgb
 {
 	// Define LOGGING_ON_SEPARATE_THREAD to have all the logging being transmitted and performed by a separate thread
-	//#define LOGGING_ON_SEPARATE_THREAD
+	#define LOGGING_ON_SEPARATE_THREAD
+
+	// Define PRINT_STACKTRACE to have the stack trace printed for errors
+	#define PRINT_STACKTRACE
 
 	// LOG-LEVELS:
 	// 0 ... nothing (except debug messages in DEBUG-mode)
@@ -37,9 +40,11 @@ namespace cgb
 		std::string mMessage;
 		log_type mLogType;
 		log_importance mLogImportance;
+		std::string mStacktrace;
 	};
 	
 	extern void set_console_output_color(cgb::log_type level, cgb::log_importance importance);
+	extern void set_console_output_color_for_stacktrace(cgb::log_type level, cgb::log_importance importance);
 	extern void reset_console_output_color();
 	extern void dispatch_log(cgb::log_pack pToBeLogged);
 	
@@ -125,4 +130,6 @@ namespace cgb
 	std::string to_string(const glm::vec4&);
 
 	std::string fourcc_to_string(unsigned int fourcc);
+
+	std::string get_current_callstack();
 }
