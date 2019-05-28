@@ -1,4 +1,5 @@
 #include "context_vulkan.h"
+#include <set>
 
 namespace cgb
 {
@@ -66,8 +67,6 @@ namespace cgb
 			context().pick_physical_device();
 
 			context().create_and_assign_logical_device(surface);
-
-			context().mContextState = cgb::context_state::fully_initialized;
 
 		}, cgb::context_state::halfway_initialized);
 
@@ -643,81 +642,96 @@ namespace cgb
 		assert(mPhysicalDevice);
 
 		// Determine which queue families we have, i.e. what the different queue families support and what they don't
-		auto presentQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gQueueSelectionPreference, pSurface);
-		auto graphicsQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gPreferSameQueueForGraphicsAndPresent 
+		auto* presentQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gQueueSelectionPreference, pSurface);
+		auto* graphicsQueue		= device_queue::prepare(vk::QueueFlagBits::eGraphics,		settings::gPreferSameQueueForGraphicsAndPresent 
 																							  ? device_queue_selection_strategy::prefer_everything_on_single_queue
 																							  : settings::gQueueSelectionPreference, std::nullopt);
-		auto computeQueue		= device_queue::prepare(vk::QueueFlagBits::eCompute,		settings::gQueueSelectionPreference, std::nullopt);
-		auto transferQueue		= device_queue::prepare(vk::QueueFlagBits::eTransfer,		settings::gQueueSelectionPreference, std::nullopt);
+		auto* computeQueue		= device_queue::prepare(vk::QueueFlagBits::eCompute,		settings::gQueueSelectionPreference, std::nullopt);
+		auto* transferQueue		= device_queue::prepare(vk::QueueFlagBits::eTransfer,		settings::gQueueSelectionPreference, std::nullopt);
 
-		// Get the same validation layers as for the instance!
-		std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
+		// Defer pipeline creation to enable the user to request more queues
+
+		mEventHandlers.emplace_back([presentQueue, graphicsQueue, computeQueue, transferQueue]() -> bool {
+			LOG_INFO("Running vulkan create_and_assign_logical_device event handler");
+
+			// Get the same validation layers as for the instance!
+			std::vector<const char*> supportedValidationLayers = assemble_validation_layers();
 		
-		// Always prepare the shading rate image features descriptor, but only use it if the extension has been requested
-		auto shadingRateImageFeatureNV = vk::PhysicalDeviceShadingRateImageFeaturesNV()
-			.setShadingRateImage(VK_TRUE)
-			.setShadingRateCoarseSampleOrder(VK_TRUE);
-		auto activateShadingRateImage = shading_rate_image_extension_requested() && supports_shading_rate_image(mPhysicalDevice);
+			// Always prepare the shading rate image features descriptor, but only use it if the extension has been requested
+			auto shadingRateImageFeatureNV = vk::PhysicalDeviceShadingRateImageFeaturesNV()
+				.setShadingRateImage(VK_TRUE)
+				.setShadingRateCoarseSampleOrder(VK_TRUE);
+			auto activateShadingRateImage = shading_rate_image_extension_requested() && supports_shading_rate_image(context().physical_device());
 
-		// Gather all the queue create infos:
-		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-		std::vector<std::vector<float>> queuePriorities;
-		for (const auto& pq : device_queue::sPreparedQueues) {
-			bool handled = false;
-			for (auto i = 0; i < queueCreateInfos.size(); ++i) {
-				if (queueCreateInfos[i].queueFamilyIndex == pq->family_index()) {
-					// found, i.e. increase count
-					queueCreateInfos[i].queueCount += 1;
-					queuePriorities[i].push_back(pq->mPriority);
-					handled = true; 
-					break; // done
+			// Gather all the queue create infos:
+			std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+			std::vector<std::vector<float>> queuePriorities;
+			for (const auto& pq : device_queue::sPreparedQueues) {
+				bool handled = false;
+				for (auto i = 0; i < queueCreateInfos.size(); ++i) {
+					if (queueCreateInfos[i].queueFamilyIndex == pq.family_index()) {
+						// found, i.e. increase count
+						queueCreateInfos[i].queueCount += 1;
+						queuePriorities[i].push_back(pq.mPriority);
+						handled = true; 
+						break; // done
+					}
+				}
+				if (!handled) { // => must be a new entry
+					queueCreateInfos.emplace_back()
+						.setQueueFamilyIndex(pq.family_index())
+						.setQueueCount(1u);
+					queuePriorities.push_back({ pq.mPriority });
 				}
 			}
-			if (!handled) { // => must be a new entry
-				queueCreateInfos.emplace_back()
-					.setQueueFamilyIndex(pq->family_index())
-					.setQueueCount(1u);
-				queuePriorities.push_back({ pq->mPriority });
+			// Iterate over all vk::DeviceQueueCreateInfo entries and set the queue priorities pointers properly
+			for (auto i = 0; i < queueCreateInfos.size(); ++i) {
+				queueCreateInfos[i].setPQueuePriorities(queuePriorities[i].data());
 			}
-		}
-		// Iterate over all vk::DeviceQueueCreateInfo entries and set the queue priorities pointers properly
-		for (auto i = 0; i < queueCreateInfos.size(); ++i) {
-			queueCreateInfos[i].setPQueuePriorities(queuePriorities[i].data());
-		}
 
-		// Enable certain device features:
-		auto deviceFeatures = vk::PhysicalDeviceFeatures2()
-			.setFeatures(vk::PhysicalDeviceFeatures()
-				.setSamplerAnisotropy(VK_TRUE)
-				.setVertexPipelineStoresAndAtomics(VK_TRUE)
-				.setShaderStorageImageExtendedFormats(VK_TRUE))
-			.setPNext(activateShadingRateImage ? &shadingRateImageFeatureNV : nullptr);
+			// Enable certain device features:
+			auto deviceFeatures = vk::PhysicalDeviceFeatures2()
+				.setFeatures(vk::PhysicalDeviceFeatures()
+					.setSamplerAnisotropy(VK_TRUE)
+					.setVertexPipelineStoresAndAtomics(VK_TRUE)
+					.setShaderStorageImageExtendedFormats(VK_TRUE))
+				.setPNext(activateShadingRateImage ? &shadingRateImageFeatureNV : nullptr);
 
-		auto allRequiredDeviceExtensions = get_all_required_device_extensions();
-		auto deviceCreateInfo = vk::DeviceCreateInfo()
-			.setQueueCreateInfoCount(static_cast<uint32_t>(queueCreateInfos.size()))
-			.setPQueueCreateInfos(queueCreateInfos.data())
-			.setPNext(&deviceFeatures) // instead of :setPEnabledFeatures(&deviceFeatures) because we are using vk::PhysicalDeviceFeatures2
-			// Whether the device supports these extensions has already been checked during device selection in @ref pick_physical_device
-			// TODO: Are these the correct extensions to set here?
-			.setEnabledExtensionCount(static_cast<uint32_t>(allRequiredDeviceExtensions.size()))
-			.setPpEnabledExtensionNames(allRequiredDeviceExtensions.data())
-			.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
-			.setPpEnabledLayerNames(supportedValidationLayers.data());
-		mLogicalDevice = mPhysicalDevice.createDevice(deviceCreateInfo);
-		// Create a dynamic dispatch loader for extensions
-		mDynamicDispatch = vk::DispatchLoaderDynamic(mInstance, logical_device());
+			auto allRequiredDeviceExtensions = get_all_required_device_extensions();
+			auto deviceCreateInfo = vk::DeviceCreateInfo()
+				.setQueueCreateInfoCount(static_cast<uint32_t>(queueCreateInfos.size()))
+				.setPQueueCreateInfos(queueCreateInfos.data())
+				.setPNext(&deviceFeatures) // instead of :setPEnabledFeatures(&deviceFeatures) because we are using vk::PhysicalDeviceFeatures2
+				// Whether the device supports these extensions has already been checked during device selection in @ref pick_physical_device
+				// TODO: Are these the correct extensions to set here?
+				.setEnabledExtensionCount(static_cast<uint32_t>(allRequiredDeviceExtensions.size()))
+				.setPpEnabledExtensionNames(allRequiredDeviceExtensions.data())
+				.setEnabledLayerCount(static_cast<uint32_t>(supportedValidationLayers.size()))
+				.setPpEnabledLayerNames(supportedValidationLayers.data());
+			context().mLogicalDevice = context().physical_device().createDevice(deviceCreateInfo);
+			// Create a dynamic dispatch loader for extensions
+			context().mDynamicDispatch = vk::DispatchLoaderDynamic(context().vulkan_instance(), context().logical_device());
 
-		// Create the queues which have been prepared in the beginning of this method:
-		mPresentQueue		= device_queue::create(*presentQueue);
-		mGraphicsQueue		= device_queue::create(*graphicsQueue);
-		mComputeQueue		= device_queue::create(*computeQueue);
-		mTransferQueue		= device_queue::create(*transferQueue);
+			// Create the queues which have been prepared in the beginning of this method:
+			context().mPresentQueue		= device_queue::create(*presentQueue);
+			context().mGraphicsQueue	= device_queue::create(*graphicsQueue);
+			context().mComputeQueue		= device_queue::create(*computeQueue);
+			context().mTransferQueue	= device_queue::create(*transferQueue);
 
-		mTransferAndGraphicsQueueIndices.push_back(mGraphicsQueue.mQueueFamilyIndex);
-		if (mGraphicsQueue.mQueueFamilyIndex != mTransferQueue.mQueueFamilyIndex) {
-			mTransferAndGraphicsQueueIndices.push_back(mTransferQueue.mQueueFamilyIndex);
-		}
+			// Uniqueify queue family indices:
+			std::set<uint32_t> uniqueFamilyIndices;
+			for (auto q : device_queue::sPreparedQueues) {
+				uniqueFamilyIndices.insert(q.family_index());
+			}
+			// Put into contiguous memory
+			for (auto fi : uniqueFamilyIndices) {
+				context().mAllUsedQueueFamilyIndices.push_back(fi);
+			}
+
+			context().mContextState = cgb::context_state::fully_initialized;
+
+			return true; // This is just always true
+		}, cgb::context_state::halfway_initialized);
 	}
 
 	void vulkan::create_swap_chain_for_window(window* pWindow)
@@ -1226,8 +1240,8 @@ namespace cgb
 		}
 		else {
 			pCreateInfo.setSharingMode(vk::SharingMode::eConcurrent);
-			pCreateInfo.setQueueFamilyIndexCount(2u);
-			pCreateInfo.setPQueueFamilyIndices(mTransferAndGraphicsQueueIndices.data());
+			pCreateInfo.setQueueFamilyIndexCount(static_cast<uint32_t>(mAllUsedQueueFamilyIndices.size()));
+			pCreateInfo.setPQueueFamilyIndices(mAllUsedQueueFamilyIndices.data());
 		}
 	}
 

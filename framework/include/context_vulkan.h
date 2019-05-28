@@ -55,6 +55,7 @@ namespace cgb
 		vk::Queue& graphics_queue() { return mGraphicsQueue.mQueue; }
 		vk::Queue& presentation_queue() { return mPresentQueue.mQueue; }
 		vk::Queue& transfer_queue() { return mTransferQueue.mQueue; }
+		const std::vector<uint32_t>& all_queue_family_indices() { return mAllUsedQueueFamilyIndices; }
 
 		/**	Creates a new window, but doesn't open it. Set the window's parameters
 		 *	according to your requirements before opening it!
@@ -111,7 +112,7 @@ namespace cgb
 		 *	an array which are supported by the instance. A warning will be issued for those
 		 *	entries which are not supported.
 		 */
-		auto assemble_validation_layers();
+		static auto assemble_validation_layers();
 
 		/** Create a new vulkan instance with all the application information and
 		 *	also set the required instance extensions which GLFW demands.
@@ -245,8 +246,7 @@ namespace cgb
 		device_queue mGraphicsQueue;
 		device_queue mComputeQueue;
 		device_queue mTransferQueue;
-
-		std::vector<uint32_t> mTransferAndGraphicsQueueIndices;
+		std::vector<uint32_t> mAllUsedQueueFamilyIndices;
 
 		std::vector<command_pool> mCommandPools;
 		std::vector<descriptor_pool> mDescriptorPools;

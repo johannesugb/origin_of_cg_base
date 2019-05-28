@@ -196,7 +196,7 @@ namespace cgb
 		*
 		*	Event handlers are always executed on the main thread.
 		*/
-		std::vector<std::tuple<event_handler_func, cgb::context_state>> mEventHandlers;
+		std::list<std::tuple<event_handler_func, cgb::context_state>> mEventHandlers;
 
 		// Which state the context is currently in
 		cgb::context_state mContextState;

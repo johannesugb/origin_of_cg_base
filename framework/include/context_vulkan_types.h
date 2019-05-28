@@ -467,7 +467,7 @@ namespace cgb
 	struct device_queue
 	{
 		/** Contains all the prepared queues which will be passed to logical device creation. */
-		static std::vector<std::unique_ptr<device_queue>> sPreparedQueues;
+		static std::deque<device_queue> sPreparedQueues;
 
 		/** Prepare another queue and eventually add it to `sPreparedQueues`. */
 		static device_queue* prepare(

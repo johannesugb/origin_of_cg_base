@@ -563,7 +563,7 @@ namespace cgb
 		);
 	}
 
-	std::vector<std::unique_ptr<device_queue>> device_queue::sPreparedQueues;
+	std::deque<device_queue> device_queue::sPreparedQueues;
 
 	device_queue* device_queue::prepare(
 		vk::QueueFlags pFlagsRequired,
@@ -586,8 +586,8 @@ namespace cgb
 					std::begin(sPreparedQueues), 
 					std::end(sPreparedQueues), 
 					[familyIndexInQuestion = std::get<0>(family), queueIndexInQuestion = qi](const auto& pq) {
-					return pq->family_index() == familyIndexInQuestion
-						&& pq->queue_index() == queueIndexInQuestion;
+					return pq.family_index() == familyIndexInQuestion
+						&& pq.queue_index() == queueIndexInQuestion;
 					});
 
 				// Pay attention to different selection strategies:
@@ -614,12 +614,12 @@ namespace cgb
 		}
 		
 	found_indices:
-		return sPreparedQueues.emplace_back(new device_queue{
+		return &sPreparedQueues.emplace_back(device_queue{
 			familyIndex, 
 			queueIndex,
 			0.5f, // default priority of 0.5
 			nullptr
-		}).get();
+		});
 	}
 
 	device_queue device_queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
