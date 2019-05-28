@@ -1,10 +1,11 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-const ivec2 offset[8] = { ivec2(-1, -1), ivec2(-1,  1),
-                            ivec2( 1, -1), ivec2( 1,  1), 
-                            ivec2(1,  0), ivec2( 0, -1), 
-                            ivec2( 0,  1), ivec2(-1,  0), };
+const int offsetMul = 2;
+const ivec2 offset[8] = { ivec2(-1, -1) * offsetMul, ivec2(-1,  1) * offsetMul,
+                            ivec2( 1, -1) * offsetMul, ivec2( 1,  1) * offsetMul, 
+                            ivec2(1,  0) * offsetMul, ivec2( 0, -1) * offsetMul, 
+                            ivec2( 0,  1) * offsetMul, ivec2(-1,  0) * offsetMul };
 
 layout(binding = 0) uniform sampler2D curFrame;
 layout(binding = 1) uniform sampler2D prevFrame;
@@ -83,12 +84,14 @@ vec3 YCgCoToRGB(vec3 YCgCo)
     return vec3(r, g, b);
 }
 
-const float cColorBoxSigma = 1;
-const float cAlpha = 0.1;
+const float cColorBoxSigma = 0.5;
+const float cAlpha = 0.5;
 
 void main() {
 	ivec2 texDim = textureSize(curFrame, 0);
     ivec2 ipos = ivec2(fragTexCoord * texDim);
+
+	// TODO dynamic offsets based on shading rate
 
 	 // Find the longest motion vector
     vec2 motion = texelFetch(motionVecTex, ipos, 0).xy;

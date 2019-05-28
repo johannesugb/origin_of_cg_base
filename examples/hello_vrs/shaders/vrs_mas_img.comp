@@ -5,6 +5,12 @@
 
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE) in;
 
+const int offsetMul = 2;
+const ivec2 offset[8] = { ivec2(-1, -1) * offsetMul, ivec2(-1,  1) * offsetMul,
+                            ivec2( 1, -1) * offsetMul, ivec2( 1,  1) * offsetMul, 
+                            ivec2(1,  0) * offsetMul, ivec2( 0, -1) * offsetMul, 
+                            ivec2( 0,  1) * offsetMul, ivec2(-1,  0) * offsetMul };
+
 layout(push_constant) uniform PushUniforms
 {
     mat4 vPMatrix;
@@ -16,6 +22,7 @@ layout(push_constant) uniform PushUniforms
  
 layout(set = 0, binding = 0, r8ui) uniform uimage2D targetImage;
 layout(set = 0, binding = 1) uniform sampler2D prevFrameImage;
+layout(set = 0, binding = 2) uniform sampler2D texelDiffsAndDepthImage;
 layout(set = 1, binding = 0, rgba8) uniform image2D debugImage;
 
 vec3 project(vec4 pos)
@@ -35,27 +42,50 @@ vec3 NDCToWorld(vec3 posNDC)
 }
 
 void main() {
-	vec2 pixelSize = 1/pushConst.imgSize;
+	vec2 pixelSize = 1.0/pushConst.imgSize;
 	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
 	vec2 xySSC = uv / pushConst.imgSize + 0.5 * pixelSize;
 
 	//vec4 prevFrameVal = -clamp(texture(prevFrameImage, xySSC), -1, 0);
-	vec4 prevFrameVal = texture(prevFrameImage, xySSC);
 	vec4 prevFrameMotion = texture(prevFrameImage, xySSC);
-	vec3 posWorld = NDCToWorld(vec3(xySSC, prevFrameVal.w));
 
+	ivec2 ipos = uv;
+	vec2 motion = texelFetch(prevFrameImage, ipos, 0).xy;
+    vec2 m = texelFetchOffset(prevFrameImage, ipos, 0, offset[0]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(prevFrameImage, ipos, 0, offset[1]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(prevFrameImage, ipos, 0, offset[2]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(prevFrameImage, ipos, 0, offset[3]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(prevFrameImage, ipos, 0, offset[4]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(prevFrameImage, ipos, 0, offset[5]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(prevFrameImage, ipos, 0, offset[6]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+	m = texelFetchOffset(prevFrameImage, ipos, 0, offset[7]).rg;
+    motion = dot(m, m) < dot(motion, motion) ? m : motion;
+
+
+	ivec2 newUV = ivec2((xySSC + motion.xy) * pushConst.imgSize + pixelSize);
+
+	vec4 prevFrameVal = texture(texelDiffsAndDepthImage, xySSC);
+	vec3 posWorld = NDCToWorld(vec3(xySSC, prevFrameVal.w));
 	vec3 newPosNDC = (project(vec4(posWorld, 1)) + 1.0) / 2.0f;
-	ivec2 newUV = ivec2(newPosNDC.xy * pushConst.imgSize);
-	vec4 frameVal = texture(prevFrameImage, newPosNDC.xy);
+	newUV = ivec2(newPosNDC.xy  * pushConst.imgSize);
+	vec4 frameVal = texture(texelDiffsAndDepthImage, newPosNDC.xy);
 
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
 
-	float scaledVal = 1 - dot(-prevFrameVal.xy,-prevFrameVal.xy) * 10000;
+	float scaledVal = 1 - dot(-prevFrameMotion.xy,-prevFrameMotion.xy) * 10000;
 	float shadingRate = scaledVal; // current texel diff
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
-	shadingRate = 0;
+	//shadingRate = 4;
 
-	newUV = ivec2((xySSC + 1 * prevFrameMotion.xy) * pushConst.imgSize + pixelSize);
+	//shadingRate = abs(1 - newPosNDC.z) * 100;
+
 	imageStore(targetImage, newUV, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 
 	// debug image

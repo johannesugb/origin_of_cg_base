@@ -45,7 +45,7 @@ layout(set = 2, binding = 0) uniform UniformBufferObject {
 } trans;
 
 //uniform float uNormalMappingStrength = 1.0;
-float uNormalMappingStrength = 0.0;
+float uNormalMappingStrength = 1.0;
 // ----------------------------------------------
 
 // #################### LIGHTS ##################

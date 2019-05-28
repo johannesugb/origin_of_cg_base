@@ -356,10 +356,12 @@ private:
 		auto vrsMasResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
 		vrsMasResourceBundleLayout->add_binding(0, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
 		vrsMasResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
+		vrsMasResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
 		vrsMasResourceBundleLayout->bake();
 		auto vrsMasResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsMasResourceBundleLayout, true);
 		vrsMasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
 		vrsMasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsMasMotionVecBlitTextures);
+		vrsMasResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitTextures);
 
 		auto vrsDebugResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
 		vrsDebugResourceBundleLayout->add_binding(0, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
@@ -396,7 +398,7 @@ private:
 			mVrsMasComputePipeline->bake();
 
 			mVrsMasComputeDrawer = std::make_unique<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsMasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsMasResourceBundle, vrsDebugResourceBundle },
-				mMotionVectorImages, mVrsMasMotionVecBlitImages);
+				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mMotionVectorImages, mVrsMasMotionVecBlitImages);
 			mVrsMasComputeDrawer->set_vrs_images(vrsImages);
 
 			createVrsComputeDescriptorPool();
@@ -508,6 +510,7 @@ private:
 		mCamera.set_translation(glm::vec3(-0.67, 0.53, 6.07));
 		//mCamera.LookAlong(glm::vec3(0.0f, 0.0f, -1.0f));
 		mCamera.set_perspective_projection(glm::radians(60.0f), cgb::context().main_window()->aspect_ratio(), 0.1f, 100.0f);
+		//mCamera.set_orthographic_projection(0, 30, 0, 30, 0.1f, 100.0f);
 		//mQuakeCam.set_orthographic_projection(-5, 5, -5, 5, 0.5, 100);
 		cgb::current_composition().add_element(mCamera);
 
@@ -717,6 +720,11 @@ private:
 
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
+
+		float nearPlane = mCamera.near_plane_distance();
+		float farPlane = mCamera.far_plane_distance();
+		mVrsMasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
+		mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 		uboCam.proj = glm::translate(glm::vec3(uboCam.frameOffset.x * 2.0f, uboCam.frameOffset.y * 2.0f, 0.0f)) * uboCam.proj;
 
 		// -----------------------------------
@@ -731,9 +739,6 @@ private:
 		pointLights.count = mPointLights.size();
 		mPointLightsBuffers[cgb::vulkan_context::instance().currentFrame]->update_buffer(&pointLights, sizeof(pointLights));
 
-		float nearPlane = mCamera.near_plane_distance();
-		float farPlane = mCamera.far_plane_distance();
-		mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 
 		for (int i = 0; i < mSponzaModel->get_render_objects().size(); i++) {
 			auto sponzaRenderObject = mSponzaModel->get_render_objects()[i];

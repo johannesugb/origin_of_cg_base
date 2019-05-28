@@ -15,8 +15,9 @@ class vrs_mas_compute_drawer :
 {
 public:
 	vrs_mas_compute_drawer(std::shared_ptr<cgb::vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<cgb::vulkan_pipeline> pipeline,
-		std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> globalResourceBundles, std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderImages,
-		std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages);
+		std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> globalResourceBundles, std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderImages,
+		std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages, std::vector<std::shared_ptr<cgb::vulkan_image>> motionVecImages,
+		std::vector<std::shared_ptr<cgb::vulkan_image>> motionVecBlitImages);
 	virtual ~vrs_mas_compute_drawer();
 
 	virtual void draw(std::vector<cgb::vulkan_render_object*> renderObjects, std::shared_ptr<cgb::vulkan_framebuffer> framebuffer);
@@ -42,6 +43,9 @@ private:
 
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderImages;
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderBlitImages;
+
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mMotionVecImages;
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mMotionVecBlitImages;
 
 	void blit_image(vk::CommandBuffer& commandBuffer);
 };

@@ -3,9 +3,11 @@
 
 
 vrs_mas_compute_drawer::vrs_mas_compute_drawer(std::shared_ptr<cgb::vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<cgb::vulkan_pipeline> pipeline,
-	std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> globalResourceBundles, std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderImages,
-	std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages) : vulkan_drawer(commandBufferManager, pipeline, globalResourceBundles),
-	mVrsPrevRenderImages(mVrsPrevRenderImages), mVrsPrevRenderBlitImages(vrsPrevRenderBlitImages)
+	std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> globalResourceBundles, std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderImages,
+	std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages, std::vector<std::shared_ptr<cgb::vulkan_image>> motionVecImages,
+	std::vector<std::shared_ptr<cgb::vulkan_image>> motionVecBlitImages) : vulkan_drawer(commandBufferManager, pipeline, globalResourceBundles),
+	mVrsPrevRenderImages(vrsPrevRenderImages), mVrsPrevRenderBlitImages(vrsPrevRenderBlitImages), mMotionVecImages(motionVecImages), 
+	mMotionVecBlitImages(motionVecBlitImages)
 {
 	mCurrPushConstData = vrs_mas_comp_data{};
 	int mWidth = -1;
@@ -53,9 +55,9 @@ void vrs_mas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> render
 	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eShadingRateImageNV, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
 
 	mCurrPushConstData = vrs_mas_comp_data{};
-	mCurrPushConstData.vPMatrix = mPrevCamData.proj * mPrevCamData.view;
-	mCurrPushConstData.invPMatrix = glm::inverse(mCamData.proj);
-	mCurrPushConstData.invVMatrix = glm::inverse(mCamData.view);
+	mCurrPushConstData.vPMatrix = mCamData.proj * mCamData.view;
+	mCurrPushConstData.invPMatrix = glm::inverse(mPrevCamData.proj);
+	mCurrPushConstData.invVMatrix = glm::inverse(mPrevCamData.view);
 	mCurrPushConstData.projAScale = glm::vec2(mFarPlane / (mFarPlane - mNearPlane), -mFarPlane * mNearPlane / (mFarPlane - mNearPlane));
 	mCurrPushConstData.imgSize = glm::vec2(mWidth, mHeight);
 
@@ -110,9 +112,23 @@ void vrs_mas_compute_drawer::blit_image(vk::CommandBuffer & commandBuffer)
 	srcBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
 	srcBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
 
+	vk::ImageMemoryBarrier motionVecBarrier = barrier;
+	motionVecBarrier.image = mMotionVecBlitImages[currentIdx]->get_image();
+	motionVecBarrier.oldLayout = vk::ImageLayout::eUndefined;
+	motionVecBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+	motionVecBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
+	motionVecBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+	vk::ImageMemoryBarrier srcMotionVecBarrier = barrier;
+	srcMotionVecBarrier.image = mMotionVecImages[currentIdx]->get_image();
+	srcMotionVecBarrier.oldLayout = vk::ImageLayout::eUndefined;
+	srcMotionVecBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+	srcMotionVecBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
+	srcMotionVecBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
 	commandBuffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eTransfer, {},
-		{}, {}, { barrier, srcBarrier });
+		{}, {}, { barrier, srcBarrier, motionVecBarrier, srcMotionVecBarrier });
 
 	vk::ImageBlit blit = {};
 	blit.srcOffsets[0] = { 0, 0, 0 };
@@ -134,6 +150,12 @@ void vrs_mas_compute_drawer::blit_image(vk::CommandBuffer & commandBuffer)
 		1, &blit,
 		vk::Filter::eLinear);
 
+	commandBuffer.blitImage(
+		mMotionVecImages[currentIdx]->get_image(), vk::ImageLayout::eTransferSrcOptimal,
+		mMotionVecBlitImages[currentIdx]->get_image(), vk::ImageLayout::eTransferDstOptimal,
+		1, &blit,
+		vk::Filter::eLinear);
+
 	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.newLayout = vk::ImageLayout::eGeneral;
 	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
@@ -144,9 +166,19 @@ void vrs_mas_compute_drawer::blit_image(vk::CommandBuffer & commandBuffer)
 	srcBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
 	srcBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
+	motionVecBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	motionVecBarrier.newLayout = vk::ImageLayout::eGeneral;
+	motionVecBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	motionVecBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+	srcMotionVecBarrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+	srcMotionVecBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	srcMotionVecBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+	srcMotionVecBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
 	commandBuffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
-		{}, {}, { barrier, srcBarrier });
+		{}, {}, { barrier, srcBarrier, motionVecBarrier, srcMotionVecBarrier });
 }
 
 void vrs_mas_compute_drawer::set_cam_data(UniformBufferObject camData, float nearPlane, float farPlane) {
