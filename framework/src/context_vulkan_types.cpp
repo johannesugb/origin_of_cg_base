@@ -601,7 +601,7 @@ namespace cgb
 						goto found_indices;
 					}
 					break;
-				case cgb::device_queue_selection_strategy::prefer_fewer_queues:
+				case cgb::device_queue_selection_strategy::prefer_everything_on_single_queue:
 					if (sPreparedQueues.end() != alreadyInUse) {
 						// find combination, that's good in this case
 						familyIndex = std::get<0>(family);

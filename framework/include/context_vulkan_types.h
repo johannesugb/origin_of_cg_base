@@ -455,7 +455,7 @@ namespace cgb
 	enum struct device_queue_selection_strategy
 	{
 		prefer_separate_queues,
-		prefer_fewer_queues,
+		prefer_everything_on_single_queue,
 	};
 
 	// Forward declare:
