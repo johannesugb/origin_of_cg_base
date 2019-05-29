@@ -436,7 +436,7 @@ private:
 
 		for (int i = 0; i < mTAAFullScreenQuads.size(); i++) {
 			mPostProcFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { postProcBundles[i] });
-			mTAAFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, mPostProcTextures);
+			mTAAFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, mTAATextures[i]);
 		}
 
 		// Post processing
@@ -798,7 +798,7 @@ private:
 
 
 		// TAA pass
-		int tAAIndex = 0; mTAAIndices[cgb::vulkan_context::instance().currentFrame];
+		int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
 		mTAAIndices[cgb::vulkan_context::instance().currentFrame] = (tAAIndex + 1) % 2; // switch index for the correct frame
 
 		auto prevData = taa_prev_frame_data{};
