@@ -44,15 +44,29 @@ void vrs_mas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> render
 
 	vk::ImageMemoryBarrier imgMemBarrier = {};
 	imgMemBarrier.srcAccessMask = vk::AccessFlagBits::eShadingRateImageReadNV;
-	imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+	imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 	imgMemBarrier.oldLayout = vk::ImageLayout::eShadingRateOptimalNV;
-	imgMemBarrier.newLayout = vk::ImageLayout::eGeneral;
+	imgMemBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
 	imgMemBarrier.image = mVrsImages[cgb::vulkan_context::instance().currentFrame]->get_image();
 	imgMemBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	imgMemBarrier.subresourceRange.baseArrayLayer = 0;
 	imgMemBarrier.subresourceRange.layerCount = 1;
 	imgMemBarrier.subresourceRange.levelCount = 1;
-	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eShadingRateImageNV, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
+	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eShadingRateImageNV, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, imgMemBarrier);
+
+
+	// clear shading rate image from old values, needed due forward projection, 
+	// which may not hit all points in target image
+	// e.g. some values would stay from the previous image and lead to artifacts
+	auto defaultShadingRate = vk::ClearColorValue(std::array<float, 4>({ 11.0f, 0.0f, 0.0f, 0.0f }));
+	commandBuffer.clearColorImage(mVrsImages[cgb::vulkan_context::instance().currentFrame]->get_image(), vk::ImageLayout::eTransferDstOptimal, defaultShadingRate, imgMemBarrier.subresourceRange);
+
+	imgMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+	imgMemBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	imgMemBarrier.newLayout = vk::ImageLayout::eGeneral;
+	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
+
 
 	mCurrPushConstData = vrs_mas_comp_data{};
 	mCurrPushConstData.vPMatrix = mCamData[cgb::vulkan_context::instance().currentFrame].proj * mCamData[cgb::vulkan_context::instance().currentFrame].view;
@@ -69,16 +83,10 @@ void vrs_mas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> render
 
 	commandBuffer.dispatch(std::ceil(mWidth * 1.0 / WORKGROUP_SIZE), std::ceil(mHeight * 1.0 / WORKGROUP_SIZE), 1);
 
-	imgMemBarrier = {};
 	imgMemBarrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
 	imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShadingRateImageReadNV;
 	imgMemBarrier.oldLayout = vk::ImageLayout::eGeneral;
 	imgMemBarrier.newLayout = vk::ImageLayout::eShadingRateOptimalNV;
-	imgMemBarrier.image = mVrsImages[cgb::vulkan_context::instance().currentFrame]->get_image();
-	imgMemBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	imgMemBarrier.subresourceRange.baseArrayLayer = 0;
-	imgMemBarrier.subresourceRange.layerCount = 1;
-	imgMemBarrier.subresourceRange.levelCount = 1;
 	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eShadingRateImageNV, {}, nullptr, nullptr, imgMemBarrier);
 }
 

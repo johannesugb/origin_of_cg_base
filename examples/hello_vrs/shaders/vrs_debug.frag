@@ -28,5 +28,5 @@ void main() {
 	//outColor = vec4(vec3(gl_FragmentSizeNV.x * gl_FragmentSizeNV.y / 16.0f), 0.5f);
 	//outColor = vec4(vec3( 0.5 + (-gl_FragmentSizeNV.x * gl_FragmentSizeNV.y + 1.0)/30.0 + (gl_InvocationsPerPixelNV - 1.0) / 30.0f), 0.5f);
 	//outColor = vec4(vec3(gl_FragmentSizeNV.x / 4.0f), 0.5f);
-	outColor =  vec4( 0.1 * texture(texSampler, fragTexCoord).xyz, 0.5);
+	//outColor =  vec4( 0.1 * texture(texSampler, fragTexCoord).xyz, 0.5);
 }

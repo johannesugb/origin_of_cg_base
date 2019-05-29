@@ -45,6 +45,7 @@ void main() {
 	vec2 pixelSize = 1.0/pushConst.imgSize;
 	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
 	vec2 xySSC = uv / pushConst.imgSize + 0.5 * pixelSize;
+	//imageStore(targetImage, uv, uvec4(11,0,0,0));
 
 	//vec4 prevFrameVal = -clamp(texture(prevFrameImage, xySSC), -1, 0);
 	vec4 prevFrameMotion = texture(prevFrameImage, xySSC);
@@ -74,21 +75,21 @@ void main() {
 	vec4 prevFrameVal = texture(texelDiffsAndDepthImage, xySSC);
 	vec3 posWorld = NDCToWorld(vec3(xySSC, prevFrameVal.w));
 	vec3 newPosNDC = (project(vec4(posWorld, 1)) + 1.0) / 2.0f;
-	//newUV = ivec2(newPosNDC.xy  * pushConst.imgSize);
+	newUV = ivec2(newPosNDC.xy  * pushConst.imgSize);
 	vec4 frameVal = texture(texelDiffsAndDepthImage, newPosNDC.xy);
 
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
 
-	float scaledVal = 1 - dot(-prevFrameMotion.xy,-prevFrameMotion.xy) * 10000;
+	float scaledVal = 1 - dot(-prevFrameMotion.xy,-prevFrameMotion.xy) * 1000;
 	float shadingRate = scaledVal; // current texel diff
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	//shadingRate = 4;
 
-	shadingRate = abs(1 - newPosNDC.z) * 100;
-	shadingRate = abs(posWorld.z);
+	//shadingRate = abs(1 - newPosNDC.z) * 100;
+	//shadingRate = abs(posWorld.z);
 
 	imageStore(targetImage, newUV, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 
 	// debug image
-	imageStore(debugImage, uv, vec4(vec3(shadingRate / 12.0), 0.9));
+	imageStore(debugImage, newUV, vec4(vec3(shadingRate / 12.0), 0.9));
 }

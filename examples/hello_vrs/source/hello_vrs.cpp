@@ -835,7 +835,7 @@ private:
 		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->imgSize = glm::vec2(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height);
 		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
 
-		Sleep(280);
+		//Sleep(280);
 	}
 
 	void createDescriptorSetLayout()
@@ -1056,7 +1056,7 @@ private:
 
 		for (int i = 0; i < cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
 			vrsImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 1, vk::SampleCountFlagBits::e1, colorFormat, vk::ImageTiling::eOptimal,
-				vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+				vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			vrsImages[i]->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eShadingRateOptimalNV, 1);
 
 			vrsDefaultImage[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 1, vk::SampleCountFlagBits::e1, colorFormat, vk::ImageTiling::eOptimal,
@@ -1096,8 +1096,12 @@ private:
 				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
 				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			mVrsPrevRenderImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 1);
-			mVrsPrevRenderTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsPrevRenderImages[i]);
+			mVrsPrevRenderTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsPrevRenderImages[0]);
 		}
+		//mVrsPrevRenderBlitImages[1] = mVrsPrevRenderBlitImages[0];
+		//mVrsPrevRenderBlitImages[2] = mVrsPrevRenderBlitImages[0];
+		//mVrsPrevRenderImages[1] = mVrsPrevRenderImages[0];
+		//mVrsPrevRenderImages[2] = mVrsPrevRenderImages[0];
 	}
 
 	void create_post_process_objects(vk::Viewport viewport, vk::Rect2D scissor) {
