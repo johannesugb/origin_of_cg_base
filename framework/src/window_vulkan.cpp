@@ -187,7 +187,8 @@ namespace cgb
 	void window::open()
 	{
 		context().dispatch_to_main_thread([this]() {
-			while (context().work_off_event_handlers() > 0u);
+			// Ensure, previous work is done:
+			context().work_off_event_handlers();
 
 			// Share the graphics context between all windows
 			auto* sharedContex = context().get_window_for_shared_context();
@@ -205,7 +206,7 @@ namespace cgb
 			// There will be some pending work regarding this newly created window stored within the
 			// context's events, like creating a swap chain and so on. 
 			// Why wait? Invoke them now!
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 		});
 	}
 

@@ -143,7 +143,7 @@ namespace cgb
 		static bool supports_all_required_extensions(const vk::PhysicalDevice& device);
 
 		/** Pick the physical device which looks to be the most promising one */
-		void pick_physical_device();
+		void pick_physical_device(vk::SurfaceKHR pSurface);
 
 
 		/**	Finds all queue families which support certain criteria which are defined by the parameters.

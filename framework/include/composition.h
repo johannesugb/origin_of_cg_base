@@ -282,7 +282,7 @@ namespace cgb
 
 		void start() override
 		{
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 
 			// Make myself the current composition_interface
 			composition_interface::set_current(this);
@@ -295,7 +295,7 @@ namespace cgb
 
 			// Signal context after initialization
 			context().begin_composition();
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 
 			// Enable receiving input
 			auto windows_for_input = context().find_windows([](auto * w) { return w->is_input_enabled(); });
@@ -317,7 +317,7 @@ namespace cgb
 			while (!mShouldStop)
 			{
 				context().work_off_all_pending_main_thread_actions();
-				while (context().work_off_event_handlers() > 0u);
+				context().work_off_event_handlers();
 
 				if (mShouldSwapInputBuffers)
 				{

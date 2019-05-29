@@ -452,31 +452,32 @@ namespace cgb
 			// No need to lock anything here, everything is happening on the main thread only
 			context().mEventHandlers.emplace_back(std::move(handler), stage);
 
-			// This newly added event handler might have changed something, so let's process 
-			// the events for as long as nothing changes anymore:
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 		});
 	}
 
-	uint32_t generic_glfw::work_off_event_handlers()
+	void generic_glfw::work_off_event_handlers()
 	{
 		assert(are_we_on_the_main_thread());
-		// No need to lock anything here, everything is happening on the main thread only
-		auto numBefore = mEventHandlers.size();
-		mEventHandlers.erase(
-			std::remove_if(
-				std::begin(mEventHandlers), std::end(mEventHandlers),
-				[curState = mContextState](const auto& tpl) {
-					auto targetStates = std::get<cgb::context_state>(tpl);
-					if ((curState & targetStates) != curState) {
-						return false; // false => not done yet! Handler shall remain, because handler has not been invoked.
-					}
-					// Invoke the handler:
-					return std::get<event_handler_func>(tpl)();	// true => done, i.e. remove
-																// false => not done yet, i.e. shall remain
-				}),
-			std::end(mEventHandlers));
-		auto numAfter = mEventHandlers.size();
-		return static_cast<uint32_t>(numAfter - numBefore);
+		size_t numHandled = 0;
+		do {
+			// No need to lock anything here, everything is happening on the main thread only
+			auto numBefore = mEventHandlers.size();
+			mEventHandlers.erase(
+				std::remove_if(
+					std::begin(mEventHandlers), std::end(mEventHandlers),
+					[curState = mContextState](const auto& tpl) {
+				auto targetStates = std::get<cgb::context_state>(tpl);
+				if ((curState & targetStates) != curState) {
+					return false; // false => not done yet! Handler shall remain, because handler has not been invoked.
+				}
+				// Invoke the handler:
+				return std::get<event_handler_func>(tpl)();	// true => done, i.e. remove
+															// false => not done yet, i.e. shall remain
+			}),
+				std::end(mEventHandlers));
+			auto numAfter = mEventHandlers.size();
+			numHandled = numAfter - numBefore;
+		} while (numHandled > 0);
 	}
 }

@@ -556,11 +556,11 @@ namespace cgb
 
 	command_pool command_pool::create(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo)
 	{
-		return command_pool(
+		return command_pool{
 			pQueueFamilyIndex,
 			pCreateInfo,
 			context().logical_device().createCommandPool(pCreateInfo)
-		);
+		};
 	}
 
 	std::deque<device_queue> device_queue::sPreparedQueues;

@@ -160,7 +160,7 @@ namespace cgb
 		 *	
 		 *	@return The number of event handlers that have been removed from the list of event handlers
 		 */
-		uint32_t work_off_event_handlers();
+		void work_off_event_handlers();
 
 		// Waits for GLFW input events and pauses the current (=main) thread
 		inline void wait_for_input_events() const { glfwWaitEvents(); }

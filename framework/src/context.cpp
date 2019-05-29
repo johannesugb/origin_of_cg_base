@@ -20,7 +20,7 @@ namespace cgb
 
 		bool gDisableImGui = false;
 
-		device_queue_selection_strategy gQueueSelectionPreference = device_queue_selection_strategy::prefer_everything_on_single_queue;
+		device_queue_selection_strategy gQueueSelectionPreference = device_queue_selection_strategy::prefer_separate_queues;
 
 		bool gPreferSameQueueForGraphicsAndPresent = true;
 

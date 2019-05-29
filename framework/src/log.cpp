@@ -185,9 +185,9 @@ namespace cgb
 		static std::thread sLogThread = std::thread([]() {
 			
 			cgb::set_console_output_color(cgb::log_type::system, cgb::log_importance::important);
-			fmt::print("Logger thread started...");
+			std::cout << "Logger thread started...";
 			cgb::reset_console_output_color();
-			fmt::print("\n");
+			std::cout << std::endl;
 
 			while (sContinueLogging) {
 				// Process all messages
@@ -212,10 +212,10 @@ namespace cgb
 					{
 						// ACTUAL LOGGING:
 						cgb::set_console_output_color(front.mLogType, front.mLogImportance);
-						fmt::print(front.mMessage);
+						std::cout << front.mMessage;
 						if (!front.mStacktrace.empty()) {
 							cgb::set_console_output_color_for_stacktrace(front.mLogType, front.mLogImportance);
-							fmt::print(front.mStacktrace);
+							std::cout << front.mStacktrace;
 						}
 						cgb::reset_console_output_color();
 
@@ -239,9 +239,9 @@ namespace cgb
 			}
 
 			cgb::set_console_output_color(cgb::log_type::system, cgb::log_importance::important);
-			fmt::print("Logger thread terminating.");
+			std::cout << "Logger thread terminating.";
 			cgb::reset_console_output_color();
-			fmt::print("\n");
+			std::cout << std::endl;
 		});
 		static struct thread_stopper {
 			~thread_stopper() {
@@ -268,11 +268,11 @@ namespace cgb
 	void dispatch_log(log_pack pToBeLogged)
 	{
 		cgb::set_console_output_color(pToBeLogged.mLogType, pToBeLogged.mLogImportance);
-		fmt::print(pToBeLogged.mMessage);
+		std::cout << pToBeLogged.mMessage;
 #if defined(_WIN32) && defined (_DEBUG) && defined (PRINT_STACKTRACE)
 		if (pToBeLogged.mLogType == log_type::error) {
 			set_console_output_color_for_stacktrace(pToBeLogged.mLogType, pToBeLogged.mLogImportance);
-			fmt::print(get_current_callstack());
+			std::cout << get_current_callstack();
 		}
 #endif
 		cgb::reset_console_output_color();

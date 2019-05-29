@@ -48,7 +48,7 @@ namespace cgb
 		//   This constructor is the only exception, in all other cases, it's safe to use `add_event_handler`
 		//   
 		mEventHandlers.emplace_back([]() -> bool {
-			LOG_INFO("Running vulkan fully_init event handler");
+			LOG_INFO("Running event handler to pick physical device");
 
 			// Just get any window:
 			auto* window = context().find_window([](cgb::window* w) { 
@@ -64,8 +64,32 @@ namespace cgb
 			auto& surface = window->surface();
 
 			// Select the best suitable physical device which supports all requested extensions
-			context().pick_physical_device();
+			context().pick_physical_device(surface);
 
+		}, cgb::context_state::halfway_initialized);
+
+		mEventHandlers.emplace_back([]() -> bool {
+			LOG_INFO("Running event handler to create logical device");
+
+			// Just get any window:
+			auto* window = context().find_window([](cgb::window* w) { 
+				return w->handle().has_value() && static_cast<bool>(w->surface());
+			});
+
+			// Do we have a window with a handle?
+			if (nullptr == window) { 
+				return false; // Nope => not done
+			}
+
+			// We need a SURFACE to create the logical device => do it after the first window has been created
+			auto& surface = window->surface();
+
+			// Do we already have a physical device?
+			if (!context().physical_device()) {
+				return false; // Nope => wait a bit longer
+			}
+
+			// Alright => let's move on and finally finish Vulkan initialization
 			context().create_and_assign_logical_device(surface);
 
 		}, cgb::context_state::halfway_initialized);
@@ -143,7 +167,7 @@ namespace cgb
 	vulkan::~vulkan()
 	{
 		mContextState = cgb::context_state::about_to_finalize;
-		while (work_off_event_handlers() > 0u);
+		context().work_off_event_handlers();
 
 		// Destroy all descriptor pools before the queues and the device is destroyed
 		mDescriptorPools.clear();
@@ -181,7 +205,7 @@ namespace cgb
 		mInstance.destroy();
 	
 		mContextState = cgb::context_state::has_finalized;
-		while (work_off_event_handlers() > 0u);
+		context().work_off_event_handlers();
 	}
 
 	void vulkan::check_vk_result(VkResult err)
@@ -193,7 +217,7 @@ namespace cgb
 	{ 
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::composition_beginning;
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 		});
 	}
 
@@ -201,7 +225,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::composition_ending;
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 			context().mLogicalDevice.waitIdle();
 		});
 	}
@@ -210,7 +234,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::frame_begun;
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 		});
 		//mFrameCounter += 1;
 	
@@ -229,7 +253,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::frame_updates_done;
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 		});
 	}
 
@@ -237,7 +261,7 @@ namespace cgb
 	{
 		dispatch_to_main_thread([]() {
 			context().mContextState = cgb::context_state::frame_ended;
-			while (context().work_off_event_handlers() > 0u);
+			context().work_off_event_handlers();
 		});
 	}
 
@@ -265,7 +289,7 @@ namespace cgb
 	window* vulkan::create_window(const std::string& pTitle)
 	{
 		assert(are_we_on_the_main_thread());
-		while (work_off_event_handlers() > 0u);
+		context().work_off_event_handlers();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		auto* wnd = generic_glfw::prepare_window();
@@ -501,7 +525,7 @@ namespace cgb
 		return allExtensionsSupported;
 	}
 
-	void vulkan::pick_physical_device()
+	void vulkan::pick_physical_device(vk::SurfaceKHR pSurface)
 	{
 		assert(mInstance);
 		auto devices = mInstance.enumeratePhysicalDevices();
@@ -1235,6 +1259,9 @@ namespace cgb
 
 	void vulkan::set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo)
 	{
+
+		// TODO: OMG, not only compare the QUEUE INDICES, but also the QUEUE FAMILY INDICES ffs (oder evtl. sogar NUR die QUEUE FAMILY INDICES?)
+
 		if (graphics_queue_index() == transfer_queue_index()) {
 			pCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
 		}
