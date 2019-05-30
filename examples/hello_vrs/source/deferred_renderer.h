@@ -17,13 +17,14 @@ public:
 	deferred_renderer(std::vector<std::shared_ptr<cgb::vulkan_renderer>> dependentRenderers, std::shared_ptr<cgb::vulkan_render_queue> vulkanRenderQueue,
 		std::shared_ptr<cgb::vulkan_command_buffer_manager> drawCommandBufferManager, dynamic_image_resource targetImage, std::vector<dynamic_image_resource> additionalTargetImages,
 		vk::Viewport viewport, vk::Rect2D scissor, std::shared_ptr<cgb::vulkan_resource_bundle_layout> objectResourceBundleLayout, std::shared_ptr<cgb::vulkan_resource_bundle> lightsResourceBundle,
-		std::shared_ptr<cgb::vulkan_attribute_description_binding> materialAttr, std::shared_ptr<cgb::vulkan_resource_bundle_group> resourceBundleGroup);
+		std::shared_ptr<cgb::vulkan_attribute_description_binding> materialAttr, std::shared_ptr<cgb::vulkan_resource_bundle_group> resourceBundleGroup, 
+		std::vector<std::shared_ptr<cgb::vulkan_image>> vrsImages, cgb::quake_camera& camera);
 	virtual ~deferred_renderer();
 
 	void init_vulkan(std::vector<std::shared_ptr<cgb::vulkan_renderer>> dependentRenderers, std::shared_ptr<cgb::vulkan_render_queue> vulkanRenderQueue,
 		std::shared_ptr<cgb::vulkan_command_buffer_manager> drawCommandBufferManager, dynamic_image_resource targetImage, std::vector<dynamic_image_resource> additionalTargetImages,
 		vk::Viewport viewport, vk::Rect2D scissor, std::shared_ptr<cgb::vulkan_resource_bundle_layout> objectResourceBundleLayout, std::shared_ptr<cgb::vulkan_resource_bundle> lightsResourceBundle,
-		std::shared_ptr<cgb::vulkan_attribute_description_binding> materialAttr);
+		std::shared_ptr<cgb::vulkan_attribute_description_binding> materialAttr, std::vector<std::shared_ptr<cgb::vulkan_image>> vrsImages);
 
 	void draw(std::vector<cgb::vulkan_render_object*> renderObjects);
 
@@ -34,7 +35,8 @@ public:
 	void reload_shaders();
 
 private:
-	std::shared_ptr<cgb::vulkan_resource_bundle_group> mResourceBundleGroup;
+	std::shared_ptr<cgb::vulkan_resource_bundle_group> mResourceBundleGroup; 
+	cgb::quake_camera* mCamera;
 
 	std::unique_ptr<cgb::vulkan_drawer> mGeoPassDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mGeoPassPipeline;

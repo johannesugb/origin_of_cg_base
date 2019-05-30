@@ -495,7 +495,7 @@ private:
 		// TODO move this huge constructor into struct for deferred shading
 		mDefRend = std::make_shared<deferred_renderer>(dependentRenderers, mVulkanRenderQueue, drawCommandBufferManager, dynamic_image_resource{ colorImage, mPostProcImages },
 			std::vector<dynamic_image_resource> { dynamic_image_resource{ mVrsPrevRenderMsaaImage, mVrsPrevRenderImages }, dynamic_image_resource{ mMotionVectorMsaaImage, mMotionVectorImages } },
-			viewport, scissor, mMaterialObjectResourceBundleLayout, mGlobalResourceBundle, sponzaBinding, mResourceBundleGroup);
+			viewport, scissor, mMaterialObjectResourceBundleLayout, mGlobalResourceBundle, sponzaBinding, mResourceBundleGroup, vrsImages, mCamera);
 
 		mTAARenderer->add_predecessors({ mDefRend->get_final_renderer() });
 		//mTAARenderer->add_predecessors({ mRenderer });

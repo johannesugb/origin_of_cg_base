@@ -6,6 +6,15 @@
 #define PI 3.1415926535897932384626433832795
 
 // ######################## uniforms ########################
+
+layout(push_constant) uniform taa_prev_frame_data
+{
+    mat4 vPMatrix;
+	mat4 invPMatrix;
+	mat4 invVMatrix;
+	vec2 jitter;
+} pushConst;
+
 layout(set = 1, binding = 0) uniform sampler2D uNormalSampler;
 layout(set = 1, binding = 1) uniform sampler2D uAmbientSampler;
 layout(set = 1, binding = 2) uniform sampler2D uDiffSampler;
@@ -52,6 +61,7 @@ layout(set = 0, binding = 2) uniform uPointLightsBlock
 layout(location = 0) in VertexData
 {
 	vec4 positionVS;  /// viewRay used to compute view position from depth
+	vec2 aVertexTexCoord;
 } fs_in;
 // ----------------------------------------------
 
@@ -152,6 +162,14 @@ vec3 CalculateDiffuseAndSpecularIlluminationInVS(vec3 pos_vs, vec3 normal_vs, ve
 	return diffuse_and_specular;
 }
 
+vec3 NDCToWorld(vec3 posNDC)
+{
+	vec2 pos = posNDC.xy;
+	vec4 positionVS = pushConst.invPMatrix * vec4(pos.xy * 2 - 1, posNDC.z, 1.0);
+	vec3 position_vs = positionVS.xyz / positionVS.w;
+	return position_vs;
+}
+
 void main()
 {
 	vec2 uv = gl_FragCoord.xy;
@@ -161,7 +179,9 @@ void main()
 	vec3 position_vs = vec3(0);
 	// Optimization: Positions from depth
 	//float linearDepth = projScale / (depth - projA);
+	
 	position_vs = fs_in.positionVS.xyz; // * linearDepth;
+	position_vs = NDCToWorld(vec3(fs_in.aVertexTexCoord, depth));
 
 	// initialize data from g buffer attachments
 	vec3 normal_vs = vec3(FetchFromSampler(uNormalSampler, uv));

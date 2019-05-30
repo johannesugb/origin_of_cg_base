@@ -15,6 +15,7 @@ layout(push_constant) uniform taa_prev_frame_data
 layout(location = 0) out VertexData
 {
 	vec4 positionVS;
+	vec2 aVertexTexCoord;
 } v_out;
 
 void main()
