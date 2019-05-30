@@ -36,7 +36,7 @@ layout(set = 1, binding = 6) uniform sampler2D uNormalTexSampler;
 
 
 layout(set = 2, binding = 0) uniform UniformBufferObject {
-    mat4 model;
+    mat4 vmNormalMatrix;
     mat4 view;
     mat4 pMatrix;
 	mat4 mvp;

@@ -19,6 +19,9 @@
     <Filter Include="assets\chalet">
       <UniqueIdentifier>{429fa5bf-6ad9-4bbc-b579-c59f0fd54fba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\deferred">
+      <UniqueIdentifier>{283c0252-727c-44d0-a924-6e83903278ae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag">
@@ -97,6 +100,20 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\deferred\blinnphong_nm_geo.vert">
+      <Filter>shaders\deferred</Filter>
+    </None>
+    <None Include="@(NativeLibs)" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\deferred\lighting_pass.frag">
+      <Filter>shaders\deferred</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_vrs\shaders\deferred\lighting_pass.vert">
+      <Filter>shaders\deferred</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_vrs\shaders\deferred\blinnphong_nm_geo.frag">
+      <Filter>shaders\deferred</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
@@ -104,12 +121,15 @@
     <ClCompile Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_mas_compute_drawer.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\deferred_renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_mas_compute_drawer.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\deferred_renderer.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\common_structs.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\framework\assets\chalet\chalet.jpg">

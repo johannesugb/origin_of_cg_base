@@ -12,7 +12,7 @@ layout(push_constant) uniform PushUniforms
 } prevFrameData;
 
 layout(set = 2, binding = 0) uniform UniformBufferObject {
-    mat4 model;
+    mat4 vmNormalMatrix;
     mat4 view;
     mat4 pMatrix;
 	mat4 mvp;

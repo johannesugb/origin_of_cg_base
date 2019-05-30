@@ -29,6 +29,8 @@ namespace cgb {
 		// manually submit renderer, not needed for OpenGl, done automatically on end_frame or if rendering a successor
 		void submit_render();
 
+		void add_predecessors(std::vector<std::shared_ptr<vulkan_renderer>> predecessors) { mPredecessors.insert(mPredecessors.end(), predecessors.begin(), predecessors.end()); };
+
 	private:
 		std::shared_ptr<vulkan_image_presenter> mImagePresenter;
 		std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;

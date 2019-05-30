@@ -57,6 +57,7 @@ namespace cgb {
 	class vulkan_framebuffer;
 	class vulkan_memory_manager;
 	class vulkan_command_buffer_manager;
+	class vulkan_image;
 
 	struct SwapChainSupportDetails {
 		vk::SurfaceCapabilitiesKHR capabilities;
@@ -110,7 +111,8 @@ namespace cgb {
 		vk::DispatchLoaderDynamic dynamicDispatchInstance;
 		vk::DispatchLoaderDynamic dynamicDispatchInstanceDevice;
 
-		std::shared_ptr<vulkan_command_buffer_manager> transferCommandBufferManager;
+		std::shared_ptr<vulkan_command_buffer_manager> transferCommandBufferManager; 
+		std::shared_ptr<vulkan_image> defaultDepthImage;
 
 		static vulkan_context& instance()
 		{

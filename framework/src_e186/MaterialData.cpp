@@ -252,7 +252,7 @@ namespace cgb
 		if (!m_reflection_tex) { m_reflection_tex = whiteTex; }
 		if (!m_lightmap_tex) { m_lightmap_tex = whiteTex; }
 
-
+		// TODO replace numbers with constants
 		resourceBundle->add_buffer_resource(0, mMaterialBuffer, bufferSize);
 		if (m_diffuse_tex) { resourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, m_diffuse_tex); }
 		if (m_specular_tex) { resourceBundle->add_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, m_specular_tex); }

@@ -13,7 +13,7 @@ layout(binding = 1) uniform sampler2D prevFrame;
 layout(binding = 2) uniform sampler2D motionVecTex;
 layout(binding = 3) uniform sampler2D shadingRateTex;
 
-layout(push_constant) uniform PushUniforms
+layout(push_constant) uniform taa_prev_frame_data
 {
     mat4 vPMatrix;
 	mat4 invPMatrix;

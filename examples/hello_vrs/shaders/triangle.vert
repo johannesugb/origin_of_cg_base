@@ -2,10 +2,12 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(binding = 0) uniform UniformBufferObject {
-    mat4 model;
+    mat4 vmNormalMatrix;
     mat4 view;
-    mat4 proj;
+    mat4 pMatrix;
 	mat4 mvp;
+	mat4 vmMatrix;
+	vec2 frameOffset;
 } ubo;
 
 layout(push_constant) uniform PushUniforms

@@ -56,7 +56,9 @@ namespace cgb {
 			commandBuffer.bindIndexBuffer(renderObject->get_index_buffer(), 0, vk::IndexType::eUint32);
 
 			auto descriptorSets = get_descriptor_sets(renderObject->get_resource_bundles());
-			commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), globalDescriptorSets.size(), descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+			if (descriptorSets.size() > 0) {
+				commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline->get_pipeline_layout(), globalDescriptorSets.size(), descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+			}
 
 			if (mPipeline->get_push_constant_size() > 0) {
 				commandBuffer.pushConstants(

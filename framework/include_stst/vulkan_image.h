@@ -9,7 +9,7 @@ namespace cgb {
 	class vulkan_image
 	{
 	public:
-		vulkan_image(void* pixels, int texWidth, int texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
+		vulkan_image(void* pixels, uint32_t texWidth, uint32_t texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
 
 		vulkan_image(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
 			vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
@@ -56,7 +56,7 @@ namespace cgb {
 
 		std::shared_ptr<vulkan_command_buffer_manager> mCommandBufferManager;
 
-		void create_texture_image(void * pixels, int texWidth, int texHeight, int texChannels);
+		void create_texture_image(void * pixels, uint32_t texWidth, uint32_t texHeight, int texChannels);
 		void create_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
 			vk::MemoryPropertyFlags properties, vk::Image & image, vulkan_memory & imageMemory);
 		bool has_stencil_component(vk::Format format);

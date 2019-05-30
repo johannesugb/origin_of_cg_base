@@ -7,7 +7,7 @@
 #include "vulkan_memory_manager.h"
 
 namespace cgb {
-	vulkan_image::vulkan_image(void* pixels, int texWidth, int texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
+	vulkan_image::vulkan_image(void* pixels, uint32_t texWidth, uint32_t texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
 		mCommandBufferManager(commandBufferManager), mTexWidth(texWidth), mTexHeight(texHeight), mTtexChannels(texChannels)
 	{
 		create_texture_image(pixels, texWidth, texHeight, texChannels);
@@ -31,7 +31,7 @@ namespace cgb {
 		vulkan_context::instance().memoryManager->free_memory(mImageMemory);
 	}
 
-	void vulkan_image::create_texture_image(void* pixels, int texWidth, int texHeight, int texChannels) {
+	void vulkan_image::create_texture_image(void* pixels, uint32_t texWidth, uint32_t texHeight, int texChannels) {
 		mMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
 		if (!pixels) {
