@@ -50,7 +50,8 @@ void deferred_renderer::init_vulkan(std::vector<std::shared_ptr<cgb::vulkan_rend
 	mGeoPassFramebuffer->add_dynamic_color_attachment(mAmbientMsaaImage, mAmbientImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 	mGeoPassFramebuffer->add_dynamic_color_attachment(mSpecularMsaaImage, mSpecularImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 	mGeoPassFramebuffer->add_dynamic_color_attachment(mDiffuseMsaaImage, mDiffuseImages, vk::ImageLayout::eShaderReadOnlyOptimal);
-	mGeoPassFramebuffer->set_depth_attachment(cgb::vulkan_context::instance().defaultDepthImage, vk::ImageLayout::eShaderReadOnlyOptimal);
+	mGeoPassFramebuffer->set_depth_attachment(cgb::vulkan_context::instance().defaultDepthImage, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eUndefined, vk::AttachmentLoadOp::eClear,
+		vk::AttachmentStoreOp::eStore);
 	for (auto addTargetImg : additionalTargetImages) {
 		mGeoPassFramebuffer->add_dynamic_color_attachment(addTargetImg.colorImage, addTargetImg.resolveColorImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 	}

@@ -174,7 +174,8 @@ void main()
 {
 	vec2 uv = gl_FragCoord.xy;
 
-	float depth = FetchFromSampler(uDepthSampler, uv).r;
+	
+	float depth = texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; FetchFromSampler(uDepthSampler, uv).r;
 	
 	vec3 position_vs = vec3(0);
 	// Optimization: Positions from depth
@@ -193,7 +194,8 @@ void main()
 
 	// add all together
 	oFragColor = vec4(ambient + emissive + diffuse_and_specular, 1.0);
-
+	//oFragColor = vec4(depth);
+	
 	//vec4 texCol = FetchFromSampler(uColorSampler, uv);
 	//oFragColor = texCol;
 	gl_FragDepth = depth;
