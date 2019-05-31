@@ -587,6 +587,7 @@ private:
 
 	void cleanup()
 	{
+		mDefRend.reset();
 		cleanupSwapChain();
 
 		mResourceBundleGroup.reset();

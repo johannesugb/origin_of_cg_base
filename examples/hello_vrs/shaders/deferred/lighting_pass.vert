@@ -26,5 +26,6 @@ void main()
 	// Optimization: Positions from depth
 	vec4 positionVS = pushConst.invPMatrix * aVertexPosition;
 	v_out.positionVS = positionVS; //vec3(positionVS.xy / positionVS.z, 1.0f) * -1; // view rays are facing to the camera due to negative z axis, inverting here solves the problem
+	v_out.aVertexTexCoord = aVertexTexCoord;
 }
 

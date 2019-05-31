@@ -162,7 +162,7 @@ vec3 CalculateDiffuseAndSpecularIlluminationInVS(vec3 pos_vs, vec3 normal_vs, ve
 	return diffuse_and_specular;
 }
 
-vec3 NDCToWorld(vec3 posNDC)
+vec3 NDCToView(vec3 posNDC)
 {
 	vec2 pos = posNDC.xy;
 	vec4 positionVS = pushConst.invPMatrix * vec4(pos.xy * 2 - 1, posNDC.z, 1.0);
@@ -182,7 +182,7 @@ void main()
 	//float linearDepth = projScale / (depth - projA);
 	
 	position_vs = fs_in.positionVS.xyz; // * linearDepth;
-	position_vs = NDCToWorld(vec3(fs_in.aVertexTexCoord, depth));
+	position_vs = NDCToView(vec3(fs_in.aVertexTexCoord, depth));
 
 	// initialize data from g buffer attachments
 	vec3 normal_vs = vec3(FetchFromSampler(uNormalSampler, uv));
@@ -194,7 +194,7 @@ void main()
 
 	// add all together
 	oFragColor = vec4(ambient + emissive + diffuse_and_specular, 1.0);
-	//oFragColor = vec4(depth);
+	//oFragColor = vec4(position_vs/ 100, 1.0);
 	
 	//vec4 texCol = FetchFromSampler(uColorSampler, uv);
 	//oFragColor = texCol;
