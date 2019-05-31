@@ -3,7 +3,7 @@
 namespace cgb
 {
 	// Define LOGGING_ON_SEPARATE_THREAD to have all the logging being transmitted and performed by a separate thread
-	//#define LOGGING_ON_SEPARATE_THREAD
+	#define LOGGING_ON_SEPARATE_THREAD
 
 	// LOG-LEVELS:
 	// 0 ... nothing (except debug messages in DEBUG-mode)
@@ -12,7 +12,7 @@ namespace cgb
 	// 3 ... errors, warnings and infos
 	// 4 ... everything
 	#if !defined(LOG_LEVEL)
-	#define LOG_LEVEL 4
+	#define LOG_LEVEL 0
 	#endif
 
 	enum struct log_type

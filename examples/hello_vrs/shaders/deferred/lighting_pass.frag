@@ -139,8 +139,8 @@ vec3 CalculateDiffuseAndSpecularIlluminationInVS(vec3 pos_vs, vec3 normal_vs, ve
 	// directional light
 	vec3 to_light_dir_vs = -uDirectionalLight.direction.xyz;
 	vec3 dl_intensity = uDirectionalLight.color.rgb;
-	//diffuse_and_specular += dl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_light_dir_vs, to_eye_nrm_vs, normal_vs, diff, spec, shini);
-	diffuse_and_specular += CalcPhysicallyBasedLighting(to_light_dir_vs, to_eye_nrm_vs, normal_vs, diff, 1/100.0f, dl_intensity, shini);
+	diffuse_and_specular += dl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_light_dir_vs, to_eye_nrm_vs, normal_vs, diff, spec, shini);
+	//diffuse_and_specular += CalcPhysicallyBasedLighting(to_light_dir_vs, to_eye_nrm_vs, normal_vs, diff, 1/100.0f, dl_intensity, shini);
 
 
 	// multiple point lights
@@ -194,7 +194,7 @@ void main()
 
 	// add all together
 	oFragColor = vec4(ambient + emissive + diffuse_and_specular, 1.0);
-	//oFragColor = vec4(position_vs/ 100, 1.0);
+	//oFragColor = vec4(position_vs.z/ 100, position_vs.z/ 100,0, 1.0);
 	
 	//vec4 texCol = FetchFromSampler(uColorSampler, uv);
 	//oFragColor = texCol;

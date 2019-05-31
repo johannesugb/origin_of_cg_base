@@ -41,6 +41,8 @@
 #define VRS_CAS 0
 #define VRS_MAS 1
 
+#define DEFERRED_SHADING 1
+
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
 
@@ -492,15 +494,18 @@ private:
 
 		auto sponzaBinding = std::shared_ptr<cgb::vulkan_attribute_description_binding>(new cgb::vulkan_attribute_description_binding(mesh.GetOrCreateForVertexAttribConfig(attrib_config)));
 
+#if DEFERRED_SHADING
+
 		// TODO move this huge constructor into struct for deferred shading
 		mDefRend = std::make_shared<deferred_renderer>(dependentRenderers, mVulkanRenderQueue, drawCommandBufferManager, dynamic_image_resource{ colorImage, mPostProcImages },
 			std::vector<dynamic_image_resource> { dynamic_image_resource{ mVrsPrevRenderMsaaImage, mVrsPrevRenderImages }, dynamic_image_resource{ mMotionVectorMsaaImage, mMotionVectorImages } },
 			viewport, scissor, mMaterialObjectResourceBundleLayout, mGlobalResourceBundle, sponzaBinding, mResourceBundleGroup, vrsImages, mCamera);
 
 		mTAARenderer->add_predecessors({ mDefRend->get_final_renderer() });
-		//mTAARenderer->add_predecessors({ mRenderer });
-
 		mDefRend->allocate_resources();
+#else
+		mTAARenderer->add_predecessors({ mRenderer });
+#endif // DEFERRED_SHADING
 
 		mSponzaModel->allocate_render_object_data();
 		mParallelPipesModel->allocate_render_object_data();
@@ -587,7 +592,9 @@ private:
 
 	void cleanup()
 	{
+#if DEFERRED_SHADING
 		mDefRend.reset();
+#endif // DEFERRED_SHADING
 		cleanupSwapChain();
 
 		mResourceBundleGroup.reset();
@@ -804,11 +811,14 @@ private:
 		for (auto parallelPipesRenderObject : mParallelPipesModel->get_render_objects()) {
 			renderObjects.push_back(parallelPipesRenderObject.get());
 		}
-		mDefRend->draw(renderObjects);
-		//mRenderer->render({ renderObjects }, mMaterialDrawer.get());		
-		
+
 		//cgb::vulkan_context::instance().currentFrame = oldFrameIdx;
 
+#if DEFERRED_SHADING
+		mDefRend->draw(renderObjects);
+#else
+		mRenderer->render({ renderObjects }, mMaterialDrawer.get());		
+#endif // DEFERRED_SHADING
 
 		// TAA pass
 		int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
