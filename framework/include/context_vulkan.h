@@ -217,12 +217,6 @@ namespace cgb
 		 */
 		uint32_t find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties);
 
-		/** Sets the sharing mode parameter on the given @ref vk::BufferCreateInfo struct.
-		 *	If there are two distinct queue families, concurrent sharing mode will be set for both queues,
-		 *	if there is only one queue family to handle transfer and graphics, sharing mode will be set to exclusive.
-		 */
-		void set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo);
-
 		descriptor_pool& get_descriptor_pool();
 
 		std::vector<descriptor_set> create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData);

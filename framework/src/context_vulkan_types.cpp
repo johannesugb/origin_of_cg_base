@@ -708,62 +708,6 @@ namespace cgb
 		mCommandBuffer.endRenderPass();
 	}
 
-	buffer::buffer() noexcept
-		: mSize{ 0u }
-		, mBufferFlags{}
-		, mBuffer{ nullptr }
-		, mMemoryProperties{}
-		, mMemory{ nullptr }
-	{ }
-
-	buffer::buffer(size_t pSize, const vk::BufferUsageFlags& pBufferFlags, const vk::Buffer& pBuffer, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory) noexcept
-		: mSize{ pSize }
-		, mBufferFlags{ pBufferFlags }
-		, mBuffer{ pBuffer }
-		, mMemoryProperties{ pMemoryProperties }
-		, mMemory{ pMemory }
-	{ }
-
-	buffer::buffer(buffer&& other) noexcept
-		: mSize{ std::move(other.mSize) }
-		, mBufferFlags{ std::move(other.mBufferFlags) }
-		, mBuffer{ std::move(other.mBuffer) }
-		, mMemoryProperties{ std::move(other.mMemoryProperties) }
-		, mMemory{ std::move(other.mMemory) }
-	{ 
-		other.mSize = 0;
-		other.mBufferFlags = {};
-		other.mBuffer = nullptr;
-		other.mMemoryProperties = {};
-		other.mMemory = nullptr;
-	}
-
-	buffer& buffer::operator=(buffer&& other) noexcept
-	{
-		mSize = std::move(other.mSize);
-		mBufferFlags = std::move(other.mBufferFlags);
-		mBuffer = std::move(other.mBuffer);
-		mMemoryProperties = std::move(other.mMemoryProperties);
-		mMemory = std::move(other.mMemory);
-		other.mSize = 0u;
-		other.mBufferFlags = {};
-		other.mBuffer = nullptr;
-		other.mMemoryProperties = {};
-		other.mMemory = nullptr;
-		return *this;
-	}
-
-	buffer::~buffer()
-	{
-		if (mBuffer) {
-			context().logical_device().destroyBuffer(mBuffer);
-			mBuffer = nullptr;
-		}
-		if (mMemory) {
-			context().logical_device().freeMemory(mMemory);
-			mMemory = nullptr;
-		}
-	}
 
 	buffer buffer::create(size_t pBufferSize, vk::BufferUsageFlags pUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
 	{

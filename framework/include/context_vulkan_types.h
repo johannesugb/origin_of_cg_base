@@ -73,9 +73,40 @@ namespace cgb
 	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
 	extern bool has_stencil_component(const image_format& pImageFormat);
 
+	/** Specifies for a buffer, where the buffer's memory will be located */
+	enum struct memory_location
+	{
+		/** Buffer's memory will be on the host and in "host coherent" mode */
+		host_coherent,
+		/** Buffer's memory will be on the host and in "host cached" mode */
+		host_cached,
+		/** Buffer's memory is on the GPU */
+		device,
+		/** Buffer's memory is on the GPU with "protected mode" set */
+		device_protected
+	};
+
+	/** Specifies how a buffer is going to be used. The "dynamic" versions 
+	 *	usually imply that there will be many instances of the buffer;
+	 *	e.g., more specifically, one buffer for each swap chain image, if 
+	 *	      the buffer_usage is set to `dynamic_for_render`
+	 */
+	enum struct buffer_usage
+	{
+		/** Write once and never modify again */
+		static_only,
+		/** Read and write constantly, but only have one instance. */
+		dynamic_singleton,
+		/** Dynamic buffer with as many copies as there are swap chain images */
+		dynamic_for_render,
+		/** Dynamic buffer with a configurable number of copies */
+		dynamic_for_update
+	};
+
 	/** Struct which stores data for a swap chain */
 	struct swap_chain_data
 	{
+		window* mWindow;
 		window* mWindow;
 		vk::SurfaceKHR mSurface;
 		vk::SwapchainKHR mSwapChain;
@@ -204,64 +235,64 @@ namespace cgb
 	/** Represents a Vulkan buffer along with its assigned memory, holds the 
 	 *	native handle and takes care about lifetime management of the native handles.
 	 */
+	template <typename Cfg>
 	struct buffer
 	{
-		buffer() noexcept;
-		buffer(size_t, const vk::BufferUsageFlags&, const vk::Buffer&, const vk::MemoryPropertyFlags&, const vk::DeviceMemory&) noexcept;
+		buffer() noexcept = default;
 		buffer(const buffer&) = delete;
-		buffer(buffer&&) noexcept;
+		buffer(buffer&&) noexcept = default;
 		buffer& operator=(const buffer&) = delete;
-		buffer& operator=(buffer&&) noexcept;
-		~buffer();
+		buffer& operator=(buffer&&) noexcept = default;
+		~buffer() {
+			for (auto& inst : mInstances) {
+				if (std::get<vk::Buffer>(inst)) {
+					context().logical_device().destroyBuffer(std::get<vk::Buffer>(inst));
+					std::get<vk::Buffer>(inst) = nullptr;
+				}
+				if (std::get<vk::Memory>(inst)) {
+					context().logical_device().freeMemory(std::get<vk::Memory>(inst));
+					std::get<vk::Memory>(inst) = nullptr;
+				}
+			}
+		}
+
+		auto size_at(size_t index)				{ return std::get<size_t>(mInstances[index]); }
+		auto usage_flags_at(size_t index)		{ return std::get<vk::BufferUsageFlags>(mInstances[index]); }
+		auto buffer_at(size_t index)			{ return std::get<vk::Buffer>(mInstances[index]); }
+		auto memory_properties_at(size_t index) { return std::get<vk::MemoryPropertyFlags>(mInstances[index]); }
+		auto memory_at(size_t index)			{ return std::get<vk::DeviceMemory>(mInstances[index]); }
+		auto config_at(size_t index)			{ return std::get<Cfg>(mInstances[index]); }
+		auto size()								{ return size_at(0); }
+		auto usage_flags()						{ return usage_flags_at(0); }
+		auto buffer()							{ return buffer_at(0); }
+		auto memory_properties()				{ return memory_properties_at(0); }
+		auto memory()							{ return memory_at(0); }
+		auto config()							{ return config_at(0); }
 
 		static buffer create(size_t pBufferSize, vk::BufferUsageFlags pUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
 		void fill_host_coherent_memory(const void* pData, std::optional<size_t> pSize = std::nullopt);
 
-		size_t mSize;
-		vk::BufferUsageFlags mBufferFlags;
-		vk::Buffer mBuffer;
-		vk::MemoryPropertyFlags mMemoryProperties;
-		vk::DeviceMemory mMemory;
+		const Cfg& config_parameters() { return mConfig; }
+
+		// mSize, mBufferFlags, mBuffer, mMemoryProperties, mMemory, config-type
+		std::vector<std::tuple<size_t, vk::BufferUsageFlags, vk::Buffer, vk::MemoryPropertyFlags, vk::DeviceMemory, Cfg>> mInstances;
 	};
 	
 	extern void copy(const buffer& pSource, const buffer& pDestination);
 	
-	struct vertex_buffer : public buffer
+	struct vertex_buffer
 	{
-		vertex_buffer() noexcept;
-		vertex_buffer(const vertex_buffer&) = delete;
-		vertex_buffer(vertex_buffer&&) noexcept;
-		vertex_buffer& operator=(const vertex_buffer&) = delete;
-		vertex_buffer& operator=(vertex_buffer&&) noexcept;
-
-		static vertex_buffer create(size_t pVertexDataSize, size_t pVertexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
-
 		uint32_t mVertexCount;
 	};
 
-	struct index_buffer : public buffer
+	struct index_buffer
 	{
-		index_buffer() noexcept;
-		index_buffer(const index_buffer&) = delete;
-		index_buffer(index_buffer&&) noexcept;
-		index_buffer& operator=(const index_buffer&) = delete;
-		index_buffer& operator=(index_buffer&&) noexcept;
-
-		static index_buffer create(vk::IndexType pIndexType, size_t pIndexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
-
 		vk::IndexType mIndexType;
 		uint32_t mIndexCount;
 	};
 
-	struct uniform_buffer : public buffer
+	struct uniform_buffer
 	{
-		uniform_buffer() noexcept;
-		uniform_buffer(const uniform_buffer&) = delete;
-		uniform_buffer(uniform_buffer&&) noexcept;
-		uniform_buffer& operator=(const uniform_buffer&) = delete;
-		uniform_buffer& operator=(uniform_buffer&&) noexcept;
-
-		static uniform_buffer create(size_t pBufferSize, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
 	};
 
 	struct descriptor_pool

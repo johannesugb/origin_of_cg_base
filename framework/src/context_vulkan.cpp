@@ -1257,21 +1257,6 @@ namespace cgb
 		throw std::runtime_error("failed to find suitable memory type!");
 	}
 
-	void vulkan::set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo)
-	{
-
-		// TODO: OMG, not only compare the QUEUE INDICES, but also the QUEUE FAMILY INDICES ffs (oder evtl. sogar NUR die QUEUE FAMILY INDICES?)
-
-		if (graphics_queue_index() == transfer_queue_index()) {
-			pCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
-		}
-		else {
-			pCreateInfo.setSharingMode(vk::SharingMode::eConcurrent);
-			pCreateInfo.setQueueFamilyIndexCount(static_cast<uint32_t>(mAllUsedQueueFamilyIndices.size()));
-			pCreateInfo.setPQueueFamilyIndices(mAllUsedQueueFamilyIndices.data());
-		}
-	}
-
 	descriptor_pool& vulkan::get_descriptor_pool()
 	{
 		if (mDescriptorPools.size() == 0) {
