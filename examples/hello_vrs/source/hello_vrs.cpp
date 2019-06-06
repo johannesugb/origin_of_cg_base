@@ -370,6 +370,9 @@ private:
 		vrsDebugResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsDebugImages);
 
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			createVrsComputeDescriptorPool();
+			createVrsDescriptorSets();
+			
 			drawer->set_vrs_images(vrsImages);
 
 			// Compute Drawer and Pipeline
@@ -401,8 +404,6 @@ private:
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mMotionVectorImages, mVrsMasMotionVecBlitImages);
 			mVrsMasComputeDrawer->set_vrs_images(vrsImages);
 
-			createVrsComputeDescriptorPool();
-			createVrsDescriptorSets();
 			mVrsCasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 			mVrsMasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 		}
@@ -784,6 +785,7 @@ private:
 			auto mParallelPipesObj = mParallelPipesModel->get_render_objects()[i];
 			uboCam.mv = uboCam.view * model;
 			uboCam.mvp = uboCam.proj * uboCam.mv;
+			uboCam.vmNormalMatrix = glm::mat4(glm::inverseTranspose(glm::mat3(uboCam.mv)));
 			prevFrameModel = model;
 
 			mParallelPipesObj->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);

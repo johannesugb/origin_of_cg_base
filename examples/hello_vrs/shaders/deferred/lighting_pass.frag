@@ -198,6 +198,7 @@ void main()
 	
 	//vec4 texCol = FetchFromSampler(uColorSampler, uv);
 	//oFragColor = texCol;
+	//oFragColor = vec4(normal_vs, 1);
 	gl_FragDepth = depth;
 }
 

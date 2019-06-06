@@ -89,7 +89,9 @@ void deferred_renderer::init_vulkan(std::vector<std::shared_ptr<cgb::vulkan_rend
 	mLightingPassPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/deferred/lighting_pass.frag.spv");
 	mLightingPassPipeline->bake();
 	mLightingPassDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mLightingPassPipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { lightsResourceBundle, mGeoBufferResourceBundle });
-
+	if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+		mLightingPassDrawer->set_vrs_images(vrsImages);
+	}
 }
 
 void deferred_renderer::draw(std::vector<cgb::vulkan_render_object*> renderObjects) {
