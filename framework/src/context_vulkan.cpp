@@ -742,14 +742,19 @@ namespace cgb
 			context().mComputeQueue		= device_queue::create(*computeQueue);
 			context().mTransferQueue	= device_queue::create(*transferQueue);
 
-			// Uniqueify queue family indices:
+			// Determine distinct queue family indices and distinct (family-id, queue-id)-tuples:
 			std::set<uint32_t> uniqueFamilyIndices;
+			std::set<std::tuple<uint32_t, uint32_t>> uniqueQueues;
 			for (auto q : device_queue::sPreparedQueues) {
 				uniqueFamilyIndices.insert(q.family_index());
+				uniqueQueues.insert(std::make_tuple(q.family_index(), q.queue_index()));
 			}
 			// Put into contiguous memory
-			for (auto fi : uniqueFamilyIndices) {
-				context().mAllUsedQueueFamilyIndices.push_back(fi);
+			for (auto idx : uniqueFamilyIndices) {
+				context().mDistinctQueueFamilies.push_back(idx);
+			}
+			for (auto tpl : uniqueQueues) {
+				context().mDistinctQueues.push_back(tpl);
 			}
 
 			context().mContextState = cgb::context_state::fully_initialized;
@@ -1248,7 +1253,7 @@ namespace cgb
 		// when VRAM runs out. The different types of memory exist within these heaps. Right now we'll 
 		// only concern ourselves with the type of memory and not the heap it comes from, but you can 
 		// imagine that this can affect performance.
-		auto memProperties = mPhysicalDevice.getMemoryProperties();
+		auto memProperties = physical_device().getMemoryProperties();
 		for (auto i = 0u; i < memProperties.memoryTypeCount; ++i) {
 			if ((pMemoryTypeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & pMemoryProperties) == pMemoryProperties) {
 				return i;

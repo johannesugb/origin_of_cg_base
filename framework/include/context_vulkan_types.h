@@ -103,6 +103,16 @@ namespace cgb
 		dynamic_for_update
 	};
 
+	/** Additional information for some cgb::buffer_usage settings */
+	struct buffer_usage_details
+	{
+		static buffer_usage_details from_swap_chain(window* pWindow);
+		static buffer_usage_details from_main_window();
+		static buffer_usage_details from_num_buffers(uint32_t pNumBuffers);
+
+		uint32_t mNumBuffers;
+	};
+
 	/** Struct which stores data for a swap chain */
 	struct swap_chain_data
 	{
@@ -231,6 +241,9 @@ namespace cgb
 		vk::CommandPool mCommandPool;
 	};
 
+	// Just a stub for the great create-functions which there are to come
+	template <typename I, typename O>
+	O create();
 
 	/** Represents a Vulkan buffer along with its assigned memory, holds the 
 	 *	native handle and takes care about lifetime management of the native handles.
@@ -256,44 +269,149 @@ namespace cgb
 			}
 		}
 
-		auto size_at(size_t index)				{ return std::get<size_t>(mInstances[index]); }
-		auto usage_flags_at(size_t index)		{ return std::get<vk::BufferUsageFlags>(mInstances[index]); }
-		auto buffer_at(size_t index)			{ return std::get<vk::Buffer>(mInstances[index]); }
-		auto memory_properties_at(size_t index) { return std::get<vk::MemoryPropertyFlags>(mInstances[index]); }
-		auto memory_at(size_t index)			{ return std::get<vk::DeviceMemory>(mInstances[index]); }
-		auto config_at(size_t index)			{ return std::get<Cfg>(mInstances[index]); }
-		auto size()								{ return size_at(0); }
-		auto usage_flags()						{ return usage_flags_at(0); }
-		auto buffer()							{ return buffer_at(0); }
-		auto memory_properties()				{ return memory_properties_at(0); }
-		auto memory()							{ return memory_at(0); }
-		auto config()							{ return config_at(0); }
+		auto size_at(size_t index) const				{ return std::get<size_t>(mInstances[index]); }
+		auto usage_flags_at(size_t index) const			{ return std::get<vk::BufferUsageFlags>(mInstances[index]); }
+		auto buffer_at(size_t index) const				{ return std::get<vk::Buffer>(mInstances[index]); }
+		auto memory_properties_at(size_t index) const	{ return std::get<vk::MemoryPropertyFlags>(mInstances[index]); }
+		auto memory_at(size_t index) const				{ return std::get<vk::DeviceMemory>(mInstances[index]); }
+		auto config_at(size_t index) const				{ return std::get<Cfg>(mInstances[index]); }
+		auto size() const								{ return size_at(0); }
+		auto usage_flags() const						{ return usage_flags_at(0); }
+		auto buffer() const								{ return buffer_at(0); }
+		auto memory_properties() const					{ return memory_properties_at(0); }
+		auto memory() const								{ return memory_at(0); }
+		auto config() const								{ return config_at(0); }
 
 		static buffer create(size_t pBufferSize, vk::BufferUsageFlags pUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
 		void fill_host_coherent_memory(const void* pData, std::optional<size_t> pSize = std::nullopt);
 
-		const Cfg& config_parameters() { return mConfig; }
-
 		// mSize, mBufferFlags, mBuffer, mMemoryProperties, mMemory, config-type
 		std::vector<std::tuple<size_t, vk::BufferUsageFlags, vk::Buffer, vk::MemoryPropertyFlags, vk::DeviceMemory, Cfg>> mInstances;
 	};
-	
 	extern void copy(const buffer& pSource, const buffer& pDestination);
 	
-	struct vertex_buffer
+	/** This struct contains information for a staging buffer which is a temporary buffer 
+	 *	usually used to transfer data from the CPU side to the GPU side.
+	 */
+	struct staging_buffer
 	{
-		uint32_t mVertexCount;
+		size_t total_size() const { return mSize; }
+		size_t mSize;
 	};
 
+	/**	This struct contains information for a buffer which is intended to be used as 
+	 *	vertex buffer, i.e. vertex attributes provided to a shader.
+	 */
+	struct vertex_buffer
+	{
+		size_t size_one_element() const { return mSizeOneElement; }
+		size_t num_elements() const { return mNumElements; }
+		size_t total_size() const { return size_one_element() * num_elements(); }
+
+		size_t mSizeOneElement;
+		size_t mNumElements;
+	};
+
+	/**	This struct contains information for a buffer which is intended to be used as 
+	*	index buffer.
+	*/
 	struct index_buffer
 	{
+		size_t size_one_element() const 
+		{
+			switch (mIndexType) {
+			case vk::IndexType::eUint16:
+				return sizeof(uint16_t);
+			case vk::IndexType::eUint32:
+				return sizeof(uint32_t);
+			case vk::IndexType::eNoneNV:
+				return 0;
+			default:
+				throw std::runtime_error("Unsupported vk::IndexType");
+			}
+		}
+		size_t num_elements() const { return static_cast<size_t>(mIndexCount); }
+		size_t total_size() const { return size_one_element() * num_elements(); }
+
 		vk::IndexType mIndexType;
 		uint32_t mIndexCount;
 	};
 
+	/** This struct contains information for a uniform buffer.
+	*/
 	struct uniform_buffer
 	{
+		size_t total_size() const { return mSize; }
+		size_t mSize;
 	};
+
+	/**	Create (multiple) buffers which are all created with exclusive access for a queue.
+	 *	If different queues are being used, ownership has to be transferred explicitely.
+	 */
+	template <typename Cfg>
+	cgb::buffer<Cfg> create(Cfg pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, size_t pNumBuffers)
+	{
+		cgb::buffer<Cfg> b;
+		for (size_t i = 0; i < pNumBuffers; ++i) {
+			auto bufferSize = pConfig.total_size();
+
+			// Create (possibly multiple) buffer(s):
+			auto bufferCreateInfo = vk::BufferCreateInfo()
+				.setSize(static_cast<vk::DeviceSize>(bufferSize))
+				.setUsage(pBufferUsage)
+				// Always grant exclusive ownership to the queue.
+				.setSharingMode(vk::SharingMode::eExclusive)
+				// The flags parameter is used to configure sparse buffer memory, which is not relevant right now. We'll leave it at the default value of 0. [2]
+				.setFlags(vk::BufferCreateFlags()); 
+
+			// Create the buffer on the logical device
+			auto vkBuffer = context().logical_device().createBuffer(bufferCreateInfo);
+
+			// The buffer has been created, but it doesn't actually have any memory assigned to it yet. 
+			// The first step of allocating memory for the buffer is to query its memory requirements [2]
+			auto memRequirements = context().logical_device().getBufferMemoryRequirements(vkBuffer);
+
+			auto allocInfo = vk::MemoryAllocateInfo()
+				.setAllocationSize(memRequirements.size)
+				.setMemoryTypeIndex(context().find_memory_type_index(
+					memRequirements.memoryTypeBits, 
+					pMemoryProperties));
+
+			// Allocate the memory for the buffer:
+			auto vkMemory = context().logical_device().allocateMemory(allocInfo);
+
+			b.mInstances.push_back(std::make_tuple(bufferSize, pBufferUsage, vkBuffer, pMemoryProperties, vkMemory, pConfig));
+		}
+		return b;
+	}
+
+	/**	Return value of a create-function which creates one or multiple buffers.
+	 *	These buffers can potentially also require some semaphores which you have to use in order to wait
+	 *	for data transfer completion. You'll always get some semaphores back if you allocate memory on the 
+	 */
+	template <typename Cfg>
+	struct buffer_and_semaphores
+	{
+		cgb::buffer<Cfg> mBuffer;
+		std::vector<cgb::semaphore> mSemaphores;
+	};
+
+	template <typename Cfg>
+	buffer_and_semaphores<Cfg> create(Cfg pConfig, cgb::memory_location pMemoryLocation, cgb::buffer_usage pUsage, const void* pData)
+	{
+		buffer_and_semaphores<Cfg> result;
+
+		auto bufferSize = pConfig.total_size();
+		
+
+		cgb::create(cgb::staging_buffer{ bufferSize }, )
+		// TODO: Create a staging buffer, fill it (maybe with flush?)
+		// Create another device buffer
+		// Create the staging buffer contents into device buffer
+
+		return result;
+	}
+	
 
 	struct descriptor_pool
 	{
@@ -475,12 +593,27 @@ namespace cgb
 		semaphore(semaphore&&) noexcept;
 		semaphore& operator=(const semaphore&) = delete;
 		semaphore& operator=(semaphore&&) noexcept;
-		~semaphore();
+		virtual ~semaphore();
 
 		static semaphore create(const vk::SemaphoreCreateInfo& pCreateInfo);
 
 		vk::SemaphoreCreateInfo mCreateInfo;
 		vk::Semaphore mSemaphore;
+
+		// --- Some advanced features of a semaphore object ---
+
+		/** A custom deleter function called upon destruction of this semaphore */
+		std::optional<std::function<void()>> mCustomDeleter;
+
+		/** An optional dependant semaphore. This means: The dependant
+		 *	semaphore can be assumed to be finished when this semaphore
+		 *	has finished.
+		 *	The point here is that some internal function might wait on it,
+		 *	that shall be somewhat opaque to the user in some cases.
+		 *	The dependant semaphore child object ensures that the semaphore
+		 *	does not get destructed prematurely.
+		 */
+		std::optional<semaphore> mDependantSemaphore;
 	};
 
 	enum struct device_queue_selection_strategy

@@ -240,10 +240,13 @@ namespace cgb
 		device_queue mGraphicsQueue;
 		device_queue mComputeQueue;
 		device_queue mTransferQueue;
-		std::vector<uint32_t> mAllUsedQueueFamilyIndices;
+		// Vector of queue family indices
+		std::vector<uint32_t> mDistinctQueueFamilies;
+		// Vector of pairs of queue family indices and queue indices
+		std::vector<std::tuple<uint32_t, uint32_t>> mDistinctQueues;
 
-		std::vector<command_pool> mCommandPools;
-		std::vector<descriptor_pool> mDescriptorPools;
+		std::deque<command_pool> mCommandPools;
+		std::deque<descriptor_pool> mDescriptorPools;
 		
 	};
 

@@ -359,6 +359,21 @@ namespace cgb
 		return it != stencilFormats.end();
 	}
 
+	buffer_usage_details buffer_usage_details::from_swap_chain(window* pWindow)
+	{
+		return buffer_usage_details{ static_cast<uint32_t>(pWindow->number_of_swapchain_images()) };
+	}
+
+	buffer_usage_details buffer_usage_details::from_main_window()
+	{
+		return buffer_usage_details{ static_cast<uint32_t>(context().main_window()->number_of_swapchain_images()) };
+	}
+
+	buffer_usage_details buffer_usage_details::from_num_buffers(uint32_t pNumBuffers)
+	{
+		return buffer_usage_details{ pNumBuffers };
+	}
+
 	shader_handle shader_handle::create_from_binary_code(const std::vector<char>& code)
 	{
 		auto createInfo = vk::ShaderModuleCreateInfo()
@@ -1509,32 +1524,53 @@ namespace cgb
 	semaphore::semaphore() noexcept
 		: mCreateInfo{}
 		, mSemaphore{nullptr}
+		, mCustomDeleter{}
+		, mDependantSemaphore{}
 	{ }
 
 	semaphore::semaphore(const vk::SemaphoreCreateInfo& pCreateInfo, const vk::Semaphore& pSemaphore) noexcept
 		: mCreateInfo{pCreateInfo}
 		, mSemaphore{pSemaphore}
+		, mCustomDeleter{}
+		, mDependantSemaphore{}
 	{ }
 
 	semaphore::semaphore(semaphore&& other) noexcept
 		: mCreateInfo{ std::move(other.mCreateInfo) }
 		, mSemaphore{ std::move(other.mSemaphore) }
+		, mCustomDeleter{ std::move(other.mCustomDeleter) }
+		, mDependantSemaphore{ std::move(other.mDependantSemaphore) }
 	{ 
 		other.mCreateInfo = {};
 		other.mSemaphore = nullptr;
+		other.mCustomDeleter.reset(); // TODO: This is probably not required
+		other.mDependantSemaphore.reset(); // TODO: This is probably not required
 	}
 
 	semaphore& semaphore::operator=(semaphore&& other) noexcept
 	{ 
 		mCreateInfo = std::move(other.mCreateInfo);
 		mSemaphore = std::move(other.mSemaphore);
+		mCustomDeleter = std::move(other.mCustomDeleter);
+		mDependantSemaphore = std::move(other.mDependantSemaphore);
 		other.mCreateInfo = {};
 		other.mSemaphore = nullptr;
+		other.mCustomDeleter.reset(); // TODO: This is probably not required
+		other.mDependantSemaphore.reset(); // TODO: This is probably not required
 		return *this;
 	}
 
 	semaphore::~semaphore()
-	{ 
+	{
+		if (mCustomDeleter) {
+			// If there is a custom deleter => call it now
+			(*mCustomDeleter)();
+			mCustomDeleter.reset();
+		}
+		if (mDependantSemaphore) {
+			// Destroy the dependant semaphore before destroying myself
+			mDependantSemaphore.reset();
+		}
 		if (mSemaphore) {
 			context().logical_device().destroySemaphore(mSemaphore);
 			mSemaphore = nullptr;
