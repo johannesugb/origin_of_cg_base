@@ -56,7 +56,7 @@ namespace cgb {
 			resourceBundle->add_image_resource(1, vk::ImageLayout::eShaderReadOnlyOptimal, texture);
 		}
 
-		if (vulkan_context::instance().shadingRateImageSupported && !debugTextures.empty()) {
+		if (!debugTextures.empty()) {
 			resourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, debugTextures);
 		}
 
