@@ -273,15 +273,19 @@ private:
 		vrsCasResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
 		vrsCasResourceBundleLayout->bake();
 		auto vrsCasResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsCasResourceBundleLayout, true);
-		vrsCasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
-		//vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitImages);
-		vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderTextures);
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			vrsCasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
+			//vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitImages);
+			vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderTextures);
+		}
 
 		auto vrsDebugResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
 		vrsDebugResourceBundleLayout->add_binding(0, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
 		vrsDebugResourceBundleLayout->bake();
 		auto vrsDebugResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsDebugResourceBundleLayout, true);
-		vrsDebugResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsDebugImages);
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			vrsDebugResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsDebugImages);
+		}
 
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			drawer->set_vrs_images(vrsImages);
@@ -615,8 +619,9 @@ private:
 
 		float nearPlane = mCamera.near_plane_distance();
 		float farPlane = mCamera.far_plane_distance();
-		mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
-
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
+		}
 		// start drawing, record draw commands, etc.
 		cgb::vulkan_context::instance().vulkanFramebuffer = mVulkanFramebuffer;
 
@@ -784,6 +789,23 @@ private:
 			cgb::vulkan_context::instance().msaaSamples, colorFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, 
 			vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 		colorImage->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+
+		vk::Format colorFormatVrsPrevImg = vk::Format::eR16G16B16A16Unorm;
+
+		auto width = imagePresenter->get_swap_chain_extent().width;
+		auto height = imagePresenter->get_swap_chain_extent().height;
+		mVrsPrevRenderImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
+
+		mVrsPrevRenderMsaaImage = std::make_shared<cgb::vulkan_image>(width, height, 1, cgb::vulkan_context::instance().msaaSamples, colorFormatVrsPrevImg,
+			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eColorAttachment,
+			vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+
+		for (int i = 0; i < cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
+			mVrsPrevRenderImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, vk::SampleCountFlagBits::e1, colorFormatVrsPrevImg,
+				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
+				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			mVrsPrevRenderImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal, 1);
+		}
 	}
 
 	void createVRSImageResources()
@@ -818,21 +840,6 @@ private:
 			vrsDebugImages[i]->transition_image_layout(colorFormatDebug, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral, 1);
 
 			vrsDebugTextureImages[i] = std::make_shared<cgb::vulkan_texture>(vrsDebugImages[i]);
-		}
-
-		width = imagePresenter->get_swap_chain_extent().width;
-		height = imagePresenter->get_swap_chain_extent().height;
-		mVrsPrevRenderImages.resize(cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount);
-
-		mVrsPrevRenderMsaaImage = std::make_shared<cgb::vulkan_image>(width, height, 1, cgb::vulkan_context::instance().msaaSamples, colorFormatVrsPrevImg,
-			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eColorAttachment,
-			vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-
-		for (int i = 0; i < cgb::vulkan_context::instance().cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
-			mVrsPrevRenderImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, vk::SampleCountFlagBits::e1, colorFormatVrsPrevImg,
-				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
-				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-			mVrsPrevRenderImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal, 1);
 		}
 	}
 
@@ -981,7 +988,7 @@ int main()
 		cgb::settings::gApplicationName = "Hello VRS";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
 		cgb::settings::gRequiredInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-		cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+		//cgb::settings::gRequiredDeviceExtensions.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
 
 		// Create a window which we're going to use to render to
 		auto mainWnd = cgb::context().create_window("Hello VRS!");
