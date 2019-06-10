@@ -1,0 +1,95 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_SIZE 16
+
+layout(local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE) in;
+
+layout(push_constant) uniform PushUniforms
+{
+    mat4 vPMatrix;
+	mat4 invPMatrix;
+	mat4 invVMatrix;
+	vec2 projAScale;
+	vec2 imgSize;
+} pushConst;
+ 
+layout(set = 0, binding = 0, r8ui) uniform uimage2D targetImage;
+layout(set = 0, binding = 1) uniform sampler2D prevFrameImage;
+layout(set = 0, binding = 2) uniform sampler2D edgeImage;
+//layout(set = 0, binding = 1, rgba16) uniform image2D prevFrameImage;
+layout(set = 1, binding = 0, rgba8) uniform image2D debugImage;
+
+vec3 project(vec4 pos)
+{
+	pos = pushConst.vPMatrix * pos;
+	float s = sign(pos.z);
+	pos = pos/pos.w;
+	return vec3(pos.x, pos.y, pos.z * s);
+}
+
+vec3 NDCToWorld(vec3 posNDC)
+{
+	vec2 pos = posNDC.xy;
+	vec4 positionVS = pushConst.invPMatrix * vec4(pos.xy * 2 - 1, posNDC.z, 1.0);
+	vec3 position_vs = positionVS.xyz / positionVS.w;
+	return vec3(pushConst.invVMatrix * vec4(position_vs, 1.0));
+}
+
+float rgbToLuma(vec3 rgb) {
+	return sqrt(dot(rgb, vec3(0.299, 0.587, 0.114)));
+}
+
+void main() {
+	vec2 pixelSize = 1.0 / textureSize(edgeImage, 0);
+	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+	vec2 xySSC = uv * pixelSize + 0.5 * pixelSize;
+
+	//vec4 prevFrameVal = imageLoad(prevFrameImage, uv);
+	vec4 prevFrameVal = texture(prevFrameImage, xySSC);
+	vec3 posWorld = NDCToWorld(vec3(xySSC, prevFrameVal.w));
+
+	vec3 newPosNDC = (project(vec4(posWorld, 1)) + 1.0) / 2.0f;
+	//newPosNDC.z = newPosNDC.z * 2.0 - 1.0;
+	ivec2 newUV = ivec2(newPosNDC.xy * pushConst.imgSize);
+	
+	//vec4 frameVal = imageLoad(prevFrameImage, newUV);
+	vec4 frameVal = texture(prevFrameImage, newPosNDC.xy);
+
+	//uint shadingRate = int( pushConst.projAScale.y / (newPosNDC.z - pushConst.projAScale.x) ); // current depth linear
+	//uint shadingRate = int( pushConst.projAScale.y / (prevFrameVal.w - pushConst.projAScale.x)); // previos depth linear
+	//uint shadingRate = int( posWorld.z ); // current depth world space
+	//uint shadingRate = int(round(distance(xySSC, newPosNDC.xy) * 12.0));
+	//uint shadingRate = int( pushConst.projAScale.x / (posWorld.y - pushConst.projAScale.x));
+	//shadingRate = int( pushConst.projAScale.y / (prevFrameVal.y - pushConst.projAScale.x)); // previos depth linear
+	//shadingRate = int(abs(val.x * val.y * 12));
+
+	uvec4 prevShadingRate = imageLoad(targetImage, uv);
+
+	float scaledVal = abs(clamp(frameVal.x * 2 - 0.75,-1,1));
+	float shadingRate = (scaledVal * scaledVal); // current texel diff
+	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
+	//shadingRate = (shadingRate * 2/4 + prevShadingRate.x * 2/4);
+	shadingRate = 12;
+	//shadingRate = shadingRate / (frameVal.y * frameVal.z * 16.0);
+	//shadingRate = (frameVal.y * frameVal.z) * 1000;
+	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
+	//imageStore(targetImage, uv, uvec4(8 - clamp(shadingRate, 0, 11),0,0,0));
+
+	float color = rgbToLuma(texelFetch(edgeImage, uv, 0).xyz);
+	float colorUp = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, 1)).xyz);
+	float colorDown = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, -1)).xyz);
+	float colorLeft = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(-1, 1)).xyz);
+	float colorRight = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(-1, -1)).xyz);
+
+	float lumaMin = min(color, min(min(colorUp,colorDown), min(colorLeft,colorRight)));
+	float lumaMax = max(color, max(max(colorUp,colorDown), max(colorLeft,colorRight)));
+
+	vec2 dir;
+	dir.x = -((colorUp + colorLeft) - (colorDown + colorRight));
+	dir.y = ((colorUp + colorDown) - (colorLeft + colorRight));
+
+	imageStore(debugImage, uv, vec4(vec3(float((lumaMax-lumaMin) > 0.09) * 10), 1.0));
+	//imageStore(debugImage, uv, vec4(vec3(float((abs(dir.x) + abs(dir.y)) > 0.09) * 10), 1.0));
+	//imageStore(debugImage, uv, vec4(vec3((uv.y%2)), 1.0));
+}

@@ -25,6 +25,7 @@
 
 #include "vrs_image_compute_drawer.h"
 #include "vrs_cas_compute_drawer.h"
+#include "vrs_cas_edge_compute_drawer.h"
 #include "vrs_mas_compute_drawer.h"
 
 #include "eyetracking_interface.h"
@@ -39,7 +40,8 @@
 
 #define VRS_EYE 0
 #define VRS_CAS 0
-#define VRS_MAS 1
+#define VRS_CAS_EDGE 1
+#define VRS_MAS 0
 
 #define DEFERRED_SHADING 0
 
@@ -142,6 +144,11 @@ private:
 	std::unique_ptr<vrs_cas_compute_drawer> mVrsCasComputeDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mVrsCasComputePipeline;
 
+	std::unique_ptr<vrs_cas_edge_compute_drawer> mVrsCasEdgeComputeDrawer;
+	std::shared_ptr<cgb::vulkan_pipeline> mVrsCasEdgeComputePipeline;
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsEdgeBlitImages;
+	std::vector<std::shared_ptr<cgb::vulkan_texture>> mVrsEdgeBlitTextures;
+
 	// VRS: motion adaptive shading
 	std::unique_ptr<vrs_mas_compute_drawer> mVrsMasComputeDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mVrsMasComputePipeline;
@@ -214,6 +221,7 @@ public:
 			if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 				mComputeVulkanPipeline->bake();
 				mVrsCasComputePipeline->bake();
+				mVrsCasEdgeComputePipeline->bake();
 				mVrsMasComputePipeline->bake();
 			}
 
@@ -353,12 +361,18 @@ private:
 		vrsCasResourceBundleLayout->add_binding(0, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
 		//vrsCasResourceBundleLayout->add_binding(1, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
 		vrsCasResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
+#if VRS_CAS_EDGE
+		vrsCasResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
+#endif
 		vrsCasResourceBundleLayout->bake();
 		auto vrsCasResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsCasResourceBundleLayout, true);
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			vrsCasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
 			//vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitImages);
 			vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitTextures);
+#if VRS_CAS_EDGE
+			vrsCasResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eGeneral, mVrsEdgeBlitTextures);
+#endif
 		}
 
 		auto vrsMasResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
@@ -406,6 +420,15 @@ private:
 			mVrsCasComputeDrawer = std::make_unique<vrs_cas_compute_drawer>(drawCommandBufferManager, mVrsCasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsCasResourceBundle, vrsDebugResourceBundle },
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages);
 			mVrsCasComputeDrawer->set_vrs_images(vrsImages);
+			mVrsCasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
+
+			mVrsCasEdgeComputePipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { vrsCasResourceBundleLayout, vrsDebugResourceBundleLayout }, sizeof(vrs_cas_comp_data));
+			mVrsCasEdgeComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_cas_edge_img.comp.spv");
+			mVrsCasEdgeComputePipeline->bake();
+			mVrsCasEdgeComputeDrawer = std::make_unique<vrs_cas_edge_compute_drawer>(drawCommandBufferManager, mVrsCasEdgeComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsCasResourceBundle, vrsDebugResourceBundle },
+				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mPostProcImages, mVrsEdgeBlitImages);
+			mVrsCasEdgeComputeDrawer->set_vrs_images(vrsImages);
+			mVrsCasEdgeComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 
 			// MAS
 			mVrsMasComputePipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { vrsMasResourceBundleLayout, vrsDebugResourceBundleLayout }, sizeof(vrs_cas_comp_data));
@@ -415,8 +438,6 @@ private:
 			mVrsMasComputeDrawer = std::make_unique<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsMasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsMasResourceBundle, vrsDebugResourceBundle },
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mMotionVectorImages, mVrsMasMotionVecBlitImages);
 			mVrsMasComputeDrawer->set_vrs_images(vrsImages);
-
-			mVrsCasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 			mVrsMasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 		}
 		mVrsDebugFullscreenQuad = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, vrsDebugTextureImages);
@@ -654,12 +675,14 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			mVrsImageComputeDrawer.reset();
 			mVrsCasComputeDrawer.reset();
+			mVrsCasEdgeComputeDrawer.reset();
 			mVrsMasComputeDrawer.reset();
 			mVrsDebugDrawer.reset();
 		}
 		mMaterialDrawer.reset();
 		mRenderVulkanPipeline.reset();
 		mComputeVulkanPipeline.reset();
+		mVrsCasComputePipeline.reset();
 		mVrsCasComputePipeline.reset();
 		mVrsMasComputePipeline.reset();
 		mVrsDebugPipeline.reset();
@@ -764,6 +787,8 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 #if VRS_CAS
 			mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
+#elif VRS_CAS_EDGE
+			mVrsCasEdgeComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 #elif VRS_MAS
 			mVrsMasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 #endif
@@ -812,16 +837,48 @@ private:
 		//auto oldFrameIdx = cgb::vulkan_context::instance().currentFrame;
 		//cgb::vulkan_context::instance().currentFrame = 0;
 
+		vk::ImageMemoryBarrier imgMemBarrier = {};
+		imgMemBarrier.srcAccessMask = {};
+		imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+		imgMemBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		imgMemBarrier.newLayout = vk::ImageLayout::eGeneral;
+		imgMemBarrier.image = vrsDebugImages[cgb::vulkan_context::instance().currentFrame]->get_image();
+		imgMemBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imgMemBarrier.subresourceRange.baseArrayLayer = 0;
+		imgMemBarrier.subresourceRange.layerCount = 1;
+		imgMemBarrier.subresourceRange.levelCount = 1;
+
+		vk::CommandBufferInheritanceInfo inheritanceInfo = {};
+		inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+
+		vk::CommandBufferBeginInfo beginInfo = {};
+		beginInfo.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
+		beginInfo.pInheritanceInfo = &inheritanceInfo;
+
+		vk::CommandBuffer commandBuffer = drawCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
+		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
+
 		// start drawing, record draw commands, etc.
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 #if VRS_EYE
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsImageComputeDrawer.get());
 #elif VRS_CAS
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsCasComputeDrawer.get());
+#elif VRS_CAS_EDGE
+			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsCasEdgeComputeDrawer.get());
 #elif VRS_MAS
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsMasComputeDrawer.get());
 #endif
 		}
+
+		imgMemBarrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+		imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		imgMemBarrier.oldLayout = vk::ImageLayout::eGeneral;
+		imgMemBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		commandBuffer = drawCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
+		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, imgMemBarrier);
+
 
 		std::vector<cgb::vulkan_render_object*> renderObjects;
 		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
@@ -1035,9 +1092,9 @@ private:
 
 		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
 			mPostProcImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 4, vk::SampleCountFlagBits::e1, colorFormat,
-				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
 				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
-			mPostProcImages[i]->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+			mPostProcImages[i]->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 1);
 			mPostProcTextures[i] = std::make_shared<cgb::vulkan_texture>(mPostProcImages[i]);
 
 			for (int j = 0; j < mTAAImages.size(); j++) {
@@ -1084,7 +1141,7 @@ private:
 				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
 				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			mVrsPrevRenderImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 1);
-			mVrsPrevRenderTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsPrevRenderImages[0]);
+			mVrsPrevRenderTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsPrevRenderImages[i]);
 		}
 		//mVrsPrevRenderBlitImages[1] = mVrsPrevRenderBlitImages[0];
 		//mVrsPrevRenderBlitImages[2] = mVrsPrevRenderBlitImages[0];
@@ -1101,6 +1158,7 @@ private:
 		vk::Format colorFormatDebug = vk::Format::eR8G8B8A8Unorm;
 		vk::Format colorFormatVrsPrevImg = vk::Format::eR16G16B16A16Unorm;
 		vk::Format colorFormatMotionVectorImg = mMotionVectorImages[0]->get_format();
+		vk::Format colorFormatSwapChain = mImagePresenter->get_swap_chain_image_format();
 
 
 		vrsImages.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
@@ -1112,8 +1170,10 @@ private:
 		mVrsPrevRenderBlitTextures.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
 		mVrsMasMotionVecBlitImages.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
 		mVrsMasMotionVecBlitTextures.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+		mVrsEdgeBlitImages.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+		mVrsEdgeBlitTextures.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
 
-		std::vector clearPixels = std::vector<uint8_t>(width * height, 7);
+		std::vector clearPixels = std::vector<uint8_t>(size_t(width * height), 7);
 
 		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
 			vrsImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 1, vk::SampleCountFlagBits::e1, colorFormat, vk::ImageTiling::eOptimal,
@@ -1129,6 +1189,11 @@ private:
 				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			mVrsPrevRenderBlitImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, 1);
 			mVrsPrevRenderBlitTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsPrevRenderBlitImages[i]);
+
+			mVrsEdgeBlitImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 4, vk::SampleCountFlagBits::e1, colorFormatSwapChain, vk::ImageTiling::eOptimal,
+				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			mVrsEdgeBlitImages[i]->transition_image_layout(colorFormatSwapChain, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, 1);
+			mVrsEdgeBlitTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsEdgeBlitImages[i]);
 
 			mVrsMasMotionVecBlitImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 2, vk::SampleCountFlagBits::e1, colorFormatMotionVectorImg, vk::ImageTiling::eOptimal,
 				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);

@@ -44,6 +44,7 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\taa.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\vrs_cas_edge_img.comp" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_cas_img.comp" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_debug.vert" />
@@ -59,6 +60,7 @@
     <ClCompile Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_cas_edge_compute_drawer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_mas_compute_drawer.cpp" />
   </ItemGroup>
@@ -67,6 +69,7 @@
     <ClInclude Include="..\..\..\examples\hello_vrs\source\deferred_renderer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_cas_edge_compute_drawer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_mas_compute_drawer.h" />
   </ItemGroup>

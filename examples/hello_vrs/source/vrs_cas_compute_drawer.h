@@ -27,14 +27,14 @@ public:
 
 	vrs_cas_comp_data get_push_constant_data() { return mCurrPushConstData; }
 
-private:
+protected:
 	static const int WORKGROUP_SIZE = 16;
 
 	int mWidth;
 	int mHeight;
 
-	UniformBufferObject mCamData;
-	UniformBufferObject mPrevCamData;
+	std::vector<UniformBufferObject> mCamData;
+	std::vector<UniformBufferObject> mPrevCamData;
 	float mNearPlane;
 	float mFarPlane;
 
@@ -43,6 +43,6 @@ private:
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderImages;
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderBlitImages;
 
-	void blit_image(vk::CommandBuffer& commandBuffer);
+	virtual void blit_image(vk::CommandBuffer& commandBuffer);
 };
 

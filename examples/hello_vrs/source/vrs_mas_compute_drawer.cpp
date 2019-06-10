@@ -115,7 +115,7 @@ void vrs_mas_compute_drawer::blit_image(vk::CommandBuffer & commandBuffer)
 
 	vk::ImageMemoryBarrier srcBarrier = barrier;
 	srcBarrier.image = mVrsPrevRenderImages[currentIdx]->get_image();
-	srcBarrier.oldLayout = vk::ImageLayout::eUndefined;
+	srcBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	srcBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
 	srcBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
 	srcBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;

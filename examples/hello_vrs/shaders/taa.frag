@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-const int offsetMul = 2;
+const int offsetMul = 1;
 const ivec2 offset[8] = { ivec2(-1, -1) * offsetMul, ivec2(-1,  1) * offsetMul,
                             ivec2( 1, -1) * offsetMul, ivec2( 1,  1) * offsetMul, 
                             ivec2(1,  0) * offsetMul, ivec2( 0, -1) * offsetMul, 
@@ -84,7 +84,7 @@ vec3 YCgCoToRGB(vec3 YCgCo)
     return vec3(r, g, b);
 }
 
-const float cColorBoxSigma = 0.5;
+const float cColorBoxSigma = 1.5;
 const float cAlpha = 0.5;
 
 void main() {
@@ -188,7 +188,7 @@ void main() {
 	outColor = vec4(result, 0);
 
 	vec4 curColor = texture(curFrame, fragTexCoord + 1 * pushConst.jitter);
-    //outColor = curColor;
+    outColor = curColor;
 	//outColor = vec4(texture(prevFrame, fragTexCoord - motion).rgb, 0);
 	//outColor = vec4(motion.x);
 	//outColor = vec4(YCgCoToRGB(history), 0);

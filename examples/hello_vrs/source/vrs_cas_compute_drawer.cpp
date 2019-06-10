@@ -11,8 +11,8 @@ vrs_cas_compute_drawer::vrs_cas_compute_drawer(std::shared_ptr<cgb::vulkan_comma
 	int mWidth = -1;
 	int mHeight = -1;
 
-	mCamData = UniformBufferObject{};
-	mPrevCamData = UniformBufferObject{};
+	mCamData = std::vector<UniformBufferObject>(cgb::vulkan_context::instance().dynamicRessourceCount);
+	mPrevCamData = std::vector<UniformBufferObject>(cgb::vulkan_context::instance().dynamicRessourceCount);
 	mNearPlane - 1;
 	mFarPlane = -1;
 }
@@ -53,9 +53,9 @@ void vrs_cas_compute_drawer::draw(std::vector<cgb::vulkan_render_object*> render
 	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eShadingRateImageNV, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
 
 	mCurrPushConstData = vrs_cas_comp_data{};
-	mCurrPushConstData.vPMatrix = mPrevCamData.proj * mPrevCamData.view;
-	mCurrPushConstData.invPMatrix = glm::inverse(mCamData.proj);
-	mCurrPushConstData.invVMatrix = glm::inverse(mCamData.view);
+	mCurrPushConstData.vPMatrix = mCamData[cgb::vulkan_context::instance().currentFrame].proj * mCamData[cgb::vulkan_context::instance().currentFrame].view;
+	mCurrPushConstData.invPMatrix = glm::inverse(mPrevCamData[cgb::vulkan_context::instance().currentFrame].proj);
+	mCurrPushConstData.invVMatrix = glm::inverse(mPrevCamData[cgb::vulkan_context::instance().currentFrame].view);
 	mCurrPushConstData.projAScale = glm::vec2(mFarPlane / (mFarPlane - mNearPlane), -mFarPlane * mNearPlane / (mFarPlane - mNearPlane));
 	mCurrPushConstData.imgSize = glm::vec2(mWidth, mHeight);
 
@@ -103,11 +103,16 @@ void vrs_cas_compute_drawer::blit_image(vk::CommandBuffer& commandBuffer)
 	barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
 	barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
+	vk::ImageMemoryBarrier srcBarrier = barrier;
+	srcBarrier.image = mVrsPrevRenderImages[currentIdx]->get_image();
+	srcBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	srcBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+	srcBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
+	srcBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
 	commandBuffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eTransfer, {},
-		0, nullptr,
-		0, nullptr,
-		1, &barrier);
+		{}, {}, { barrier, srcBarrier });
 
 	vk::ImageBlit blit = {};
 	blit.srcOffsets[0] = { 0, 0, 0 };
@@ -134,16 +139,19 @@ void vrs_cas_compute_drawer::blit_image(vk::CommandBuffer& commandBuffer)
 	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
+	srcBarrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+	srcBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	srcBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+	srcBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
 	commandBuffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
-		0, nullptr,
-		0, nullptr,
-		1, &barrier);
+		{}, {}, { barrier, srcBarrier });
 }
 
 void vrs_cas_compute_drawer::set_cam_data(UniformBufferObject camData, float nearPlane, float farPlane) {
 	mNearPlane = nearPlane;
 	mFarPlane = farPlane;
-	mPrevCamData = mCamData;
-	mCamData = camData;
+	mPrevCamData[cgb::vulkan_context::instance().currentFrame] = mCamData[cgb::vulkan_context::instance().currentFrame];
+	mCamData[cgb::vulkan_context::instance().currentFrame] = camData;
 }
