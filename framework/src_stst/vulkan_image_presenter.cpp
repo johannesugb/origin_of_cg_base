@@ -11,7 +11,6 @@ namespace cgb {
 	{
 		mSwapChainRecreated = false;
 		create_swap_chain();
-		create_image_views();
 	}
 
 
@@ -21,10 +20,6 @@ namespace cgb {
 	}
 
 	void vulkan_image_presenter::cleanup() {
-		for (size_t i = 0; i < mSwapChainImageViews.size(); i++) {
-			vkDestroyImageView(vulkan_context::instance().device, mSwapChainImageViews[i], nullptr);
-		}
-
 		vkDestroySwapchainKHR(vulkan_context::instance().device, mSwapChain, nullptr);
 	}
 
@@ -40,7 +35,6 @@ namespace cgb {
 
 		cleanup();
 		create_swap_chain();
-		create_image_views();
 	}
 
 	void vulkan_image_presenter::fetch_next_swapchain_image(vk::Fence inFlightFence, vk::Semaphore signalSemaphore) {
@@ -191,34 +185,13 @@ namespace cgb {
 
 		mSwapChainImageFormat = surfaceFormat.format;
 		mSwapChainExtent = extent;
-	}
 
-	void vulkan_image_presenter::create_image_views() {
-		mSwapChainImageViews.resize(mSwapChainImages.size());
+		mVulkanSwapChainImages.resize(mSwapChainImages.size());
 
 		for (uint32_t i = 0; i < mSwapChainImages.size(); i++) {
-			mSwapChainImageViews[i] = create_image_view(mSwapChainImages[i], mSwapChainImageFormat, vk::ImageAspectFlagBits::eColor, 1);
+			mVulkanSwapChainImages[i] = std::make_shared<vulkan_image>(mSwapChainImages[i], mSwapChainExtent.width, mSwapChainExtent.height, 1, 4,
+				vk::SampleCountFlagBits::e1, mSwapChainImageFormat, vk::ImageUsageFlagBits::eColorAttachment, vk::ImageAspectFlagBits::eColor);
 		}
-	}
-
-	// TODO optional, move to image or utility class
-	vk::ImageView vulkan_image_presenter::create_image_view(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) {
-		vk::ImageViewCreateInfo viewInfo = {};
-		viewInfo.image = image;
-		viewInfo.viewType = vk::ImageViewType::e2D;
-		viewInfo.format = format;
-		viewInfo.subresourceRange.aspectMask = aspectFlags;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = mipLevels;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-
-		vk::ImageView imageView;
-		if (vulkan_context::instance().device.createImageView(&viewInfo, nullptr, &imageView) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to create swapchain image view!");
-		}
-
-		return imageView;
 	}
 
 }

@@ -7,6 +7,29 @@
 #include "vulkan_memory_manager.h"
 
 namespace cgb {
+
+	cgb::vulkan_image::vulkan_image(vk::Image image, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels,
+		vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
+		mImage(image), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels), mTtexChannels(texChannels),
+		mNumSamples(numSamples), mFormat(format), mUsage(usage), mAspects(aspects), mCommandBufferManager(commandBufferManager)
+	{
+		mImageView = create_image_view(mFormat, mAspects, mMipLevels);
+		vkImageNotControlled = true;
+
+		mTiling = {};
+	}
+
+	cgb::vulkan_image::vulkan_image(vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, 
+		vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
+		mImage(image), mImageView(imageView), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels), mTtexChannels(texChannels),
+		mNumSamples(numSamples), mFormat(format), mUsage(usage), mAspects(aspects), mCommandBufferManager(commandBufferManager)
+	{
+		vkImageViewNotControlled = true;
+		vkImageNotControlled = true;
+
+		mTiling = {};
+	}
+
 	vulkan_image::vulkan_image(void* pixels, uint32_t texWidth, uint32_t texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
 		mCommandBufferManager(commandBufferManager), mTexWidth(texWidth), mTexHeight(texHeight), mTtexChannels(texChannels)
 	{
@@ -26,9 +49,13 @@ namespace cgb {
 
 	vulkan_image::~vulkan_image()
 	{
-		vkDestroyImageView(vulkan_context::instance().vulkan_context::instance().device, mImageView, nullptr);
-		vkDestroyImage(vulkan_context::instance().vulkan_context::instance().device, mImage, nullptr);
-		vulkan_context::instance().memoryManager->free_memory(mImageMemory);
+		if (!vkImageViewNotControlled) {
+			vkDestroyImageView(vulkan_context::instance().vulkan_context::instance().device, mImageView, nullptr);
+		}
+		if (!vkImageNotControlled) {
+			vkDestroyImage(vulkan_context::instance().vulkan_context::instance().device, mImage, nullptr);
+			vulkan_context::instance().memoryManager->free_memory(mImageMemory);
+		}
 	}
 
 	void vulkan_image::create_texture_image(void* pixels, uint32_t texWidth, uint32_t texHeight, int texChannels) {
@@ -193,7 +220,7 @@ namespace cgb {
 	}
 
 	void vulkan_image::update_pixels(void* pixels) {
-		vk::DeviceSize imageSize = mTexWidth * mTexHeight * mTtexChannels;
+		vk::DeviceSize imageSize = vk::DeviceSize(mTexWidth) * vk::DeviceSize(mTexHeight) * vk::DeviceSize(mTtexChannels);
 		vulkan_buffer stagingBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, mCommandBufferManager);
 		stagingBuffer.update_buffer(pixels, imageSize);
 
@@ -351,5 +378,86 @@ namespace cgb {
 		one_px[2] = color_b;
 		one_px[3] = 0;
 		return std::make_shared<vulkan_image>(&one_px, 1, 1, 4);
+	}
+
+	void vulkan_image::blit_image(vulkan_image* srcImage, vulkan_image* targetImage, 
+		vk::ImageLayout srcInitLayout, vk::ImageLayout srcEndLayout, vk::ImageLayout targetInitLayout, vk::ImageLayout targetEndLayout,
+		vk::AccessFlagBits srcInitAccFlags, vk::AccessFlagBits srcEndAccFlags, vk::AccessFlagBits targetInitAccFlags, vk::AccessFlagBits targetEndAccFlags,
+		vk::PipelineStageFlagBits srcStage, vk::PipelineStageFlagBits targetStage,
+		vulkan_command_buffer_manager* commandBufferManager) {
+
+		vk::CommandBufferInheritanceInfo inheritanceInfo = {};
+		inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+
+		vk::CommandBufferBeginInfo beginInfo = {};
+		beginInfo.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
+		beginInfo.pInheritanceInfo = &inheritanceInfo;
+		vk::CommandBuffer commandBuffer = commandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
+
+
+		int32_t blitWidth = targetImage->get_width();
+		int32_t blitHeight = targetImage->get_height();
+		int32_t width = srcImage->get_width();
+		int32_t height = srcImage->get_height();
+
+		vk::ImageMemoryBarrier barrier = {};
+		barrier.image = targetImage->get_image();
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.subresourceRange.aspectMask = targetImage->get_aspects();
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.baseMipLevel = 0;
+
+		barrier.oldLayout = targetInitLayout;
+		barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+		barrier.srcAccessMask = targetInitAccFlags;
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+		vk::ImageMemoryBarrier srcBarrier = barrier;
+		srcBarrier.image = srcImage->get_image();
+		srcBarrier.oldLayout = srcInitLayout;
+		srcBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+		srcBarrier.srcAccessMask = srcInitAccFlags;
+		srcBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+		commandBuffer.pipelineBarrier(
+			srcStage, vk::PipelineStageFlagBits::eTransfer, {},
+			{}, {}, { barrier, srcBarrier });
+
+		vk::ImageBlit blit = {};
+		blit.srcOffsets[0] = { 0, 0, 0 };
+		blit.srcOffsets[1] = { width, height, 1 };
+		blit.srcSubresource.aspectMask = targetImage->get_aspects();
+		blit.srcSubresource.mipLevel = 0;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+		blit.dstOffsets[0] = { 0, 0, 0 };
+		blit.dstOffsets[1] = { blitWidth, blitHeight, 1 };
+		blit.dstSubresource.aspectMask = targetImage->get_aspects();
+		blit.dstSubresource.mipLevel = 0;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+		commandBuffer.blitImage(
+			srcImage->get_image(), vk::ImageLayout::eTransferSrcOptimal,
+			targetImage->get_image(), vk::ImageLayout::eTransferDstOptimal,
+			1, &blit,
+			vk::Filter::eLinear);
+
+		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+		barrier.newLayout = targetEndLayout;
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		barrier.dstAccessMask = targetEndAccFlags;
+
+		srcBarrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+		srcBarrier.newLayout = srcEndLayout;
+		srcBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+		srcBarrier.dstAccessMask = srcEndAccFlags;
+
+		commandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer, targetStage, {},
+			{}, {}, { barrier, srcBarrier });
 	}
 }

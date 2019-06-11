@@ -9,6 +9,12 @@ namespace cgb {
 	class vulkan_image
 	{
 	public:
+		vulkan_image(vk::Image image, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, vk::SampleCountFlagBits numSamples, vk::Format format,
+			vk::ImageUsageFlags usage, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
+
+		vulkan_image(vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, vk::SampleCountFlagBits numSamples, vk::Format format, 
+			vk::ImageUsageFlags usage, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
+
 		vulkan_image(void* pixels, uint32_t texWidth, uint32_t texHeight, int texChannels, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager = vulkan_context::instance().transferCommandBufferManager);
 
 		vulkan_image(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
@@ -36,15 +42,20 @@ namespace cgb {
 		void generate_mipmaps(vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 		static std::shared_ptr<vulkan_image> generate_1px_image(uint8_t color_r, uint8_t color_g, uint8_t color_b);
+		static void blit_image(vulkan_image* srcImage, vulkan_image* targetImage,
+			vk::ImageLayout srcInitLayout, vk::ImageLayout srcEndLayout, vk::ImageLayout targetInitLayout, vk::ImageLayout targetEndLayout,
+			vk::AccessFlagBits srcInitAccFlags, vk::AccessFlagBits srcEndAccFlags, vk::AccessFlagBits targetInitAccFlags, vk::AccessFlagBits targetEndAccFlags,
+			vk::PipelineStageFlagBits srcStage, vk::PipelineStageFlagBits targetStage,
+			vulkan_command_buffer_manager* commandBufferManager);
 	private:
 		vk::Image mImage;
 		vulkan_memory mImageMemory;
 		vk::ImageView mImageView;
 
 		// properties of image
-		int mTexWidth;
-		int mTexHeight;
-		int mTtexChannels;
+		uint32_t mTexWidth;
+		uint32_t mTexHeight;
+		uint32_t mTtexChannels;
 		uint32_t mMipLevels;
 		vk::SampleCountFlagBits mNumSamples;
 		vk::Format mFormat;
@@ -55,6 +66,9 @@ namespace cgb {
 
 
 		std::shared_ptr<vulkan_command_buffer_manager> mCommandBufferManager;
+
+		bool vkImageViewNotControlled = false;
+		bool vkImageNotControlled = false;
 
 		void create_texture_image(void * pixels, uint32_t texWidth, uint32_t texHeight, int texChannels);
 		void create_image(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,

@@ -19,11 +19,12 @@ namespace cgb {
 		vk::Format get_swap_chain_image_format() { return mSwapChainImageFormat; }
 		vk::Extent2D get_swap_chain_extent() { return mSwapChainExtent; }
 		size_t get_swap_chain_images_count() { return mSwapChainImages.size(); }
-		std::vector<vk::ImageView> get_swap_chain_image_views() { return mSwapChainImageViews; }
+		std::vector<std::shared_ptr<vulkan_image>> get_swap_chain_images() { return mVulkanSwapChainImages; }
 	private:
 		vk::SwapchainKHR mSwapChain;
 		std::vector<vk::Image> mSwapChainImages; // created and destroyed with the swap chain
-		std::vector<vk::ImageView> mSwapChainImageViews;
+		std::vector<std::shared_ptr<vulkan_image>> mVulkanSwapChainImages;
+
 		vk::Format mSwapChainImageFormat;
 		vk::Extent2D mSwapChainExtent;
 
@@ -43,9 +44,6 @@ namespace cgb {
 
 		void cleanup();
 		void create_swap_chain();
-		void create_image_views();
-
-		vk::ImageView create_image_view(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 	};
 
 }

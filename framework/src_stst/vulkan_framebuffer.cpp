@@ -193,6 +193,11 @@ namespace cgb {
 		vk::ImageLayout finalLayout, vk::ImageLayout initialLayout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp,
 		vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp, std::array<float, 4> clearColor)
 	{
+		std::vector<vk::ImageView> imageViews(imagePresenter->get_swap_chain_images().size());
+		for (int i = 0; i < imagePresenter->get_swap_chain_images().size(); i++) {
+			imageViews[i] = imagePresenter->get_swap_chain_images()[i]->get_image_view();
+		}
+
 		if (colorImage) {
 			vk::AttachmentDescription colorAttachment = {};
 			colorAttachment.format = colorImage->get_format();
@@ -219,11 +224,6 @@ namespace cgb {
 			auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
 			mColorAttachmentImages.push_back(colorImages);
 
-			auto resolveColorImages = imagePresenter->get_swap_chain_image_views();
-			std::vector<vk::ImageView> imageViews(resolveColorImages.size());
-			for (int i = 0; i < resolveColorImages.size(); i++) {
-				imageViews[i] = resolveColorImages[i];
-			}
 			mResolveColorAttachmentImages.push_back(imageViews);
 		}
 		else {
@@ -238,11 +238,6 @@ namespace cgb {
 			colorAttachment.finalLayout = finalLayout;
 			mColorAttachments.push_back(colorAttachment);
 
-			auto resolveColorImages = imagePresenter->get_swap_chain_image_views();
-			std::vector<vk::ImageView> imageViews(resolveColorImages.size());
-			for (int i = 0; i < resolveColorImages.size(); i++) {
-				imageViews[i] = resolveColorImages[i];
-			}
 			mColorAttachmentImages.push_back(imageViews);
 		}
 
