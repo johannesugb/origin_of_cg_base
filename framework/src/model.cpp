@@ -11,35 +11,35 @@
 
 namespace cgb
 {
-	const char* Model::kIndent = "    ";
-	const glm::vec4 Model::kDefaultDiffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	const glm::vec4 Model::kDefaultSpecularColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	const glm::vec3 Model::kDefaultAmbientColor = glm::vec3(1.0f);
-	const glm::vec3 Model::kDefaultEmissiveColor = glm::vec3(0.0f, 0.0f, 0.0f);
-	const glm::vec4 Model::kDefaultTransparentColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	const float Model::kDefaultSpecularPower = 0.0f;
-	const float Model::kDefaultOpacity = 1.0f;
-	const float Model::kDefaultBumpScaling = 1.0f;
-	const float Model::kDefaultRefraction = 0.0f;
-	const float Model::kDefaultReflectivity = 1.0f;
+	const char* model_data::kIndent = "    ";
+	const glm::vec4 model_data::kDefaultDiffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	const glm::vec4 model_data::kDefaultSpecularColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	const glm::vec3 model_data::kDefaultAmbientColor = glm::vec3(1.0f);
+	const glm::vec3 model_data::kDefaultEmissiveColor = glm::vec3(0.0f, 0.0f, 0.0f);
+	const glm::vec4 model_data::kDefaultTransparentColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	const float model_data::kDefaultSpecularPower = 0.0f;
+	const float model_data::kDefaultOpacity = 1.0f;
+	const float model_data::kDefaultBumpScaling = 1.0f;
+	const float model_data::kDefaultRefraction = 0.0f;
+	const float model_data::kDefaultReflectivity = 1.0f;
 
-	Model::Model(const glm::mat4& loadTransMatrix)
+	model_data::model_data(const glm::mat4& loadTransMatrix)
 		: m_meshes(0),
 		m_load_transformation_matrix(loadTransMatrix)
 	{
 	}
 
-	Model::~Model()
+	model_data::~model_data()
 	{
 	}
 
-	Model::Model(Model&& other) noexcept :
+	model_data::model_data(model_data&& other) noexcept :
 		m_meshes(std::move(other.m_meshes)),
 		m_load_transformation_matrix(std::move(other.m_load_transformation_matrix))
 	{
 	}
 
-	Model& Model::operator=(Model&& other) noexcept
+	model_data& model_data::operator=(model_data&& other) noexcept
 	{
 		m_meshes = std::move(other.m_meshes);
 		m_load_transformation_matrix = std::move(other.m_load_transformation_matrix);
@@ -47,29 +47,29 @@ namespace cgb
 		return *this;
 	}
 
-	std::unique_ptr<Model> Model::LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, const unsigned int model_loader_flags)
+	std::unique_ptr<model_data> model_data::LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, const unsigned int model_loader_flags)
 	{
-		std::unique_ptr<Model> model = std::make_unique<Model>(transform_matrix);
+		std::unique_ptr<model_data> model = std::make_unique<model_data>(transform_matrix);
 		if (!model->LoadFromFile(path, model_loader_flags))
 		{
 			// smartpointer will be deleted automatically when it goes out of scope
-			return std::unique_ptr<Model>(nullptr);
+			return std::unique_ptr<model_data>(nullptr);
 		}
 		return model;
 	}
 
-	std::unique_ptr<Model> Model::LoadFromMemory(const std::string& memory, const glm::mat4& transform_matrix, const unsigned int model_loader_flags)
+	std::unique_ptr<model_data> model_data::LoadFromMemory(const std::string& memory, const glm::mat4& transform_matrix, const unsigned int model_loader_flags)
 	{
-		std::unique_ptr<Model> model = std::make_unique<Model>(transform_matrix);
+		std::unique_ptr<model_data> model = std::make_unique<model_data>(transform_matrix);
 		if (!model->LoadFromMemory(memory, model_loader_flags))
 		{
 			// smartpointer will be deleted automatically when it goes out of scope
-			return std::unique_ptr<Model>(nullptr);
+			return std::unique_ptr<model_data>(nullptr);
 		}
 		return model;
 	}
 
-	unsigned int Model::CompileAssimpImportFlags(const unsigned int modelLoaderFlags)
+	unsigned int model_data::CompileAssimpImportFlags(const unsigned int modelLoaderFlags)
 	{
 		unsigned int flags_for_assimp_importer = 0;
 		// process importer-flags
@@ -92,7 +92,7 @@ namespace cgb
 	}
 
 
-	bool Model::LoadFromFile(const std::string& path, const unsigned int modelLoaderFlags)
+	bool model_data::LoadFromFile(const std::string& path, const unsigned int modelLoaderFlags)
 	{
 		// Create an importer and load from file (only this overload can load additional textures from the file system)
 		Assimp::Importer importer;
@@ -101,7 +101,7 @@ namespace cgb
 		return PostLoadProcessing(importer, scene, &path);
 	}
 
-	bool Model::LoadFromMemory(const std::string& data, const unsigned int modelLoaderFlags)
+	bool model_data::LoadFromMemory(const std::string& data, const unsigned int modelLoaderFlags)
 	{
 		// Release the previously loaded mesh (if it exists)
 		// Create an importer and load from file (can't load additional textures in this case)
@@ -111,7 +111,7 @@ namespace cgb
 		return PostLoadProcessing(importer, scene, nullptr);
 	}
 
-	bool Model::PostLoadProcessing(Assimp::Importer& importer, const aiScene* scene, const std::string* file_path_or_null)
+	bool model_data::PostLoadProcessing(Assimp::Importer& importer, const aiScene* scene, const std::string* file_path_or_null)
 	{
 		if (scene)
 		{
@@ -127,7 +127,7 @@ namespace cgb
 
 
 
-	bool Model::InitScene(const aiScene* scene)
+	bool model_data::InitScene(const aiScene* scene)
 	{
 		m_meshes.resize(scene->mNumMeshes);
 
@@ -148,7 +148,7 @@ namespace cgb
 	}
 
 
-	bool Model::InitMesh(const int index, const aiMesh* paiMesh)
+	bool model_data::InitMesh(const int index, const aiMesh* paiMesh)
 	{
 		if (!(paiMesh->HasPositions() && paiMesh->HasNormals()))
 		{
@@ -328,24 +328,24 @@ namespace cgb
 		return true;
 	}
 
-	glm::vec3 Mesh::vertex_position_at(size_t index) const
+	glm::vec3 mesh_data::vertex_position_at(size_t index) const
 	{
 		auto* ptr = &m_vertex_data.at(index * m_size_one_vertex + m_position_offset);
 		return *reinterpret_cast<const glm::vec3*>(ptr);
 	}
 
-	glm::vec3 Mesh::vertex_normal_at(size_t index) const
+	glm::vec3 mesh_data::vertex_normal_at(size_t index) const
 	{
 		auto* ptr = &m_vertex_data.at(index * m_size_one_vertex + m_normal_offset);
 		return *reinterpret_cast<const glm::vec3*>(ptr);
 	}
 
-	GLuint Mesh::index_at(size_t index) const
+	GLuint mesh_data::index_at(size_t index) const
 	{
 		return m_indices.at(index);
 	}
 
-	void Mesh::SetVertexData(
+	void mesh_data::SetVertexData(
 		std::vector<uint8_t>&& vertex_data,
 		VertexAttribData vertex_data_layout,
 		size_t position_offset,
@@ -385,7 +385,7 @@ namespace cgb
 		m_bitangent_size	  = bitangent_size;
 	}
 
-	void Mesh::SetVertexData(
+	void mesh_data::SetVertexData(
 		const std::vector<uint8_t>& vertex_data,
 		VertexAttribData vertex_data_layout,
 		size_t position_offset,
@@ -425,20 +425,20 @@ namespace cgb
 		m_bitangent_size = bitangent_size;
 	}
 
-	void Mesh::SetIndices(std::vector<GLuint>&& indices, int patch_size)
+	void mesh_data::SetIndices(std::vector<GLuint>&& indices, int patch_size)
 	{
 		m_indices = std::move(indices);
 		m_patch_size = patch_size;
 	}
 
-	void Mesh::SetIndices(const std::vector<GLuint>& indices, int patch_size)
+	void mesh_data::SetIndices(const std::vector<GLuint>& indices, int patch_size)
 	{
 		m_indices = indices;
 		m_patch_size = patch_size;
 	}
 
 
-	void Model::InitTransformationMatrices(const aiNode* pNode, const aiMatrix4x4& accTrans)
+	void model_data::InitTransformationMatrices(const aiNode* pNode, const aiMatrix4x4& accTrans)
 	{
 		for (unsigned int i = 0; i < pNode->mNumMeshes; i++)
 		{
@@ -454,13 +454,13 @@ namespace cgb
 
 
 
-	void Model::PrintIndent(std::ostream& stream, int indent)
+	void model_data::PrintIndent(std::ostream& stream, int indent)
 	{
 		for (int i = 0; i < indent; i++)
 			stream << kIndent;
 	}
 
-	void Model::PrintMatrix(std::ostream& stream, const aiMatrix4x4& mat, int indent)
+	void model_data::PrintMatrix(std::ostream& stream, const aiMatrix4x4& mat, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << std::setiosflags(std::ios::fixed) << std::setiosflags(std::ios::showpoint) << std::setprecision(2) << mat.a1 << "\t" << mat.a2 << "\t" << mat.a3 << "\t" << mat.a4 << std::endl;
@@ -472,13 +472,13 @@ namespace cgb
 		stream << mat.d1 << "\t" << mat.d2 << "\t" << mat.d3 << "\t" << mat.d4 << std::endl << std::resetiosflags(std::ios::fixed);
 	}
 
-	void Model::PrintMesh(const aiScene* scene, std::ostream& stream, unsigned int meshIndex, int indent)
+	void model_data::PrintMesh(const aiScene* scene, std::ostream& stream, unsigned int meshIndex, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "mesh at index[" << meshIndex << "] named[" << GetMeshName(scene, meshIndex) << "]" << std::endl;
 	}
 
-	void Model::PrintNodeRecursively(const aiScene* scene, std::ostream& stream, const aiNode* pNode, const aiMatrix4x4 accTranse, int indent)
+	void model_data::PrintNodeRecursively(const aiScene* scene, std::ostream& stream, const aiNode* pNode, const aiMatrix4x4 accTranse, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << std::endl << std::endl << "NODE at level[" << indent << "], name[" << pNode->mName.data << "]" << std::endl;
@@ -516,23 +516,23 @@ namespace cgb
 		stream << "}" << std::endl;
 	}
 
-	void Model::PrintNodeTree(const aiScene* scene, std::ostream& stream)
+	void model_data::PrintNodeTree(const aiScene* scene, std::ostream& stream)
 	{
 		PrintNodeRecursively(scene, stream, scene->mRootNode, aiMatrix4x4(), 0);
 	}
 
 
-	void Model::PrintVector3D(std::ostream& stream, const aiVector3D& vec)
+	void model_data::PrintVector3D(std::ostream& stream, const aiVector3D& vec)
 	{
 		stream << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
 	}
 
-	void Model::PrintQuaternion(std::ostream& stream, const aiQuaternion& quat)
+	void model_data::PrintQuaternion(std::ostream& stream, const aiQuaternion& quat)
 	{
 		stream << "(" << quat.x << ", " << quat.y << ", " << quat.z << ", " << quat.w << ")";
 	}
 
-	void Model::PrintVectorKey(std::ostream& stream, const aiVectorKey& key, int indent)
+	void model_data::PrintVectorKey(std::ostream& stream, const aiVectorKey& key, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "aiVectorKey time[" << key.mTime << "] value vec3";
@@ -540,7 +540,7 @@ namespace cgb
 		stream << std::endl;
 	}
 
-	void Model::PrintRotationKey(std::ostream& stream, const aiQuatKey& key, int indent)
+	void model_data::PrintRotationKey(std::ostream& stream, const aiQuatKey& key, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "aiQuatKey time[" << key.mTime << "] value quat";
@@ -548,7 +548,7 @@ namespace cgb
 		stream << std::endl;
 	}
 
-	void Model::PrintAnimationChannel(std::ostream& stream, const aiNodeAnim* channel, int indent)
+	void model_data::PrintAnimationChannel(std::ostream& stream, const aiNodeAnim* channel, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "aiNodeAnim nodeName[" << channel->mNodeName.data << "], preState[" << channel->mPreState << "], postState[" << channel->mPostState << "]" << std::endl;
@@ -583,13 +583,13 @@ namespace cgb
 		stream << "}" << std::endl;
 	}
 
-	void Model::PrintMeshKey(std::ostream& stream, const aiMeshKey& key, int indent)
+	void model_data::PrintMeshKey(std::ostream& stream, const aiMeshKey& key, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "aiMeshKey time[" << key.mTime << "], aiMesh::mAnimMeshes index[" << key.mValue << "]" << std::endl;
 	}
 
-	void Model::PrintMeshChannel(std::ostream& stream, const aiMeshAnim* channel, int indent)
+	void model_data::PrintMeshChannel(std::ostream& stream, const aiMeshAnim* channel, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "aiMeshAnim name[" << channel->mName.data << "]" << std::endl;
@@ -606,7 +606,7 @@ namespace cgb
 		stream << "}" << std::endl;
 	}
 
-	void Model::PrintAnimationTree(const aiScene* scene, std::ostream& stream)
+	void model_data::PrintAnimationTree(const aiScene* scene, std::ostream& stream)
 	{
 		for (unsigned int i = 0; i < scene->mNumAnimations; i++)
 		{
@@ -628,7 +628,7 @@ namespace cgb
 	}
 
 
-	void Model::PrintBone(std::ostream& stream, const aiBone* bone, int indent)
+	void model_data::PrintBone(std::ostream& stream, const aiBone* bone, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "aiBone name[" << bone->mName.data << "] #vertex-weights[" << bone->mNumWeights << "]" << std::endl;
@@ -643,14 +643,14 @@ namespace cgb
 	}
 
 
-	void Model::PrintAnimMesh(std::ostream& stream, const aiAnimMesh* am, int indent)
+	void model_data::PrintAnimMesh(std::ostream& stream, const aiAnimMesh* am, int indent)
 	{
 		PrintIndent(stream, indent);
 		stream << "aiAnimMesh numVertices[" << am->mNumVertices << "]" << std::endl;
 	}
 
 
-	void Model::PrintMeshes(const aiScene* scene, std::ostream& stream)
+	void model_data::PrintMeshes(const aiScene* scene, std::ostream& stream)
 	{
 		for (unsigned int i = 0; i < scene->mNumMeshes; i++)
 		{
@@ -672,29 +672,29 @@ namespace cgb
 	}
 
 
-	const glm::mat4& Model::transformation_matrix() const
+	const glm::mat4& model_data::transformation_matrix() const
 	{
 		return m_load_transformation_matrix;
 	}
 
-	const glm::mat4 Model::transformation_matrix(unsigned int meshIndex) const
+	const glm::mat4 model_data::transformation_matrix(unsigned int meshIndex) const
 	{
 		return m_load_transformation_matrix * m_meshes[meshIndex].m_scene_transformation_matrix;
 	}
 
 
-	size_t Model::num_meshes() const
+	size_t model_data::num_meshes() const
 	{
 		return m_meshes.size();
 	}
 
-	size_t Model::num_vertices(unsigned int meshIndex) const
+	size_t model_data::num_vertices(unsigned int meshIndex) const
 	{
 		const auto& mesh = m_meshes.at(meshIndex);
 		return mesh.m_vertex_data.size() / mesh.m_size_one_vertex;
 	}
 
-	size_t Model::indices_length(unsigned int meshIndex) const
+	size_t model_data::indices_length(unsigned int meshIndex) const
 	{
 		const auto& mesh = m_meshes.at(meshIndex);
 		return mesh.m_indices.size();
@@ -702,7 +702,7 @@ namespace cgb
 
 
 
-	std::string Model::GetMeshName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetMeshName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		aiMaterial* pMaterial = scene->mMaterials[scene->mMeshes[meshIndex]->mMaterialIndex];
 		if (!pMaterial) return "";
@@ -714,7 +714,7 @@ namespace cgb
 	}
 
 
-	std::string Model::GetTextureNameFromMaterials(const aiScene* scene, unsigned int meshIndex, aiTextureType type)
+	std::string model_data::GetTextureNameFromMaterials(const aiScene* scene, unsigned int meshIndex, aiTextureType type)
 	{
 		aiMaterial* pMaterial = scene->mMaterials[scene->mMeshes[meshIndex]->mMaterialIndex];
 		if (!pMaterial) return "";
@@ -725,59 +725,59 @@ namespace cgb
 			return "";
 	}
 
-	std::string Model::GetDiffuseTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetDiffuseTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_DIFFUSE);
 	}
-	std::string Model::GetSpecularTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetSpecularTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_SPECULAR);
 	}
-	std::string Model::GetAmbientTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetAmbientTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_AMBIENT);
 	}
-	std::string Model::GetEmissiveTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetEmissiveTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_EMISSIVE);
 	}
-	std::string Model::GetHeightTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetHeightTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_HEIGHT);
 	}
-	std::string Model::GetNormalsTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetNormalsTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_NORMALS);
 	}
-	std::string Model::GetShininessTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetShininessTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_SHININESS);
 	}
-	std::string Model::GetOpacityTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetOpacityTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_OPACITY);
 	}
-	std::string Model::GetDisplacementTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetDisplacementTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_DISPLACEMENT);
 	}
-	std::string Model::GetReflectionTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetReflectionTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_REFLECTION);
 	}
-	std::string Model::GetLightmapTextureName(const aiScene* scene, unsigned int meshIndex) 
+	std::string model_data::GetLightmapTextureName(const aiScene* scene, unsigned int meshIndex) 
 	{
 		return GetTextureNameFromMaterials(scene, meshIndex, aiTextureType_LIGHTMAP);
 	}
 
-	aiMaterial* Model::GetAssimpMaterialPtr(const aiScene* scene, unsigned int meshIndex)
+	aiMaterial* model_data::GetAssimpMaterialPtr(const aiScene* scene, unsigned int meshIndex)
 	{
 		return scene->mMaterials[scene->mMeshes[meshIndex]->mMaterialIndex];
 	}
 
 
 
-	Mesh& Model::mesh_at(unsigned int meshIndex)
+	mesh_data& model_data::mesh_at(unsigned int meshIndex)
 	{
 		return m_meshes[meshIndex];
 	}

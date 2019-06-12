@@ -3,6 +3,15 @@
 
 namespace cgb
 {
+	class model_data;
+	using model = std::variant<
+		model_data,
+		std::shared_ptr<model_data>,
+		std::unique_ptr<model_data>
+	>;
+
+
+
 	enum ModelLoaderFlags
 	{
 		MOLF_none = 0x00000000,
@@ -73,8 +82,7 @@ namespace cgb
 	using VAOMap = std::unordered_map<VertexAttribData, uint32_t>;
 
 
-	class Model;
-	class Mesh
+	class mesh_data
 	{
 	public:
 
@@ -117,7 +125,7 @@ namespace cgb
 
 	public:
 		// Constructor - initialize everything
-		Mesh() :
+		mesh_data() :
 			m_index(-1),
 			m_vertex_data_layout(VertexAttribData::Nothing),
 			m_size_one_vertex(0),
@@ -198,9 +206,9 @@ namespace cgb
 
 	};
 
-	using MeshRef = std::reference_wrapper<Mesh>;
+	using MeshRef = std::reference_wrapper<mesh_data>;
 	
-	class Model
+	class model_data
 	{
 	private:
 		static const int kNumFaceVertices = 3;
@@ -219,7 +227,7 @@ namespace cgb
 		static const float kDefaultRefraction;
 		static const float kDefaultReflectivity;
 
-		std::vector<Mesh> m_meshes;
+		std::vector<mesh_data> m_meshes;
 
 #ifdef false
 		std::vector<Animator*> m_animators;
@@ -230,16 +238,16 @@ namespace cgb
 		glm::mat4 m_load_transformation_matrix;
 
 	public:
-		Model(const glm::mat4& loadTransMatrix = glm::mat4(1.0f));
-		Model(const Model& other) = delete;
-		Model(Model&& other) noexcept;
-		Model& operator=(const Model& other) = delete;
-		Model& operator=(Model&& other) noexcept;
-		~Model();
+		model_data(const glm::mat4& loadTransMatrix = glm::mat4(1.0f));
+		model_data(const model_data& other) = delete;
+		model_data(model_data&& other) noexcept;
+		model_data& operator=(const model_data& other) = delete;
+		model_data& operator=(model_data&& other) noexcept;
+		~model_data();
 
 	public:
-		static std::unique_ptr<Model> LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, const unsigned int model_loader_flags = MOLF_default);
-		static std::unique_ptr<Model> LoadFromMemory(const std::string& memory, const glm::mat4& transform_matrix, const unsigned int model_loader_flags = MOLF_default);
+		static std::unique_ptr<model_data> LoadFromFile(const std::string& path, const glm::mat4& transform_matrix, const unsigned int model_loader_flags = MOLF_default);
+		static std::unique_ptr<model_data> LoadFromMemory(const std::string& memory, const glm::mat4& transform_matrix, const unsigned int model_loader_flags = MOLF_default);
 
 	private:
 		unsigned static int CompileAssimpImportFlags(const unsigned int modelLoaderFlags);
@@ -311,10 +319,10 @@ namespace cgb
 
 		std::vector<MeshRef> SelectAllMeshes()
 		{
-			return SelectMeshes([](const Mesh& mesh) { return true; });
+			return SelectMeshes([](const mesh_data& mesh) { return true; });
 		}
 
-		Mesh& mesh_at(unsigned int meshIndex);
+		mesh_data& mesh_at(unsigned int meshIndex);
 
 	};
 

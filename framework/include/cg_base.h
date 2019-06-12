@@ -50,6 +50,9 @@
 #endif
 
 // -------------------- CG-Base includes --------------------
+#include "buffer_usage.h"
+#include "memory_usage.h"
+#include "buffer.h"
 #include "context_state.h"
 #include "context_types.h"
 #include "context.h"

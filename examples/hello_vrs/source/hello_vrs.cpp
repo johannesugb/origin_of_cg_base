@@ -79,7 +79,7 @@ private:
 	std::shared_ptr<eyetracking_interface> eyeInf;
 
 
-	std::unique_ptr<cgb::Model> mModel;
+	std::unique_ptr<cgb::model_data> mModel;
 
 
 	std::shared_ptr<cgb::vulkan_render_object> mSponzaModel;
@@ -556,9 +556,9 @@ private:
 		}
 	}
 
-	void load_model(std::string inPath, glm::mat4 transform, const unsigned int model_loader_flags, std::unique_ptr<cgb::Model>& outModel)
+	void load_model(std::string inPath, glm::mat4 transform, const unsigned int model_loader_flags, std::unique_ptr<cgb::model_data>& outModel)
 	{
-		outModel = cgb::Model::LoadFromFile(inPath, transform, model_loader_flags);
+		outModel = cgb::model_data::LoadFromFile(inPath, transform, model_loader_flags);
 		auto& mesh = outModel->mesh_at(0);
 
 		auto outVertexBuffer = std::make_shared<cgb::vulkan_buffer>(sizeof(mesh.m_vertex_data[0]) * mesh.m_vertex_data.size(),

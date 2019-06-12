@@ -148,6 +148,9 @@
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp">
       <Filter>Source Files\application_structure_and_general_stuff\timers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\synchronization_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -308,6 +311,18 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\various_utils.h">
       <Filter>Header Files\utilities_components_helpers\helper_functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\buffer.h">
+      <Filter>Header Files\data_and_buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\synchronization_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\window_opengl.h">
+      <Filter>Header Files\context_and_context_specific_functionality\opengl46</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\synchronization_opengl.h">
+      <Filter>Header Files\context_and_context_specific_functionality\opengl46</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

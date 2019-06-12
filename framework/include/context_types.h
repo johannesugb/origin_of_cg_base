@@ -2,18 +2,6 @@
 
 namespace cgb
 {
-	/** Dimensions of a window */
-	struct window_size
-	{
-		window_size(int pWidth, int pHeight)
-			: mWidth{ pWidth }
-			, mHeight{ pHeight }
-		{}
-
-		int mWidth;
-		int mHeight;
-	};
-
 	/** The order of the color channels w.r.t. an image format */
 	enum struct image_color_channel_order
 	{

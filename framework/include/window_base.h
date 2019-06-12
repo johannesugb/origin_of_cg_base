@@ -3,7 +3,21 @@
 
 namespace cgb
 {
+	// Forward-declare the context-specific window class.
+	// It will be defined in window_vulkan.h or window_opengl.h (or similarly named), respectively.
 	class window;
+
+	/** Dimensions of a window */
+	struct window_size
+	{
+		window_size(int pWidth, int pHeight)
+			: mWidth{ pWidth }
+			, mHeight{ pHeight }
+		{}
+
+		int mWidth;
+		int mHeight;
+	};
 
 	class window_base
 	{

@@ -73,45 +73,7 @@ namespace cgb
 	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
 	extern bool has_stencil_component(const image_format& pImageFormat);
 
-	/** Specifies for a buffer, where the buffer's memory will be located */
-	enum struct memory_location
-	{
-		/** Buffer's memory will be on the host and in "host coherent" mode */
-		host_coherent,
-		/** Buffer's memory will be on the host and in "host cached" mode */
-		host_cached,
-		/** Buffer's memory is on the GPU */
-		device,
-		/** Buffer's memory is on the GPU with "protected mode" set */
-		device_protected
-	};
-
-	/** Specifies how a buffer is going to be used. The "dynamic" versions 
-	 *	usually imply that there will be many instances of the buffer;
-	 *	e.g., more specifically, one buffer for each swap chain image, if 
-	 *	      the buffer_usage is set to `dynamic_for_render`
-	 */
-	enum struct buffer_usage
-	{
-		/** Write once and never modify again */
-		static_only,
-		/** Read and write constantly, but only have one instance. */
-		dynamic_singleton,
-		/** Dynamic buffer with as many copies as there are swap chain images */
-		dynamic_for_render,
-		/** Dynamic buffer with a configurable number of copies */
-		dynamic_for_update
-	};
-
-	/** Additional information for some cgb::buffer_usage settings */
-	struct buffer_usage_details
-	{
-		static buffer_usage_details from_swap_chain(window* pWindow);
-		static buffer_usage_details from_main_window();
-		static buffer_usage_details from_num_buffers(uint32_t pNumBuffers);
-
-		uint32_t mNumBuffers;
-	};
+	
 
 	/** Struct which stores data for a swap chain */
 	struct swap_chain_data
@@ -240,110 +202,7 @@ namespace cgb
 		vk::CommandPoolCreateInfo mCreateInfo;
 		vk::CommandPool mCommandPool;
 	};
-
-	// Just a stub for the great create-functions which there are to come
-	template <typename I, typename O>
-	O create();
-
-	/** Represents a Vulkan buffer along with its assigned memory, holds the 
-	 *	native handle and takes care about lifetime management of the native handles.
-	 */
-	template <typename Cfg>
-	struct buffer
-	{
-		buffer() noexcept = default;
-		buffer(const buffer&) = delete;
-		buffer(buffer&&) noexcept = default;
-		buffer& operator=(const buffer&) = delete;
-		buffer& operator=(buffer&&) noexcept = default;
-		~buffer() {
-			for (auto& inst : mInstances) {
-				if (std::get<vk::Buffer>(inst)) {
-					context().logical_device().destroyBuffer(std::get<vk::Buffer>(inst));
-					std::get<vk::Buffer>(inst) = nullptr;
-				}
-				if (std::get<vk::Memory>(inst)) {
-					context().logical_device().freeMemory(std::get<vk::Memory>(inst));
-					std::get<vk::Memory>(inst) = nullptr;
-				}
-			}
-		}
-
-		auto size_at(size_t index) const				{ return std::get<size_t>(mInstances[index]); }
-		auto usage_flags_at(size_t index) const			{ return std::get<vk::BufferUsageFlags>(mInstances[index]); }
-		auto buffer_at(size_t index) const				{ return std::get<vk::Buffer>(mInstances[index]); }
-		auto memory_properties_at(size_t index) const	{ return std::get<vk::MemoryPropertyFlags>(mInstances[index]); }
-		auto memory_at(size_t index) const				{ return std::get<vk::DeviceMemory>(mInstances[index]); }
-		auto config_at(size_t index) const				{ return std::get<Cfg>(mInstances[index]); }
-		auto size() const								{ return size_at(0); }
-		auto usage_flags() const						{ return usage_flags_at(0); }
-		auto buffer() const								{ return buffer_at(0); }
-		auto memory_properties() const					{ return memory_properties_at(0); }
-		auto memory() const								{ return memory_at(0); }
-		auto config() const								{ return config_at(0); }
-
-		static buffer create(size_t pBufferSize, vk::BufferUsageFlags pUsageFlags, vk::MemoryPropertyFlags pMemoryProperties);
-		void fill_host_coherent_memory(const void* pData, std::optional<size_t> pSize = std::nullopt);
-
-		// mSize, mBufferFlags, mBuffer, mMemoryProperties, mMemory, config-type
-		std::vector<std::tuple<size_t, vk::BufferUsageFlags, vk::Buffer, vk::MemoryPropertyFlags, vk::DeviceMemory, Cfg>> mInstances;
-	};
-	extern void copy(const buffer& pSource, const buffer& pDestination);
 	
-	/** This struct contains information for a staging buffer which is a temporary buffer 
-	 *	usually used to transfer data from the CPU side to the GPU side.
-	 */
-	struct staging_buffer
-	{
-		size_t total_size() const { return mSize; }
-		size_t mSize;
-	};
-
-	/**	This struct contains information for a buffer which is intended to be used as 
-	 *	vertex buffer, i.e. vertex attributes provided to a shader.
-	 */
-	struct vertex_buffer
-	{
-		size_t size_one_element() const { return mSizeOneElement; }
-		size_t num_elements() const { return mNumElements; }
-		size_t total_size() const { return size_one_element() * num_elements(); }
-
-		size_t mSizeOneElement;
-		size_t mNumElements;
-	};
-
-	/**	This struct contains information for a buffer which is intended to be used as 
-	*	index buffer.
-	*/
-	struct index_buffer
-	{
-		size_t size_one_element() const 
-		{
-			switch (mIndexType) {
-			case vk::IndexType::eUint16:
-				return sizeof(uint16_t);
-			case vk::IndexType::eUint32:
-				return sizeof(uint32_t);
-			case vk::IndexType::eNoneNV:
-				return 0;
-			default:
-				throw std::runtime_error("Unsupported vk::IndexType");
-			}
-		}
-		size_t num_elements() const { return static_cast<size_t>(mIndexCount); }
-		size_t total_size() const { return size_one_element() * num_elements(); }
-
-		vk::IndexType mIndexType;
-		uint32_t mIndexCount;
-	};
-
-	/** This struct contains information for a uniform buffer.
-	*/
-	struct uniform_buffer
-	{
-		size_t total_size() const { return mSize; }
-		size_t mSize;
-	};
 
 	/**	Create (multiple) buffers which are all created with exclusive access for a queue.
 	 *	If different queues are being used, ownership has to be transferred explicitely.
@@ -397,14 +256,93 @@ namespace cgb
 	};
 
 	template <typename Cfg>
-	buffer_and_semaphores<Cfg> create(Cfg pConfig, cgb::memory_location pMemoryLocation, cgb::buffer_usage pUsage, const void* pData)
+	buffer_and_semaphores<Cfg> create(Cfg pConfig, cgb::memory_location pMemoryLocation, cgb::buffer_usage pUsage, const void* pData, std::optional<cgb::buffer_usage_details> pBufferUsageDetails = std::nullopt)
 	{
-		buffer_and_semaphores<Cfg> result;
+		// Determine the number of buffers to allocate:
+		uint32_t numBuffers = 1;
+		switch (pUsage)
+		{
+		case cgb::buffer_usage::dynamic_for_render:
+			if (!pBufferUsageDetails.has_value()) {
+				// Default to the main window's data
+				pBufferUsageDetails = cgb::buffer_usage_details::from_main_window();
+			}
+			numBuffers = pBufferUsageDetails->mNumBuffers;
+			break;
+		case cgb::buffer_usage::dynamic_for_update:
+			if (!pBufferUsageDetails.has_value()) {
+				// Default to a ping-pong buffer
+				pBufferUsageDetails = cgb::buffer_usage_details::from_num_buffers(2);
+			}
+			numBuffers = pBufferUsageDetails->mNumBuffers;
+			break;
+		default:
+			break;
+		}
+
+		auto bufferSize = pConfig.total_size();
+
+		// We've got two major branches here: 
+		// 1) Memory will stay on the host and there will be no dedicated memory on the device
+		// 2) Memory will be transfered to the device. (Only in this case, we'll need to create semaphores.)
+		if (pMemoryLocation < cgb::memory_location::device) {
+			// HOST-ONLY Memory
+			auto memoryFlags = vk::MemoryPropertyFlagBits::eHostVisible;
+			if (cgb::memory_location::host_coherent == pMemoryLocation) {
+				memoryFlags |= vk::MemoryPropertyFlagBits::eHostCoherent;
+			}
+			if (cgb::memory_location::host_cached == pMemoryLocation) {
+				memoryFlags |= vk::MemoryPropertyFlagBits::eHostCached;
+			}
+
+			auto buffers = cgb::create(cgb::host_buffer{ bufferSize }, vk::BufferUsageFlags(), memoryFlags, numBuffers);
+
+			// Set the data:
+			if (cgb::memory_location::host_coherent == pMemoryLocation) {
+				// Copy data to coherently mapped host memory
+				for (uint32_t i = 0; i < num_instances; ++i) {
+					auto memory = buffer.memory_handle_at(i);
+					void* mapped = context().logical_device().mapMemory(memory, 0, bufferSize);
+					memcpy(mapped, pData, copySize);
+					context().logical_device().unmapMemory(memory);
+				}
+			}
+			if (cgb::memory_location::host_cached == pMemoryLocation) {
+				// Copy data to non-coherently, cached mapped host memory
+				for (uint32_t i = 0; i < num_instances; ++i) {
+					auto memory = buffer.memory_handle_at(i);
+					void* mapped = context().logical_device().mapMemory(memory, 0, bufferSize);
+					memcpy(mapped, pData, copySize);
+					context().logical_device().unmapMemory(memory); // TODO: FLUSH oder so??
+				}
+			}
+		}
+		else { 
+			// Memory ON THE DEVICE
+
+		}
+		/** Write once and never modify again */
+		static_only,
+			/** Read and write constantly, but only have one instance. */
+			dynamic_singleton,
+			/** Dynamic buffer with as many copies as there are swap chain images */
+			dynamic_for_render,
+			/** Dynamic buffer with a configurable number of copies */
+			dynamic_for_update
+
+			/** Buffer's memory will be on the host and in "host coherent" mode */
+			host_coherent,
+			/** Buffer's memory will be on the host and in "host cached" mode */
+			host_cached,
+			/** Buffer's memory is on the GPU */
+			device,
+			/** Buffer's memory is on the GPU with "protected mode" set */
+			device_protected
+
 
 		auto bufferSize = pConfig.total_size();
 		
 
-		cgb::create(cgb::staging_buffer{ bufferSize }, )
 		// TODO: Create a staging buffer, fill it (maybe with flush?)
 		// Create another device buffer
 		// Create the staging buffer contents into device buffer
@@ -569,52 +507,6 @@ namespace cgb
 		static shader_binding_table create(const pipeline& pRtPipeline);
 	};
 
-	struct fence
-	{
-		fence() noexcept;
-		fence(const vk::FenceCreateInfo&, const vk::Fence&) noexcept;
-		fence(const fence&) = delete;
-		fence(fence&&) noexcept;
-		fence& operator=(const fence&) = delete;
-		fence& operator=(fence&&) noexcept;
-		~fence();
-
-		static fence create(const vk::FenceCreateInfo& pCreateInfo);
-
-		vk::FenceCreateInfo mCreateInfo;
-		vk::Fence mFence;
-	};
-
-	struct semaphore
-	{
-		semaphore() noexcept;
-		semaphore(const vk::SemaphoreCreateInfo&, const vk::Semaphore&) noexcept;
-		semaphore(const semaphore&) = delete;
-		semaphore(semaphore&&) noexcept;
-		semaphore& operator=(const semaphore&) = delete;
-		semaphore& operator=(semaphore&&) noexcept;
-		virtual ~semaphore();
-
-		static semaphore create(const vk::SemaphoreCreateInfo& pCreateInfo);
-
-		vk::SemaphoreCreateInfo mCreateInfo;
-		vk::Semaphore mSemaphore;
-
-		// --- Some advanced features of a semaphore object ---
-
-		/** A custom deleter function called upon destruction of this semaphore */
-		std::optional<std::function<void()>> mCustomDeleter;
-
-		/** An optional dependant semaphore. This means: The dependant
-		 *	semaphore can be assumed to be finished when this semaphore
-		 *	has finished.
-		 *	The point here is that some internal function might wait on it,
-		 *	that shall be somewhat opaque to the user in some cases.
-		 *	The dependant semaphore child object ensures that the semaphore
-		 *	does not get destructed prematurely.
-		 */
-		std::optional<semaphore> mDependantSemaphore;
-	};
 
 	enum struct device_queue_selection_strategy
 	{

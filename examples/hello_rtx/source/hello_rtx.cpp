@@ -135,9 +135,9 @@ public:
 		cgb::copy(stagingBuffer, mIndexBuffer);
 	}
 
-	static void load_model(std::string inPath, std::unique_ptr<cgb::Model>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer, int mesh_index)
+	static void load_model(std::string inPath, std::unique_ptr<cgb::model_data>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer, int mesh_index)
 	{
-		outModel = cgb::Model::LoadFromFile(inPath, glm::mat4(1.0f));
+		outModel = cgb::model_data::LoadFromFile(inPath, glm::mat4(1.0f));
 		auto& mesh = outModel->mesh_at(mesh_index);
 		
 		{
@@ -762,10 +762,15 @@ public:
 #endif
 
 private:
+	// Raw-Data, kk:
 	const std::vector<Vertex> mVertices;
 	const std::vector<uint16_t> mIndices;
-	std::unique_ptr<cgb::Model> mModel;
-	std::unique_ptr<cgb::Model> mSphere;
+
+
+
+	// Ab hier wird's ugly:
+	std::unique_ptr<cgb::model_data> mModel;
+	std::unique_ptr<cgb::model_data> mSphere;
 #ifdef USE_VULKAN_CONTEXT
 	cgb::vertex_buffer mModelVertices;
 	cgb::index_buffer mModelIndices;
@@ -799,6 +804,43 @@ private:
 	std::vector<std::shared_ptr<cgb::image>> mOffscreenImages;
 	std::vector<cgb::image_view> mOffscreenImageViews;
 #endif
+	// ...bis hier
+
+	cgb::model mModel;
+	cgb::model mSphere;
+	cgb::vertex_buffer mModelVertices;
+	cgb::index_buffer mModelIndices;
+	cgb::vertex_buffer mSphereVertices;
+	cgb::index_buffer mSphereIndices;
+	cgb::vertex_buffer mVertexBuffer;
+	cgb::index_buffer mIndexBuffer;
+	std::vector<cgb::uniform_buffer> mUniformBuffers;
+	std::vector<std::vector<cgb::uniform_buffer>> mRtUniformBuffers;
+	cgb::descriptor_set_layout mDescriptorSetLayout;
+	cgb::descriptor_set_layout mRtDescriptorSetLayout;
+	cgb::pipeline mPipeline;
+	cgb::pipeline mRtPipeline;
+	std::vector<cgb::framebuffer> mFrameBuffers;
+	std::vector<cgb::command_buffer> mCmdBfrs;
+	std::vector<cgb::descriptor_set> mDescriptorSets;
+	std::vector<cgb::descriptor_set> mRtDescriptorSets;
+	std::shared_ptr<cgb::image> mImage;
+	cgb::image_view mImageView;
+	cgb::sampler mSampler;
+	std::shared_ptr<cgb::image> mDepthImage;
+	cgb::image_view mDepthImageView;
+
+	std::vector<vk::GeometryNV> mGeometries;
+	std::vector<VkGeometryInstance> mGeometryInstances;
+	std::vector<cgb::buffer> mGeometryInstanceBuffers;
+	cgb::acceleration_structure mBottomLevelAccStructure;
+	cgb::acceleration_structure mTopLevelAccStructure;
+	cgb::shader_binding_table mShaderBindingTable;
+
+	std::vector<std::shared_ptr<cgb::image>> mOffscreenImages;
+	std::vector<cgb::image_view> mOffscreenImageViews;
+
+
 
 	cgb::quake_camera mQuakeCam;
 
@@ -811,7 +853,7 @@ private:
 
 int main()
 {
-	//try {
+	try {
 		cgb::settings::gApplicationName = "Hello World";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);
 		cgb::settings::gRequiredDeviceExtensions.push_back("VK_NV_ray_tracing");
@@ -839,11 +881,11 @@ int main()
 
 		// Let's go:
 		hello.start();
-	//}
-	//catch (std::runtime_error& re)
-	//{
-	//	LOG_ERROR_EM(re.what());
-	//}
+	}
+	catch (std::runtime_error& re)
+	{
+		LOG_ERROR_EM(re.what());
+	}
 }
 
 
