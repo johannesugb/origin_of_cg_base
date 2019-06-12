@@ -179,9 +179,12 @@
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\camera.h" />
     <ClInclude Include="..\..\framework\include\cg_base.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\cg_element.h" />
     <ClInclude Include="..\..\framework\include\composition.h" />
