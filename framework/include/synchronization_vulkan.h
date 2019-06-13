@@ -3,42 +3,49 @@
 namespace cgb
 {
 	/** A synchronization object which allows GPU->CPU synchronization */
-	struct fence
+	class fence
 	{
-		fence() noexcept;
-		fence(const vk::FenceCreateInfo&, const vk::Fence&) noexcept;
+	public:
+		fence() = default;
 		fence(const fence&) = delete;
-		fence(fence&&) noexcept;
+		fence(fence&&) = default;
 		fence& operator=(const fence&) = delete;
-		fence& operator=(fence&&) noexcept;
-		~fence();
+		fence& operator=(fence&&) = default;
+		~fence() = default;
+
+		const auto& create_info() const { return mCreateInfo; }
+		const auto& handle() const { return mFence.get(); }
+		const auto* handle_addr() const { return &mFence.get(); }
 
 		static fence create(const vk::FenceCreateInfo& pCreateInfo);
 
+	private:
 		vk::FenceCreateInfo mCreateInfo;
-		vk::Fence mFence;
+		vk::UniqueFence mFence;
 	};
 
 	/** A synchronization object which allows GPU->GPU synchronization */
-	struct semaphore
+	class semaphore
 	{
-		semaphore() noexcept;
-		semaphore(const vk::SemaphoreCreateInfo&, const vk::Semaphore&) noexcept;
+	public:
+		semaphore() = default;
 		semaphore(const semaphore&) = delete;
-		semaphore(semaphore&&) noexcept;
+		semaphore(semaphore&&) = default;
 		semaphore& operator=(const semaphore&) = delete;
-		semaphore& operator=(semaphore&&) noexcept;
+		semaphore& operator=(semaphore&&) = default;
 		virtual ~semaphore();
+
+		const auto& create_info() const { return mCreateInfo; }
+		const auto& handle() const { return mSemaphore.get(); }
+		const auto* handle_addr() const { return &mSemaphore.get(); }
 
 		static semaphore create(const vk::SemaphoreCreateInfo& pCreateInfo);
 
+	private:
 		vk::SemaphoreCreateInfo mCreateInfo;
-		vk::Semaphore mSemaphore;
+		vk::UniqueSemaphore mSemaphore;
 
 		// --- Some advanced features of a semaphore object ---
-
-		/** A custom deleter function called upon destruction of this semaphore */
-		std::optional<std::function<void()>> mCustomDeleter;
 
 		/** An optional dependant semaphore. This means: The dependant
 		*	semaphore can be assumed to be finished when this semaphore
@@ -49,6 +56,10 @@ namespace cgb
 		*	does not get destructed prematurely.
 		*/
 		std::optional<semaphore> mDependantSemaphore;
+
+		/** A custom deleter function called upon destruction of this semaphore */
+		std::optional<std::function<void()>> mCustomDeleter;
+
 	};
 
 }

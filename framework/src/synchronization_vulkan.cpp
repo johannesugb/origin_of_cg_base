@@ -2,94 +2,12 @@
 
 namespace cgb
 {
-#pragma region fence
-	fence::fence() noexcept
-		: mCreateInfo{}
-		, mFence{nullptr}
-	{ }
-
-	fence::fence(const vk::FenceCreateInfo& pCreateInfo, const vk::Fence& pFence) noexcept
-		: mCreateInfo{pCreateInfo}
-		, mFence{pFence}
-	{ }
-
-	fence::fence(fence&& other) noexcept
-		: mCreateInfo{ std::move(other.mCreateInfo) }
-		, mFence{ std::move(other.mFence) }
-	{ 
-		other.mCreateInfo = {};
-		other.mFence = nullptr;
-	}
-
-	fence& fence::operator=(fence&& other) noexcept
-	{ 
-		mCreateInfo = std::move(other.mCreateInfo);
-		mFence = std::move(other.mFence);
-		other.mCreateInfo = {};
-		other.mFence = nullptr;
-		return *this;
-	}
-
-	fence::~fence()
-	{ 
-		if (mFence) {
-			context().logical_device().destroyFence(mFence);
-			mFence = nullptr;
-		}
-	}
-
 	fence fence::create(const vk::FenceCreateInfo& pCreateInfo)
-	{ 
-		return fence{
-			pCreateInfo,
-			context().logical_device().createFence(pCreateInfo)
-			//
-			//
-			// FUUU, das dürfte sich wohl ziemlich auszahlen, alles auf UniqueHandle umzustellen GODDAMNIT!!
-			//
-			//
-		};
-	}
-#pragma endregion
-
-#pragma region semaphore
-	semaphore::semaphore() noexcept
-		: mCreateInfo{}
-		, mSemaphore{nullptr}
-		, mCustomDeleter{}
-		, mDependantSemaphore{}
-	{ }
-
-	semaphore::semaphore(const vk::SemaphoreCreateInfo& pCreateInfo, const vk::Semaphore& pSemaphore) noexcept
-		: mCreateInfo{pCreateInfo}
-		, mSemaphore{pSemaphore}
-		, mCustomDeleter{}
-		, mDependantSemaphore{}
-	{ }
-
-	semaphore::semaphore(semaphore&& other) noexcept
-		: mCreateInfo{ std::move(other.mCreateInfo) }
-		, mSemaphore{ std::move(other.mSemaphore) }
-		, mCustomDeleter{ std::move(other.mCustomDeleter) }
-		, mDependantSemaphore{ std::move(other.mDependantSemaphore) }
-	{ 
-		other.mCreateInfo = {};
-		other.mSemaphore = nullptr;
-		other.mCustomDeleter.reset(); // TODO: This is probably not required
-		other.mDependantSemaphore.reset(); // TODO: This is probably not required
-	}
-
-	semaphore& semaphore::operator=(semaphore&& other) noexcept
-	{ 
-		mCreateInfo = std::move(other.mCreateInfo);
-		mSemaphore = std::move(other.mSemaphore);
-		mCustomDeleter = std::move(other.mCustomDeleter);
-		mDependantSemaphore = std::move(other.mDependantSemaphore);
-		other.mCreateInfo = {};
-		other.mSemaphore = nullptr;
-		other.mCustomDeleter.reset(); // TODO: This is probably not required
-		other.mDependantSemaphore.reset(); // TODO: This is probably not required
-		return *this;
+	{
+		fence result;
+		result.mCreateInfo = pCreateInfo;
+		result.mFence = context().logical_device().createFenceUnique(pCreateInfo);
+		return result;
 	}
 
 	semaphore::~semaphore()
@@ -99,22 +17,16 @@ namespace cgb
 			(*mCustomDeleter)();
 			mCustomDeleter.reset();
 		}
-		if (mDependantSemaphore) {
-			// Destroy the dependant semaphore before destroying myself
-			mDependantSemaphore.reset();
-		}
-		if (mSemaphore) {
-			context().logical_device().destroySemaphore(mSemaphore);
-			mSemaphore = nullptr;
-		}
+		// Destroy the dependant semaphore before destroying "my actual semaphore"
+		// ^ This is ensured by the order of the members
+		//   See: https://isocpp.org/wiki/faq/dtors#calling-member-dtors
 	}
 
 	semaphore semaphore::create(const vk::SemaphoreCreateInfo& pCreateInfo)
 	{ 
-		return semaphore{
-			pCreateInfo,
-			context().logical_device().createSemaphore(pCreateInfo)
-		};
+		semaphore result;
+		result.mCreateInfo = pCreateInfo;
+		result.mSemaphore = context().logical_device().createSemaphoreUnique(pCreateInfo);
+		return result;
 	}
-#pragma endregion
 }

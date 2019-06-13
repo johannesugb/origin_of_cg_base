@@ -3,7 +3,7 @@
 namespace cgb
 {
 	/** Specifies how a buffer will/might be used */
-	enum struct memory_usage
+	enum struct buffer_usage
 	{
 		/** No special usages */
 		nothing_special					= 0x0000,
@@ -27,24 +27,24 @@ namespace cgb
 		device_address					= 0x0020,
 	};
 
-	inline memory_usage operator| (memory_usage a, memory_usage b)
+	inline buffer_usage operator| (buffer_usage a, buffer_usage b)
 	{
-		typedef std::underlying_type<memory_usage>::type EnumType;
-		return static_cast<memory_usage>(static_cast<EnumType>(a) | static_cast<EnumType>(b));
+		typedef std::underlying_type<buffer_usage>::type EnumType;
+		return static_cast<buffer_usage>(static_cast<EnumType>(a) | static_cast<EnumType>(b));
 	}
 
-	inline memory_usage operator& (memory_usage a, memory_usage b)
+	inline buffer_usage operator& (buffer_usage a, buffer_usage b)
 	{
-		typedef std::underlying_type<memory_usage>::type EnumType;
-		return static_cast<memory_usage>(static_cast<EnumType>(a) & static_cast<EnumType>(b));
+		typedef std::underlying_type<buffer_usage>::type EnumType;
+		return static_cast<buffer_usage>(static_cast<EnumType>(a) & static_cast<EnumType>(b));
 	}
 
-	inline memory_usage& operator |= (memory_usage& a, memory_usage b)
+	inline buffer_usage& operator |= (buffer_usage& a, buffer_usage b)
 	{
 		return a = a | b;
 	}
 
-	inline memory_usage& operator &= (memory_usage& a, memory_usage b)
+	inline buffer_usage& operator &= (buffer_usage& a, buffer_usage b)
 	{
 		return a = a & b;
 	}

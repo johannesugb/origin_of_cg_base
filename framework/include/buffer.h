@@ -74,16 +74,16 @@ namespace cgb
 
 	// Forward declare templated cgb::buffer and set up some type defs.
 	// The definition of the buffer will always be inside the context-specific implementation files.
-	template <typename Cfg>
-	struct buffer;
+	//template <typename Cfg>
+	//struct buffer_t;
 
-	using generic_buffer		= std::variant<buffer<generic_buffer_data>,			std::unique_ptr<buffer<generic_buffer_data>>,		std::shared_ptr<buffer<generic_buffer_data>>>;
-	using uniform_buffer		= std::variant<buffer<uniform_buffer_data>,			std::unique_ptr<buffer<uniform_buffer_data>>,		std::shared_ptr<buffer<uniform_buffer_data>>>;
-	using uniform_texel_buffer	= std::variant<buffer<uniform_texel_buffer_data>,	std::unique_ptr<buffer<uniform_texel_buffer_data>>, std::shared_ptr<buffer<uniform_texel_buffer_data>>>;
-	using storage_buffer		= std::variant<buffer<storage_buffer_data>,			std::unique_ptr<buffer<storage_buffer_data>>,		std::shared_ptr<buffer<storage_buffer_data>>>;
-	using storage_texel_buffer	= std::variant<buffer<storage_texel_buffer_data>,	std::unique_ptr<buffer<storage_texel_buffer_data>>, std::shared_ptr<buffer<storage_texel_buffer_data>>>;
-	using vertex_buffer			= std::variant<buffer<vertex_buffer_data>,			std::unique_ptr<buffer<vertex_buffer_data>>,		std::shared_ptr<buffer<vertex_buffer_data>>>;
-	using index_buffer			= std::variant<buffer<index_buffer_data>,			std::unique_ptr<buffer<index_buffer_data>>,			std::shared_ptr<buffer<index_buffer_data>>>;
+	using generic_buffer		= std::variant<buffer_t<generic_buffer_data>,		std::unique_ptr<buffer_t<generic_buffer_data>>,			std::shared_ptr<buffer_t<generic_buffer_data>>>;
+	using uniform_buffer		= std::variant<buffer_t<uniform_buffer_data>,		std::unique_ptr<buffer_t<uniform_buffer_data>>,			std::shared_ptr<buffer_t<uniform_buffer_data>>>;
+	using uniform_texel_buffer	= std::variant<buffer_t<uniform_texel_buffer_data>,	std::unique_ptr<buffer_t<uniform_texel_buffer_data>>,	std::shared_ptr<buffer_t<uniform_texel_buffer_data>>>;
+	using storage_buffer		= std::variant<buffer_t<storage_buffer_data>,		std::unique_ptr<buffer_t<storage_buffer_data>>,			std::shared_ptr<buffer_t<storage_buffer_data>>>;
+	using storage_texel_buffer	= std::variant<buffer_t<storage_texel_buffer_data>,	std::unique_ptr<buffer_t<storage_texel_buffer_data>>,	std::shared_ptr<buffer_t<storage_texel_buffer_data>>>;
+	using vertex_buffer			= std::variant<buffer_t<vertex_buffer_data>,		std::unique_ptr<buffer_t<vertex_buffer_data>>,			std::shared_ptr<buffer_t<vertex_buffer_data>>>;
+	using index_buffer			= std::variant<buffer_t<index_buffer_data>,			std::unique_ptr<buffer_t<index_buffer_data>>,			std::shared_ptr<buffer_t<index_buffer_data>>>;
 
 	using buffer = std::variant<
 		generic_buffer,

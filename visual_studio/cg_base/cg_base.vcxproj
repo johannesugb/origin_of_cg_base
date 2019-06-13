@@ -85,6 +85,7 @@
     <ClCompile Include="..\..\framework\src\model.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
     <ClCompile Include="..\..\framework\src\shader.cpp" />
+    <ClCompile Include="..\..\framework\src\shader_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\synchronization_vulkan.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">false</ExcludedFromBuild>
@@ -205,6 +206,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\buffer.h" />
+    <ClInclude Include="..\..\framework\include\buffer_usage.h" />
+    <ClInclude Include="..\..\framework\include\buffer_vulkan.h" />
     <ClInclude Include="..\..\framework\include\camera.h" />
     <ClInclude Include="..\..\framework\include\cg_base.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
@@ -260,11 +263,13 @@
     <ClInclude Include="..\..\framework\include\key_state.h" />
     <ClInclude Include="..\..\framework\include\log.h" />
     <ClInclude Include="..\..\framework\include\math_utils.h" />
+    <ClInclude Include="..\..\framework\include\memory_usage.h" />
     <ClInclude Include="..\..\framework\include\model.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
+    <ClInclude Include="..\..\framework\include\shader_type.h" />
+    <ClInclude Include="..\..\framework\include\shader_vulkan.h" />
     <ClInclude Include="..\..\framework\include\string_utils.h" />
     <ClInclude Include="..\..\framework\include\sequential_executor.h" />
-    <ClInclude Include="..\..\framework\include\shader.h" />
     <ClInclude Include="..\..\framework\include\shader_source_info.h" />
     <ClInclude Include="..\..\framework\include\synchronization_opengl.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">false</ExcludedFromBuild>

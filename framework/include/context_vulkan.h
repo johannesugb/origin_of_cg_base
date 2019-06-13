@@ -11,6 +11,9 @@
 #include <vulkan/vulkan.hpp>
 #include "window_vulkan.h"
 #include "context_vulkan_types.h"
+#include "buffer_vulkan.h"
+#include "shader_vulkan.h"
+#include "synchronization_vulkan.h"
 #include "context_generic_glfw.h"
 #include "imgui_impl_vulkan.h"
 

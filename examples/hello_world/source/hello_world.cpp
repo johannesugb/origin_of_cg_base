@@ -37,7 +37,6 @@ class hello_behavior : public cgb::cg_element
 	}
 
 private:
-	cgb::swap_chain_data* mSwapChainData;
 	cgb::pipeline mPipeline;
 
 };
