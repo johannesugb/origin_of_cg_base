@@ -162,9 +162,6 @@
     <ClInclude Include="..\..\framework\include\cg_element.h">
       <Filter>Header Files\application_structure_and_general_stuff</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\composition.h">
-      <Filter>Header Files\application_structure_and_general_stuff</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\composition_interface.h">
       <Filter>Header Files\application_structure_and_general_stuff</Filter>
     </ClInclude>
@@ -336,8 +333,11 @@
     <ClInclude Include="..\..\framework\include\shader_type.h">
       <Filter>Header Files\pipeline_and_shaders</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\buffer_usage.h">
-      <Filter>Header Files\data_and_buffers</Filter>
+    <ClInclude Include="..\..\framework\include\vulkan_convenience_functions.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\composition.h">
+      <Filter>Header Files\application_structure_and_general_stuff</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -206,7 +206,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\buffer.h" />
-    <ClInclude Include="..\..\framework\include\buffer_usage.h" />
     <ClInclude Include="..\..\framework\include\buffer_vulkan.h" />
     <ClInclude Include="..\..\framework\include\camera.h" />
     <ClInclude Include="..\..\framework\include\cg_base.h">
@@ -292,6 +291,7 @@
     <ClInclude Include="..\..\framework\include\transform.h" />
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_timer.h" />
+    <ClInclude Include="..\..\framework\include\vulkan_convenience_functions.h" />
     <ClInclude Include="..\..\framework\include\window_base.h" />
     <ClInclude Include="..\..\framework\include\window_opengl.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">false</ExcludedFromBuild>

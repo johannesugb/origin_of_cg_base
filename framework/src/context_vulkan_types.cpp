@@ -359,6 +359,159 @@ namespace cgb
 		return it != stencilFormats.end();
 	}
 
+#pragma region command_buffer
+	std::vector<command_buffer> command_buffer::create_many(uint32_t pCount, command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags)
+	{
+		auto bufferAllocInfo = vk::CommandBufferAllocateInfo()
+			.setCommandPool(pPool.handle())
+			.setLevel(vk::CommandBufferLevel::ePrimary) // Those, allocated from a pool, are primary command buffers; secondary command buffers can be allocated from command buffers.
+			.setCommandBufferCount(pCount);
+
+		auto tmp = context().logical_device().allocateCommandBuffersUnique(bufferAllocInfo);
+		
+		// Iterate over all the "raw"-Vk objects in `tmp` and...
+		std::vector<command_buffer> buffers;
+		buffers.reserve(pCount);
+		std::transform(std::begin(tmp), std::end(tmp),
+			std::back_inserter(buffers),
+			// ...transform them into `cgb::command_buffer` objects:
+			[usageFlags = pUsageFlags](auto& vkCb) {
+				command_buffer result;
+				result.mBeginInfo = vk::CommandBufferBeginInfo()
+					.setFlags(usageFlags)
+					.setPInheritanceInfo(nullptr);
+				result.mCommandBuffer = std::move(vkCb);
+			});
+		return buffers;
+	}
+
+	command_buffer command_buffer::create(command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags)
+	{
+		auto result = std::move(command_buffer::create_many(1, pPool, pUsageFlags)[0]);
+		return result;
+	}
+#pragma endregion
+
+#pragma region command_pool
+	command_pool command_pool::create(uint32_t pQueueFamilyIndex, vk::CommandPoolCreateFlags pCreateFlags)
+	{
+		auto createInfo = vk::CommandPoolCreateInfo()
+			.setQueueFamilyIndex(pQueueFamilyIndex)
+			.setFlags(pCreateFlags); // Optional
+		// Possible values for the flags [7]
+		//  - VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
+		//  - VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
+		command_pool result;
+		result.mQueueFamilyIndex = pQueueFamilyIndex;
+		result.mCreateInfo = createInfo;
+		result.mCommandPool = context().logical_device().createCommandPoolUnique(createInfo);
+		return result;
+	}
+
+	std::vector<command_buffer> command_pool::get_command_buffers(uint32_t pCount, vk::CommandBufferUsageFlags pUsageFlags)
+	{
+		return command_buffer::create_many(pCount, *this, pUsageFlags);
+	}
+
+	command_buffer command_pool::get_command_buffer(vk::CommandBufferUsageFlags pUsageFlags)
+	{
+		return command_buffer::create(*this, pUsageFlags);
+	}
+#pragma endregion
+
+#pragma region device_queue
+	std::deque<device_queue> device_queue::sPreparedQueues;
+
+	device_queue* device_queue::prepare(
+		vk::QueueFlags pFlagsRequired,
+		device_queue_selection_strategy pSelectionStrategy,
+		std::optional<vk::SurfaceKHR> pSupportForSurface)
+	{
+		auto families = context().find_best_queue_family_for(pFlagsRequired, pSelectionStrategy, pSupportForSurface);
+		if (families.size() == 0) {
+			throw std::runtime_error("Couldn't find queue families satisfying the given criteria.");
+		}
+
+		// Default to the first ones, each
+		uint32_t familyIndex = std::get<0>(families[0]);
+		uint32_t queueIndex = 0;
+
+		for (auto& family : families) {
+			for (uint32_t qi = 0; qi < std::get<1>(family).queueCount; ++qi) {
+
+				auto alreadyInUse = std::find_if(
+					std::begin(sPreparedQueues), 
+					std::end(sPreparedQueues), 
+					[familyIndexInQuestion = std::get<0>(family), queueIndexInQuestion = qi](const auto& pq) {
+					return pq.family_index() == familyIndexInQuestion
+						&& pq.queue_index() == queueIndexInQuestion;
+				});
+
+				// Pay attention to different selection strategies:
+				switch (pSelectionStrategy)
+				{
+				case cgb::device_queue_selection_strategy::prefer_separate_queues:
+					if (sPreparedQueues.end() == alreadyInUse) {
+						// didn't find combination, that's good
+						familyIndex = std::get<0>(family);
+						queueIndex = qi;
+						goto found_indices;
+					}
+					break;
+				case cgb::device_queue_selection_strategy::prefer_everything_on_single_queue:
+					if (sPreparedQueues.end() != alreadyInUse) {
+						// find combination, that's good in this case
+						familyIndex = std::get<0>(family);
+						queueIndex = qi;
+						goto found_indices;
+					}
+					break;
+				}
+			}
+		}
+
+	found_indices:
+		return &sPreparedQueues.emplace_back(device_queue{
+			familyIndex, 
+			queueIndex,
+			0.5f, // default priority of 0.5
+			nullptr
+			});
+	}
+
+	device_queue device_queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
+	{
+		device_queue result;
+		result.mQueueFamilyIndex = pQueueFamilyIndex;
+		result.mQueueIndex = pQueueIndex;
+		result.mPriority = 0.5f; // default priority of 0.5f
+		result.mQueue = context().logical_device().getQueue(result.mQueueFamilyIndex, result.mQueueIndex);
+		return result;
+	}
+
+	device_queue device_queue::create(const device_queue& pPreparedQueue)
+	{
+		device_queue result;
+		result.mQueueFamilyIndex = pPreparedQueue.family_index();
+		result.mQueueIndex = pPreparedQueue.queue_index();
+		result.mPriority = pPreparedQueue.mPriority; // default priority of 0.5f
+		result.mQueue = context().logical_device().getQueue(result.mQueueFamilyIndex, result.mQueueIndex);
+		return result;
+	}
+#pragma endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	pipeline::pipeline() noexcept
 		: mRenderPass{}
@@ -440,134 +593,8 @@ namespace cgb
 		}
 	}
 
-	command_pool::command_pool() noexcept
-		: mQueueFamilyIndex{ 0 }
-		, mCreateInfo{}
-		, mCommandPool{ nullptr }
-	{ }
 
-	command_pool::command_pool(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo, const vk::CommandPool& pPool) noexcept
-		: mQueueFamilyIndex{ pQueueFamilyIndex }
-		, mCreateInfo{ pCreateInfo }
-		, mCommandPool{ pPool }
-	{ }
-
-	command_pool::command_pool(command_pool&& other) noexcept
-		: mQueueFamilyIndex{ std::move(other.mQueueFamilyIndex) }
-		, mCreateInfo{ std::move(other.mCreateInfo) }
-		, mCommandPool{ std::move(other.mCommandPool) }
-	{
-		other.mQueueFamilyIndex = 0;
-		other.mCreateInfo = {};
-		other.mCommandPool = nullptr;
-	}
-
-	command_pool& command_pool::operator=(command_pool&& other) noexcept
-	{
-		mQueueFamilyIndex = std::move(other.mQueueFamilyIndex);
-		mCreateInfo = std::move(other.mCreateInfo);
-		mCommandPool = std::move(other.mCommandPool);
-		other.mQueueFamilyIndex = 0u;
-		other.mCreateInfo = {};
-		other.mCommandPool = nullptr;
-		return *this;
-	}
-
-	command_pool::~command_pool()
-	{
-		if (mCommandPool) {
-			context().logical_device().destroyCommandPool(mCommandPool);
-			mCommandPool = nullptr;
-		}
-	}
-
-	command_pool command_pool::create(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo)
-	{
-		return command_pool{
-			pQueueFamilyIndex,
-			pCreateInfo,
-			context().logical_device().createCommandPool(pCreateInfo)
-		};
-	}
-
-	std::deque<device_queue> device_queue::sPreparedQueues;
-
-	device_queue* device_queue::prepare(
-		vk::QueueFlags pFlagsRequired,
-		device_queue_selection_strategy pSelectionStrategy,
-		std::optional<vk::SurfaceKHR> pSupportForSurface)
-	{
-		auto families = context().find_best_queue_family_for(pFlagsRequired, pSelectionStrategy, pSupportForSurface);
-		if (families.size() == 0) {
-			throw std::runtime_error("Couldn't find queue families satisfying the given criteria.");
-		}
-
-		// Default to the first ones, each
-		uint32_t familyIndex = std::get<0>(families[0]);
-		uint32_t queueIndex = 0;
-
-		for (auto& family : families) {
-			for (uint32_t qi = 0; qi < std::get<1>(family).queueCount; ++qi) {
-
-				auto alreadyInUse = std::find_if(
-					std::begin(sPreparedQueues), 
-					std::end(sPreparedQueues), 
-					[familyIndexInQuestion = std::get<0>(family), queueIndexInQuestion = qi](const auto& pq) {
-					return pq.family_index() == familyIndexInQuestion
-						&& pq.queue_index() == queueIndexInQuestion;
-					});
-
-				// Pay attention to different selection strategies:
-				switch (pSelectionStrategy)
-				{
-				case cgb::device_queue_selection_strategy::prefer_separate_queues:
-					if (sPreparedQueues.end() == alreadyInUse) {
-						// didn't find combination, that's good
-						familyIndex = std::get<0>(family);
-						queueIndex = qi;
-						goto found_indices;
-					}
-					break;
-				case cgb::device_queue_selection_strategy::prefer_everything_on_single_queue:
-					if (sPreparedQueues.end() != alreadyInUse) {
-						// find combination, that's good in this case
-						familyIndex = std::get<0>(family);
-						queueIndex = qi;
-						goto found_indices;
-					}
-					break;
-				}
-			}
-		}
-		
-	found_indices:
-		return &sPreparedQueues.emplace_back(device_queue{
-			familyIndex, 
-			queueIndex,
-			0.5f, // default priority of 0.5
-			nullptr
-		});
-	}
-
-	device_queue device_queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
-	{
-		return device_queue{
-			pQueueFamilyIndex, 
-			pQueueIndex,
-			0.5f, // default priority of 0.5f
-			context().logical_device().getQueue(pQueueFamilyIndex, pQueueIndex)
-		};
-	}
-
-	device_queue device_queue::create(const device_queue& pPreparedQueue)
-	{
-		return device_queue{
-			pPreparedQueue.family_index(),
-			pPreparedQueue.queue_index(),
-			pPreparedQueue.mPriority,
-			context().logical_device().getQueue(pPreparedQueue.family_index(), pPreparedQueue.queue_index())
-		};
-	}
+	
 
 
 	void command_buffer::begin_recording()
@@ -633,29 +660,6 @@ namespace cgb
 	void command_buffer::end_render_pass()
 	{
 		mCommandBuffer.endRenderPass();
-	}
-
-	void copy(const buffer& pSource, const buffer& pDestination)
-	{
-		auto commandBuffer = context().create_command_buffers_for_transfer(1);
-
-		// Immediately start recording the command buffer:
-		commandBuffer[0].begin_recording();
-
-		auto copyRegion = vk::BufferCopy{}
-			.setSrcOffset(0u)
-			.setDstOffset(0u)
-			.setSize(static_cast<vk::DeviceSize>(pSource.mSize));
-		commandBuffer[0].mCommandBuffer.copyBuffer(pSource.mBuffer, pDestination.mBuffer, { copyRegion });
-
-		// That's all
-		commandBuffer[0].end_recording();
-
-		auto submitInfo = vk::SubmitInfo{}
-			.setCommandBufferCount(1u)
-			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
-		cgb::context().transfer_queue().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
-		cgb::context().transfer_queue().waitIdle();
 	}
 
 	vertex_buffer::vertex_buffer() noexcept

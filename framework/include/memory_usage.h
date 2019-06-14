@@ -17,6 +17,9 @@ namespace cgb
 		/** Buffer's memory is accessible on the GPU only, i.e. not visible on the host at all. */
 		device,
 
+		/** Buffer's memory is accessible on the GPU only, but its data might be transfered back to the host. */
+		device_readback,
+
 		/** Buffer's memory is accessible on the GPU only and allows protected queue operations to access the memory. */
 		device_protected
 	};

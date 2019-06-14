@@ -9,6 +9,7 @@
 
 // INCLUDES:
 #include <vulkan/vulkan.hpp>
+#include "vulkan_convenience_functions.h"
 #include "window_vulkan.h"
 #include "context_vulkan_types.h"
 #include "buffer_vulkan.h"
@@ -55,9 +56,9 @@ namespace cgb
 		uint32_t graphics_queue_index() const { return mGraphicsQueue.mQueueIndex; }
 		uint32_t presentation_queue_index() const { return mPresentQueue.mQueueIndex; }
 		uint32_t transfer_queue_index() const { return mTransferQueue.mQueueIndex; }
-		vk::Queue& graphics_queue() { return mGraphicsQueue.mQueue; }
-		vk::Queue& presentation_queue() { return mPresentQueue.mQueue; }
-		vk::Queue& transfer_queue() { return mTransferQueue.mQueue; }
+		device_queue& graphics_queue() { return mGraphicsQueue; }
+		device_queue& presentation_queue() { return mPresentQueue; }
+		device_queue& transfer_queue() { return mTransferQueue; }
 		const std::vector<uint32_t>& all_queue_family_indices() { return mAllUsedQueueFamilyIndices; }
 
 		/**	Creates a new window, but doesn't open it. Set the window's parameters
@@ -195,12 +196,16 @@ namespace cgb
 
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view& pDepthImageView);
 
+		/** Gets a command pool for the given queue family index.
+		 *	If the command pool does not exist already, it will be created.
+		 */
 		command_pool& get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex);
-
-		std::vector<command_buffer> create_command_buffers(size_t pCount, uint32_t pQueueFamilyIndex, vk::CommandBufferUsageFlags pUsageFlags);
-		std::vector<command_buffer> create_command_buffers_for_graphics(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-		std::vector<command_buffer> create_command_buffers_for_transfer(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		std::vector<command_buffer> create_command_buffers_for_presentation(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlags());
+		
+		/** Gets a command pool for the given queue's queue family index.
+		 *	If the command pool does not exist already, it will be created.
+		 *	A command pool can be shared for multiple queue families if they have the same queue family index.
+		 */
+		command_pool& get_command_pool_for_queue(const device_queue& pQueue);
 		
 		///** Calculates the semaphore index of the current frame */
 		//size_t sync_index_curr_frame() const { return mFrameCounter % sActualMaxFramesInFlight; }
@@ -248,7 +253,9 @@ namespace cgb
 		// Vector of pairs of queue family indices and queue indices
 		std::vector<std::tuple<uint32_t, uint32_t>> mDistinctQueues;
 
-		std::deque<command_pool> mCommandPools;
+		// Command pools are created/stored per thread and per queue family index.
+		// Queue family indices are stored within the command_pool objects, thread indices in the tuple.
+		std::deque<std::tuple<std::thread::id, command_pool>> mCommandPools;
 		std::deque<descriptor_pool> mDescriptorPools;
 		
 	};

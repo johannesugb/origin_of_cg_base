@@ -1193,57 +1193,21 @@ namespace cgb
 	command_pool& vulkan::get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex)
 	{
 		auto it = std::find_if(std::begin(mCommandPools), std::end(mCommandPools),
-							   [pQueueFamilyIndex](const auto& existing) {
-								   return existing.mQueueFamilyIndex == pQueueFamilyIndex;
+							   [family_idx = pQueueFamilyIndex, thread_id = std::this_thread::get_id()](const std::tuple<std::thread::id, command_pool>& existing) {
+								   return std::get<0>(existing) == thread_id && std::get<1>(existing).queue_family_index() == family_idx;
 							   });
 		if (it == std::end(mCommandPools)) {
-			auto commandPoolInfo = vk::CommandPoolCreateInfo()
-				.setQueueFamilyIndex(pQueueFamilyIndex)
-				.setFlags(vk::CommandPoolCreateFlags()); // Optional
-			// Possible values for the flags [7]
-			//  - VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
-			//  - VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
-			mCommandPools.push_back(command_pool::create(pQueueFamilyIndex, commandPoolInfo));
-			return mCommandPools.back();
+			// TODO: Do we want different parameters depending on the queue? 
+			//       Like, for instance re-usable buffers for the graphics queue?
+			//		 There is a parameter to `command_pool::create` where this could be specified!
+			return std::get<1>(mCommandPools.emplace_back(std::this_thread::get_id(), command_pool::create(pQueueFamilyIndex)));
 		}
-		return *it;
+		return std::get<1>(*it);
 	}
 
-	std::vector<command_buffer> vulkan::create_command_buffers(size_t pCount, uint32_t pQueueFamilyIndex, vk::CommandBufferUsageFlags pUsageFlags)
+	command_pool& vulkan::get_command_pool_for_queue(const device_queue& pQueue)
 	{
-		auto& pool = get_command_pool_for_queue_family(pQueueFamilyIndex);
-
-		auto bufferAllocInfo = vk::CommandBufferAllocateInfo()
-			.setCommandPool(pool.mCommandPool)
-			.setLevel(vk::CommandBufferLevel::ePrimary) // TODO: make configurable?!
-			.setCommandBufferCount(static_cast<uint32_t>(pCount));
-
-		std::vector<command_buffer> buffers;
-		auto tmp = mLogicalDevice.allocateCommandBuffers(bufferAllocInfo);
-		std::transform(std::begin(tmp), std::end(tmp),
-					   std::back_inserter(buffers),
-					   [pUsageFlags](const auto& vkCb) {
-						   auto beginInfo = vk::CommandBufferBeginInfo()
-							   .setFlags(pUsageFlags)
-							   .setPInheritanceInfo(nullptr);
-						   return command_buffer{ beginInfo, vkCb };
-					   });
-		return buffers;
-	}
-
-	std::vector<command_buffer> vulkan::create_command_buffers_for_graphics(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags)
-	{
-		return create_command_buffers(pCount, graphics_queue_index(), pUsageFlags);
-	}
-
-	std::vector<command_buffer> vulkan::create_command_buffers_for_transfer(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags)
-	{
-		return create_command_buffers(pCount, transfer_queue_index(), pUsageFlags);
-	}
-
-	std::vector<command_buffer> vulkan::create_command_buffers_for_presentation(size_t pCount, vk::CommandBufferUsageFlags pUsageFlags)
-	{
-		return create_command_buffers(pCount, presentation_queue_index(), pUsageFlags);
+		return get_command_pool_for_queue_family(pQueue.family_index());
 	}
 
 	uint32_t vulkan::find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties)

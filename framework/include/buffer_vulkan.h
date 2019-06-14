@@ -1,4 +1,5 @@
 #pragma once
+#include "buffer.h"
 
 namespace cgb
 {
@@ -8,6 +9,9 @@ namespace cgb
 	template <typename Cfg>
 	class buffer_t
 	{
+		template <typename T>
+		friend buffer_t<T> create(T pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties);
+
 	public:
 		buffer_t() = default;
 		buffer_t(const buffer_t&) = delete;
@@ -16,8 +20,8 @@ namespace cgb
 		buffer_t& operator=(buffer_t&&) = default;
 		~buffer_t() = default; // Declaration order determines destruction order (inverse!)
 
-		auto size() const						{ return mSize; }
 		const auto& config() const				{ return mConfig; }
+		auto size() const						{ return mConfig.total_size(); }
 		const auto& memory_properties() const	{ return mMemoryPropertyFlags; }
 		const auto& memory_handle() const		{ return mMemory.get(); }
 		const auto* memory_handle_addr() const	{ return &mMemory.get(); }
@@ -26,7 +30,6 @@ namespace cgb
 		const auto* buffer_handle_addr() const	{ return &mBuffer.get(); }
 
 	private:
-		size_t mSize;
 		Cfg mConfig;
 		vk::MemoryPropertyFlags mMemoryPropertyFlags;
 		vk::UniqueDeviceMemory mMemory;
@@ -57,7 +60,7 @@ namespace cgb
 
 		// The buffer has been created, but it doesn't actually have any memory assigned to it yet. 
 		// The first step of allocating memory for the buffer is to query its memory requirements [2]
-		auto memRequirements = context().logical_device().getBufferMemoryRequirements(vkBuffer);
+		auto memRequirements = context().logical_device().getBufferMemoryRequirements(vkBuffer.get());
 
 		auto allocInfo = vk::MemoryAllocateInfo()
 			.setAllocationSize(memRequirements.size)
@@ -69,7 +72,6 @@ namespace cgb
 		auto vkMemory = context().logical_device().allocateMemoryUnique(allocInfo);
 
 		cgb::buffer_t<Cfg> b;
-		b.mSize = bufferSize;
 		b.mConfig = pConfig;
 		b.mMemoryPropertyFlags = pMemoryProperties;
 		b.mMemory = std::move(vkMemory);
@@ -80,32 +82,90 @@ namespace cgb
 
 	/** Create multiple buffers */
 	template <typename Cfg>
-	std::vector<buffer_t<Cfg>> create(Cfg pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, uint32_t pNumBuffers)
+	auto create(Cfg pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, uint32_t pNumBuffers)
 	{
 		std::vector<buffer_t<Cfg>> bs;
 		bs.reserve(pNumBuffers);
-		for (uint32_t = 0; i < pNumBuffers; ++i) {
+		for (uint32_t i = 0; i < pNumBuffers; ++i) {
 			bs.push_back(create(pConfig, pBufferUsage, pMemoryProperties));
 		}
 		return bs;
 	}
 
+	// Forward-declare what comes after:
 	template <typename Cfg>
-	std::tuple<cgb::buffer_t<Cfg>, semaphore> create_and_fill(
+	std::tuple<cgb::buffer_t<Cfg>, std::optional<semaphore>> create_and_fill(
+		Cfg pConfig,
+		cgb::memory_usage pMemoryUsage,
+		const void* pData,
+		vk::BufferUsageFlags pUsage);
+
+	// SET DATA
+	template <typename Cfg>
+	std::optional<semaphore> set_data(
+		cgb::buffer_t<Cfg>& target,
+		const void* pData)
+	{
+		auto bufferSize = static_cast<vk::DeviceSize>(target.size());
+
+		auto memProps = target.memory_properties();
+		// #1: Is our memory on the CPU-SIDE? 
+		if (has_flag(memProps, vk::MemoryPropertyFlagBits::eHostVisible)) {
+			void* mapped = context().logical_device().mapMemory(target.memory_handle(), 0, bufferSize);
+			memcpy(mapped, pData, bufferSize);
+			context().logical_device().unmapMemory(target.memory_handle());
+			// Coherent memory is done; non-coherent memory not yet
+			if (!has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCoherent)) {
+				// Setup the range 
+				auto range = vk::MappedMemoryRange()
+					.setMemory(target.memory_handle())
+					.setOffset(0)
+					.setSize(bufferSize);
+				// Flush the range
+				context().logical_device().flushMappedMemoryRanges(1, &range);
+			}
+			// TODO: Handle has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCached) case
+		}
+		// #2: Otherwise, it must be on the GPU-SIDE!
+		else {
+			assert(has_flag(memProps, vk::MemoryPropertyFlagBits::eDeviceLocal));
+
+			// Okay, we have to create a (somewhat temporary) staging buffer and transfer it to the GPU
+			// "somewhat temporary" means that it can not be deleted in this function, but only
+			//						after the transfer operation has completed => handle via semaphore!
+			auto [stagingBuffer, _] = create_and_fill(generic_buffer_data{ target.size() }, cgb::memory_usage::host_coherent, pData, vk::BufferUsageFlagBits::eTransferDst);
+
+			auto commandBuffer = context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+			commandBuffer.begin_recording();
+
+			auto copyRegion = vk::BufferCopy{}
+				.setSrcOffset(0u)
+				.setDstOffset(0u)
+				.setSize(bufferSize);
+			commandBuffer.mCommandBuffer.copyBuffer(stagingBuffer.buffer_handle(), target.buffer_handle(), { copyRegion });
+
+			// That's all
+			commandBuffer.end_recording();
+
+			auto submitInfo = vk::SubmitInfo{}
+				.setCommandBufferCount(1u)
+				.setPCommandBuffers(commandBuffer.buffer_handle_addr());
+			cgb::context().transfer_queue().handle().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
+			cgb::context().transfer_queue().handle().waitIdle();
+
+			// TODO: Handle has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCached) case
+		}
+	}
+
+	// CREATE AND FILL
+	template <typename Cfg>
+	std::tuple<cgb::buffer_t<Cfg>, std::optional<semaphore>> create_and_fill(
 		Cfg pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
-		cgb::buffer_usage pUsage = cgb::buffer_usage::nothing_special)
+		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
 		auto bufferSize = pConfig.total_size();
-
-		vk::BufferUsageFlags usageFlags;
-		if ((pUsage & cgb::buffer_usage::indirect) == cgb::buffer_usage::indirect)										{ usageFlags |= vk::BufferUsageFlagBits::eIndirectBuffer; }
-		if ((pUsage & cgb::buffer_usage::transform_feedback) == cgb::buffer_usage::transform_feedback)					{ usageFlags |= vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT; }
-		if ((pUsage & cgb::buffer_usage::transform_feedback_counter) == cgb::buffer_usage::transform_feedback_counter)	{ usageFlags |= vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT; }
-		if ((pUsage & cgb::buffer_usage::conditional_rendering) == cgb::buffer_usage::conditional_rendering)			{ usageFlags |= vk::BufferUsageFlagBits::eConditionalRenderingEXT; }
-		if ((pUsage & cgb::buffer_usage::ray_tracing) == cgb::buffer_usage::ray_tracing)								{ usageFlags |= vk::BufferUsageFlagBits::eRayTracingNV; }
-		if ((pUsage & cgb::buffer_usage::device_address) == cgb::buffer_usage::device_address)							{ usageFlags |= vk::BufferUsageFlags(); /* TODO: use the proper flag! */ }
 
 		vk::MemoryPropertyFlags memoryFlags;
 		// We've got two major branches here: 
@@ -124,42 +184,41 @@ namespace cgb
 			break;
 		case cgb::memory_usage::device:
 			memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+			pUsage |= vk::BufferUsageFlagBits::eTransferDst; // We have to transfer data into it, because we are inside of `cgb::create_and_fill`
+			break;
+		case cgb::memory_usage::device_readback:
+			memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+			pUsage |= vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
 			break;
 		case cgb::memory_usage::device_protected:
 			memoryFlags = vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eProtected;
+			pUsage |= vk::BufferUsageFlagBits::eTransferDst;
 			break;
 		}
+
+		if constexpr (std::is_same_v<Cfg, cgb::uniform_buffer_data>) {
+			pUsage |= vk::BufferUsageFlagBits::eUniformBuffer;
+		} 
+		if constexpr (std::is_same_v<Cfg, cgb::uniform_texel_buffer_data>) {
+			pUsage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
+		} 
+		if constexpr (std::is_same_v<Cfg, cgb::storage_buffer_data>) {
+			pUsage |= vk::BufferUsageFlagBits::eStorageBuffer;
+		} 
+		if constexpr (std::is_same_v<Cfg, cgb::storage_texel_buffer_data>) {
+			pUsage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
+		} 
+		if constexpr (std::is_same_v<Cfg, cgb::vertex_buffer_data>) {
+			pUsage |= vk::BufferUsageFlagBits::eVertexBuffer;
+		} 
+		if constexpr (std::is_same_v<Cfg, cgb::index_buffer_data>) {
+			pUsage |= vk::BufferUsageFlagBits::eIndexBuffer;
+		} 
 
 		// Create buffer here to make use of named return value optimization.
 		// How it will be filled depends on where the memory is located at.
-		auto result = cgb::create(pConfig, usageFlags, memoryFlags);
-
-		switch (pMemoryUsage)
-		{
-		case cgb::memory_usage::host_visible:
-		case cgb::memory_usage::host_coherent:
-		case cgb::memory_usage::host_cached:
-			{
-				// TODO: Proceed here!	
-
-				auto memory = buffer.memory_handle_at(i);
-				void* mapped = context().logical_device().mapMemory(memory, 0, bufferSize);
-				memcpy(mapped, pData, copySize);
-				context().logical_device().unmapMemory(memory);
-			}
-			break;
-		case cgb::memory_usage::device:
-		case cgb::memory_usage::device_protected:
-			{
-				// TODO: Create a staging buffer, fill it (maybe with flush?)
-				// Create another device buffer
-				// Create the staging buffer contents into device buffer
-
-			}
-			break;
-		}
-
-
-		return result;
+		auto result = cgb::create(pConfig, pUsage, memoryFlags);
+		auto semaphore = set_data(result, pData);
+		return [result, semaphore];
 	}
 }

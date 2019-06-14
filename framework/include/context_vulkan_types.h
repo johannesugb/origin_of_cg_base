@@ -73,6 +73,128 @@ namespace cgb
 	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
 	extern bool has_stencil_component(const image_format& pImageFormat);
 
+	// Forsward-declare the command pool
+	class command_pool;
+
+	/** A command buffer which has been created for a certain queue family */
+	class command_buffer
+	{
+	public:
+		void begin_recording();
+		void end_recording();
+		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);
+		void set_image_barrier(const vk::ImageMemoryBarrier& pBarrierInfo);
+		void copy_image(const image& pSource, const vk::Image& pDestination);
+		void end_render_pass();
+
+		static std::vector<command_buffer> create_many(uint32_t pCount, command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags);
+		static command_buffer create(command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags);
+
+		vk::CommandBufferBeginInfo mBeginInfo;
+		vk::UniqueCommandBuffer mCommandBuffer;
+	};
+
+	/** Represents a Vulkan command pool, holds the native handle and takes
+	*	care about lifetime management of the native handles.
+	*	Also contains the queue family index it has been created for and is 
+	*  intended to be used with:
+	*	"All command buffers allocated from this command pool must be submitted 
+	*	 on queues from the same queue family." [+]
+	*	
+	*	[+]: https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkCommandPoolCreateInfo.html
+	*/
+	class command_pool
+	{
+	public:
+		command_pool() = default;
+		command_pool(const command_pool&) = delete;
+		command_pool(command_pool&&) = default;
+		command_pool& operator=(const command_pool&) = delete;
+		command_pool& operator=(command_pool&&) = default;
+		~command_pool() = default;
+
+		auto queue_family_index() const { return mQueueFamilyIndex; }
+		const auto& create_info() const { return mCreateInfo; }
+		const auto& handle() const { return mCommandPool.get(); }
+		const auto* handle_addr() const { return &mCommandPool.get(); }
+		
+		static command_pool create(uint32_t pQueueFamilyIndex, vk::CommandPoolCreateFlags pCreateFlags = vk::CommandPoolCreateFlags());
+
+		std::vector<command_buffer> get_command_buffers(uint32_t pCount, vk::CommandBufferUsageFlags pUsageFlags);
+		command_buffer get_command_buffer(vk::CommandBufferUsageFlags pUsageFlags);
+
+	private:
+		uint32_t mQueueFamilyIndex;
+		vk::CommandPoolCreateInfo mCreateInfo;
+		vk::UniqueCommandPool mCommandPool;
+	};
+
+	/** Allows to configure whether to go for many or for a single queue. */
+	enum struct device_queue_selection_strategy
+	{
+		prefer_separate_queues,
+		prefer_everything_on_single_queue,
+	};
+
+	// Forward declare:
+	struct queue_submit_proxy;
+
+	/** Represents a device queue, storing the queue itself, 
+	*	the queue family's index, and the queue's index.
+	*/
+	class device_queue
+	{
+	public:
+		/** Contains all the prepared queues which will be passed to logical device creation. */
+		static std::deque<device_queue> sPreparedQueues;
+
+		/** Prepare another queue and eventually add it to `sPreparedQueues`. */
+		static device_queue* prepare(
+			vk::QueueFlags pFlagsRequired,
+			device_queue_selection_strategy pSelectionStrategy,
+			std::optional<vk::SurfaceKHR> pSupportForSurface);
+
+		/** Create a new queue on the logical device. */
+		static device_queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex);
+		/** Create a new queue on the logical device. */
+		static device_queue create(const device_queue& pPreparedQueue);
+
+		/** Gets the queue family index of this queue */
+		auto family_index() const { return mQueueFamilyIndex; }
+		/** Gets queue index (inside the queue family) of this queue. */
+		auto queue_index() const { return mQueueIndex; }
+		const auto& handle() const { return mQueue; }
+		const auto* handle_addr() const { return &mQueue; }
+
+		/** Gets a pool which is usable for this queue and the current thread. */
+		auto& pool() const { return context().get_command_pool_for_queue(*this); }
+
+	private:
+		uint32_t mQueueFamilyIndex;
+		uint32_t mQueueIndex;
+		float mPriority;
+		vk::Queue mQueue;
+	};
+
+	struct queue_submit_proxy
+	{
+		queue_submit_proxy() = default;
+		queue_submit_proxy(const queue_submit_proxy&) = delete;
+		queue_submit_proxy(queue_submit_proxy&&) = delete;
+		queue_submit_proxy& operator=(const queue_submit_proxy&) = delete;
+		queue_submit_proxy& operator=(queue_submit_proxy&&) = delete;
+
+		device_queue& mQueue;
+		vk::SubmitInfo mSubmitInfo;
+		std::vector<command_buffer> mCommandBuffers;
+		std::vector<semaphore> mWaitSemaphores;
+		std::vector<semaphore> mSignalSemaphores;
+	};
+
+
+
+
+
 
 	/** Represents data for a vulkan graphics pipeline 
 	 *	The data held by such a struct is a triple of:
@@ -111,31 +233,7 @@ namespace cgb
 		vk::Framebuffer mFramebuffer;
 	};
 
-	/** Represents a Vulkan command pool, holds the native handle and takes
-	 *	care about lifetime management of the native handles.
-	 *	Also contains the queue family index it has been created for and is 
-	 *  intended to be used with:
-	 *	"All command buffers allocated from this command pool must be submitted 
-	 *	 on queues from the same queue family." [+]
-	 *	
-	 *	[+]: https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkCommandPoolCreateInfo.html
-	 */
-	struct command_pool
-	{
-		command_pool() noexcept;
-		command_pool(uint32_t, const vk::CommandPoolCreateInfo&, const vk::CommandPool&) noexcept;
-		command_pool(const command_pool&) = delete;
-		command_pool(command_pool&&) noexcept;
-		command_pool& operator=(const command_pool&) = delete;
-		command_pool& operator=(command_pool&&) noexcept;
-		~command_pool();
 
-		static command_pool create(uint32_t pQueueFamilyIndex, const vk::CommandPoolCreateInfo& pCreateInfo);
-
-		uint32_t mQueueFamilyIndex;
-		vk::CommandPoolCreateInfo mCreateInfo;
-		vk::CommandPool mCommandPool;
-	};
 
 	struct descriptor_pool
 	{
@@ -190,19 +288,6 @@ namespace cgb
 	extern void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout);
 
 	extern void copy_buffer_to_image(const buffer& pSrcBuffer, const image& pDstImage);
-
-	struct command_buffer
-	{
-		void begin_recording();
-		void end_recording();
-		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);
-		void set_image_barrier(const vk::ImageMemoryBarrier& pBarrierInfo);
-		void copy_image(const image& pSource, const vk::Image& pDestination);
-		void end_render_pass();
-
-		vk::CommandBufferBeginInfo mBeginInfo;
-		vk::CommandBuffer mCommandBuffer;
-	};
 
 	struct image_view
 	{
@@ -294,58 +379,6 @@ namespace cgb
 	};
 
 
-	enum struct device_queue_selection_strategy
-	{
-		prefer_separate_queues,
-		prefer_everything_on_single_queue,
-	};
 
-	// Forward declare:
-	struct queue_submit_proxy;
-
-	/** Represents a device queue, storing the queue itself, 
-	 *	the queue family's index, and the queue's index.
-	*/
-	struct device_queue
-	{
-		/** Contains all the prepared queues which will be passed to logical device creation. */
-		static std::deque<device_queue> sPreparedQueues;
-
-		/** Prepare another queue and eventually add it to `sPreparedQueues`. */
-		static device_queue* prepare(
-			vk::QueueFlags pFlagsRequired,
-			device_queue_selection_strategy pSelectionStrategy,
-			std::optional<vk::SurfaceKHR> pSupportForSurface);
-
-		/** Create a new queue on the logical device. */
-		static device_queue create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex);
-		/** Create a new queue on the logical device. */
-		static device_queue create(const device_queue& pPreparedQueue);
-
-		/** Gets the queue family index of this queue */
-		uint32_t family_index() const { return mQueueFamilyIndex; }
-		/** Gets queue index (inside the queue family) of this queue. */
-		uint32_t queue_index() const { return mQueueIndex; }
-
-		uint32_t mQueueFamilyIndex;
-		uint32_t mQueueIndex;
-		float mPriority;
-		vk::Queue mQueue;
-	};
-
-	struct queue_submit_proxy
-	{
-		queue_submit_proxy() = default;
-		queue_submit_proxy(const queue_submit_proxy&) = delete;
-		queue_submit_proxy(queue_submit_proxy&&) = delete;
-		queue_submit_proxy& operator=(const queue_submit_proxy&) = delete;
-		queue_submit_proxy& operator=(queue_submit_proxy&&) = delete;
-
-		device_queue& mQueue;
-		vk::SubmitInfo mSubmitInfo;
-		std::vector<command_buffer> mCommandBuffers;
-		std::vector<semaphore> mWaitSemaphores;
-		std::vector<semaphore> mSignalSemaphores;
-	};
 
 }
