@@ -31,6 +31,7 @@ namespace cgb {
 
 		void add_predecessors(std::vector<std::shared_ptr<vulkan_renderer>> predecessors) { mPredecessors.insert(mPredecessors.end(), predecessors.begin(), predecessors.end()); };
 
+		void recordPrimaryCommandBuffer();
 	private:
 		std::shared_ptr<vulkan_image_presenter> mImagePresenter;
 		std::shared_ptr<vulkan_render_queue> mVulkanRenderQueue;
@@ -51,7 +52,6 @@ namespace cgb {
 		static vk::CommandBuffer mPrimCmdBuffer;
 
 		void create_sync_objects();
-		void recordPrimaryCommandBuffer();
 
 		// no render pass if this is a pure compute renderer (TODO maybe better solution required)
 		bool mIsCompute;

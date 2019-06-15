@@ -95,6 +95,7 @@ private:
 	std::shared_ptr<cgb::vulkan_render_queue> mVulkanRenderQueue;
 	std::shared_ptr<cgb::vulkan_renderer> mRenderer;
 	std::shared_ptr<cgb::vulkan_renderer> mVrsRenderer;
+	std::shared_ptr<cgb::vulkan_renderer> mFinalBlitRenderer;
 	std::shared_ptr<cgb::vulkan_pipeline> mRenderVulkanPipeline;
 	std::shared_ptr<cgb::vulkan_pipeline> mComputeVulkanPipeline;
 	std::shared_ptr<cgb::vulkan_framebuffer> mVulkanFramebuffer;
@@ -297,7 +298,7 @@ private:
 		mRenderer = std::make_shared<cgb::vulkan_renderer>(nullptr, mVulkanRenderQueue, drawCommandBufferManager, dependentRenderers);
 		mTAARenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager); // predecessors added later on
 		mPostProcRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>> { mTAARenderer });
-
+		mFinalBlitRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>>{ mTAARenderer }, true);
 
 		createColorResources();
 		createDepthResources();
@@ -702,6 +703,7 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			mVrsRenderer.reset();
 		}
+		mFinalBlitRenderer.reset();
 		mRenderer.reset();
 		mTAARenderer.reset();
 		mPostProcRenderer.reset();
@@ -770,7 +772,7 @@ private:
 		// update states, e.g. for animation
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
-		mPostProcRenderer->start_frame();
+		mFinalBlitRenderer->start_frame();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
@@ -840,7 +842,7 @@ private:
 		vk::ImageMemoryBarrier imgMemBarrier = {};
 		imgMemBarrier.srcAccessMask = {};
 		imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
-		imgMemBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		imgMemBarrier.oldLayout = vk::ImageLayout::eUndefined;
 		imgMemBarrier.newLayout = vk::ImageLayout::eGeneral;
 		imgMemBarrier.image = vrsDebugImages[cgb::vulkan_context::instance().currentFrame]->get_image();
 		imgMemBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -918,18 +920,24 @@ private:
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
 		// post processing pass
-		renderObjects.clear();
-		renderObjects.push_back(mTAAFullScreenQuads[tAAIndex].get());
-		mPostProcRenderer->render(renderObjects, mPostProcDrawer.get());
+		//renderObjects.clear();
+		//renderObjects.push_back(mTAAFullScreenQuads[tAAIndex].get());
+		//mPostProcRenderer->render(renderObjects, mPostProcDrawer.get());
 
 
-		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-			renderObjects.clear();
-			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
-			mPostProcRenderer->render(renderObjects, mVrsDebugDrawer.get());
-		}
+		//if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+		//	renderObjects.clear();
+		//	renderObjects.push_back(mVrsDebugFullscreenQuad.get());
+		//	mPostProcRenderer->render(renderObjects, mVrsDebugDrawer.get());
+		//}
+		mTAARenderer->recordPrimaryCommandBuffer();
+		cgb::vulkan_image::blit_image(mTAAImages[tAAIndex][cgb::vulkan_context::instance().currentFrame].get(),
+			mImagePresenter->get_swap_chain_images()[cgb::vulkan_context::instance().currentSwapChainIndex].get(), vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
+			vk::AccessFlagBits::eColorAttachmentWrite, {}, {}, {},
+			vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eBottomOfPipe, drawCommandBufferManager.get());
 
-		mPostProcRenderer->end_frame();
+		mFinalBlitRenderer->end_frame();
 		//cgb::vulkan_context::instance().device.waitIdle();
 
 		//frame = (frame + int(0 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
@@ -1099,7 +1107,7 @@ private:
 
 			for (int j = 0; j < mTAAImages.size(); j++) {
 				mTAAImages[j][i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 4, vk::SampleCountFlagBits::e1, colorFormat,
-					vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+					vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
 					vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 				if (j == 0) {
 					mTAAImages[j][i]->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);

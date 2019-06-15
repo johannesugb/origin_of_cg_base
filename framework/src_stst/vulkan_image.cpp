@@ -204,6 +204,13 @@ namespace cgb {
 			sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
 			destinationStage = vk::PipelineStageFlagBits::eShadingRateImageNV;
 		}
+		else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::ePresentSrcKHR) {
+			barrier.srcAccessMask = {};
+			barrier.dstAccessMask = {};
+
+			sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+			destinationStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+		}
 		else {
 			throw std::invalid_argument("unsupported layout transition!");
 		}
