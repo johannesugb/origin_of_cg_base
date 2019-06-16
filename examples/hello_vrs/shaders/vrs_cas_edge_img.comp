@@ -70,26 +70,28 @@ void main() {
 	float shadingRate = (scaledVal * scaledVal); // current texel diff
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	//shadingRate = (shadingRate * 2/4 + prevShadingRate.x * 2/4);
-	shadingRate = 12;
+	shadingRate = 0;
 	//shadingRate = shadingRate / (frameVal.y * frameVal.z * 16.0);
 	//shadingRate = (frameVal.y * frameVal.z) * 1000;
 	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 	//imageStore(targetImage, uv, uvec4(8 - clamp(shadingRate, 0, 11),0,0,0));
 
-	float color = rgbToLuma(texelFetch(edgeImage, uv, 0).xyz);
-	float colorUp = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, 1)).xyz);
-	float colorDown = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, -1)).xyz);
-	float colorLeft = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(-1, 1)).xyz);
-	float colorRight = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(-1, -1)).xyz);
+	vec3 color = texelFetch(edgeImage, uv, 0).xyz;
+	float luma = rgbToLuma(texelFetch(edgeImage, uv, 0).xyz);
+	float lumaUp = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, 1)).xyz);
+	float lumaDown = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, -1)).xyz);
+	float lumaLeft = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(-1, 1)).xyz);
+	float lumaRight = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(-1, -1)).xyz);
 
-	float lumaMin = min(color, min(min(colorUp,colorDown), min(colorLeft,colorRight)));
-	float lumaMax = max(color, max(max(colorUp,colorDown), max(colorLeft,colorRight)));
+	float lumaMin = min(luma, min(min(lumaUp,lumaDown), min(lumaLeft,lumaRight)));
+	float lumaMax = max(luma, max(max(lumaUp,lumaDown), max(lumaLeft,lumaRight)));
 
 	vec2 dir;
-	dir.x = -((colorUp + colorLeft) - (colorDown + colorRight));
-	dir.y = ((colorUp + colorDown) - (colorLeft + colorRight));
+	dir.x = -((lumaUp + lumaLeft) - (lumaDown + lumaRight));
+	dir.y = ((lumaUp + lumaDown) - (lumaLeft + lumaRight));
 
 	imageStore(debugImage, uv, vec4(vec3(float((lumaMax-lumaMin) > 0.09) * 10), 1.0));
 	//imageStore(debugImage, uv, vec4(vec3(float((abs(dir.x) + abs(dir.y)) > 0.09) * 10), 1.0));
 	//imageStore(debugImage, uv, vec4(vec3((uv.y%2)), 1.0));
+	imageStore(debugImage, uv, vec4(vec3(color) * 10, 1.0));
 }

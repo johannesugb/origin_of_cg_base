@@ -51,7 +51,7 @@ void vrs_cas_edge_compute_drawer::blit_image(vk::CommandBuffer& commandBuffer)
 
 	commandBuffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eTransfer, {},
-		{}, {}, { barrier, srcBarrier });
+		{}, {}, { barrier });
 
 	vk::ImageBlit blit = {};
 	blit.srcOffsets[0] = { 0, 0, 0 };
@@ -79,7 +79,7 @@ void vrs_cas_edge_compute_drawer::blit_image(vk::CommandBuffer& commandBuffer)
 	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
 	srcBarrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-	srcBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	srcBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	srcBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
 	srcBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 

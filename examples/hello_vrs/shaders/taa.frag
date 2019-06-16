@@ -24,6 +24,11 @@ layout(push_constant) uniform taa_prev_frame_data
 layout(location = 0) in vec2 fragTexCoord;
 
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outEdge;
+
+float rgbToLuma(vec3 rgb) {
+	return sqrt(dot(rgb, vec3(0.299, 0.587, 0.114)));
+}
 
 // Catmull-Rom filtering code from http://vec3.ca/bicubic-filtering-in-fewer-taps/
 vec3 bicubicSampleCatmullRom(sampler2D tex, vec2 samplePos)
@@ -124,6 +129,7 @@ void main() {
     // Details here: http://www.gdcvault.com/play/1023521/From-the-Lab-Bench-Real
     // and here: http://cwyman.org/papers/siga16_gazeTrackedFoveatedRendering.pdf
     vec3 color = texelFetch(curFrame, ipos, 0).rgb;
+	float luma = rgbToLuma(color);
     color = RGBToYCgCo(color);
     vec3 colorAvg = color;
     vec3 colorVar = color * color;
@@ -144,18 +150,22 @@ void main() {
     colorAvg += c;
     colorVar += c * c;
 	c = texelFetchOffset(curFrame, ipos, 0, offset[4]).rgb;
+	float lumaRight = rgbToLuma(c);
     c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
 	c = texelFetchOffset(curFrame, ipos, 0, offset[5]).rgb;
+	float lumaDown = rgbToLuma(c);
     c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
 	c = texelFetchOffset(curFrame, ipos, 0, offset[6]).rgb;
+	float lumaUp = rgbToLuma(c);
     c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
 	c = texelFetchOffset(curFrame, ipos, 0, offset[7]).rgb;
+	float lumaLeft = rgbToLuma(c); 
     c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
@@ -188,11 +198,23 @@ void main() {
 	outColor = vec4(result, 0);
 
 	vec4 curColor = texture(curFrame, fragTexCoord + 1 * pushConst.jitter);
-    outColor = curColor;
+    //outColor = curColor;
 	//outColor = vec4(texture(prevFrame, fragTexCoord - motion).rgb, 0);
 	//outColor = vec4(motion.x);
 	//outColor = vec4(YCgCoToRGB(history), 0);
 	//outColor = vec4(shadingRate.x, 0, 0, 0);
+
+	// compute edge for other purposes (e.g. fxaa, or CAS with edges)
+	float lumaMin = min(luma, min(min(lumaUp,lumaDown), min(lumaLeft,lumaRight)));
+	float lumaMax = max(luma, max(max(lumaUp,lumaDown), max(lumaLeft,lumaRight)));
+
+	vec2 dir;
+	dir.x = -((lumaUp + lumaLeft) - (lumaDown + lumaRight));
+	dir.y = ((lumaUp + lumaDown) - (lumaLeft + lumaRight));
+
+	//outEdge = vec4(vec3(float((lumaMax-lumaMin) > 0.02) * 10), 1.0);
+	outEdge = vec4(vec3(float((abs(dir.x) + abs(dir.y))) ), 1.0);
+	//outEdge = vec4(vec3(0.5), 0.0);
 }
 
 
