@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.hpp>
 #include "context_generic_glfw_types.h"
 #include "window_base.h"
+#include "image.h"
 
 namespace cgb
 {
@@ -73,6 +74,31 @@ namespace cgb
 	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
 	extern bool has_stencil_component(const image_format& pImageFormat);
 
+
+	struct image
+	{
+		image() noexcept;
+		image(const vk::ImageCreateInfo&, const vk::Image&, const vk::DeviceMemory&) noexcept;
+		image(const image&) = delete;
+		image(image&&) noexcept;
+		image& operator=(const image&) = delete;
+		image& operator=(image&&) noexcept;
+		~image();
+
+		static image create2D(int width, int height, 
+			vk::Format format = vk::Format::eR8G8B8A8Unorm, 
+			vk::ImageTiling tiling = vk::ImageTiling::eOptimal, 
+			vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+			vk::MemoryPropertyFlags properties = vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		vk::ImageMemoryBarrier create_barrier(vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt) const;
+
+		vk::ImageCreateInfo mInfo;
+		vk::Image mImage;
+		vk::DeviceMemory mMemory;
+	};
+
+
 	// Forsward-declare the command pool
 	class command_pool;
 
@@ -87,9 +113,14 @@ namespace cgb
 		void copy_image(const image& pSource, const vk::Image& pDestination);
 		void end_render_pass();
 
+		auto& begin_info() const { return mBeginInfo; }
+		auto& handle() const { return mCommandBuffer.get(); }
+		auto* handle_addr() const { return &mCommandBuffer.get(); }
+
 		static std::vector<command_buffer> create_many(uint32_t pCount, command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags);
 		static command_buffer create(command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags);
 
+	private:
 		vk::CommandBufferBeginInfo mBeginInfo;
 		vk::UniqueCommandBuffer mCommandBuffer;
 	};
@@ -163,11 +194,12 @@ namespace cgb
 		auto family_index() const { return mQueueFamilyIndex; }
 		/** Gets queue index (inside the queue family) of this queue. */
 		auto queue_index() const { return mQueueIndex; }
+		auto priority() const { return mPriority; }
 		const auto& handle() const { return mQueue; }
 		const auto* handle_addr() const { return &mQueue; }
 
 		/** Gets a pool which is usable for this queue and the current thread. */
-		auto& pool() const { return context().get_command_pool_for_queue(*this); }
+		command_pool& pool() const;
 
 	private:
 		uint32_t mQueueFamilyIndex;
@@ -262,32 +294,48 @@ namespace cgb
 
 	extern vk::ImageMemoryBarrier create_image_barrier(vk::Image pImage, vk::Format pFormat, vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt);
 
-	struct image
-	{
-		image() noexcept;
-		image(const vk::ImageCreateInfo&, const vk::Image&, const vk::DeviceMemory&) noexcept;
-		image(const image&) = delete;
-		image(image&&) noexcept;
-		image& operator=(const image&) = delete;
-		image& operator=(image&&) noexcept;
-		~image();
-
-		static image create2D(int width, int height, 
-							  vk::Format format = vk::Format::eR8G8B8A8Unorm, 
-							  vk::ImageTiling tiling = vk::ImageTiling::eOptimal, 
-							  vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-							  vk::MemoryPropertyFlags properties = vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-		vk::ImageMemoryBarrier create_barrier(vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt) const;
-
-		vk::ImageCreateInfo mInfo;
-		vk::Image mImage;
-		vk::DeviceMemory mMemory;
-	};
 
 	extern void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout);
 
-	extern void copy_buffer_to_image(const buffer& pSrcBuffer, const image& pDstImage);
+	template <typename Bfr>
+	void copy_buffer_to_image(const Bfr& pSrcBuffer, const image& pDstImage)
+	{
+		//auto commandBuffer = context().create_command_buffers_for_transfer(1);
+		auto commandBuffer = context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+		// Immediately start recording the command buffer:
+		commandBuffer.begin_recording();
+
+		auto copyRegion = vk::BufferImageCopy()
+			.setBufferOffset(0)
+			// The bufferRowLength and bufferImageHeight fields specify how the pixels are laid out in memory. For example, you could have some padding 
+			// bytes between rows of the image. Specifying 0 for both indicates that the pixels are simply tightly packed like they are in our case. [3]
+			.setBufferRowLength(0)
+			.setBufferImageHeight(0)
+			.setImageSubresource(vk::ImageSubresourceLayers()
+				.setAspectMask(vk::ImageAspectFlagBits::eColor)
+				.setMipLevel(0u)
+				.setBaseArrayLayer(0u)
+				.setLayerCount(1u))
+			.setImageOffset({ 0u, 0u, 0u })
+			.setImageExtent(pDstImage.mInfo.extent);
+
+		commandBuffer.handle().copyBufferToImage(
+			pSrcBuffer.buffer_handle(), 
+			pDstImage.mImage, 
+			vk::ImageLayout::eTransferDstOptimal,
+			{ copyRegion });
+
+		// That's all
+		commandBuffer.end_recording();
+
+		auto submitInfo = vk::SubmitInfo()
+			.setCommandBufferCount(1u)
+			.setPCommandBuffers(commandBuffer.handle_addr());
+		cgb::context().transfer_queue().handle().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
+		cgb::context().transfer_queue().handle().waitIdle();
+	}
+
 
 	struct image_view
 	{
@@ -345,8 +393,6 @@ namespace cgb
 	struct acceleration_structure
 	{
 		acceleration_structure() noexcept;
-		acceleration_structure(const vk::AccelerationStructureInfoNV& pAccStructureInfo, const vk::AccelerationStructureNV& pAccStructure, const acceleration_structure_handle& pHandle, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory);
-		acceleration_structure(const buffer&) = delete;
 		acceleration_structure(acceleration_structure&&) noexcept;
 		acceleration_structure& operator=(const acceleration_structure&) = delete;
 		acceleration_structure& operator=(acceleration_structure&&) noexcept;
@@ -365,7 +411,7 @@ namespace cgb
 		vk::DeviceMemory mMemory;
 	};
 
-	struct shader_binding_table : public buffer
+	struct shader_binding_table
 	{
 		shader_binding_table() noexcept;
 		shader_binding_table(size_t, const vk::BufferUsageFlags&, const vk::Buffer&, const vk::MemoryPropertyFlags&, const vk::DeviceMemory&) noexcept;

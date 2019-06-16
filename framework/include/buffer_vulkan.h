@@ -1,5 +1,6 @@
 #pragma once
-#include "buffer.h"
+#include "buffer_data.h"
+#include "synchronization_vulkan.h"
 
 namespace cgb
 {
@@ -9,8 +10,8 @@ namespace cgb
 	template <typename Cfg>
 	class buffer_t
 	{
-		template <typename T>
-		friend buffer_t<T> create(T pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties);
+		//template <typename T>
+		//friend buffer_t<T> create(T pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties);
 
 	public:
 		buffer_t() = default;
@@ -29,7 +30,7 @@ namespace cgb
 		const auto& buffer_handle() const		{ return mBuffer.get(); }
 		const auto* buffer_handle_addr() const	{ return &mBuffer.get(); }
 
-	private:
+	//private:
 		Cfg mConfig;
 		vk::MemoryPropertyFlags mMemoryPropertyFlags;
 		vk::UniqueDeviceMemory mMemory;
@@ -166,6 +167,7 @@ namespace cgb
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
 		auto bufferSize = pConfig.total_size();
+
 
 		vk::MemoryPropertyFlags memoryFlags;
 		// We've got two major branches here: 

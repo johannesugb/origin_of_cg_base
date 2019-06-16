@@ -1,89 +1,44 @@
-#pragma once
+ #pragma once
 
 namespace cgb
 {
-	/** This struct contains information for a generic buffer.
- 	 */
-	struct generic_buffer_data
-	{
-		size_t total_size() const { return mSize; }
-		size_t mSize;
-	};
-
-	/** This struct contains information for a uniform buffer.
-	*/
-	struct uniform_buffer_data
-	{
-		size_t total_size() const { return mSize; }
-		size_t mSize;
-	};
-
-	/** This struct contains information for a uniform texel buffer.
-	*/
-	struct uniform_texel_buffer_data
-	{
-		size_t total_size() const { return mSize; }
-		size_t mSize;
-	};
-
-	/** This struct contains information for a storage buffer.
-	*/
-	struct storage_buffer_data
-	{
-		size_t total_size() const { return mSize; }
-		size_t mSize;
-	};
-
-	/** This struct contains information for a storage texel buffer.
-	*/
-	struct storage_texel_buffer_data
-	{
-		size_t total_size() const { return mSize; }
-		size_t mSize;
-	};
-
-	/**	This struct contains information for a buffer which is intended to be used as 
-	 *	vertex buffer, i.e. vertex attributes provided to a shader.
-	 */
-	struct vertex_buffer_data
-	{
-		size_t sizeof_one_element() const { return mSizeOfOneElement; }
-		size_t num_elements() const { return mNumElements; }
-		size_t total_size() const { return sizeof_one_element() * num_elements(); }
-
-		size_t mSizeOfOneElement;
-		size_t mNumElements;
-	};
-
-	/**	This struct contains information for a buffer which is intended to be used as 
-	 *	index buffer.
-	 */
-	struct index_buffer_data
-	{
-		size_t sizeof_one_element() const { return mSizeOfOneElement; }
-		size_t num_elements() const { return mIndexCount; }
-		size_t total_size() const { return sizeof_one_element() * num_elements(); }
-
-		// Size of the data type which is used to represent one index element, 
-		// this is typically uint16 or uint32
-		size_t mSizeOfOneElement;
-
-		// The number of indices in the buffer
-		uint32_t mIndexCount;
-	};
 
 	// Forward declare templated cgb::buffer and set up some type defs.
 	// The definition of the buffer will always be inside the context-specific implementation files.
 	//template <typename Cfg>
 	//struct buffer_t;
 
-	using generic_buffer		= std::variant<buffer_t<generic_buffer_data>,		std::unique_ptr<buffer_t<generic_buffer_data>>,			std::shared_ptr<buffer_t<generic_buffer_data>>>;
-	using uniform_buffer		= std::variant<buffer_t<uniform_buffer_data>,		std::unique_ptr<buffer_t<uniform_buffer_data>>,			std::shared_ptr<buffer_t<uniform_buffer_data>>>;
-	using uniform_texel_buffer	= std::variant<buffer_t<uniform_texel_buffer_data>,	std::unique_ptr<buffer_t<uniform_texel_buffer_data>>,	std::shared_ptr<buffer_t<uniform_texel_buffer_data>>>;
-	using storage_buffer		= std::variant<buffer_t<storage_buffer_data>,		std::unique_ptr<buffer_t<storage_buffer_data>>,			std::shared_ptr<buffer_t<storage_buffer_data>>>;
-	using storage_texel_buffer	= std::variant<buffer_t<storage_texel_buffer_data>,	std::unique_ptr<buffer_t<storage_texel_buffer_data>>,	std::shared_ptr<buffer_t<storage_texel_buffer_data>>>;
-	using vertex_buffer			= std::variant<buffer_t<vertex_buffer_data>,		std::unique_ptr<buffer_t<vertex_buffer_data>>,			std::shared_ptr<buffer_t<vertex_buffer_data>>>;
-	using index_buffer			= std::variant<buffer_t<index_buffer_data>,			std::unique_ptr<buffer_t<index_buffer_data>>,			std::shared_ptr<buffer_t<index_buffer_data>>>;
+	using generic_buffer_t = buffer_t<generic_buffer_data>;
+	using uniform_buffer_t = buffer_t<uniform_buffer_data>;
+	using uniform_texel_buffer_t = buffer_t<uniform_texel_buffer_data>;
+	using storage_buffer_t = buffer_t<storage_buffer_data>;
+	using storage_texel_buffer_t = buffer_t<storage_texel_buffer_data>;
+	using vertex_buffer_t = buffer_t<vertex_buffer_data>;
+	using index_buffer_t = buffer_t<index_buffer_data>;
+
+	using unique_generic_buffer_t = std::unique_ptr<buffer_t<generic_buffer_data>>;
+	using unique_uniform_buffer_t = std::unique_ptr<buffer_t<uniform_buffer_data>>;
+	using unique_uniform_texel_buffer_t = std::unique_ptr<buffer_t<uniform_texel_buffer_data>>;
+	using unique_storage_buffer_t = std::unique_ptr<buffer_t<storage_buffer_data>>;
+	using unique_storage_texel_buffer_t = std::unique_ptr<buffer_t<storage_texel_buffer_data>>;
+	using unique_vertex_buffer_t = std::unique_ptr<buffer_t<vertex_buffer_data>>;
+	using unique_index_buffer_t = std::unique_ptr<buffer_t<index_buffer_data>>;
+
+	using shared_generic_buffer_t = std::shared_ptr<buffer_t<generic_buffer_data>>;
+	using shared_uniform_buffer_t = std::shared_ptr<buffer_t<uniform_buffer_data>>;
+	using shared_uniform_texel_buffer_t = std::shared_ptr<buffer_t<uniform_texel_buffer_data>>;
+	using shared_storage_buffer_t = std::shared_ptr<buffer_t<storage_buffer_data>>;
+	using shared_storage_texel_buffer_t = std::shared_ptr<buffer_t<storage_texel_buffer_data>>;
+	using shared_vertex_buffer_t = std::shared_ptr<buffer_t<vertex_buffer_data>>;
+	using shared_index_buffer_t = std::shared_ptr<buffer_t<index_buffer_data>>;
+
+	using generic_buffer		= std::variant<generic_buffer_t, unique_generic_buffer_t, shared_generic_buffer_t>;
+	using uniform_buffer		= std::variant<uniform_buffer_t, unique_uniform_buffer_t, shared_uniform_buffer_t>;
+	using uniform_texel_buffer	= std::variant<uniform_texel_buffer_t, unique_uniform_texel_buffer_t, shared_uniform_texel_buffer_t>;
+	using storage_buffer		= std::variant<storage_buffer_t, unique_storage_buffer_t, shared_storage_buffer_t>;
+	using storage_texel_buffer	= std::variant<storage_texel_buffer_t, unique_storage_texel_buffer_t, shared_storage_texel_buffer_t>;
+	using vertex_buffer			= std::variant<vertex_buffer_t, unique_vertex_buffer_t, shared_vertex_buffer_t>;
+	using index_buffer			= std::variant<index_buffer_t, unique_index_buffer_t, shared_index_buffer_t>;
 
 	using buffer = std::variant<
 		generic_buffer,

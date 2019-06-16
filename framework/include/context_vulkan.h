@@ -10,11 +10,11 @@
 // INCLUDES:
 #include <vulkan/vulkan.hpp>
 #include "vulkan_convenience_functions.h"
+#include "synchronization_vulkan.h"
 #include "window_vulkan.h"
 #include "context_vulkan_types.h"
 #include "buffer_vulkan.h"
 #include "shader_vulkan.h"
-#include "synchronization_vulkan.h"
 #include "context_generic_glfw.h"
 #include "imgui_impl_vulkan.h"
 
@@ -53,13 +53,13 @@ namespace cgb
 		vk::PhysicalDevice& physical_device() { return mPhysicalDevice; }
 		vk::Device& logical_device() { return mLogicalDevice; }
 		vk::DispatchLoaderDynamic& dynamic_dispatch() { return mDynamicDispatch; }
-		uint32_t graphics_queue_index() const { return mGraphicsQueue.mQueueIndex; }
-		uint32_t presentation_queue_index() const { return mPresentQueue.mQueueIndex; }
-		uint32_t transfer_queue_index() const { return mTransferQueue.mQueueIndex; }
+		uint32_t graphics_queue_index() const { return mGraphicsQueue.queue_index(); }
+		uint32_t presentation_queue_index() const { return mPresentQueue.queue_index(); }
+		uint32_t transfer_queue_index() const { return mTransferQueue.queue_index(); }
 		device_queue& graphics_queue() { return mGraphicsQueue; }
 		device_queue& presentation_queue() { return mPresentQueue; }
 		device_queue& transfer_queue() { return mTransferQueue; }
-		const std::vector<uint32_t>& all_queue_family_indices() { return mAllUsedQueueFamilyIndices; }
+		const std::vector<uint32_t>& all_queue_family_indices() { return mDistinctQueueFamilies; }
 
 		/**	Creates a new window, but doesn't open it. Set the window's parameters
 		 *	according to your requirements before opening it!
@@ -79,9 +79,27 @@ namespace cgb
 
 		void draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer);
 
-		void draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer);
+		template <typename Bfr>
+		void draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const Bfr& pVertexBuffer)
+		{
+			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
+			pCommandBuffer.handle().draw(pVertexBuffer.mVertexCount, 1u, 0u, 0u);
+		}
 
-		void draw_indexed(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer, const index_buffer& pIndexBuffer);
+		template <typename VBfr, typename IBfr>
+		void draw_indexed(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const VBfr& pVertexBuffer, const IBfr& pIndexBuffer)
+		{
+			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
+
+			vk::IndexType indexType = vk::IndexType::eUint32;
+			if (pIndexBuffer.config().sizeof_one_element() == sizeof(uint16_t)) {
+				indexType = vk::IndexType::eUint16;
+			}
+			pCommandBuffer.handle().bindIndexBuffer(pVertexBuffer.buffer_handle(), 0u, indexType);
+			pCommandBuffer.handle().drawIndexed(pIndexBuffer.config().num_elements(), 1u, 0u, 0u, 0u);
+		}
 
 		/** Completes all pending work on the device, blocks the current thread until then. */
 		void finish_pending_work();
@@ -183,7 +201,7 @@ namespace cgb
 
 		/** TODO: TBD */
 		pipeline create_graphics_pipeline_for_window(
-			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos, 
+			const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos, 
 			window* pWindow, 
 			image_format pDepthFormat,
 			const vk::VertexInputBindingDescription& pBindingDesc, 
@@ -191,7 +209,7 @@ namespace cgb
 			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
 		pipeline create_ray_tracing_pipeline(
-			const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
+			const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
 			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
 		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view& pDepthImageView);

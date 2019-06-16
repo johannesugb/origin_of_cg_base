@@ -381,6 +381,7 @@ namespace cgb
 					.setFlags(usageFlags)
 					.setPInheritanceInfo(nullptr);
 				result.mCommandBuffer = std::move(vkCb);
+				return result;
 			});
 		return buffers;
 	}
@@ -471,12 +472,12 @@ namespace cgb
 		}
 
 	found_indices:
-		return &sPreparedQueues.emplace_back(device_queue{
-			familyIndex, 
-			queueIndex,
-			0.5f, // default priority of 0.5
-			nullptr
-			});
+		auto& prepd_queue = sPreparedQueues.emplace_back();
+		prepd_queue.mQueueFamilyIndex = familyIndex;
+		prepd_queue.mQueueIndex = queueIndex;
+		prepd_queue.mPriority = 0.5f; // default priority of 0.5
+		prepd_queue.mQueue = nullptr;
+		return &prepd_queue;
 	}
 
 	device_queue device_queue::create(uint32_t pQueueFamilyIndex, uint32_t pQueueIndex)
@@ -497,6 +498,11 @@ namespace cgb
 		result.mPriority = pPreparedQueue.mPriority; // default priority of 0.5f
 		result.mQueue = context().logical_device().getQueue(result.mQueueFamilyIndex, result.mQueueIndex);
 		return result;
+	}
+
+	command_pool& device_queue::pool() const 
+	{ 
+		return context().get_command_pool_for_queue(*this); 
 	}
 #pragma endregion
 
@@ -599,12 +605,12 @@ namespace cgb
 
 	void command_buffer::begin_recording()
 	{
-		mCommandBuffer.begin(mBeginInfo);
+		mCommandBuffer->begin(mBeginInfo);
 	}
 
 	void command_buffer::end_recording()
 	{
-		mCommandBuffer.end();
+		mCommandBuffer->end();
 	}
 
 	void command_buffer::begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent)
@@ -624,7 +630,7 @@ namespace cgb
 			.setClearValueCount(static_cast<uint32_t>(clearValues.size()))
 			.setPClearValues(clearValues.data());
 		
-		mCommandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+		mCommandBuffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 		// 2nd parameter: how the drawing commands within the render pass will be provided. It can have one of two values [7]:
 		//  - VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be embedded in the primary command buffer itself and no secondary command buffers will be executed.
 		//  - VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : The render pass commands will be executed from secondary command buffers.
@@ -632,7 +638,7 @@ namespace cgb
 
 	void command_buffer::set_image_barrier(const vk::ImageMemoryBarrier& pBarrierInfo)
 	{
-		mCommandBuffer.pipelineBarrier(
+		mCommandBuffer->pipelineBarrier(
 			vk::PipelineStageFlagBits::eAllCommands,
 			vk::PipelineStageFlagBits::eAllCommands,
 			vk::DependencyFlags(),
@@ -654,116 +660,12 @@ namespace cgb
 			.setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0u, 0u, 1u))
 			.setDstOffset(offset)
 			.setExtent(extent);
-		mCommandBuffer.copyImage(pSource.mImage, vk::ImageLayout::eTransferSrcOptimal, pDestination, vk::ImageLayout::eTransferDstOptimal, { copyInfo });
+		mCommandBuffer->copyImage(pSource.mImage, vk::ImageLayout::eTransferSrcOptimal, pDestination, vk::ImageLayout::eTransferDstOptimal, { copyInfo });
 	}
 
 	void command_buffer::end_render_pass()
 	{
-		mCommandBuffer.endRenderPass();
-	}
-
-	vertex_buffer::vertex_buffer() noexcept
-		: buffer()
-		, mVertexCount(0)
-	{ }
-
-	vertex_buffer::vertex_buffer(vertex_buffer&& other) noexcept
-		: buffer(std::move(other))
-		, mVertexCount(std::move(other.mVertexCount))
-	{
-		other.mVertexCount = 0;
-	}
-
-	vertex_buffer& vertex_buffer::operator=(vertex_buffer&& other) noexcept
-	{
-		buffer::operator=(std::move(other));
-		mVertexCount = std::move(other.mVertexCount);
-		other.mVertexCount = 0;
-		return *this;
-	}
-
-	vertex_buffer vertex_buffer::create(size_t pVertexDataSize, size_t pVertexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
-	{
-		auto b = buffer::create(pVertexDataSize * pVertexCount, vk::BufferUsageFlagBits::eVertexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
-
-		auto vertexBuffer = vertex_buffer();
-		static_cast<cgb::buffer&>(vertexBuffer) = std::move(b);
-		vertexBuffer.mVertexCount = static_cast<uint32_t>(pVertexCount);
-		return vertexBuffer;
-	}
-
-
-	index_buffer::index_buffer() noexcept
-		: buffer()
-		, mIndexType()
-		, mIndexCount(0u)
-	{ }
-
-	index_buffer::index_buffer(index_buffer&& other) noexcept
-		: buffer(std::move(other))
-		, mIndexType(std::move(other.mIndexType))
-		, mIndexCount(std::move(other.mIndexCount))
-	{ 
-		other.mIndexType = vk::IndexType();
-		other.mIndexCount = 0u;
-	}
-
-	index_buffer& index_buffer::operator=(index_buffer&& other) noexcept
-	{
-		buffer::operator=(std::move(other));
-		mIndexType = std::move(other.mIndexType);
-		mIndexCount = std::move(other.mIndexCount);
-		other.mIndexType = vk::IndexType();
-		other.mIndexCount = 0u;
-		return *this;
-	}
-
-	index_buffer index_buffer::create(vk::IndexType pIndexType, size_t pIndexCount, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
-	{
-		size_t elSize = 0;
-		switch (pIndexType) {
-		case vk::IndexType::eUint16:
-			elSize = sizeof(uint16_t);
-			break;
-		case vk::IndexType::eUint32:
-			elSize = sizeof(uint32_t);
-			break;
-		case vk::IndexType::eNoneNV:
-			elSize = 0;
-			break;
-		default:
-			throw std::runtime_error("Can't handle that vk::IndexType");
-		}
-		auto b = buffer::create(elSize * pIndexCount, vk::BufferUsageFlagBits::eIndexBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
-
-		auto indexBuffer = index_buffer();
-		static_cast<cgb::buffer&>(indexBuffer) = std::move(b);
-		indexBuffer.mIndexType = pIndexType;
-		indexBuffer.mIndexCount = static_cast<uint32_t>(pIndexCount);
-		return indexBuffer;
-	}
-
-	uniform_buffer::uniform_buffer() noexcept
-		: buffer()
-	{ }
-
-	uniform_buffer::uniform_buffer(uniform_buffer&& other) noexcept
-		: buffer(std::move(other))
-	{ }
-
-	uniform_buffer& uniform_buffer::operator=(uniform_buffer&& other) noexcept
-	{
-		buffer::operator=(std::move(other));
-		return *this;
-	}
-
-	uniform_buffer uniform_buffer::create(size_t pBufferSize, vk::BufferUsageFlags pAdditionalBufferUsageFlags, vk::MemoryPropertyFlags pMemoryProperties)
-	{
-		auto b = buffer::create(pBufferSize, vk::BufferUsageFlagBits::eUniformBuffer | pAdditionalBufferUsageFlags, pMemoryProperties);
-
-		auto uniformBuffer = uniform_buffer();
-		static_cast<cgb::buffer&>(uniformBuffer) = std::move(b);
-		return uniformBuffer;
+		mCommandBuffer->endRenderPass();
 	}
 
 	descriptor_pool::descriptor_pool() noexcept
@@ -928,10 +830,11 @@ namespace cgb
 
 	void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout)
 	{
-		auto commandBuffer = context().create_command_buffers_for_graphics(1, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		//auto commandBuffer = context().create_command_buffers_for_graphics(1, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		auto commandBuffer = context().graphics_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 		// Immediately start recording the command buffer:
-		commandBuffer[0].begin_recording();
+		commandBuffer.begin_recording();
 
 		vk::AccessFlags sourceAccessMask, destinationAccessMask;
 		vk::PipelineStageFlags sourceStageFlags, destinationStageFlags;
@@ -974,7 +877,7 @@ namespace cgb
 		// the uniform as pipeline stage, for example VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT. It would not make sense to specify a non-shader 
 		// pipeline stage for this type of usage and the validation layers will warn you when you specify a pipeline stage that does not 
 		// match the type of usage. [3]
-		commandBuffer[0].mCommandBuffer.pipelineBarrier(
+		commandBuffer.handle().pipelineBarrier(
 			sourceStageFlags,
 			destinationStageFlags,
 			vk::DependencyFlags(), // The third parameter is either 0 or VK_DEPENDENCY_BY_REGION_BIT. The latter turns the barrier into a per-region condition. That means that the implementation is allowed to already begin reading from the parts of a resource that were written so far, for example. [3]
@@ -983,52 +886,16 @@ namespace cgb
 			{ barrier });
 
 		// That's all
-		commandBuffer[0].end_recording();
+		commandBuffer.end_recording();
 		
 		auto submitInfo = vk::SubmitInfo()
 			.setCommandBufferCount(1u)
-			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
-		cgb::context().graphics_queue().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
-		cgb::context().graphics_queue().waitIdle();
+			.setPCommandBuffers(commandBuffer.handle_addr());
+		cgb::context().graphics_queue().handle().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
+		cgb::context().graphics_queue().handle().waitIdle();
 	}
 	
-	void copy_buffer_to_image(const buffer& pSrcBuffer, const image& pDstImage)
-	{
-		auto commandBuffer = context().create_command_buffers_for_transfer(1);
-
-		// Immediately start recording the command buffer:
-		commandBuffer[0].begin_recording();
-
-		auto copyRegion = vk::BufferImageCopy()
-			.setBufferOffset(0)
-			// The bufferRowLength and bufferImageHeight fields specify how the pixels are laid out in memory. For example, you could have some padding 
-			// bytes between rows of the image. Specifying 0 for both indicates that the pixels are simply tightly packed like they are in our case. [3]
-			.setBufferRowLength(0)
-			.setBufferImageHeight(0)
-			.setImageSubresource(vk::ImageSubresourceLayers()
-								 .setAspectMask(vk::ImageAspectFlagBits::eColor)
-								 .setMipLevel(0u)
-								 .setBaseArrayLayer(0u)
-								 .setLayerCount(1u))
-			.setImageOffset({ 0u, 0u, 0u })
-			.setImageExtent(pDstImage.mInfo.extent);
-
-		commandBuffer[0].mCommandBuffer.copyBufferToImage(
-			pSrcBuffer.mBuffer, 
-			pDstImage.mImage, 
-			vk::ImageLayout::eTransferDstOptimal,
-			{ copyRegion });
-
-		// That's all
-		commandBuffer[0].end_recording();
-
-		auto submitInfo = vk::SubmitInfo()
-			.setCommandBufferCount(1u)
-			.setPCommandBuffers(&commandBuffer[0].mCommandBuffer);
-		cgb::context().transfer_queue().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
-		cgb::context().transfer_queue().waitIdle();
-	}
-
+	
 	image_view::image_view() noexcept
 		: mInfo()
 		, mImageView()
@@ -1184,14 +1051,6 @@ namespace cgb
 		, mMemory(nullptr)
 	{ }
 
-	acceleration_structure::acceleration_structure(const vk::AccelerationStructureInfoNV& pAccStructureInfo, const vk::AccelerationStructureNV& pAccStructure, const acceleration_structure_handle& pHandle, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory)
-		: mAccStructureInfo(pAccStructureInfo)
-		, mAccStructure(pAccStructure)
-		, mHandle(pHandle)
-		, mMemoryProperties(pMemoryProperties)
-		, mMemory(pMemory)
-	{ }
-
 	acceleration_structure::acceleration_structure(acceleration_structure&& other) noexcept
 		: mAccStructureInfo(std::move(other.mAccStructureInfo))
 		, mAccStructure(std::move(other.mAccStructure))
@@ -1287,7 +1146,8 @@ namespace cgb
 		acceleration_structure_handle handle;
 		context().logical_device().getAccelerationStructureHandleNV(accStructure, sizeof(handle.mHandle), &handle.mHandle, cgb::context().dynamic_dispatch());
 
-		return acceleration_structure(accInfo, accStructure, handle, memPropertyFlags, deviceMemory);
+		//return acceleration_structure(accInfo, accStructure, handle, memPropertyFlags, deviceMemory);
+		return acceleration_structure{};
 	}
 
 	size_t acceleration_structure::get_scratch_buffer_size()
@@ -1301,20 +1161,16 @@ namespace cgb
 	}
 
 	shader_binding_table::shader_binding_table() noexcept
-		: buffer()
 	{ }
 
 	shader_binding_table::shader_binding_table(size_t pSize, const vk::BufferUsageFlags& pBufferFlags, const vk::Buffer& pBuffer, const vk::MemoryPropertyFlags& pMemoryProperties, const vk::DeviceMemory& pMemory) noexcept
-		: buffer(pSize, pBufferFlags, pBuffer, pMemoryProperties, pMemory)
 	{ }
 
 	shader_binding_table::shader_binding_table(shader_binding_table&& other) noexcept
-		: buffer(std::move(other))
 	{ }
 
 	shader_binding_table& shader_binding_table::operator=(shader_binding_table&& other) noexcept
 	{ 
-		buffer::operator=(std::move(other));
 		return *this;
 	}
 
@@ -1327,17 +1183,18 @@ namespace cgb
 		auto rtProps = context().get_ray_tracing_properties();
 		auto shaderBindingTableSize = rtProps.shaderGroupHandleSize * numGroups;
 
-		auto b = buffer::create(shaderBindingTableSize,
-								vk::BufferUsageFlagBits::eTransferSrc,
-								vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		// TODO: Use *new* buffer_t
+		//auto b = buffer::create(shaderBindingTableSize,
+		//						vk::BufferUsageFlagBits::eTransferSrc,
+		//						vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-		void* mapped = context().logical_device().mapMemory(b.mMemory, 0, b.mSize);
-		// Transfer something into the buffer's memory...
-		context().logical_device().getRayTracingShaderGroupHandlesNV(pRtPipeline.mPipeline, 0, numGroups, b.mSize, mapped, context().dynamic_dispatch());
-		context().logical_device().unmapMemory(b.mMemory);
+		//void* mapped = context().logical_device().mapMemory(b.mMemory, 0, b.mSize);
+		//// Transfer something into the buffer's memory...
+		//context().logical_device().getRayTracingShaderGroupHandlesNV(pRtPipeline.mPipeline, 0, numGroups, b.mSize, mapped, context().dynamic_dispatch());
+		//context().logical_device().unmapMemory(b.mMemory);
 		
 		auto sbt = shader_binding_table();
-		static_cast<buffer&>(sbt) = std::move(b);
+		//static_cast<buffer&>(sbt) = std::move(b);
 		return sbt;
 	}
 

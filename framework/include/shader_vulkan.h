@@ -1,4 +1,5 @@
 #pragma once
+#include "shader_type.h"
 
 namespace cgb
 {

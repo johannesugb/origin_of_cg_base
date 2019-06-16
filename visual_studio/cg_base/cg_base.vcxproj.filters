@@ -4,9 +4,6 @@
     <ClCompile Include="..\..\framework\src\composition_interface.cpp">
       <Filter>Source Files\application_structure_and_general_stuff</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\shader.cpp">
-      <Filter>Source Files\pipeline_and_shaders</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\context.cpp">
       <Filter>Source Files\context_and_context_specific_functionality</Filter>
     </ClCompile>
@@ -26,7 +23,7 @@
       <Filter>Source Files\context_and_context_specific_functionality\opengl46</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\model.cpp">
-      <Filter>Source Files\data_and_buffers</Filter>
+      <Filter>Source Files\data_buffers_images</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\transform.cpp">
       <Filter>Source Files\scene_and_object_hierarchy</Filter>
@@ -204,11 +201,8 @@
     <ClInclude Include="..\..\framework\include\context_vulkan_types.h">
       <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_types.h">
-      <Filter>Header Files\context_and_context_specific_functionality</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\model.h">
-      <Filter>Header Files\data_and_buffers</Filter>
+      <Filter>Header Files\data_buffers_images</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\transform.h">
       <Filter>Header Files\scene_and_object_hierarchy</Filter>
@@ -310,7 +304,7 @@
       <Filter>Header Files\utilities_components_helpers\helper_functions</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\buffer.h">
-      <Filter>Header Files\data_and_buffers</Filter>
+      <Filter>Header Files\data_buffers_images</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\synchronization_vulkan.h">
       <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
@@ -322,7 +316,7 @@
       <Filter>Header Files\context_and_context_specific_functionality\opengl46</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\memory_usage.h">
-      <Filter>Header Files\data_and_buffers</Filter>
+      <Filter>Header Files\data_buffers_images</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\buffer_vulkan.h">
       <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
@@ -338,6 +332,12 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\composition.h">
       <Filter>Header Files\application_structure_and_general_stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\image.h">
+      <Filter>Header Files\data_buffers_images</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\buffer_data.h">
+      <Filter>Header Files\data_buffers_images</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -419,9 +419,6 @@
     <Filter Include="Header Files\context_and_context_specific_functionality\opengl46">
       <UniqueIdentifier>{2f6ad3fb-9dc3-4e3d-9f48-2f14baf6ad74}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\data_and_buffers">
-      <UniqueIdentifier>{7e592d59-e1a9-4f56-a9d2-2fdb56a7075f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\context_and_context_specific_functionality">
       <UniqueIdentifier>{f608b38b-95d7-4852-ab7c-e65244afe8cd}</UniqueIdentifier>
     </Filter>
@@ -449,9 +446,6 @@
     <Filter Include="Source Files\application_structure_and_general_stuff\timers">
       <UniqueIdentifier>{f526f372-4587-438e-92bc-f69b7dda58bb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\data_and_buffers">
-      <UniqueIdentifier>{50fa4b81-fe6d-4215-80a8-6d974e43b960}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\pipeline_and_shaders">
       <UniqueIdentifier>{0fdd72a4-7319-41db-8135-463523b4cb94}</UniqueIdentifier>
     </Filter>
@@ -475,6 +469,12 @@
     </Filter>
     <Filter Include="Source Files\user_interface">
       <UniqueIdentifier>{b3702408-1275-441e-96c8-274bca405c65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\data_buffers_images">
+      <UniqueIdentifier>{7e592d59-e1a9-4f56-a9d2-2fdb56a7075f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\data_buffers_images">
+      <UniqueIdentifier>{50fa4b81-fe6d-4215-80a8-6d974e43b960}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

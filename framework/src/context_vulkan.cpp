@@ -151,7 +151,7 @@ namespace cgb
 				init_info.PhysicalDevice = context().physical_device();
 				init_info.Device = context().logical_device();;
 				init_info.QueueFamily = context().graphics_queue_index();
-				init_info.Queue = context().graphics_queue();
+				init_info.Queue = context().graphics_queue().handle();
 				init_info.PipelineCache = VK_NULL_HANDLE;
 				init_info.DescriptorPool = context().get_descriptor_pool().mDescriptorPool;
 				init_info.Allocator = VK_NULL_HANDLE;
@@ -267,24 +267,10 @@ namespace cgb
 
 	void vulkan::draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer)
 	{
-		pCommandBuffer.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
-		pCommandBuffer.mCommandBuffer.draw(3u, 1u, 0u, 0u);
+		pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+		pCommandBuffer.handle().draw(3u, 1u, 0u, 0u);
 	}
 
-	void vulkan::draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer)
-	{
-		pCommandBuffer.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
-		pCommandBuffer.mCommandBuffer.bindVertexBuffers(0u, { pVertexBuffer.mBuffer }, { 0 });
-		pCommandBuffer.mCommandBuffer.draw(pVertexBuffer.mVertexCount, 1u, 0u, 0u);
-	}
-
-	void vulkan::draw_indexed(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer& pVertexBuffer, const index_buffer& pIndexBuffer)
-	{
-		pCommandBuffer.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
-		pCommandBuffer.mCommandBuffer.bindVertexBuffers(0u, { pVertexBuffer.mBuffer }, { 0 });
-		pCommandBuffer.mCommandBuffer.bindIndexBuffer(pIndexBuffer.mBuffer, 0u, pIndexBuffer.mIndexType);
-		pCommandBuffer.mCommandBuffer.drawIndexed(pIndexBuffer.mIndexCount, 1u, 0u, 0u, 0u);
-	}
 
 	window* vulkan::create_window(const std::string& pTitle)
 	{
@@ -696,7 +682,7 @@ namespace cgb
 					if (queueCreateInfos[i].queueFamilyIndex == pq.family_index()) {
 						// found, i.e. increase count
 						queueCreateInfos[i].queueCount += 1;
-						queuePriorities[i].push_back(pq.mPriority);
+						queuePriorities[i].push_back(pq.priority());
 						handled = true; 
 						break; // done
 					}
@@ -705,7 +691,7 @@ namespace cgb
 					queueCreateInfos.emplace_back()
 						.setQueueFamilyIndex(pq.family_index())
 						.setQueueCount(1u);
-					queuePriorities.push_back({ pq.mPriority });
+					queuePriorities.push_back({ pq.priority() });
 				}
 			}
 			// Iterate over all vk::DeviceQueueCreateInfo entries and set the queue priorities pointers properly
@@ -942,7 +928,7 @@ namespace cgb
 	}
 
 	pipeline vulkan::create_graphics_pipeline_for_window(
-		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
+		const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
 		window* pWindow,
 		image_format pDepthFormat,
 		const vk::VertexInputBindingDescription& pBindingDesc,
@@ -956,7 +942,7 @@ namespace cgb
 					   [](const auto& tpl) {
 						   return vk::PipelineShaderStageCreateInfo()
 							   .setStage(convert(std::get<shader_type>(tpl)))
-							   .setModule(std::get<shader_handle*>(tpl)->mShaderModule)
+							   .setModule(std::get<shader*>(tpl)->handle())
 							   .setPName("main"); // TODO: support different entry points?!
 					   });
 		
@@ -1089,7 +1075,7 @@ namespace cgb
 	}
 
 	pipeline vulkan::create_ray_tracing_pipeline(
-		const std::vector<std::tuple<shader_type, shader_handle*>>& pShaderInfos,
+		const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
 		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
 	{
 		// CREATE PIPELINE
@@ -1107,7 +1093,7 @@ namespace cgb
 					   [](const auto& tpl) {
 						   return vk::PipelineShaderStageCreateInfo()
 							   .setStage(convert(std::get<shader_type>(tpl)))
-							   .setModule(std::get<shader_handle*>(tpl)->mShaderModule)
+							   .setModule(std::get<shader*>(tpl)->handle())
 							   .setPName("main"); // TODO: support different entry points?!
 					   });
 

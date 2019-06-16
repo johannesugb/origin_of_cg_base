@@ -84,7 +84,6 @@
     <ClCompile Include="..\..\framework\src\math_utils.cpp" />
     <ClCompile Include="..\..\framework\src\model.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
-    <ClCompile Include="..\..\framework\src\shader.cpp" />
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\synchronization_vulkan.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
@@ -206,6 +205,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\buffer.h" />
+    <ClInclude Include="..\..\framework\include\buffer_data.h" />
     <ClInclude Include="..\..\framework\include\buffer_vulkan.h" />
     <ClInclude Include="..\..\framework\include\camera.h" />
     <ClInclude Include="..\..\framework\include\cg_base.h">
@@ -239,7 +239,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\context_state.h" />
-    <ClInclude Include="..\..\framework\include\context_types.h" />
     <ClInclude Include="..\..\framework\include\context_vulkan.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
@@ -257,6 +256,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
+    <ClInclude Include="..\..\framework\include\image.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
     <ClInclude Include="..\..\framework\include\key_code.h" />
     <ClInclude Include="..\..\framework\include\key_state.h" />

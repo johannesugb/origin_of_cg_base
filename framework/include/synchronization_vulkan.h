@@ -55,7 +55,7 @@ namespace cgb
 		*	The dependant semaphore child object ensures that the semaphore
 		*	does not get destructed prematurely.
 		*/
-		std::optional<semaphore> mDependantSemaphore;
+		//std::optional<semaphore> mDependantSemaphore;
 
 		/** A custom deleter function called upon destruction of this semaphore */
 		std::optional<std::function<void()>> mCustomDeleter;
