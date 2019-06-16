@@ -191,10 +191,6 @@ namespace cgb {
 		for (uint32_t i = 0; i < mSwapChainImages.size(); i++) {
 			mVulkanSwapChainImages[i] = std::make_shared<vulkan_image>(mSwapChainImages[i], mSwapChainExtent.width, mSwapChainExtent.height, 1, 4,
 				vk::SampleCountFlagBits::e1, mSwapChainImageFormat, createInfo.imageUsage, vk::ImageAspectFlagBits::eColor);
-			// should not be necessary as normaly automatically transitioned by renderpass / or at BLIT (transfer)
-			// though,this does not seem to work for the first two frames after the first one, for all other frames it works...
-			// this fixes the problem by transfering it default to the correct layout
-			mVulkanSwapChainImages[i]->transition_image_layout(mSwapChainImageFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, 1);
 		}
 	}
 

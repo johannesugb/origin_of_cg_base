@@ -43,7 +43,9 @@
 #define VRS_CAS_EDGE 1
 #define VRS_MAS 0
 
-#define DEFERRED_SHADING 0
+#define DEFERRED_SHADING 1
+
+#define BLIT_FINAL_IMAGE 1
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -191,6 +193,10 @@ private:
 
 	std::shared_ptr<deferred_renderer> mDefRend;
 
+	// super sampling
+	uint32_t renderWidth;
+	uint32_t renderHeight;
+
 
 public:
 	void initialize() override
@@ -286,6 +292,8 @@ private:
 
 
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
+		renderWidth = mImagePresenter->get_swap_chain_extent().width * 2;
+		renderHeight = mImagePresenter->get_swap_chain_extent().height * 2;
 		cgb::vulkan_context::instance().dynamicRessourceCount = mImagePresenter->get_swap_chain_images_count();
 		drawCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(cgb::vulkan_context::instance().dynamicRessourceCount, commandPool, cgb::vulkan_context::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<cgb::vulkan_render_queue>(cgb::vulkan_context::instance().graphicsQueue);
@@ -297,8 +305,8 @@ private:
 		}
 		mRenderer = std::make_shared<cgb::vulkan_renderer>(nullptr, mVulkanRenderQueue, drawCommandBufferManager, dependentRenderers);
 		mTAARenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager); // predecessors added later on
-		mPostProcRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>> { mTAARenderer });
 		mFinalBlitRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>>{ mTAARenderer }, true);
+		mPostProcRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>> { mTAARenderer });
 
 		createColorResources();
 		createDepthResources();
@@ -306,7 +314,7 @@ private:
 			createVRSImageResources();
 		}
 
-		mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height,
+		mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(renderWidth, renderHeight,
 			cgb::vulkan_context::instance().dynamicRessourceCount, cgb::vulkan_context::instance().msaaSamples);
 		mVulkanFramebuffer->add_dynamic_color_attachment(colorImage, mPostProcImages, vk::ImageLayout::eShaderReadOnlyOptimal);
 		mVulkanFramebuffer->set_depth_attachment(depthImage);
@@ -326,14 +334,26 @@ private:
 		vk::Viewport viewport = {};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = (float)mImagePresenter->get_swap_chain_extent().width;
-		viewport.height = (float)mImagePresenter->get_swap_chain_extent().height;
+		viewport.width = (float)renderWidth;
+		viewport.height = (float)renderHeight;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
+		vk::Viewport postProcViewport = {};
+		postProcViewport.x = 0.0f;
+		postProcViewport.y = 0.0f;
+		postProcViewport.width = (float)mImagePresenter->get_swap_chain_extent().width;
+		postProcViewport.height = (float)mImagePresenter->get_swap_chain_extent().height;
+		postProcViewport.minDepth = 0.0f;
+		postProcViewport.maxDepth = 1.0f;
+
 		vk::Rect2D scissor = {};
 		scissor.offset = { 0, 0 };
-		scissor.extent = mImagePresenter->get_swap_chain_extent();
+		scissor.extent = vk::Extent2D{renderWidth, renderHeight};
+		
+		vk::Rect2D postProcScissor = {};
+		postProcScissor.offset = { 0, 0 };
+		postProcScissor.extent = vk::Extent2D{ mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height };
 
 		//Atribute description bindings
 		auto bind1 = std::make_shared<cgb::vulkan_attribute_description_binding>(1, sizeof(Vertex), vk::VertexInputRate::eVertex);
@@ -472,7 +492,7 @@ private:
 		}
 
 		// Post processing
-		create_post_process_objects(viewport, scissor);
+		create_post_process_objects(postProcViewport, postProcScissor);
 
 		// TAA
 		create_TAA_objects(viewport, scissor, postProcResourceBundleLayout);
@@ -599,7 +619,7 @@ private:
 		}
 
 		// VRS Debug render, used with e.g. fullscreen quad
-		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mPostProcFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
+		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mPostProcFramebuffer->get_render_pass(), postProcViewport, postProcScissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
 		mVrsDebugPipeline->add_attr_desc_binding(bind1);
 		mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
@@ -772,14 +792,14 @@ private:
 		// update states, e.g. for animation
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
-		mFinalBlitRenderer->start_frame();
+		mPostProcRenderer->start_frame();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 		UniformBufferObject uboCam{};
 		// -----> !ACHTUNG! Neu von JU <------
-		uboCam.frameOffset = (jitter[frame] - glm::vec2(0.5)) / glm::vec2(mImagePresenter->get_swap_chain_extent().width / 2, mImagePresenter->get_swap_chain_extent().height / 2);
+		uboCam.frameOffset = (jitter[frame] - glm::vec2(0.5)) / glm::vec2(renderWidth / 2, renderHeight / 2);
 
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
@@ -919,30 +939,32 @@ private:
 		
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
+#if !BLIT_FINAL_IMAGE
 		// post processing pass
-		//renderObjects.clear();
-		//renderObjects.push_back(mTAAFullScreenQuads[tAAIndex].get());
-		//mPostProcRenderer->render(renderObjects, mPostProcDrawer.get());
-
-
-		//if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-		//	renderObjects.clear();
-		//	renderObjects.push_back(mVrsDebugFullscreenQuad.get());
-		//	mPostProcRenderer->render(renderObjects, mVrsDebugDrawer.get());
-		//}
+		renderObjects.clear();
+		renderObjects.push_back(mTAAFullScreenQuads[tAAIndex].get());
+		mPostProcRenderer->render(renderObjects, mPostProcDrawer.get());
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			renderObjects.clear();
+			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
+			mPostProcRenderer->render(renderObjects, mVrsDebugDrawer.get());
+		}
+#else
 		mTAARenderer->recordPrimaryCommandBuffer();
 		cgb::vulkan_image::blit_image(mTAAImages[tAAIndex][cgb::vulkan_context::instance().currentFrame].get(),
 			mImagePresenter->get_swap_chain_images()[cgb::vulkan_context::instance().currentSwapChainIndex].get(), vk::ImageLayout::eShaderReadOnlyOptimal,
 			vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
 			vk::AccessFlagBits::eColorAttachmentWrite, {}, {}, {},
 			vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eBottomOfPipe, drawCommandBufferManager.get());
+		mPostProcRenderer->add_recorded_secondary_command_buffers();
+#endif
 
-		mFinalBlitRenderer->end_frame();
+		mPostProcRenderer->end_frame();
 		//cgb::vulkan_context::instance().device.waitIdle();
 
 		//frame = (frame + int(0 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
 		frame = (frame + 1) % jitter.size();
-		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->imgSize = glm::vec2(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height);
+		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->imgSize = glm::vec2(renderWidth, renderHeight);
 		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
 
 		//Sleep(280);
@@ -1046,7 +1068,7 @@ private:
 	{
 		vk::Format depthFormat = findDepthFormat();
 
-		depthImage = std::make_shared<cgb::vulkan_image>(mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height, 1, 1, cgb::vulkan_context::instance().msaaSamples, depthFormat,
+		depthImage = std::make_shared<cgb::vulkan_image>(renderWidth, renderHeight, 1, 1, cgb::vulkan_context::instance().msaaSamples, depthFormat,
 			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth);
 		depthImage->transition_image_layout(depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, 1);
 		cgb::vulkan_context::instance().defaultDepthImage = depthImage;
@@ -1080,8 +1102,8 @@ private:
 
 	void createColorResources()
 	{
-		auto width = mImagePresenter->get_swap_chain_extent().width;
-		auto height = mImagePresenter->get_swap_chain_extent().height;
+		auto width = renderWidth;
+		auto height = renderHeight;
 		vk::Format colorFormat = mImagePresenter->get_swap_chain_image_format();
 		vk::Format colorFormatMotionVectorImg = vk::Format::eR16G16Snorm;
 		vk::Format colorFormatVrsPrevImg = vk::Format::eR16G16B16A16Unorm;
@@ -1160,8 +1182,8 @@ private:
 	void createVRSImageResources()
 	{
 		vk::Format colorFormat = vk::Format::eR8Uint;
-		auto width = mImagePresenter->get_swap_chain_extent().width / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.width;
-		auto height = mImagePresenter->get_swap_chain_extent().height / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.height;
+		auto width = renderWidth / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.width;
+		auto height = renderHeight / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.height;
 
 		vk::Format colorFormatDebug = vk::Format::eR8G8B8A8Unorm;
 		vk::Format colorFormatVrsPrevImg = vk::Format::eR16G16B16A16Unorm;
@@ -1248,7 +1270,7 @@ private:
 
 		for (int i = 0; i < mTAAFramebuffers.size(); i++) {
 			mTAAFramebuffers[i] = std::make_shared<cgb::vulkan_framebuffer>(
-				mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height,
+				renderWidth, renderHeight,
 				cgb::vulkan_context::instance().dynamicRessourceCount, vk::SampleCountFlagBits::e1);
 			mTAAFramebuffers[i]->add_dynamic_color_attachment(mTAAImages[i], vk::ImageLayout::eShaderReadOnlyOptimal);
 			mTAAFramebuffers[i]->bake();

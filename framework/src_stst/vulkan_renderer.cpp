@@ -123,7 +123,9 @@ namespace cgb {
 			}
 
 			// submit secondary command buffers
-			mPrimCmdBuffer.executeCommands(secondaryCommandBuffers.size(), secondaryCommandBuffers.data());
+			if (secondaryCommandBuffers.size() > 0) {
+				mPrimCmdBuffer.executeCommands(secondaryCommandBuffers.size(), secondaryCommandBuffers.data());
+			}
 
 			if (!mIsCompute) {
 				mPrimCmdBuffer.endRenderPass();
@@ -131,5 +133,11 @@ namespace cgb {
 
 			mSubmitted = true;
 		}
+	}
+
+	void vulkan_renderer::add_recorded_secondary_command_buffers() {
+		std::vector<vk::CommandBuffer> secondaryCommandBuffers = mDrawCommandBufferManager->get_recorded_command_buffers(vk::CommandBufferLevel::eSecondary);
+		// submit secondary command buffers
+		mPrimCmdBuffer.executeCommands(secondaryCommandBuffers.size(), secondaryCommandBuffers.data());
 	}
 }
