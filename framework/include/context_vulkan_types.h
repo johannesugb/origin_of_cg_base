@@ -301,7 +301,7 @@ namespace cgb
 	void copy_buffer_to_image(const Bfr& pSrcBuffer, const image& pDstImage)
 	{
 		//auto commandBuffer = context().create_command_buffers_for_transfer(1);
-		auto commandBuffer = context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		auto commandBuffer = cgb::context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 		// Immediately start recording the command buffer:
 		commandBuffer.begin_recording();

@@ -83,6 +83,6 @@ namespace cgb
 	 */
 	template <typename T, typename V>
 	T& get_at(V v, size_t index)	{
-		return get<T>(v[i]);
+		return get<T>(v[index]);
 	}
 }

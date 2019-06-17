@@ -283,9 +283,9 @@ namespace cgb
 		// Wait for the window to receive a valid handle before creating its surface
 		context().add_event_handler(context_state::halfway_initialized | context_state::anytime_after_init_before_finalize, [wnd]() -> bool {
 			LOG_INFO("Running window surface creator event handler");
-			
+
 			// Make sure it is the right window
-			auto* window = context().find_window([wnd](cgb::window* w) { 
+			auto* window = context().find_window([wnd](cgb::window* w) {
 				return w == wnd && w->handle().has_value();
 			});
 
@@ -298,6 +298,8 @@ namespace cgb
 				throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", wnd->title()));
 			}
 			window->mSurface = surface;
+			//vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderStatic> deleter(context().vulkan_instance(), nullptr, vk::DispatchLoaderStatic());
+			//window->mSurface = vk::UniqueHandle<vk::SurfaceKHR, vk::DispatchLoaderStatic>(surface, deleter);
 			return true;
 		});
 
@@ -810,24 +812,27 @@ namespace cgb
 		}
 
 		// Finally, create the swap chain prepare a struct which stores all relevant data (for further use)
+		//pWindow->mSwapChain = logical_device().createSwapchainKHRUnique(createInfo);
 		pWindow->mSwapChain = logical_device().createSwapchainKHR(createInfo);
 		pWindow->mSwapChainImageFormat = surfaceFormat;
 		pWindow->mSwapChainExtent = vk::Extent2D(extent.x, extent.y);
-		pWindow->mSwapChainImages = {}; // Soon...
-		pWindow->mSwapChainImageViews = {}; // Soon...
 		pWindow->mCurrentFrame = 0; // Start af frame 0
 
 		auto swapChainImages = logical_device().getSwapchainImagesKHR(pWindow->swap_chain());
 		assert(swapChainImages.size() == pWindow->get_config_number_of_presentable_images());
 		// Store the images,
-		std::copy(std::begin(swapChainImages), std::end(swapChainImages),
-				  std::back_inserter(pWindow->mSwapChainImages));
+		std::transform(std::begin(swapChainImages), std::end(swapChainImages),
+					   std::back_inserter(pWindow->mSwapChainImages),
+					   [](auto& swim) {
+							vk::ObjectDestroy<vk::Device, vk::DispatchLoaderStatic> deleter(context().logical_device(), nullptr, vk::DispatchLoaderStatic());
+							return vk::UniqueHandle<vk::Image, vk::DispatchLoaderStatic>(swim, deleter);
+					   });
 		// and create one image view per image
 		std::transform(std::begin(pWindow->mSwapChainImages), std::end(pWindow->mSwapChainImages),
 					   std::back_inserter(pWindow->mSwapChainImageViews),
 					   [wnd=pWindow](const auto& image) {
 						   auto viewCreateInfo = vk::ImageViewCreateInfo()
-							   .setImage(image)
+							   .setImage(image.get())
 							   .setViewType(vk::ImageViewType::e2D)
 							   .setFormat(wnd->swap_chain_image_format().mFormat)
 							   .setComponents(vk::ComponentMapping() // The components field allows you to swizzle the color channels around. In our case we'll stick to the default mapping. [3]
@@ -842,7 +847,7 @@ namespace cgb
 													.setBaseArrayLayer(0u)
 													.setLayerCount(1u));
 						   // Note:: If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers. You could then create multiple image views for each image representing the views for the left and right eyes by accessing different layers. [3]
-						   auto imageView = context().logical_device().createImageView(viewCreateInfo);
+						   auto imageView = context().logical_device().createImageViewUnique(viewCreateInfo);
 						   return imageView;
 					   });
 
@@ -1162,7 +1167,7 @@ namespace cgb
 		std::vector<framebuffer> framebuffers;
 		auto extent = pWindow->swap_chain_extent();
 		for (const auto& imageView : pWindow->swap_chain_image_views()) {
-			std::array attachments = { imageView, pDepthImageView.mImageView };
+			std::array attachments = { imageView.get(), pDepthImageView.mImageView };
 			auto framebufferInfo = vk::FramebufferCreateInfo()
 				.setRenderPass(renderPass)
 				.setAttachmentCount(static_cast<uint32_t>(attachments.size()))

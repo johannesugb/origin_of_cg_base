@@ -30,7 +30,7 @@ namespace cgb
 		const auto& buffer_handle() const		{ return mBuffer.get(); }
 		const auto* buffer_handle_addr() const	{ return &mBuffer.get(); }
 
-	//private:
+	private:
 		Cfg mConfig;
 		vk::MemoryPropertyFlags mMemoryPropertyFlags;
 		vk::UniqueDeviceMemory mMemory;
@@ -57,20 +57,20 @@ namespace cgb
 			.setFlags(vk::BufferCreateFlags()); 
 
 		// Create the buffer on the logical device
-		auto vkBuffer = context().logical_device().createBufferUnique(bufferCreateInfo);
+		auto vkBuffer = cgb::context().logical_device().createBufferUnique(bufferCreateInfo);
 
 		// The buffer has been created, but it doesn't actually have any memory assigned to it yet. 
 		// The first step of allocating memory for the buffer is to query its memory requirements [2]
-		auto memRequirements = context().logical_device().getBufferMemoryRequirements(vkBuffer.get());
+		auto memRequirements = cgb::context().logical_device().getBufferMemoryRequirements(vkBuffer.get());
 
 		auto allocInfo = vk::MemoryAllocateInfo()
 			.setAllocationSize(memRequirements.size)
-			.setMemoryTypeIndex(context().find_memory_type_index(
+			.setMemoryTypeIndex(cgb::context().find_memory_type_index(
 				memRequirements.memoryTypeBits, 
 				pMemoryProperties));
 
 		// Allocate the memory for the buffer:
-		auto vkMemory = context().logical_device().allocateMemoryUnique(allocInfo);
+		auto vkMemory = cgb::context().logical_device().allocateMemoryUnique(allocInfo);
 
 		cgb::buffer_t<Cfg> b;
 		b.mConfig = pConfig;
@@ -112,9 +112,9 @@ namespace cgb
 		auto memProps = target.memory_properties();
 		// #1: Is our memory on the CPU-SIDE? 
 		if (has_flag(memProps, vk::MemoryPropertyFlagBits::eHostVisible)) {
-			void* mapped = context().logical_device().mapMemory(target.memory_handle(), 0, bufferSize);
+			void* mapped = cgb::context().logical_device().mapMemory(target.memory_handle(), 0, bufferSize);
 			memcpy(mapped, pData, bufferSize);
-			context().logical_device().unmapMemory(target.memory_handle());
+			cgb::context().logical_device().unmapMemory(target.memory_handle());
 			// Coherent memory is done; non-coherent memory not yet
 			if (!has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCoherent)) {
 				// Setup the range 
@@ -123,7 +123,7 @@ namespace cgb
 					.setOffset(0)
 					.setSize(bufferSize);
 				// Flush the range
-				context().logical_device().flushMappedMemoryRanges(1, &range);
+				cgb::context().logical_device().flushMappedMemoryRanges(1, &range);
 			}
 			// TODO: Handle has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCached) case
 		}
@@ -136,7 +136,7 @@ namespace cgb
 			//						after the transfer operation has completed => handle via semaphore!
 			auto [stagingBuffer, _] = create_and_fill(generic_buffer_data{ target.size() }, cgb::memory_usage::host_coherent, pData, vk::BufferUsageFlagBits::eTransferDst);
 
-			auto commandBuffer = context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+			auto commandBuffer = cgb::context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 			commandBuffer.begin_recording();
 
 			auto copyRegion = vk::BufferCopy{}
@@ -221,6 +221,6 @@ namespace cgb
 		// How it will be filled depends on where the memory is located at.
 		auto result = cgb::create(pConfig, pUsage, memoryFlags);
 		auto semaphore = set_data(result, pData);
-		return [result, semaphore];
+		return std::make_tuple(std::move(result), std::move(semaphore));
 	}
 }

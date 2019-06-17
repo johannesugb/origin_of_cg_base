@@ -9,6 +9,11 @@ namespace cgb
 
 	window::~window()
 	{
+		//mSurface.release(); // Don't call destroy!
+		//mSwapChain.release(); // Don't call destroy!
+		//for (auto& fu : mSwapChainImages) {
+		//	fu.release(); // Don't call destroy!
+		//}
 		if (mHandle) {
 			context().close_window(*this);
 			mHandle = std::nullopt;
