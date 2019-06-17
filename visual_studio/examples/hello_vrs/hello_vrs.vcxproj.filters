@@ -118,6 +118,7 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_cas_edge_img.comp">
       <Filter>shaders</Filter>
     </None>
+    <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
@@ -141,5 +142,10 @@
     <Image Include="..\..\..\framework\assets\chalet\chalet.jpg">
       <Filter>assets\chalet</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="..\..\..\framework\assets\models\parallelepiped.obj">
+      <Filter>assets\models</Filter>
+    </Object>
   </ItemGroup>
 </Project>
