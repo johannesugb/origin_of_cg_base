@@ -56,27 +56,18 @@ void main() {
 	//vec4 frameVal = imageLoad(prevFrameImage, newUV);
 	vec4 frameVal = texture(prevFrameImage, newPosNDC.xy);
 
-	//uint shadingRate = int( pushConst.projAScale.y / (newPosNDC.z - pushConst.projAScale.x) ); // current depth linear
-	//uint shadingRate = int( pushConst.projAScale.y / (prevFrameVal.w - pushConst.projAScale.x)); // previos depth linear
-	//uint shadingRate = int( posWorld.z ); // current depth world space
-	//uint shadingRate = int(round(distance(xySSC, newPosNDC.xy) * 12.0));
-	//uint shadingRate = int( pushConst.projAScale.x / (posWorld.y - pushConst.projAScale.x));
-	//shadingRate = int( pushConst.projAScale.y / (prevFrameVal.y - pushConst.projAScale.x)); // previos depth linear
-	//shadingRate = int(abs(val.x * val.y * 12));
-
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
 
-	float scaledVal = abs(clamp(frameVal.x * 2 - 0.75,-1,1));
-	float shadingRate = (scaledVal * scaledVal); // current texel diff
-	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
-	//shadingRate = (shadingRate * 2/4 + prevShadingRate.x * 2/4);
-	shadingRate = 0;
-	//shadingRate = shadingRate / (frameVal.y * frameVal.z * 16.0);
-	//shadingRate = (frameVal.y * frameVal.z) * 1000;
-	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
-	//imageStore(targetImage, uv, uvec4(8 - clamp(shadingRate, 0, 11),0,0,0));
+	vec3 edge = texelFetch(edgeImage, uv, 0).xyz;
 
-	vec3 color = texelFetch(edgeImage, uv, 0).xyz;
+	float shadingRate = (edge.x * 10); // edge intensity / differntial
+	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
+	shadingRate =  mix(prevShadingRate.x, shadingRate, 0.6);
+	//shadingRate =  max(prevShadingRate.x, shadingRate);
+	//shadingRate = 0;
+	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
+
+	
 	float luma = rgbToLuma(texelFetch(edgeImage, uv, 0).xyz);
 	float lumaUp = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, 1)).xyz);
 	float lumaDown = rgbToLuma(texelFetchOffset(edgeImage, uv, 0, ivec2(1, -1)).xyz);
@@ -90,8 +81,8 @@ void main() {
 	dir.x = -((lumaUp + lumaLeft) - (lumaDown + lumaRight));
 	dir.y = ((lumaUp + lumaDown) - (lumaLeft + lumaRight));
 
-	imageStore(debugImage, uv, vec4(vec3(float((lumaMax-lumaMin) > 0.09) * 10), 1.0));
+	//imageStore(debugImage, uv, vec4(vec3(float((lumaMax-lumaMin) > 0.09) * 10), 1.0));
 	//imageStore(debugImage, uv, vec4(vec3(float((abs(dir.x) + abs(dir.y)) > 0.09) * 10), 1.0));
 	//imageStore(debugImage, uv, vec4(vec3((uv.y%2)), 1.0));
-	imageStore(debugImage, uv, vec4(vec3(color) * 10, 1.0));
+	//imageStore(debugImage, uv, vec4(vec3(float(edge.x > 0.05 )) * 10, 1.0));
 }

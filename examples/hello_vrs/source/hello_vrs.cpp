@@ -46,6 +46,7 @@
 #define DEFERRED_SHADING 1
 
 #define BLIT_FINAL_IMAGE 0
+#define TAA_ENABLED 1
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -620,7 +621,7 @@ private:
 		}
 
 		// VRS Debug render, used with e.g. fullscreen quad
-		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mPostProcFramebuffer->get_render_pass(), postProcViewport, postProcScissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
+		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mTAAFramebuffers[0]->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
 		mVrsDebugPipeline->add_attr_desc_binding(bind1);
 		mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
@@ -799,8 +800,12 @@ private:
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 		UniformBufferObject uboCam{};
-		// -----> !ACHTUNG! Neu von JU <------
+		
+#if TAA_ENABLED
 		uboCam.frameOffset = (jitter[frame] - glm::vec2(0.5)) / glm::vec2(renderWidth / 2, renderHeight / 2);
+#else
+		uboCam.frameOffset = glm::vec2(0);
+#endif
 
 		uboCam.view = mCamera.view_matrix();
 		uboCam.proj = mCamera.projection_matrix();
@@ -940,16 +945,18 @@ private:
 		
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			renderObjects.clear();
+			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
+			mTAARenderer->render(renderObjects, mVrsDebugDrawer.get());
+		}
+
 #if !BLIT_FINAL_IMAGE
 		// post processing pass
 		renderObjects.clear();
 		renderObjects.push_back(mTAAFullScreenQuads[tAAIndex].get());
 		mPostProcRenderer->render(renderObjects, mPostProcDrawer.get());
-		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-			renderObjects.clear();
-			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
-			mPostProcRenderer->render(renderObjects, mVrsDebugDrawer.get());
-		}
+		
 #else
 		mTAARenderer->recordPrimaryCommandBuffer();
 		cgb::vulkan_image::blit_image(mTAAImages[tAAIndex][cgb::vulkan_context::instance().currentFrame].get(),
