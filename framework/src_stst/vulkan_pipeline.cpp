@@ -200,7 +200,7 @@ namespace cgb {
 		shadingRatePaletteEntriesAll.push_back(vk::ShadingRatePaletteEntryNV::e16InvocationsPerPixel);
 
 		std::vector<vk::ShadingRatePaletteEntryNV>  shadingRatePaletteEntries;
-		shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
+		//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
 		//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
 		//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
 		//shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::eNoInvocations);
@@ -222,11 +222,12 @@ namespace cgb {
 		shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
 		shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPer2X2Pixels);
 		shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel);
+		shadingRatePaletteEntries.push_back(vk::ShadingRatePaletteEntryNV::e1InvocationPerPixel);
 
 
 		vk::ShadingRatePaletteNV shadingRatePalette = {};
-		shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntriesAll.size();
-		shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntriesAll.data();
+		shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntries.size();
+		shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntries.data();
 
 		shadingRateImage.pShadingRatePalettes = &shadingRatePalette;
 

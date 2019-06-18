@@ -118,7 +118,7 @@ void main() {
     motion = dot(m, m) > dot(motion, motion) ? m : motion;
 	
 	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
-	ivec2 shadingRateSize = ivec2(shadingRate * 4.0);
+	ivec2 shadingRateSize = ivec2(shadingRate * 4.0); //ivec2(1,1); 
 	//motion *= shadingRate * 4;
 
 	//ipos -= ivec2(motion *  + 0.5);

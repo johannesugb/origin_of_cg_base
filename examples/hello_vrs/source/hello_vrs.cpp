@@ -46,7 +46,7 @@
 #define DEFERRED_SHADING 1
 
 #define BLIT_FINAL_IMAGE 0
-#define TAA_ENABLED 1
+#define TAA_ENABLED 0
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;

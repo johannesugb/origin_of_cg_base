@@ -56,14 +56,15 @@ void main() {
 	//vec4 frameVal = imageLoad(prevFrameImage, newUV);
 	vec4 frameVal = texture(prevFrameImage, newPosNDC.xy);
 
-	uvec4 prevShadingRate = imageLoad(targetImage, uv);
+	float prevShadingRate = imageLoad(targetImage, uv).x;
 
 	vec3 edge = texelFetch(edgeImage, uv, 0).xyz;
 
 	float shadingRate = (edge.x * 10); // edge intensity / differntial
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
-	shadingRate =  mix(prevShadingRate.x, shadingRate, 0.6);
-	//shadingRate =  max(prevShadingRate.x, shadingRate);
+	prevShadingRate = clamp(prevShadingRate, shadingRate - 1, shadingRate + 2);
+	//shadingRate =  mix(prevShadingRate, shadingRate, 0.6);
+	shadingRate =  max(prevShadingRate, shadingRate);
 	//shadingRate = 0;
 	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 
