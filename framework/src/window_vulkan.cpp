@@ -2,43 +2,6 @@
 
 namespace cgb
 {
-	window::window()
-		: window_base()
-	{
-	}
-
-	window::~window()
-	{
-		//mSurface.release(); // Don't call destroy!
-		//mSwapChain.release(); // Don't call destroy!
-		//for (auto& fu : mSwapChainImages) {
-		//	fu.release(); // Don't call destroy!
-		//}
-		if (mHandle) {
-			context().close_window(*this);
-			mHandle = std::nullopt;
-		}
-	}
-
-	window::window(window&& other) noexcept
-		: window_base(std::move(other))
-		, mSurfaceFormatSelector(std::move(other.mSurfaceFormatSelector))
-		, mPresentationModeSelector(std::move(other.mPresentationModeSelector))
-		, mNumberOfSamplesGetter(std::move(other.mNumberOfSamplesGetter))
-		, mMultisampleCreateInfoBuilder(std::move(other.mMultisampleCreateInfoBuilder))
-	{
-	}
-
-	window& window::operator= (window&& other) noexcept
-	{
-		window_base::operator=(std::move(other));
-		mSurfaceFormatSelector = std::move(other.mSurfaceFormatSelector);
-		mPresentationModeSelector = std::move(other.mPresentationModeSelector);
-		mNumberOfSamplesGetter = std::move(other.mNumberOfSamplesGetter);
-		mMultisampleCreateInfoBuilder = std::move(other.mMultisampleCreateInfoBuilder);
-		return *this;
-	}
-
 	void window::request_srgb_framebuffer(bool pRequestSrgb)
 	{
 		// Which formats are supported, depends on the surface.

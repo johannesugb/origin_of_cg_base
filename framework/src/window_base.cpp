@@ -18,7 +18,12 @@ namespace cgb
 	}
 
 	window_base::~window_base()
-	{ }
+	{ 
+		if (mHandle) {
+			context().close_window(*this);
+			mHandle = std::nullopt;
+		}
+	}
 
 	window_base::window_base(window_base&& other) noexcept
 		: mIsInUse(std::move(other.mIsInUse))

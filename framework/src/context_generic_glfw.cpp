@@ -231,7 +231,7 @@ namespace cgb
 		return back.get();
 	}
 
-	void generic_glfw::close_window(window& wnd)
+	void generic_glfw::close_window(window_base& wnd)
 	{
 		if (!wnd.handle())
 		{

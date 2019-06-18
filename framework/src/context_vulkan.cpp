@@ -297,9 +297,9 @@ namespace cgb
 			if (VK_SUCCESS != glfwCreateWindowSurface(context().vulkan_instance(), wnd->handle()->mHandle, nullptr, &surface)) {
 				throw std::runtime_error(fmt::format("Failed to create surface for window '{}'!", wnd->title()));
 			}
-			window->mSurface = surface;
-			//vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderStatic> deleter(context().vulkan_instance(), nullptr, vk::DispatchLoaderStatic());
-			//window->mSurface = vk::UniqueHandle<vk::SurfaceKHR, vk::DispatchLoaderStatic>(surface, deleter);
+			//window->mSurface = surface;
+			vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderStatic> deleter(context().vulkan_instance(), nullptr, vk::DispatchLoaderStatic());
+			window->mSurface = vk::UniqueHandle<vk::SurfaceKHR, vk::DispatchLoaderStatic>(surface, deleter);
 			return true;
 		});
 
@@ -812,8 +812,8 @@ namespace cgb
 		}
 
 		// Finally, create the swap chain prepare a struct which stores all relevant data (for further use)
-		//pWindow->mSwapChain = logical_device().createSwapchainKHRUnique(createInfo);
-		pWindow->mSwapChain = logical_device().createSwapchainKHR(createInfo);
+		pWindow->mSwapChain = logical_device().createSwapchainKHRUnique(createInfo);
+		//pWindow->mSwapChain = logical_device().createSwapchainKHR(createInfo);
 		pWindow->mSwapChainImageFormat = surfaceFormat;
 		pWindow->mSwapChainExtent = vk::Extent2D(extent.x, extent.y);
 		pWindow->mCurrentFrame = 0; // Start af frame 0

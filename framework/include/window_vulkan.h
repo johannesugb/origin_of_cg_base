@@ -13,12 +13,12 @@ namespace cgb
 		friend class vulkan;
 	public:
 
-		window();
-		~window();
+		window() = default;
+		~window() = default;
 		window(const window&) = delete;
-		window(window&&) noexcept;
+		window(window&&) = default;
 		window& operator =(const window&) = delete;
-		window& operator =(window&&) noexcept;
+		window& operator =(window&&) = default;
 
 		/** Request a framebuffer for this window which is capable of sRGB formats */
 		void request_srgb_framebuffer(bool pRequestSrgb);
@@ -72,13 +72,13 @@ namespace cgb
 
 		/** Gets this window's surface */
 		const auto& surface() const { 
-			//return mSurface.get();  // TODO: Shit
-			return mSurface; 
+			return mSurface.get();  // TODO: Shit
+			//return mSurface; 
 		}
 		/** Gets this window's swap chain */
 		const auto& swap_chain() const { 
-			//return mSwapChain.get();  // TODO: Shit
-			return mSwapChain; 
+			return mSwapChain.get();  // TODO: Shit
+			//return mSwapChain; 
 		}
 		/** Gets this window's swap chain's image format */
 		const auto& swap_chain_image_format() const { 
@@ -227,11 +227,11 @@ namespace cgb
 		uint64_t mCurrentFrame;
 
 		// The window's surface
-		vk::SurfaceKHR mSurface;
-		//vk::UniqueSurfaceKHR mSurface; // TODO: Shit
+		//vk::SurfaceKHR mSurface;
+		vk::UniqueSurfaceKHR mSurface; // TODO: Shit
 		// The swap chain for this surface
-		vk::SwapchainKHR mSwapChain;
-		//vk::UniqueSwapchainKHR mSwapChain; // TODO: Shit
+		//vk::SwapchainKHR mSwapChain;
+		vk::UniqueSwapchainKHR mSwapChain; // TODO: Shit
 		// The swap chain's image format
 		image_format mSwapChainImageFormat;
 		// The swap chain's extent

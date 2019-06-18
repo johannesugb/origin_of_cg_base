@@ -42,7 +42,7 @@ namespace cgb
 		window* prepare_window();
 
 		/** Close the given window, cleanup the resources */
-		void close_window(window& wnd);
+		void close_window(window_base& wnd);
 
 		/** Gets the current system time */
 		double get_time();
