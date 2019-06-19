@@ -72,13 +72,11 @@ namespace cgb
 
 		/** Gets this window's surface */
 		const auto& surface() const { 
-			return mSurface.get();  // TODO: Shit
-			//return mSurface; 
+			return mSurface.get(); 
 		}
 		/** Gets this window's swap chain */
 		const auto& swap_chain() const { 
-			return mSwapChain.get();  // TODO: Shit
-			//return mSwapChain; 
+			return mSwapChain.get(); 
 		}
 		/** Gets this window's swap chain's image format */
 		const auto& swap_chain_image_format() const { 
@@ -94,7 +92,7 @@ namespace cgb
 		}
 		/** Gets this window's swap chain's image at the specified index. */
 		const auto& swap_chain_image_at_index(size_t pIdx) { 
-			return mSwapChainImages[pIdx].get(); 
+			return mSwapChainImages[pIdx]; 
 		}
 		/** Gets a collection containing all this window's swap chain image views. */
 		const auto& swap_chain_image_views() { 
@@ -227,19 +225,17 @@ namespace cgb
 		uint64_t mCurrentFrame;
 
 		// The window's surface
-		//vk::SurfaceKHR mSurface;
-		vk::UniqueSurfaceKHR mSurface; // TODO: Shit
+		vk::UniqueSurfaceKHR mSurface;
 		// The swap chain for this surface
-		//vk::SwapchainKHR mSwapChain;
-		vk::UniqueSwapchainKHR mSwapChain; // TODO: Shit
+		vk::UniqueSwapchainKHR mSwapChain; 
 		// The swap chain's image format
 		image_format mSwapChainImageFormat;
 		// The swap chain's extent
 		vk::Extent2D mSwapChainExtent;
 		// All the images of the swap chain
-		std::vector<vk::UniqueImage> mSwapChainImages;
+		std::vector<vk::Image> mSwapChainImages; // They don't need to be destroyed explicitely (get...()), ... 
 		// All the image views of the swap chain
-		std::vector<vk::UniqueImageView> mSwapChainImageViews;
+		std::vector<vk::UniqueImageView> mSwapChainImageViews; // ...but the image views do!
 #pragma endregion
 
 #pragma region indispensable sync elements

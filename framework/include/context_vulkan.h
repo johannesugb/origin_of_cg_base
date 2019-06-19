@@ -35,8 +35,8 @@ namespace cgb
 		friend struct shader_handle;
 		friend struct pipeline;
 		friend struct framebuffer;
-		friend struct command_pool;
-		friend struct command_buffer;
+		friend class command_pool;
+		friend class command_buffer;
 	public:
 		
 		vulkan();

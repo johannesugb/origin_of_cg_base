@@ -161,6 +161,7 @@ namespace cgb
 	{
 		if (mInitialized)
 		{
+			sWindowInFocus = nullptr;
 			mWindows.clear();
 			glfwTerminate();
 			// context has been destroyed by glfwTerminate
@@ -226,6 +227,7 @@ namespace cgb
 
 				// Okay, it exists => close it!
 				context().close_window(*wnd);
+				return true;
 			});
 		
 		return back.get();

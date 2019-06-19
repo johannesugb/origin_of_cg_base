@@ -66,6 +66,7 @@ namespace cgb
 			// Select the best suitable physical device which supports all requested extensions
 			context().pick_physical_device(surface);
 
+			return true;
 		}, cgb::context_state::halfway_initialized);
 
 		mEventHandlers.emplace_back([]() -> bool {
@@ -92,6 +93,7 @@ namespace cgb
 			// Alright => let's move on and finally finish Vulkan initialization
 			context().create_and_assign_logical_device(surface);
 
+			return true;
 		}, cgb::context_state::halfway_initialized);
 
 		// We're still not done yet with our initial setup efforts if we need ImGui,
@@ -160,6 +162,7 @@ namespace cgb
 				init_info.CheckVkResultFn = check_vk_result;
 
 				// TODO: Hmm, or do we have to do this per swap chain? 
+				return true;
 			}, cgb::context_state::fully_initialized);
 		}
 	}
@@ -820,19 +823,17 @@ namespace cgb
 
 		auto swapChainImages = logical_device().getSwapchainImagesKHR(pWindow->swap_chain());
 		assert(swapChainImages.size() == pWindow->get_config_number_of_presentable_images());
+
 		// Store the images,
-		std::transform(std::begin(swapChainImages), std::end(swapChainImages),
-					   std::back_inserter(pWindow->mSwapChainImages),
-					   [](auto& swim) {
-							vk::ObjectDestroy<vk::Device, vk::DispatchLoaderStatic> deleter(context().logical_device(), nullptr, vk::DispatchLoaderStatic());
-							return vk::UniqueHandle<vk::Image, vk::DispatchLoaderStatic>(swim, deleter);
-					   });
+		std::copy(std::begin(swapChainImages), std::end(swapChainImages),
+				  std::back_inserter(pWindow->mSwapChainImages));
+
 		// and create one image view per image
 		std::transform(std::begin(pWindow->mSwapChainImages), std::end(pWindow->mSwapChainImages),
 					   std::back_inserter(pWindow->mSwapChainImageViews),
 					   [wnd=pWindow](const auto& image) {
 						   auto viewCreateInfo = vk::ImageViewCreateInfo()
-							   .setImage(image.get())
+							   .setImage(image)
 							   .setViewType(vk::ImageViewType::e2D)
 							   .setFormat(wnd->swap_chain_image_format().mFormat)
 							   .setComponents(vk::ComponentMapping() // The components field allows you to swizzle the color channels around. In our case we'll stick to the default mapping. [3]
