@@ -1148,6 +1148,14 @@ private:
 				mTAATextures[j][i] = std::make_shared<cgb::vulkan_texture>(mTAAImages[j][i]);
 			}
 		}
+		mTAAImages[0][1] = mTAAImages[0][0];
+		mTAAImages[0][2] = mTAAImages[0][0];
+		mTAAImages[1][1] = mTAAImages[1][0];
+		mTAAImages[1][2] = mTAAImages[1][0];
+		mTAATextures[0][1] = mTAATextures[0][0];
+		mTAATextures[0][2] = mTAATextures[0][0];
+		mTAATextures[1][1] = mTAATextures[1][0];
+		mTAATextures[1][2] = mTAATextures[1][0];
 
 		// motion vector image
 		//auto formatProperties = cgb::vulkan_context::instance().physicalDevice.getImageFormatProperties(

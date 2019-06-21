@@ -135,18 +135,22 @@ void main() {
     vec3 colorAvg = color;
     vec3 colorVar = color * color;
     vec3 c = texelFetch(curFrame, ipos + offset[0] * shadingRateSize, 0).rgb;
-    c = RGBToYCgCo(c);
+	float lumaLB = rgbToLuma(c); 
+	c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
 	c = texelFetch(curFrame, ipos + offset[1] * shadingRateSize, 0).rgb;
+	float lumaLT = rgbToLuma(c); 
     c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
 	c = texelFetch(curFrame, ipos + offset[2] * shadingRateSize, 0).rgb;
+	float lumaRB = rgbToLuma(c); 
     c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
 	c = texelFetch(curFrame, ipos + offset[3] * shadingRateSize, 0).rgb;
+	float lumaRT = rgbToLuma(c); 
     c = RGBToYCgCo(c);
     colorAvg += c;
     colorVar += c * c;
@@ -206,15 +210,18 @@ void main() {
 	//outColor = vec4(shadingRate.x, 0, 0, 0);
 
 	// compute edge for other purposes (e.g. fxaa, or CAS with edges)
-	float lumaMin = min(luma, min(min(lumaUp,lumaDown), min(lumaLeft,lumaRight)));
-	float lumaMax = max(luma, max(max(lumaUp,lumaDown), max(lumaLeft,lumaRight)));
+	float lumaMin = min(min(luma, min(min(lumaUp,lumaDown), min(lumaLeft,lumaRight))),min(min(lumaLT,lumaLB), min(lumaRT,lumaRB)));
+	float lumaMax = max(max(luma, max(max(lumaUp,lumaDown), max(lumaLeft,lumaRight))),max(max(lumaLT,lumaLB), max(lumaRT,lumaRB)));
+
+	float lumaRange = lumaMax-lumaMin;
 
 	vec2 dir;
 	dir.x = -((lumaUp + lumaLeft) - (lumaDown + lumaRight));
 	dir.y = ((lumaUp + lumaDown) - (lumaLeft + lumaRight));
 
 	//outEdge = vec4(vec3(float((lumaMax-lumaMin) > 0.02) * 10), 1.0);
-	outEdge = vec4(vec3(float((abs(dir.x) + abs(dir.y))) ), 1.0);
+	outEdge = vec4(vec3(float(lumaRange >= max(0.0612, lumaMax * 0.125)) * 10), 1.0);
+	//outEdge = vec4(vec3(float((abs(dir.x) + abs(dir.y))) ), 1.0);
 	//outEdge = vec4(vec3(0.5), 0.0);
 }
 
