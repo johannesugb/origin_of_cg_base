@@ -292,6 +292,25 @@ namespace cgb
 		cgb::context().logical_device().waitForFences(1u, fence.handle_addr(), VK_TRUE, std::numeric_limits<uint64_t>::max());
 		cgb::context().logical_device().resetFences(1u, fence.handle_addr());
 
+
+		//
+		//
+		//
+		//	TODO: Recreate swap chain probably somewhere here
+		//  Potential problems:
+		//	 - How to handle the fences? Is waitIdle enough?
+		//	 - A problem might be the multithreaded access to this function... hmm... or is it??
+		//      => Now would be the perfect time to think about how to handle parallel executors
+		//		   Only Command Buffer generation should be parallelized anyways, submission should 
+		//		   be done on ONE thread, hence access to this method would be syncronized inherently, right?!
+		//
+		//	What about the following: Tie an instance of cg_element to ONE AND EXACTLY ONE window*?!
+		//	 => Then, the render method would create a command_buffer, which is then gathered (per window!) and passed on to this method.
+		//
+		//
+		//
+
+
 		// Get the next image from the swap chain, GPU -> GPU sync from previous present to the following acquire
 		uint32_t imageIndex;
 		const auto& imgAvailableSem = image_available_semaphore_for_frame();

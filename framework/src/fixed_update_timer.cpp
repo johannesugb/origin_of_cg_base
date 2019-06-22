@@ -37,10 +37,10 @@ namespace cgb
 		return timer_frame_type::varying;
 	}
 
-	void fixed_update_timer::set_min_render_hertz(double pMinRenderHz)
+	void fixed_update_timer::set_max_render_delta_time(double pMaxRenderDt)
 	{
-		mMinRenderHz = pMinRenderHz;
-		mMaxRenderDeltaTime = 1.0 / mMinRenderHz;
+		mMaxRenderDeltaTime = pMaxRenderDt;
+		mMinRenderHz = 1.0 / mMaxRenderDeltaTime;
 	}
 
 	void fixed_update_timer::set_fixed_simulation_hertz(double pFixedSimulationHz)

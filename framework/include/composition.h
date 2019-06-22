@@ -318,7 +318,7 @@ namespace cgb
 			{
 				context().work_off_all_pending_main_thread_actions();
 				context().work_off_event_handlers();
-
+				
 				if (mShouldSwapInputBuffers)
 				{
 					auto* windowForCursorActions = context().window_in_focus();

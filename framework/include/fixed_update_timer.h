@@ -16,7 +16,7 @@ namespace cgb
 
 		timer_frame_type tick();
 
-		void set_min_render_hertz(double pMinRenderHz);
+		void set_max_render_delta_time(double pMaxRenderDt);
 		void set_fixed_simulation_hertz(double pFixedSimulationHz);
 
 		float absolute_time() const override;
