@@ -95,10 +95,11 @@ namespace cgb
 
 	// Forward-declare what comes after:
 	template <typename Cfg>
-	std::tuple<cgb::buffer_t<Cfg>, std::optional<semaphore>> create_and_fill(
-		Cfg pConfig,
-		cgb::memory_usage pMemoryUsage,
-		const void* pData,
+	cgb::buffer_t<Cfg> create_and_fill(
+		Cfg pConfig, 
+		cgb::memory_usage pMemoryUsage, 
+		const void* pData, 
+		std::optional<semaphore>* pSemaphoreOut,
 		vk::BufferUsageFlags pUsage);
 
 	// SET DATA
@@ -160,10 +161,11 @@ namespace cgb
 
 	// CREATE AND FILL
 	template <typename Cfg>
-	std::tuple<cgb::buffer_t<Cfg>, std::optional<semaphore>> create_and_fill(
+	cgb::buffer_t<Cfg> create_and_fill(
 		Cfg pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
+		std::optional<semaphore>* pSemaphoreOut = nullptr,
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
 		auto bufferSize = pConfig.total_size();
@@ -221,6 +223,9 @@ namespace cgb
 		// How it will be filled depends on where the memory is located at.
 		auto result = cgb::create(pConfig, pUsage, memoryFlags);
 		auto semaphore = set_data(result, pData);
-		return std::make_tuple(std::move(result), std::move(semaphore));
+		if (nullptr != pSemaphoreOut && semaphore.has_value()) {
+			*pSemaphoreOut = std::move(*semaphore);
+		}
+		return result;
 	}
 }

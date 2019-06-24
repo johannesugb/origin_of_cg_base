@@ -4,7 +4,7 @@
 #include "temp.h"
 using namespace std;
 
-class hello_behavior : public cgb::cg_element
+class my_first_rtx_app : public cgb::cg_element
 {
 	struct Vertex
 	{
@@ -63,7 +63,7 @@ class hello_behavior : public cgb::cg_element
 	};
 
 public:
-	hello_behavior() 
+	my_first_rtx_app() 
 		: mVertices({	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
 						{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
 						{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
@@ -81,6 +81,11 @@ public:
 #ifdef USE_VULKAN_CONTEXT
 	void create_vertex_buffer()
 	{
+		mVertexBuffer = cgb::create_and_fill(
+			cgb::vertex_buffer_data{ sizeof(mVertices[0]), mVertices.size() },
+			cgb::memory_usage::device,
+			mVertices.data());
+
 		auto stagingBuffer = cgb::buffer::create(
 			sizeof(mVertices[0]) * mVertices.size(),
 			vk::BufferUsageFlagBits::eTransferSrc,
@@ -91,7 +96,7 @@ public:
 		stagingBuffer.fill_host_coherent_memory(mVertices.data());
 
 		mVertexBuffer = cgb::vertex_buffer::create(
-			sizeof(mVertices[0]), mVertices.size(),
+			,
 			vk::BufferUsageFlagBits::eTransferDst,
 			vk::MemoryPropertyFlagBits::eDeviceLocal);
 
@@ -867,7 +872,7 @@ int main()
 		mainWnd->open();
 
 		// Create a "behavior" which contains functionality of our program
-		auto helloBehavior = hello_behavior();
+		auto behavior = my_first_rtx_app();
 
 		// Create a composition of all things that define the essence of 
 		// our program, which there are:
@@ -876,7 +881,7 @@ int main()
 		//  - a window
 		//  - a behavior
 		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
-				&helloBehavior
+				&behavior
 			});
 
 		// Let's go:

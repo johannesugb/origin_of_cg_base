@@ -1,6 +1,6 @@
 #include "cg_base.h"
 
-class hello_behavior : public cgb::cg_element
+class my_first_rtx_app : public cgb::cg_element
 {
 	//void initialize() override
 	//{
@@ -54,7 +54,7 @@ int main()
 		mainWnd->open(); 
 
 		// Create a "behavior" which contains functionality of our program
-		auto helloBehavior = hello_behavior();
+		auto helloBehavior = my_first_rtx_app();
 
 		// Create a composition of all things that define the essence of 
 		// our program, which there are:
