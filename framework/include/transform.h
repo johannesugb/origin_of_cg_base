@@ -31,6 +31,9 @@ namespace cgb
 		/** sets a new scale, current scale is overwritten */
 		void set_scale(const glm::vec3& pValue);
 
+		/** look along this direction */
+		void look_along(const glm::vec3& pDirection);
+
 		/** returns the local transformation matrix, disregarding parent transforms */
 		const glm::mat4& local_transformation_matrix() const;
 		/** returns the global transformation matrix, taking parent transforms into account */

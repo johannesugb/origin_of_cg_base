@@ -142,6 +142,16 @@ namespace cgb
 		update_matrix_from_transforms();
 	}
 
+	void transform::look_along(const glm::vec3& pDirection)
+	{
+		auto up = glm::vec3(0.0f, 1.0f, 0.0f);
+		auto nd = glm::normalize(pDirection);
+		auto rotAxis = glm::cross(up, nd);
+		auto rotAngle = glm::dot(up, nd);
+		mRotation = glm::quat{ rotAngle, rotAxis };
+		update_matrix_from_transforms();
+	}
+
 	const mat4& transform::local_transformation_matrix() const
 	{
 		return mMatrix;

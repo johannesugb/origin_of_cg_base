@@ -2,6 +2,8 @@
 //
 #include "cg_base.h"
 #include "temp.h"
+#include "cp_interpolation.h"
+#include "bezier_curve.h"
 using namespace std;
 
 class hello_behavior : public cgb::cg_element
@@ -740,7 +742,7 @@ public:
 			glm::scale(glm::vec3(0.01f)),
 			mQuakeCam.view_matrix(),
 			mQuakeCam.projection_matrix()
-			//glm::rotate(glm::mat4(1.0f), cgb::time().frame_time() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+			//glm::rotate(glm::mat4(1.0f), cgb::time().time_since_start() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 			//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 			//glm::perspective(glm::radians(45.0f), mSwapChainData->mSwapChainExtent.width / static_cast<float>(mSwapChainData->mSwapChainExtent.height), 0.1f, 10.0f)
 		};
@@ -778,7 +780,7 @@ public:
 	}
 #endif
 
-private:
+public:
 	const std::vector<Vertex> mVertices;
 	const std::vector<uint16_t> mIndices;
 	std::unique_ptr<cgb::Model> mModel;
@@ -826,6 +828,32 @@ private:
 	// [3] Vulkan Tutorial, Descriptor layout and buffer, https://vulkan-tutorial.com/Uniform_buffers/Descriptor_layout_and_buffer
 };
 
+class camera_path : public cgb::cg_element
+{
+public:
+	camera_path(cgb::quake_camera& cam)
+		: mCam{ &cam } // Target camera
+		, mSpeed{ 0.05f } // How fast does it move
+	{ 
+		mPath = std::make_unique<cgb::bezier_curve>(std::vector<glm::vec3>{ // The path to follow
+			glm::vec3(12.0f, 2.4f, 0.0f),
+			glm::vec3( 4.5f, 7.0f, 0.0f),
+			glm::vec3(-7.0f, 2.4f, 0.0f)
+		});
+	}
+
+	void update() override
+	{
+		mCam->set_translation(mPath->value_at(cgb::time().time_since_start() * mSpeed));
+		mCam->look_along(mPath->slope_at(cgb::time().time_since_start() * mSpeed));
+	}
+
+private:
+	float mSpeed;
+	cgb::quake_camera* mCam;
+	std::unique_ptr<cgb::cp_interpolation> mPath;
+};
+
 
 int main()
 {
@@ -848,6 +876,7 @@ int main()
 
 		// Create a "behavior" which contains functionality of our program
 		auto helloBehavior = hello_behavior();
+		auto camPath = camera_path(helloBehavior.mQuakeCam);
 
 		// Create a composition of all things that define the essence of 
 		// our program, which there are:
@@ -856,7 +885,8 @@ int main()
 		//  - a window
 		//  - a behavior
 		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
-				&helloBehavior
+				&helloBehavior,
+				&camPath
 			});
 
 		// Let's go:

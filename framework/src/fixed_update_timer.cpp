@@ -54,7 +54,7 @@ namespace cgb
 		return static_cast<float>(mAbsTime);
 	}
 
-	float fixed_update_timer::frame_time() const
+	float fixed_update_timer::time_since_start() const
 	{
 		return static_cast<float>(mTimeSinceStart);
 	}

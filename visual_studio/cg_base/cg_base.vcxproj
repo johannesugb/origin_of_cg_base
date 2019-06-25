@@ -33,6 +33,7 @@
     <ClCompile Include="..\..\external\universal\src\imgui.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_demo.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_draw.cpp" />
+    <ClCompile Include="..\..\framework\src\bezier_curve.cpp" />
     <ClCompile Include="..\..\framework\src\camera.cpp" />
     <ClCompile Include="..\..\framework\src\cg_element.cpp" />
     <ClCompile Include="..\..\framework\src\composition_interface.cpp" />
@@ -58,6 +59,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\cp_interpolation.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\input_buffer.cpp" />
     <ClCompile Include="..\..\framework\src\log.cpp" />
@@ -168,6 +170,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\framework\include\bezier_curve.h" />
     <ClInclude Include="..\..\framework\include\camera.h" />
     <ClInclude Include="..\..\framework\include\cg_base.h" />
     <ClInclude Include="..\..\framework\include\cg_element.h" />
@@ -197,6 +200,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include\cp_interpolation.h" />
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
     <ClInclude Include="..\..\framework\include\key_code.h" />
