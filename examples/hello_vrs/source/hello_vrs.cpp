@@ -9,6 +9,9 @@
 
 #include <glm/gtc/matrix_inverse.hpp>
 
+#include <iostream>
+#include <fstream>
+
 #include "cg_base.h"
 #include "vulkan_render_object.h"
 #include "vulkan_texture.h"
@@ -200,6 +203,17 @@ private:
 	uint32_t renderHeight;
 
 
+	// capture frame times
+	struct frame_time_data {
+		unsigned int frame_count;
+		float sum_t;
+		float current_delta;
+	};
+
+	bool captureFrameTime = false;
+	std::vector<frame_time_data> frameTimeDataVector;
+
+
 public:
 	void initialize() override
 	{
@@ -241,6 +255,12 @@ public:
 			mDefRend->reload_shaders();
 #endif
 		}
+		if (cgb::input().key_pressed(cgb::key_code::f7)) {
+			start_capture_frame_data();
+		}
+		if (cgb::input().key_pressed(cgb::key_code::f8)) {
+			end_capture_frame_data();
+		}
 		if (cgb::input().key_pressed(cgb::key_code::tab)) {
 			if (mCamera.is_enabled()) {
 				mCamera.disable();
@@ -264,15 +284,21 @@ public:
 	void render() override
 	{
 		static float sum_t = 0.0f;
+		static unsigned int frame_count = 0;
 
 		auto eyeData = eyeInf->get_eyetracking_data();
 
 		drawFrame();
+		frame_count++;
 
 		sum_t += cgb::time().delta_time();
 		if (sum_t >= 1.0f) {
 			cgb::context().main_window()->set_title(std::to_string(1.0f / cgb::time().delta_time()).c_str());
-			sum_t -= 1.0f;
+			if (captureFrameTime) {
+				frameTimeDataVector.push_back({frame_count, sum_t, cgb::time().delta_time() });
+			}
+			sum_t = 0.0f;
+			frame_count = 0;
 
 			printf("Gaze point: %f, %f\n",
 				eyeData.positionX,
@@ -865,16 +891,7 @@ private:
 		//auto oldFrameIdx = cgb::vulkan_context::instance().currentFrame;
 		//cgb::vulkan_context::instance().currentFrame = 0;
 
-		vk::ImageMemoryBarrier imgMemBarrier = {};
-		imgMemBarrier.srcAccessMask = {};
-		imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
-		imgMemBarrier.oldLayout = vk::ImageLayout::eUndefined;
-		imgMemBarrier.newLayout = vk::ImageLayout::eGeneral;
-		imgMemBarrier.image = vrsDebugImages[cgb::vulkan_context::instance().currentFrame]->get_image();
-		imgMemBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-		imgMemBarrier.subresourceRange.baseArrayLayer = 0;
-		imgMemBarrier.subresourceRange.layerCount = 1;
-		imgMemBarrier.subresourceRange.levelCount = 1;
+
 
 		vk::CommandBufferInheritanceInfo inheritanceInfo = {};
 		inheritanceInfo.occlusionQueryEnable = VK_FALSE;
@@ -883,9 +900,21 @@ private:
 		beginInfo.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
 		beginInfo.pInheritanceInfo = &inheritanceInfo;
 
-		vk::CommandBuffer commandBuffer = drawCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
-		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
+		vk::ImageMemoryBarrier imgMemBarrier = {};
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			imgMemBarrier.srcAccessMask = {};
+			imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+			imgMemBarrier.oldLayout = vk::ImageLayout::eUndefined;
+			imgMemBarrier.newLayout = vk::ImageLayout::eGeneral;
+			imgMemBarrier.image = vrsDebugImages[cgb::vulkan_context::instance().currentFrame]->get_image();
+			imgMemBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+			imgMemBarrier.subresourceRange.baseArrayLayer = 0;
+			imgMemBarrier.subresourceRange.layerCount = 1;
+			imgMemBarrier.subresourceRange.levelCount = 1;
 
+			vk::CommandBuffer commandBuffer = drawCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
+			commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, nullptr, imgMemBarrier);
+		}
 		// start drawing, record draw commands, etc.
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 #if VRS_EYE
@@ -899,14 +928,15 @@ private:
 #endif
 		}
 
-		imgMemBarrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
-		imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		imgMemBarrier.oldLayout = vk::ImageLayout::eGeneral;
-		imgMemBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			imgMemBarrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+			imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+			imgMemBarrier.oldLayout = vk::ImageLayout::eGeneral;
+			imgMemBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-		commandBuffer = drawCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
-		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, imgMemBarrier);
-
+			vk::CommandBuffer commandBuffer = drawCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
+			commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, imgMemBarrier);
+		}
 
 		std::vector<cgb::vulkan_render_object*> renderObjects;
 		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
@@ -1466,6 +1496,24 @@ private:
 			kDistanceX * glm::sin(kSpeed * elapsed_time),
 			kDistanceY * glm::sin(kSpeed * elapsed_time),
 			0.0f));
+	}
+
+	void start_capture_frame_data() {
+		captureFrameTime = true;
+		frameTimeDataVector.clear();
+	}
+
+	void end_capture_frame_data() {
+		captureFrameTime = false;
+
+		std::ofstream outFile;
+		outFile.open("frame_times");
+		for (frame_time_data ftd : frameTimeDataVector) {
+			outFile << ftd.sum_t / ftd.frame_count << "\t" << ftd.sum_t << "\t" << ftd.frame_count << "\n";
+		}
+		outFile.close();
+
+		frameTimeDataVector.clear();
 	}
 };
 
