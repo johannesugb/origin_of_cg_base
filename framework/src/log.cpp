@@ -182,8 +182,8 @@ namespace cgb
 
 	std::string to_string(const glm::mat4& pMatrix)
 	{
-		char buf[128];
-		sprintf_s(buf, 128,
+		char buf[256];
+		sprintf_s(buf, 256,
 			"\t%.3f\t%.3f\t%.3f\t%.3f\n\t%.3f\t%.3f\t%.3f\t%.3f\n\t%.3f\t%.3f\t%.3f\t%.3f\n\t%.3f\t%.3f\t%.3f\t%.3f\n",
 			pMatrix[0][0], pMatrix[0][1], pMatrix[0][2], pMatrix[0][3],
 			pMatrix[1][0], pMatrix[1][1], pMatrix[1][2], pMatrix[1][3],
@@ -194,8 +194,8 @@ namespace cgb
 
 	std::string to_string(const glm::mat3& pMatrix)
 	{
-		char buf[128];
-		sprintf_s(buf, 128,
+		char buf[256];
+		sprintf_s(buf, 256,
 			"\t%.3f\t%.3f\t%.3f\n\t%.3f\t%.3f\t%.3f\n\t%.3f\t%.3f\t%.3f\n",
 			pMatrix[0][0], pMatrix[0][1], pMatrix[0][2],
 			pMatrix[1][0], pMatrix[1][1], pMatrix[1][2],
@@ -205,8 +205,8 @@ namespace cgb
 
 	std::string to_string_compact(const glm::mat4& pMatrix)
 	{
-		char buf[128];
-		sprintf_s(buf, 128,
+		char buf[256];
+		sprintf_s(buf, 256,
 			"{{%.2f, %.2f, %.2f, %.2f}, {%.2f, %.2f, %.2f, %.2f}, {%.2f, %.2f, %.2f, %.2f}, {%.2f, %.2f, %.2f, %.2f}}\n",
 			pMatrix[0][0], pMatrix[0][1], pMatrix[0][2], pMatrix[0][3],
 			pMatrix[1][0], pMatrix[1][1], pMatrix[1][2], pMatrix[1][3],
@@ -217,8 +217,8 @@ namespace cgb
 
 	std::string to_string_compact(const glm::mat3& pMatrix)
 	{
-		char buf[128];
-		sprintf_s(buf, 128,
+		char buf[256];
+		sprintf_s(buf, 256,
 			"{{%.2f, %.2f, %.2f}, {%.2f, %.2f, %.2f}, {%.2f, %.2f, %.2f}}\n",
 			pMatrix[0][0], pMatrix[0][1], pMatrix[0][2],
 			pMatrix[1][0], pMatrix[1][1], pMatrix[1][2],

@@ -14,7 +14,7 @@ namespace cgb
 		glm::vec3 sum(0.0f, 0.0f, 0.0f);
 		for (uint32_t i = 0; i <= n; ++i)
 		{
-			sum += bernstein_polynomial(i, n, t) * contol_point_at(i);
+			sum += bernstein_polynomial(i, n, t) * control_point_at(i);
 		}
 		return sum;
 	}
@@ -26,7 +26,7 @@ namespace cgb
 		glm::vec3 sum(0.0f, 0.0f, 0.0f);
 		for (uint32_t i = 0; i <= nMinusOne; ++i)
 		{
-			sum += (contol_point_at(i + 1) - contol_point_at(i)) * bernstein_polynomial(i, nMinusOne, t);
+			sum += (control_point_at(i + 1) - control_point_at(i)) * bernstein_polynomial(i, nMinusOne, t);
 		}
 		return static_cast<float>(n) * sum;
 	}

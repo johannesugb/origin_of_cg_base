@@ -124,4 +124,11 @@ namespace cgb
 	{
 		return binomial_coefficient(n, i) * glm::pow(t, i) * glm::pow(P(1) - t, n - i);
 	}
+
+	// Returns a quaternion such that q*start = dest
+	// Sources: 
+	//  1) "The Shortest Arc Quaternion" in Game Programming Gems 1, by Stan Melax
+	//  2) opengl-tutorial, Tutorial 17 : Rotations, accessed 26.06.2019,
+	//	   http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/
+	glm::quat rotation_between_vectors(glm::vec3 v0, glm::vec3 v1);
 }

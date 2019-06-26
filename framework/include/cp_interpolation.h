@@ -26,7 +26,7 @@ namespace cgb
 		auto num_control_points() const { return mControlPoints.size(); }
 
 		// Returns the control point at the given index
-		const auto& contol_point_at(size_t index) const { return mControlPoints[index]; }
+		const auto& control_point_at(size_t index) const { return mControlPoints[index]; }
 
 		/**	Get the value of this `cp_interpolation` at a certain interpolant.
 		*	@param	t	The interpolant, range: 0..1

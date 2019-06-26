@@ -4,6 +4,9 @@
 #include "temp.h"
 #include "cp_interpolation.h"
 #include "bezier_curve.h"
+#include "catmull_rom_spline.h"
+#include "quadratic_uniform_b_spline.h"
+#include "cubic_uniform_b_spline.h"
 using namespace std;
 
 class hello_behavior : public cgb::cg_element
@@ -833,23 +836,52 @@ class camera_path : public cgb::cg_element
 public:
 	camera_path(cgb::quake_camera& cam)
 		: mCam{ &cam } // Target camera
-		, mSpeed{ 0.05f } // How fast does it move
+		, mSpeed{ 0.1f } // How fast does it move
+		, mAutoPathActive{ true }
 	{ 
-		mPath = std::make_unique<cgb::bezier_curve>(std::vector<glm::vec3>{ // The path to follow
-			glm::vec3(12.0f, 2.4f, 0.0f),
-			glm::vec3( 4.5f, 7.0f, 0.0f),
-			glm::vec3(-7.0f, 2.4f, 0.0f)
+		// The path to follow
+		mPath = std::make_unique<cgb::bezier_curve>(std::vector<glm::vec3>{ 
+			glm::vec3( 10.0f, 15.0f,  -10.0f),
+			glm::vec3(-10.0f,  5.0f,  - 5.0f),
+			glm::vec3(  0.0f,  0.0f,    0.0f),
+			glm::vec3( 10.0f, 15.0f,   10.0f),
+			glm::vec3( 10.0f, 10.0f,    0.0f)
 		});
+	}
+
+	int32_t priority() const override 
+	{
+		return 5; 
+	}
+
+	void initialize() override 
+	{
+		mStartTime = cgb::time().time_since_start();
 	}
 
 	void update() override
 	{
-		mCam->set_translation(mPath->value_at(cgb::time().time_since_start() * mSpeed));
-		mCam->look_along(mPath->slope_at(cgb::time().time_since_start() * mSpeed));
+		// [Space] ... toggle auto-path
+		if (cgb::input().key_pressed(cgb::key_code::space)) { 
+			mAutoPathActive = !mAutoPathActive;
+		}
+		// [R] ... reset animation:
+		if (cgb::input().key_pressed(cgb::key_code::r)) { 
+			mStartTime = cgb::time().time_since_start();
+		}
+
+		// Animate along the curve:
+		if (mAutoPathActive) {
+			auto t = (cgb::time().time_since_start() - mStartTime) * mSpeed;
+			mCam->set_translation(mPath->value_at(t));
+			mCam->look_along(mPath->slope_at(t));
+		}
 	}
 
 private:
+	float mStartTime;
 	float mSpeed;
+	bool mAutoPathActive;
 	cgb::quake_camera* mCam;
 	std::unique_ptr<cgb::cp_interpolation> mPath;
 };

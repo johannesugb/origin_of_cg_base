@@ -239,7 +239,13 @@ namespace cgb
 
 		void add_element_immediately(cg_element& pElement) override
 		{
-			mElements.push_back(&pElement);
+			// Insert according to priority:
+			auto insertPos = std::begin(mElements);
+			while (insertPos != std::end(mElements) && (*insertPos)->priority() <= pElement.priority()) {
+				insertPos++;
+			}
+			mElements.insert(insertPos, &pElement);
+
 			// 1. initialize
 			pElement.initialize();
 			// Remove from mElementsToBeAdded container (if it was contained in it)
