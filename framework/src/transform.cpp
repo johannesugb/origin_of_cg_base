@@ -144,6 +144,11 @@ namespace cgb
 
 	void transform::look_along(const glm::vec3& pDirection)
 	{
+		if (glm::dot(pDirection, pDirection) < 0.0001f) {
+			LOG_ERROR("Direction vector passed to transform::look_along has (almost) zero length.");
+			return;
+		}
+
 		auto back = normalize(-pDirection);
 		auto right = glm::normalize(glm::cross(up(), back));
 		auto up = glm::normalize(glm::cross(back, right));

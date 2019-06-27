@@ -840,7 +840,7 @@ public:
 		, mAutoPathActive{ true }
 	{ 
 		// The path to follow
-		mPath = std::make_unique<cgb::bezier_curve>(std::vector<glm::vec3>{ 
+		mPath = std::make_unique<cgb::quadratic_uniform_b_spline>(std::vector<glm::vec3>{ 
 			glm::vec3( 10.0f, 15.0f,  -10.0f),
 			glm::vec3(-10.0f,  5.0f,  - 5.0f),
 			glm::vec3(  0.0f,  0.0f,    0.0f),
