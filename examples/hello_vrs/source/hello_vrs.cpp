@@ -320,8 +320,8 @@ private:
 
 
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
-		renderWidth = mImagePresenter->get_swap_chain_extent().width * 2;
-		renderHeight = mImagePresenter->get_swap_chain_extent().height * 2;
+		renderWidth = mImagePresenter->get_swap_chain_extent().width * 1;
+		renderHeight = mImagePresenter->get_swap_chain_extent().height * 1;
 		cgb::vulkan_context::instance().dynamicRessourceCount = mImagePresenter->get_swap_chain_images_count();
 		drawCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(cgb::vulkan_context::instance().dynamicRessourceCount, commandPool, cgb::vulkan_context::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<cgb::vulkan_render_queue>(cgb::vulkan_context::instance().graphicsQueue);
@@ -869,12 +869,12 @@ private:
 			uboCam.vmNormalMatrix = glm::mat4(glm::inverseTranspose(glm::mat3(uboCam.mv)));
 
 
-			auto prevDynamicData = *mPrevFrameData[cgb::vulkan_context::instance().currentFrame].get();
+			auto prevDynamicData = *mPrevFrameData[0].get();
 			prevDynamicData.mvpMatrix *= model;
 			sponzaRenderObject->update_uniform_buffer(cgb::vulkan_context::instance().currentFrame, uboCam);
 			sponzaRenderObject->update_push_constant(std::make_shared<prev_frame_data>(prevDynamicData));
 		}
-		auto prevDynamicData = *mPrevFrameData[cgb::vulkan_context::instance().currentFrame].get();
+		auto prevDynamicData = *mPrevFrameData[0].get();
 		prevDynamicData.mvpMatrix *= prevFrameModel;
 		for (int i = 0; i < mParallelPipesModel->get_render_objects().size(); i++) {
 			auto model = mParallelPipesModel->transformation_matrix() * mParallelPipesModel->mesh_at(i).transformation_matrix();
@@ -959,7 +959,7 @@ private:
 		mTAAIndices[cgb::vulkan_context::instance().currentFrame] = (tAAIndex + 1) % 2; // switch index for the correct frame
 
 		auto prevData = taa_prev_frame_data{};
-		prevData.vPMatrix = mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->mvpMatrix;
+		prevData.vPMatrix = mPrevFrameData[0]->mvpMatrix;
 		prevData.invPMatrix = glm::inverse(mCamera.projection_matrix());
 		prevData.invVMatrix = glm::inverse(uboCam.view);
 		prevData.jitter = uboCam.frameOffset;
@@ -1002,8 +1002,8 @@ private:
 
 		//frame = (frame + int(0 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
 		frame = (frame + 1) % jitter.size();
-		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->imgSize = glm::vec2(renderWidth, renderHeight);
-		mPrevFrameData[cgb::vulkan_context::instance().currentFrame]->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
+		mPrevFrameData[0]->imgSize = glm::vec2(renderWidth, renderHeight);
+		mPrevFrameData[0]->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
 
 		//Sleep(280);
 	}
