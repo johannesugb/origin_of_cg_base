@@ -86,108 +86,60 @@ public:
 			cgb::memory_usage::device,
 			mVertices.data());
 
-		auto stagingBuffer = cgb::buffer::create(
-			sizeof(mVertices[0]) * mVertices.size(),
-			vk::BufferUsageFlagBits::eTransferSrc,
-			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+		// Mind the following:
+		//		void vulkan::set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo)
+		//		{
 
-		// Filling the staging buffer!
-		//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
-		stagingBuffer.fill_host_coherent_memory(mVertices.data());
+		//			// TODO: OMG, not only compare the QUEUE INDICES, but also the QUEUE FAMILY INDICES ffs (oder evtl. sogar NUR die QUEUE FAMILY INDICES?)
 
-		mVertexBuffer = cgb::vertex_buffer::create(
-			,
-			vk::BufferUsageFlagBits::eTransferDst,
-			vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-		// Transfer the data from the staging buffer into the vertex buffer
-		cgb::copy(stagingBuffer, mVertexBuffer);
-
-		
-		cgb::create<cgb::vertex_buffer>(cgb::memory_location::device, cgb::buffer_usage::static_only, number of buffers etc.)
-
-			// Mind the following:
-			//		void vulkan::set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo)
-			//		{
-
-			//			// TODO: OMG, not only compare the QUEUE INDICES, but also the QUEUE FAMILY INDICES ffs (oder evtl. sogar NUR die QUEUE FAMILY INDICES?)
-
-			//			if (graphics_queue_index() == transfer_queue_index()) {
-			//				pCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
-			//			}
-			//			else {
-			//				pCreateInfo.setSharingMode(vk::SharingMode::eConcurrent);
-			//				pCreateInfo.setQueueFamilyIndexCount(static_cast<uint32_t>(mAllUsedQueueFamilyIndices.size()));
-			//				pCreateInfo.setPQueueFamilyIndices(mAllUsedQueueFamilyIndices.data());
-			//			}
-			//		}
+		//			if (graphics_queue_index() == transfer_queue_index()) {
+		//				pCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
+		//			}
+		//			else {
+		//				pCreateInfo.setSharingMode(vk::SharingMode::eConcurrent);
+		//				pCreateInfo.setQueueFamilyIndexCount(static_cast<uint32_t>(mAllUsedQueueFamilyIndices.size()));
+		//				pCreateInfo.setPQueueFamilyIndices(mAllUsedQueueFamilyIndices.data());
+		//			}
+		//		}
 	}
 
 	void create_index_buffer()
 	{
-		auto stagingBuffer = cgb::buffer::create(
-			sizeof(mIndices[0]) * mIndices.size(),
-			vk::BufferUsageFlagBits::eTransferSrc,
-			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		
-		stagingBuffer.fill_host_coherent_memory(mIndices.data());
-
-		mIndexBuffer = cgb::index_buffer::create(
-			vk::IndexType::eUint16, mIndices.size(),
-			vk::BufferUsageFlagBits::eTransferDst,
-			vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-		cgb::copy(stagingBuffer, mIndexBuffer);
+		mIndexBuffer = cgb::create_and_fill(
+			cgb::index_buffer_data{ sizeof(mIndices[0]), mIndices.size() },
+			cgb::memory_usage::device,
+			mIndices.data());
 	}
 
-	static void load_model(std::string inPath, std::unique_ptr<cgb::model_data>& outModel, cgb::vertex_buffer& outVertexBuffer, cgb::index_buffer& outIndexBuffer, int mesh_index)
+	static void load_model(std::string inPath, std::unique_ptr<cgb::model_data>& outModel, cgb::vertex_buffer_t& outVertexBuffer, cgb::index_buffer_t& outIndexBuffer, int mesh_index)
 	{
 		outModel = cgb::model_data::LoadFromFile(inPath, glm::mat4(1.0f));
 		auto& mesh = outModel->mesh_at(mesh_index);
 		
 		{
-			auto stagingBuffer = cgb::buffer::create(
-				mesh.m_vertex_data.size(),
-				vk::BufferUsageFlagBits::eTransferSrc,
-				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-			// Filling the staging buffer!
-			//   This is done by mapping the buffer memory into CPU accessible memory with vkMapMemory. [2]
-			stagingBuffer.fill_host_coherent_memory(mesh.m_vertex_data.data());
-
-			outVertexBuffer = cgb::vertex_buffer::create(
-				mesh.m_size_one_vertex, mesh.m_vertex_data.size() / mesh.m_size_one_vertex,
-				vk::BufferUsageFlagBits::eTransferDst,
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-			// Transfer the data from the staging buffer into the vertex buffer
-			cgb::copy(stagingBuffer, outVertexBuffer);
+			outVertexBuffer = cgb::create_and_fill(
+				cgb::vertex_buffer_data{ mesh.m_size_one_vertex, mesh.m_vertex_data.size() / mesh.m_size_one_vertex },
+				cgb::memory_usage::device,
+				mesh.m_vertex_data.data());
 		}
 
 		{
-			auto stagingBuffer = cgb::buffer::create(
-				sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
-				vk::BufferUsageFlagBits::eTransferSrc,
-				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-			stagingBuffer.fill_host_coherent_memory(mesh.m_indices.data());
-
-			outIndexBuffer = cgb::index_buffer::create(
-				vk::IndexType::eUint32, mesh.m_indices.size(),
-				vk::BufferUsageFlagBits::eTransferDst,
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-			cgb::copy(stagingBuffer, outIndexBuffer);
+			outIndexBuffer = cgb::create_and_fill(
+				cgb::index_buffer_data{ sizeof(mesh.m_indices[0]), mesh.m_indices.size() },
+				cgb::memory_usage::device,
+				mesh.m_indices.data());
 		}
 	}
 
 	void create_uniform_buffers()
 	{
 		for (auto i = 0; i < mFrameBuffers.size(); ++i) {
-			mUniformBuffers.push_back(cgb::uniform_buffer::create(
-				sizeof(UniformBufferObject),
-				vk::BufferUsageFlags(),
-				vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+			mUniformBuffers.push_back(
+				cgb::create(
+					cgb::uniform_buffer_data{ sizeof(UniformBufferObject) },
+					cgb::memory_usage::host_coherent
+				));
+
 		}
 	}
 
@@ -195,18 +147,18 @@ public:
 	{
 		for (auto i = 0; i < mFrameBuffers.size(); ++i) {
 			auto& vec = mRtUniformBuffers.emplace_back();
-			vec.emplace_back(cgb::uniform_buffer::create( // One buffer for the matrices
-					sizeof(UniformBufferObject),
-					vk::BufferUsageFlagBits::eRayTracingNV,
-					vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-			vec.emplace_back(cgb::uniform_buffer::create( // another 2 for color values
-					sizeof(glm::vec4),
-					vk::BufferUsageFlagBits::eRayTracingNV,
-					vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-			vec.emplace_back(cgb::uniform_buffer::create( // another 2 for color values
-					sizeof(glm::vec4),
-					vk::BufferUsageFlagBits::eRayTracingNV,
-					vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+			vec.emplace_back(cgb::create(
+				cgb::uniform_buffer_data{ sizeof(UniformBufferObject) },
+				cgb::memory_usage::host_coherent, vk::BufferUsageFlagBits::eRayTracingNV
+			));
+			vec.emplace_back(cgb::create( // another 2 for color values
+				cgb::uniform_buffer_data{ sizeof(glm::vec4) },
+				cgb::memory_usage::host_coherent, vk::BufferUsageFlagBits::eRayTracingNV
+			));
+			vec.emplace_back(cgb::create( // another 2 for color values
+				cgb::uniform_buffer_data{ sizeof(glm::vec4) },
+				cgb::memory_usage::host_coherent, vk::BufferUsageFlagBits::eRayTracingNV
+			));
 		}
 	}
 
@@ -290,7 +242,7 @@ public:
 
 		for (auto i = 0; i < mDescriptorSets.size(); ++i) {
 			auto bufferInfo = vk::DescriptorBufferInfo()
-				.setBuffer(mUniformBuffers[i].mBuffer)
+				.setBuffer(mUniformBuffers[i].buffer_handle())
 				.setOffset(0)
 				.setRange(sizeof(UniformBufferObject));
 			auto descriptorWriteBuffer = vk::WriteDescriptorSet()
@@ -328,13 +280,11 @@ public:
 			throw std::runtime_error("Couldnt load image using stbi_load");
 		}
 
-		auto stagingBuffer = cgb::buffer::create(
-			imageSize,
-			vk::BufferUsageFlagBits::eTransferSrc,
-			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		// Copy texture into staging buffer
-		stagingBuffer.fill_host_coherent_memory(pixels);
-
+		auto stagingBuffer = cgb::create_and_fill(
+			cgb::generic_buffer_data{ imageSize },
+			cgb::memory_usage::host_coherent,
+			pixels);
+			
 		stbi_image_free(pixels);
 
 		auto img = cgb::image::create2D(width, height);
@@ -374,15 +324,15 @@ public:
 			.setGeometryType(vk::GeometryTypeNV::eTriangles)
 			.setGeometry(vk::GeometryDataNV()
 						 .setTriangles(vk::GeometryTrianglesNV()
-									   .setVertexData(mModelVertices.mBuffer)
+									   .setVertexData(mModelVertices.buffer_handle())
 									   .setVertexOffset(0)
-									   .setVertexCount(mModelVertices.mVertexCount)
-									   .setVertexStride(mModelVertices.mSize / mModelVertices.mVertexCount)
+									   .setVertexCount(mModelVertices.config().num_elements())
+									   .setVertexStride(mModelVertices.config().sizeof_one_element())
 									   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
-									   .setIndexData(mModelIndices.mBuffer)
+									   .setIndexData(mModelIndices.buffer_handle())
 									   .setIndexOffset(0)
-									   .setIndexCount(mModelIndices.mIndexCount)
-									   .setIndexType(mModelIndices.mIndexType)
+									   .setIndexCount(mModelIndices.config().num_elements())
+									   .setIndexType(cgb::convert_to_vk_index_type(mModelIndices.config().sizeof_one_element()))
 									   .setTransformData(nullptr)
 									   .setTransformOffset(0)))
 			.setFlags(vk::GeometryFlagBitsNV::eOpaque); 
@@ -432,39 +382,42 @@ public:
 			mGeometryInstances.push_back(inst);
 		}
 
-
-		auto& bfr = mGeometryInstanceBuffers.emplace_back(cgb::buffer::create(
-			sizeof(VkGeometryInstance) * mGeometryInstances.size(),
-			vk::BufferUsageFlagBits::eRayTracingNV,
-			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-		bfr.fill_host_coherent_memory(mGeometryInstances.data());
+		mGeometryInstanceBuffer = cgb::create_and_fill(
+			cgb::generic_buffer_data{ sizeof(VkGeometryInstance) * mGeometryInstances.size() },
+			cgb::memory_usage::host_coherent, 
+			mGeometryInstances.data(),
+			nullptr, // There will be no semaphore because it is host coherent
+			vk::BufferUsageFlagBits::eRayTracingNV
+		);
 	}
 
 	void build_acceleration_structures()
 	{
-		auto scratchBuffer = cgb::buffer::create(std::max(mBottomLevelAccStructure.get_scratch_buffer_size(), mTopLevelAccStructure.get_scratch_buffer_size()),
-												 vk::BufferUsageFlagBits::eRayTracingNV,
-												 vk::MemoryPropertyFlagBits::eDeviceLocal);
+		auto scratchBuffer = cgb::create(
+			cgb::generic_buffer_data{ std::max(mBottomLevelAccStructure.get_scratch_buffer_size(), mTopLevelAccStructure.get_scratch_buffer_size()) },
+			cgb::memory_usage::device,
+			vk::BufferUsageFlagBits::eRayTracingNV
+		);
 
-		auto commandBuffers = cgb::context().create_command_buffers_for_graphics(1, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		commandBuffers[0].begin_recording();
+		auto cmdBfr = cgb::context().graphics_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		cmdBfr.begin_recording();
 
 		auto memoryBarrier = vk::MemoryBarrier()
 			.setSrcAccessMask(vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV)
 			.setDstAccessMask(vk::AccessFlagBits::eAccelerationStructureWriteNV | vk::AccessFlagBits::eAccelerationStructureReadNV);
 
 		// Build BLAS
-		commandBuffers[0].mCommandBuffer.buildAccelerationStructureNV(
+		cmdBfr.handle().buildAccelerationStructureNV(
 			mBottomLevelAccStructure.mAccStructureInfo,
 			nullptr, 0,								// no instance data for bottom level AS
 			VK_FALSE,								// update = false
 			mBottomLevelAccStructure.mAccStructure, // destination AS
 			nullptr,								// no source AS
-			scratchBuffer.mBuffer, 0,				// scratch buffer + offset
+			scratchBuffer.buffer_handle(), 0,		// scratch buffer + offset
 			cgb::context().dynamic_dispatch());
 
 		// Barrier
-		commandBuffers[0].mCommandBuffer.pipelineBarrier(
+		cmdBfr.handle().pipelineBarrier(
 			vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
 			vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
 			vk::DependencyFlags(),
@@ -472,29 +425,29 @@ public:
 			{}, {});
 
 		// Build TLAS
-		commandBuffers[0].mCommandBuffer.buildAccelerationStructureNV(
+		cmdBfr.handle().buildAccelerationStructureNV(
 			mTopLevelAccStructure.mAccStructureInfo,
-			mGeometryInstanceBuffers[0].mBuffer, 0,	// buffer containing the instance data (only one)
-			VK_FALSE,								// update = false
-			mTopLevelAccStructure.mAccStructure,	// destination AS
-			nullptr,								// no source AS
-			scratchBuffer.mBuffer, 0,				// scratch buffer + offset
+			mGeometryInstanceBuffer.buffer_handle(), 0,	// buffer containing the instance data (only one)
+			VK_FALSE,									// update = false
+			mTopLevelAccStructure.mAccStructure,		// destination AS
+			nullptr,									// no source AS
+			scratchBuffer.buffer_handle(), 0,			// scratch buffer + offset
 			cgb::context().dynamic_dispatch());
 
 		// Barrier
-		commandBuffers[0].mCommandBuffer.pipelineBarrier(
+		cmdBfr.handle().pipelineBarrier(
 			vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
 			vk::PipelineStageFlagBits::eRayTracingShaderNV,
 			vk::DependencyFlags(),
 			{ memoryBarrier },
 			{}, {});
 
-		commandBuffers[0].end_recording();
+		cmdBfr.end_recording();
 		auto submitInfo = vk::SubmitInfo()
 			.setCommandBufferCount(1u)
-			.setPCommandBuffers(&commandBuffers[0].mCommandBuffer);
-		cgb::context().graphics_queue().submit({ submitInfo }, nullptr); 
-		cgb::context().graphics_queue().waitIdle();
+			.setPCommandBuffers(cmdBfr.handle_addr());
+		cgb::context().graphics_queue().handle().submit({ submitInfo }, nullptr); 
+		cgb::context().graphics_queue().handle().waitIdle();
 	}
 
 	void create_rt_descriptor_set()
@@ -551,7 +504,7 @@ public:
 
 			// binding 2:
 			auto bufferInfo = vk::DescriptorBufferInfo()
-				.setBuffer(mRtUniformBuffers[i][0].mBuffer)
+				.setBuffer(mRtUniformBuffers[i][0].buffer_handle())
 				.setOffset(0)
 				.setRange(sizeof(UniformBufferObject));
 			auto descriptorWriteBuffer = vk::WriteDescriptorSet()
@@ -565,12 +518,12 @@ public:
 			// binding 3:
 			std::array bufferDescs = {
 				vk::DescriptorBufferInfo()
-				.setBuffer(mRtUniformBuffers[i][1].mBuffer)
+				.setBuffer(mRtUniformBuffers[i][1].buffer_handle())
 				.setOffset(0)
 				.setRange(sizeof(UniformBufferObject))
 				,
 				vk::DescriptorBufferInfo()
-				.setBuffer(mRtUniformBuffers[i][2].mBuffer)
+				.setBuffer(mRtUniformBuffers[i][2].buffer_handle())
 				.setOffset(0)
 				.setRange(sizeof(UniformBufferObject))
 			};
@@ -592,8 +545,8 @@ public:
 		ResourceBase::Init(
 			(VkPhysicalDevice)cgb::context().physical_device(),
 			(VkDevice)cgb::context().logical_device(),
-			(VkCommandPool)cgb::context().get_command_pool_for_queue_family(cgb::context().transfer_queue_index()).mCommandPool,
-			(VkQueue)cgb::context().transfer_queue());
+			(VkCommandPool)cgb::context().transfer_queue().pool().handle(),
+			(VkQueue)cgb::context().transfer_queue().handle());
 
 		auto rtProps = cgb::context().get_ray_tracing_properties();
 
@@ -620,11 +573,11 @@ public:
 		{
 			create_descriptor_set_layout();
 
-			auto vert = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/shader.vert.spv"));
-			auto frag = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/shader.frag.spv"));
+			auto vert = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/shader.vert.spv"));
+			auto frag = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/shader.frag.spv"));
 			// PROBLEME:
 			// - shader_handle* sollte kein Pointer sein!
-			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
+			std::vector<std::tuple<cgb::shader_type, cgb::shader*>> shaderInfos;
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::vertex, &vert));
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::fragment, &frag));
 		
@@ -640,19 +593,19 @@ public:
 				vertexAttribDesc.data(), 
 				{ mDescriptorSetLayout.mDescriptorSetLayout });
 			mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, cgb::context().main_window(), mDepthImageView);
-			mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
+			mCmdBfrs = cgb::context().graphics_queue().pool().get_command_buffers(mFrameBuffers.size());
 		}
 
 		// Ray tracing pipeline OMG:
 		{
 			create_rt_descriptor_set_layout();
 
-			auto rgen = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rgen.spv"));
-			auto rchit = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rchit.spv"));
-			auto rmiss = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rmiss.spv"));
-			auto rchit2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rchit.spv"));
-			auto rmiss2 = cgb::shader_handle::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rmiss.spv"));
-			std::vector<std::tuple<cgb::shader_type, cgb::shader_handle*>> shaderInfos;
+			auto rgen = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rgen.spv"));
+			auto rchit = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rchit.spv"));
+			auto rmiss = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rmiss.spv"));
+			auto rchit2 = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rchit.spv"));
+			auto rmiss2 = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rmiss.spv"));
+			std::vector<std::tuple<cgb::shader_type, cgb::shader*>> shaderInfos;
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit));
 			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit2));
@@ -674,7 +627,7 @@ public:
 			auto& cmdbfr = mCmdBfrs[i];
 			cmdbfr.begin_recording();
 			cmdbfr.begin_render_pass(mPipeline.mRenderPass, mFrameBuffers[i].mFramebuffer, { 0, 0 }, extent);
-			cmdbfr.mCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline.mPipelineLayout, 0u, { mDescriptorSets[i].mDescriptorSet }, {});
+			cmdbfr.handle().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mPipeline.mPipelineLayout, 0u, { mDescriptorSets[i].mDescriptorSet }, {});
 			//cgb::context().draw_triangle(mPipeline, cmdbfr);
 			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
 			//cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
@@ -682,19 +635,19 @@ public:
 			cmdbfr.end_render_pass();
 
 			// TODO: image barriers instead of wait idle!!
-			cgb::context().graphics_queue().waitIdle();
+			cgb::context().graphics_queue().handle().waitIdle();
 
 			cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlags(), vk::AccessFlagBits::eShaderWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral));
 
-			cmdbfr.mCommandBuffer.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipeline);
-			cmdbfr.mCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipelineLayout, 0u, { mRtDescriptorSets[i].mDescriptorSet }, {});
-			cmdbfr.mCommandBuffer.traceRaysNV(
-				mShaderBindingTable.mBuffer, 0,
-				mShaderBindingTable.mBuffer, 3 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
-				mShaderBindingTable.mBuffer, 1 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
-				nullptr, 0, 0,
-				extent.width, extent.height, 1,
-				cgb::context().dynamic_dispatch());
+			//cmdbfr.handle().bindPipeline(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipeline);
+			//cmdbfr.handle().bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipelineLayout, 0u, { mRtDescriptorSets[i].mDescriptorSet }, {});
+			//cmdbfr.handle().traceRaysNV(
+			//	mShaderBindingTable.mBuffer, 0,
+			//	mShaderBindingTable.mBuffer, 3 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
+			//	mShaderBindingTable.mBuffer, 1 * rtProps.shaderGroupHandleSize, rtProps.shaderGroupHandleSize,
+			//	nullptr, 0, 0,
+			//	extent.width, extent.height, 1,
+			//	cgb::context().dynamic_dispatch());
 
 			//cmdbfr.set_image_barrier(cgb::create_image_barrier(mSwapChainData->mSwapChainImages[i], mSwapChainData->mSwapChainImageFormat.mFormat, vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal));
 			//cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eTransferRead, vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal));
@@ -755,12 +708,12 @@ public:
 		// the projection matrix. If you don't do this, then the image will be rendered upside down. [3]
 		//ubo.proj[1][1] *= -1;
 		auto bufferIndex = wnd->image_index_for_frame();
-		mUniformBuffers[bufferIndex].fill_host_coherent_memory(&ubo);
-		mRtUniformBuffers[bufferIndex][0].fill_host_coherent_memory(&ubo);
+		cgb::fill(mUniformBuffers[bufferIndex], &ubo);
+		cgb::fill(mRtUniformBuffers[bufferIndex][0], &ubo);
 		glm::vec4 color1(1.0, 1.0, 0.0, 0.0);
 		glm::vec4 color2(1.0, 0.0, 0.0, 0.0);
-		mRtUniformBuffers[bufferIndex][1].fill_host_coherent_memory(&color1);
-		mRtUniformBuffers[bufferIndex][2].fill_host_coherent_memory(&color2);
+		cgb::fill(mRtUniformBuffers[bufferIndex][1], &color1);
+		cgb::fill(mRtUniformBuffers[bufferIndex][2], &color2);
 
 		wnd->render_frame({ mCmdBfrs[bufferIndex] });
 	}
@@ -771,29 +724,30 @@ private:
 	const std::vector<Vertex> mVertices;
 	const std::vector<uint16_t> mIndices;
 
-
+	cgb::vertex_buffer_t mVertexBuffer;
+	cgb::index_buffer_t mIndexBuffer;
 
 	// Ab hier wird's ugly:
 	std::unique_ptr<cgb::model_data> mModel;
 	std::unique_ptr<cgb::model_data> mSphere;
-#ifdef USE_VULKAN_CONTEXT
-	cgb::vertex_buffer mModelVertices;
-	cgb::index_buffer mModelIndices;
-	cgb::vertex_buffer mSphereVertices;
-	cgb::index_buffer mSphereIndices;
-	cgb::vertex_buffer mVertexBuffer;
-	cgb::index_buffer mIndexBuffer;
-	std::vector<cgb::uniform_buffer> mUniformBuffers;
-	std::vector<std::vector<cgb::uniform_buffer>> mRtUniformBuffers;
+	std::vector<cgb::uniform_buffer_t> mUniformBuffers;
+	std::vector<std::vector<cgb::uniform_buffer_t>> mRtUniformBuffers;
 	cgb::descriptor_set_layout mDescriptorSetLayout;
 	cgb::descriptor_set_layout mRtDescriptorSetLayout;
+	std::shared_ptr<cgb::image> mImage;
+	cgb::vertex_buffer_t mModelVertices;
+	cgb::index_buffer_t mModelIndices;
+	cgb::vertex_buffer_t mSphereVertices;
+	cgb::index_buffer_t mSphereIndices;
+	cgb::generic_buffer_t mGeometryInstanceBuffer;
+
+
 	cgb::pipeline mPipeline;
 	cgb::pipeline mRtPipeline;
 	std::vector<cgb::framebuffer> mFrameBuffers;
 	std::vector<cgb::command_buffer> mCmdBfrs;
 	std::vector<cgb::descriptor_set> mDescriptorSets;
 	std::vector<cgb::descriptor_set> mRtDescriptorSets;
-	std::shared_ptr<cgb::image> mImage;
 	cgb::image_view mImageView;
 	cgb::sampler mSampler;
 	std::shared_ptr<cgb::image> mDepthImage;
@@ -801,43 +755,6 @@ private:
 
 	std::vector<vk::GeometryNV> mGeometries;
 	std::vector<VkGeometryInstance> mGeometryInstances;
-	std::vector<cgb::buffer> mGeometryInstanceBuffers;
-	cgb::acceleration_structure mBottomLevelAccStructure;
-	cgb::acceleration_structure mTopLevelAccStructure;
-	cgb::shader_binding_table mShaderBindingTable;
-
-	std::vector<std::shared_ptr<cgb::image>> mOffscreenImages;
-	std::vector<cgb::image_view> mOffscreenImageViews;
-#endif
-	// ...bis hier
-
-	cgb::model mModel;
-	cgb::model mSphere;
-	cgb::vertex_buffer mModelVertices;
-	cgb::index_buffer mModelIndices;
-	cgb::vertex_buffer mSphereVertices;
-	cgb::index_buffer mSphereIndices;
-	cgb::vertex_buffer mVertexBuffer;
-	cgb::index_buffer mIndexBuffer;
-	std::vector<cgb::uniform_buffer> mUniformBuffers;
-	std::vector<std::vector<cgb::uniform_buffer>> mRtUniformBuffers;
-	cgb::descriptor_set_layout mDescriptorSetLayout;
-	cgb::descriptor_set_layout mRtDescriptorSetLayout;
-	cgb::pipeline mPipeline;
-	cgb::pipeline mRtPipeline;
-	std::vector<cgb::framebuffer> mFrameBuffers;
-	std::vector<cgb::command_buffer> mCmdBfrs;
-	std::vector<cgb::descriptor_set> mDescriptorSets;
-	std::vector<cgb::descriptor_set> mRtDescriptorSets;
-	std::shared_ptr<cgb::image> mImage;
-	cgb::image_view mImageView;
-	cgb::sampler mSampler;
-	std::shared_ptr<cgb::image> mDepthImage;
-	cgb::image_view mDepthImageView;
-
-	std::vector<vk::GeometryNV> mGeometries;
-	std::vector<VkGeometryInstance> mGeometryInstances;
-	std::vector<cgb::buffer> mGeometryInstanceBuffers;
 	cgb::acceleration_structure mBottomLevelAccStructure;
 	cgb::acceleration_structure mTopLevelAccStructure;
 	cgb::shader_binding_table mShaderBindingTable;

@@ -2,24 +2,6 @@
 
 #include <GLFW/glfw3.h>
 
-// GLM: 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/ext/quaternion_float.hpp>
-#include <glm/ext/quaternion_common.hpp>
-#include <glm/ext/quaternion_geometric.hpp>
-#include <glm/ext/quaternion_trigonometric.hpp>
-#include <glm/ext/quaternion_exponential.hpp>
-#include <glm/ext/quaternion_relational.hpp>
-#include <glm/ext/quaternion_transform.hpp>
-#include <glm/mat4x4.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/transform2.hpp>
-#include <glm/gtx/hash.hpp>
-
 namespace cgb
 {
 	/** Context-specific handle to a window.

@@ -603,9 +603,9 @@ private:
 int main()
 {
 	try {
-		auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
-		.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm); })
-			.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
+		//auto selectImageFormat = cgb::context_specific_function<cgb::image_format()>{}
+		//.SET_VULKAN_FUNCTION([]() { return cgb::image_format(vk::Format::eR8G8B8Unorm); })
+		//	.SET_OPENGL46_FUNCTION([]() { return cgb::image_format{ GL_RGB };  });
 
 		cgb::settings::gApplicationName = "Hello VRS";
 		cgb::settings::gApplicationVersion = cgb::make_version(1, 0, 0);

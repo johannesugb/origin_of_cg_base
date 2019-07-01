@@ -69,7 +69,7 @@ namespace cgb
 		size_t mSizeOfOneElement;
 
 		// The number of indices in the buffer
-		uint32_t mIndexCount;
+		size_t mIndexCount;
 	};
 
 }

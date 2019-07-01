@@ -30,7 +30,7 @@ namespace cgb
 		const auto& buffer_handle() const		{ return mBuffer.get(); }
 		const auto* buffer_handle_addr() const	{ return &mBuffer.get(); }
 
-	private:
+	public: // TODO: Make private
 		Cfg mConfig;
 		vk::MemoryPropertyFlags mMemoryPropertyFlags;
 		vk::UniqueDeviceMemory mMemory;
@@ -81,18 +81,6 @@ namespace cgb
 		return b;
 	}
 
-	/** Create multiple buffers */
-	template <typename Cfg>
-	auto create(Cfg pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, uint32_t pNumBuffers)
-	{
-		std::vector<buffer_t<Cfg>> bs;
-		bs.reserve(pNumBuffers);
-		for (uint32_t i = 0; i < pNumBuffers; ++i) {
-			bs.push_back(create(pConfig, pBufferUsage, pMemoryProperties));
-		}
-		return bs;
-	}
-
 	// Forward-declare what comes after:
 	template <typename Cfg>
 	cgb::buffer_t<Cfg> create_and_fill(
@@ -104,7 +92,7 @@ namespace cgb
 
 	// SET DATA
 	template <typename Cfg>
-	std::optional<semaphore> set_data(
+	std::optional<semaphore> fill(
 		cgb::buffer_t<Cfg>& target,
 		const void* pData)
 	{
@@ -127,6 +115,8 @@ namespace cgb
 				cgb::context().logical_device().flushMappedMemoryRanges(1, &range);
 			}
 			// TODO: Handle has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCached) case
+
+			return std::nullopt; // TODO: This should be okay, is it?
 		}
 		// #2: Otherwise, it must be on the GPU-SIDE!
 		else {
@@ -135,7 +125,12 @@ namespace cgb
 			// Okay, we have to create a (somewhat temporary) staging buffer and transfer it to the GPU
 			// "somewhat temporary" means that it can not be deleted in this function, but only
 			//						after the transfer operation has completed => handle via semaphore!
-			auto [stagingBuffer, _] = create_and_fill(generic_buffer_data{ target.size() }, cgb::memory_usage::host_coherent, pData, vk::BufferUsageFlagBits::eTransferDst);
+			auto stagingBuffer = create_and_fill(
+				generic_buffer_data{ target.size() }, 
+				cgb::memory_usage::host_coherent, 
+				pData, 
+				nullptr, //< TODO: What about the semaphore???
+				vk::BufferUsageFlagBits::eTransferDst);
 
 			auto commandBuffer = cgb::context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 			commandBuffer.begin_recording();
@@ -144,28 +139,28 @@ namespace cgb
 				.setSrcOffset(0u)
 				.setDstOffset(0u)
 				.setSize(bufferSize);
-			commandBuffer.mCommandBuffer.copyBuffer(stagingBuffer.buffer_handle(), target.buffer_handle(), { copyRegion });
+			commandBuffer.handle().copyBuffer(stagingBuffer.buffer_handle(), target.buffer_handle(), { copyRegion });
 
 			// That's all
 			commandBuffer.end_recording();
 
 			auto submitInfo = vk::SubmitInfo{}
 				.setCommandBufferCount(1u)
-				.setPCommandBuffers(commandBuffer.buffer_handle_addr());
+				.setPCommandBuffers(commandBuffer.handle_addr());
 			cgb::context().transfer_queue().handle().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
 			cgb::context().transfer_queue().handle().waitIdle();
 
 			// TODO: Handle has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCached) case
+
+			return std::nullopt; // TODO: Create a semaphore FFS!
 		}
 	}
 
-	// CREATE AND FILL
+	// CREATE 
 	template <typename Cfg>
-	cgb::buffer_t<Cfg> create_and_fill(
-		Cfg pConfig, 
-		cgb::memory_usage pMemoryUsage, 
-		const void* pData, 
-		std::optional<semaphore>* pSemaphoreOut = nullptr,
+	cgb::buffer_t<Cfg> create(
+		Cfg pConfig,
+		cgb::memory_usage pMemoryUsage,
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
 		auto bufferSize = pConfig.total_size();
@@ -202,30 +197,68 @@ namespace cgb
 
 		if constexpr (std::is_same_v<Cfg, cgb::uniform_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformBuffer;
-		} 
+		}
 		if constexpr (std::is_same_v<Cfg, cgb::uniform_texel_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
-		} 
+		}
 		if constexpr (std::is_same_v<Cfg, cgb::storage_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageBuffer;
-		} 
+		}
 		if constexpr (std::is_same_v<Cfg, cgb::storage_texel_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
-		} 
+		}
 		if constexpr (std::is_same_v<Cfg, cgb::vertex_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eVertexBuffer;
-		} 
+		}
 		if constexpr (std::is_same_v<Cfg, cgb::index_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eIndexBuffer;
-		} 
+		}
 
 		// Create buffer here to make use of named return value optimization.
 		// How it will be filled depends on where the memory is located at.
 		auto result = cgb::create(pConfig, pUsage, memoryFlags);
-		auto semaphore = set_data(result, pData);
-		if (nullptr != pSemaphoreOut && semaphore.has_value()) {
-			*pSemaphoreOut = std::move(*semaphore);
+		return result;
+	}
+
+	/** Create multiple buffers */
+	template <typename Cfg>
+	auto create_multiple(
+		int pNumBuffers,
+		Cfg pConfig,
+		cgb::memory_usage pMemoryUsage,
+		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
+	{
+		std::vector<buffer_t<Cfg>> bs;
+		bs.reserve(pNumBuffers);
+		for (int i = 0; i < pNumBuffers; ++i) {
+			bs.push_back(create(pConfig, pMemoryUsage, pUsage));
 		}
+		return bs;
+	}
+
+	// CREATE AND FILL
+	template <typename Cfg>
+	cgb::buffer_t<Cfg> create_and_fill(
+		Cfg pConfig, 
+		cgb::memory_usage pMemoryUsage, 
+		const void* pData, 
+		std::optional<semaphore>* pSemaphoreOut = nullptr,
+		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
+	{
+		// Does NRVO also apply here? I hope so...
+		auto result = create(pConfig, pMemoryUsage, pUsage);
+
+		auto semaphore = fill(result, pData);
+		if (semaphore.has_value()) {
+			// If we have a semaphore, we have to do something with it!
+			if (nullptr != pSemaphoreOut) {
+				*pSemaphoreOut = std::move(*semaphore);
+			}
+			else {
+				LOG_ERROR("An unhandled semaphore emerged in create_and_fill. You have to take care of it!");
+			}
+		}
+		
 		return result;
 	}
 }

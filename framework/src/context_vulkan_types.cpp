@@ -359,6 +359,18 @@ namespace cgb
 		return it != stencilFormats.end();
 	}
 
+	vk::IndexType convert_to_vk_index_type(size_t pSize)
+	{
+		if (pSize == sizeof(uint16_t)) {
+			return vk::IndexType::eUint16;
+		}
+		if (pSize == sizeof(uint32_t)) {
+			return vk::IndexType::eUint32;
+		}
+		LOG_ERROR(fmt::format("The given size[{}] does not correspond to a valid vk::IndexType", pSize));
+		return vk::IndexType::eNoneNV;
+	}
+
 #pragma region command_buffer
 	std::vector<command_buffer> command_buffer::create_many(uint32_t pCount, command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags)
 	{
@@ -1197,6 +1209,8 @@ namespace cgb
 		//static_cast<buffer&>(sbt) = std::move(b);
 		return sbt;
 	}
+
+
 
 	// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
 	// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation

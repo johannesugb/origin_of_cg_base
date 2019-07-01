@@ -74,6 +74,8 @@ namespace cgb
 	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
 	extern bool has_stencil_component(const image_format& pImageFormat);
 
+	/** Converts a given size to a `vk::IndexType` value. */
+	vk::IndexType convert_to_vk_index_type(size_t pSize);
 
 	struct image
 	{
@@ -151,8 +153,8 @@ namespace cgb
 		
 		static command_pool create(uint32_t pQueueFamilyIndex, vk::CommandPoolCreateFlags pCreateFlags = vk::CommandPoolCreateFlags());
 
-		std::vector<command_buffer> get_command_buffers(uint32_t pCount, vk::CommandBufferUsageFlags pUsageFlags);
-		command_buffer get_command_buffer(vk::CommandBufferUsageFlags pUsageFlags);
+		std::vector<command_buffer> get_command_buffers(uint32_t pCount, vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlags());
+		command_buffer get_command_buffer(vk::CommandBufferUsageFlags pUsageFlags = vk::CommandBufferUsageFlags());
 
 	private:
 		uint32_t mQueueFamilyIndex;
@@ -423,8 +425,5 @@ namespace cgb
 
 		static shader_binding_table create(const pipeline& pRtPipeline);
 	};
-
-
-
 
 }
