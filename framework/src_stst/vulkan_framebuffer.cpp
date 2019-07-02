@@ -37,7 +37,7 @@ namespace cgb {
 		colorAttachmentResolve.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 		mResolveColorAttachments.push_back(colorAttachmentResolve);
 
-		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_framebuffer_image_view());
 		mColorAttachmentImages.push_back(colorImages);
 		mResolveColorAttachmentImages.push_back(swapChainImageViews);
 		m_is_swapchain_framebuffer = true;
@@ -96,7 +96,7 @@ namespace cgb {
 			mClearValues.push_back(clearValue);
 		}
 
-		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_framebuffer_image_view());
 		mColorAttachmentImages.push_back(colorImages);
 	}
 
@@ -119,7 +119,7 @@ namespace cgb {
 
 		std::vector<vk::ImageView> imageViews(mSwapChainImageCount);
 		for (int i = 0; i < colorImages.size(); i++) {
-			imageViews[i] = colorImages[i]->get_image_view();
+			imageViews[i] = colorImages[i]->get_framebuffer_image_view();
 		}
 		mColorAttachmentImages.push_back(imageViews);
 
@@ -165,12 +165,12 @@ namespace cgb {
 		colorAttachmentResolve.finalLayout = finalLayout;
 		mResolveColorAttachments.push_back(colorAttachmentResolve);
 
-		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+		auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_framebuffer_image_view());
 		mColorAttachmentImages.push_back(colorImages);
 
 		std::vector<vk::ImageView> imageViews(resolveColorImages.size());
 		for (int i = 0; i < resolveColorImages.size(); i++) {
-			imageViews[i] = resolveColorImages[i]->get_image_view();
+			imageViews[i] = resolveColorImages[i]->get_framebuffer_image_view();
 		}
 		mResolveColorAttachmentImages.push_back(imageViews);
 
@@ -195,7 +195,7 @@ namespace cgb {
 	{
 		std::vector<vk::ImageView> imageViews(imagePresenter->get_swap_chain_images().size());
 		for (int i = 0; i < imagePresenter->get_swap_chain_images().size(); i++) {
-			imageViews[i] = imagePresenter->get_swap_chain_images()[i]->get_image_view();
+			imageViews[i] = imagePresenter->get_swap_chain_images()[i]->get_framebuffer_image_view();
 		}
 
 		if (colorImage) {
@@ -221,7 +221,7 @@ namespace cgb {
 			colorAttachmentResolve.finalLayout = finalLayout;
 			mResolveColorAttachments.push_back(colorAttachmentResolve);
 
-			auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_image_view());
+			auto colorImages = std::vector<vk::ImageView>(mSwapChainImageCount, colorImage->get_framebuffer_image_view());
 			mColorAttachmentImages.push_back(colorImages);
 
 			mResolveColorAttachmentImages.push_back(imageViews);
@@ -360,7 +360,7 @@ namespace cgb {
 				attachments.push_back(mColorAttachmentImages[j][i]);
 			}
 			if (mDepthImage) {
-				attachments.push_back(mDepthImage->get_image_view());
+				attachments.push_back(mDepthImage->get_framebuffer_image_view());
 			}
 			for (int j = 0; j < mResolveColorAttachmentImages.size(); j++) {
 				attachments.push_back(mResolveColorAttachmentImages[j][i]);

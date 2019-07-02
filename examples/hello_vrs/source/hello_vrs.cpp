@@ -49,7 +49,7 @@
 #define DEFERRED_SHADING 1
 
 #define BLIT_FINAL_IMAGE 0
-#define TAA_ENABLED 0
+#define TAA_ENABLED 1
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -186,6 +186,17 @@ private:
 	std::array<std::vector<std::shared_ptr<cgb::vulkan_image>>, 2> mTAAImages;
 	std::array<std::vector<std::shared_ptr<cgb::vulkan_texture>>, 2> mTAATextures;
 	std::array<std::shared_ptr<cgb::vulkan_render_object>, 2> mTAAFullScreenQuads;
+
+	std::unique_ptr<cgb::vulkan_drawer> mTAAMeanVarianceDrawer;
+	std::shared_ptr<cgb::vulkan_pipeline> mTAAMeanVariancePipeline;
+	std::shared_ptr<cgb::vulkan_renderer> mTAAMeanVarianceRenderer;
+
+	std::shared_ptr<cgb::vulkan_framebuffer> mTAAMeanVarianceFramebuffer;
+
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mTAAMeanVarianceImages;
+	std::vector<std::shared_ptr<cgb::vulkan_texture>> mTAAMeanVarianceTextures;
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mTAAVariance2Images;
+	std::vector<std::shared_ptr<cgb::vulkan_texture>> mTAAVariance2Textures;
 
 	std::vector<glm::vec2> jitter;
 
@@ -332,7 +343,8 @@ private:
 			dependentRenderers.push_back(mVrsRenderer);
 		}
 		mRenderer = std::make_shared<cgb::vulkan_renderer>(nullptr, mVulkanRenderQueue, drawCommandBufferManager, dependentRenderers);
-		mTAARenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager); // predecessors added later on
+		mTAAMeanVarianceRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager); // predecessors added later on
+		mTAARenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>>{ mTAAMeanVarianceRenderer }); // predecessors added later on
 		mFinalBlitRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>>{ mTAARenderer }, true);
 		mPostProcRenderer = std::make_shared<cgb::vulkan_renderer>(mImagePresenter, mVulkanRenderQueue, drawCommandBufferManager, std::vector<std::shared_ptr<cgb::vulkan_renderer>> { mTAARenderer });
 
@@ -584,10 +596,10 @@ private:
 			std::vector<dynamic_image_resource> { dynamic_image_resource{ mVrsPrevRenderMsaaImage, mVrsPrevRenderImages }, dynamic_image_resource{ mMotionVectorMsaaImage, mMotionVectorImages } },
 			viewport, scissor, mMaterialObjectResourceBundleLayout, mGlobalResourceBundle, sponzaBinding, mResourceBundleGroup, vrsImages, mCamera);
 
-		mTAARenderer->add_predecessors({ mDefRend->get_final_renderer() });
+		mTAAMeanVarianceRenderer->add_predecessors({ mDefRend->get_final_renderer() });
 		mDefRend->allocate_resources();
 #else
-		mTAARenderer->add_predecessors({ mRenderer });
+		mTAAMeanVarianceRenderer->add_predecessors({ mRenderer });
 #endif // DEFERRED_SHADING
 
 		mSponzaModel->allocate_render_object_data();
@@ -742,7 +754,9 @@ private:
 		mPostProcFramebuffer.reset();
 
 		mTAADrawer.reset();
+		mTAAMeanVarianceDrawer.reset();
 		mTAAPipeline.reset();
+		mTAAMeanVariancePipeline.reset();
 		for (int i = 0; i < mTAAFramebuffers.size(); i++) {
 			mTAAFramebuffers[i].reset();
 		}
@@ -754,6 +768,7 @@ private:
 		mFinalBlitRenderer.reset();
 		mRenderer.reset();
 		mTAARenderer.reset();
+		mTAAMeanVarianceRenderer.reset();
 		mPostProcRenderer.reset();
 	}
 
@@ -973,6 +988,20 @@ private:
 		//mVrsDebugDrawer->set_vrs_images(vrsDefaultImage);
 		//mMaterialDrawer->set_vrs_images(vrsDefaultImage);
 		
+		mTAAMeanVarianceRenderer->render(renderObjects, mTAAMeanVarianceDrawer.get());
+		mTAAMeanVarianceRenderer->recordPrimaryCommandBuffer();
+		// generate mipmaps for variance mean image
+		inheritanceInfo = {};
+		inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+
+		beginInfo = {};
+		beginInfo.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
+		beginInfo.pInheritanceInfo = &inheritanceInfo;
+		vk::CommandBuffer commandBuffer = drawCommandBufferManager->get_command_buffer(vk::CommandBufferLevel::eSecondary, beginInfo);
+		mTAAMeanVarianceImages[cgb::vulkan_context::instance().currentFrame]->generate_mipmaps(commandBuffer);
+		mTAAVariance2Images[cgb::vulkan_context::instance().currentFrame]->generate_mipmaps(commandBuffer);
+		mTAAMeanVarianceRenderer->add_recorded_secondary_command_buffers();
+
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
@@ -1322,6 +1351,60 @@ private:
 	void create_TAA_objects(vk::Viewport viewport, vk::Rect2D scissor, std::shared_ptr<cgb::vulkan_resource_bundle_layout> layout) {
 		mTAAIndices = std::vector<int>(cgb::vulkan_context::instance().dynamicRessourceCount, 0);
 
+		// mean variance image
+		auto width = renderWidth;
+		auto height = renderHeight;
+		auto mipLevels = cgb::vulkan_image::compute_mip_levels(width, height);
+		vk::Format colorFormatMeanVarianceImg = vk::Format::eR16G16B16A16Unorm;
+		vk::Format colorFormatVariance2Img = vk::Format::eR16G16Unorm;
+
+		mTAAMeanVarianceImages.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+		mTAAMeanVarianceTextures.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+		mTAAVariance2Images.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+		mTAAVariance2Textures.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+
+		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
+			mTAAMeanVarianceImages[i] = std::make_shared<cgb::vulkan_image>(width, height, mipLevels, 4, vk::SampleCountFlagBits::e1, colorFormatMeanVarianceImg,
+				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
+				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			mTAAMeanVarianceImages[i]->transition_image_layout(colorFormatMeanVarianceImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+			mTAAMeanVarianceTextures[i] = std::make_shared<cgb::vulkan_texture>(mPostProcImages[i]);
+
+			mTAAVariance2Images[i] = std::make_shared<cgb::vulkan_image>(width, height, mipLevels, 2, vk::SampleCountFlagBits::e1, colorFormatVariance2Img,
+				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
+				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			mTAAVariance2Images[i]->transition_image_layout(colorFormatMeanVarianceImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+			mTAAVariance2Textures[i] = std::make_shared<cgb::vulkan_texture>(mPostProcImages[i]);
+		}
+
+		mTAAMeanVarianceFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(
+			renderWidth, renderHeight,
+			cgb::vulkan_context::instance().dynamicRessourceCount, vk::SampleCountFlagBits::e1);
+		mTAAMeanVarianceFramebuffer->add_dynamic_color_attachment(mTAAMeanVarianceImages, vk::ImageLayout::eTransferDstOptimal);
+		mTAAMeanVarianceFramebuffer->add_dynamic_color_attachment(mTAAVariance2Images, vk::ImageLayout::eTransferDstOptimal);
+		mTAAMeanVarianceFramebuffer->add_dynamic_color_attachment(mVrsEdgeImages, vk::ImageLayout::eTransferSrcOptimal);
+		mTAAMeanVarianceFramebuffer->bake();
+
+		mTAAMeanVariancePipeline = std::make_shared<cgb::vulkan_pipeline>(mTAAMeanVarianceFramebuffer->get_render_pass(), viewport, scissor, vk::SampleCountFlagBits::e1, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { layout }, sizeof(taa_prev_frame_data), cgb::ShaderStageFlagBits::eFragment);
+
+		auto posAndUv = std::make_shared<cgb::vulkan_attribute_description_binding>(1, sizeof(Vertex), vk::VertexInputRate::eVertex);
+		posAndUv->add_attribute_description(0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos));
+		posAndUv->add_attribute_description(1, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
+
+		mTAAMeanVariancePipeline->add_attr_desc_binding(posAndUv);
+		mTAAMeanVariancePipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/taa_mean_variance.vert.spv");
+		mTAAMeanVariancePipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/taa_mean_variance.frag.spv");
+		mTAAMeanVariancePipeline->add_color_blend_attachment_state(mTAAMeanVariancePipeline->get_color_blend_attachment_state(0));
+		mTAAMeanVariancePipeline->add_color_blend_attachment_state(mTAAMeanVariancePipeline->get_color_blend_attachment_state(0));
+		mTAAMeanVariancePipeline->disable_shading_rate_image();
+		mTAAMeanVariancePipeline->bake();
+
+		mTAAMeanVarianceDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mTAAMeanVariancePipeline);
+		//mTAADrawer->set_vrs_images(vrsDefaultImage);
+		mTAAMeanVarianceRenderer->set_framebuffer(mTAAMeanVarianceFramebuffer);
+
+
+
 		for (int i = 0; i < mTAAFramebuffers.size(); i++) {
 			mTAAFramebuffers[i] = std::make_shared<cgb::vulkan_framebuffer>(
 				renderWidth, renderHeight,
@@ -1333,10 +1416,6 @@ private:
 
 		// framebuffers are the same, therefore render passes are too and must be compatible! --> use render pass of first framebuffer
 		mTAAPipeline = std::make_shared<cgb::vulkan_pipeline>(mTAAFramebuffers[0]->get_render_pass(), viewport, scissor, vk::SampleCountFlagBits::e1, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { layout }, sizeof(taa_prev_frame_data), cgb::ShaderStageFlagBits::eFragment);
-
-		auto posAndUv = std::make_shared<cgb::vulkan_attribute_description_binding>(1, sizeof(Vertex), vk::VertexInputRate::eVertex);
-		posAndUv->add_attribute_description(0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos));
-		posAndUv->add_attribute_description(1, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord));
 
 		mTAAPipeline->add_attr_desc_binding(posAndUv);
 		mTAAPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/taa.vert.spv");

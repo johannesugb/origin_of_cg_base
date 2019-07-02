@@ -24,6 +24,7 @@ namespace cgb {
 
 		vk::Image get_image() { return mImage; }
 		vk::ImageView get_image_view() { return mImageView; }
+		vk::ImageView get_framebuffer_image_view() { return mFramebufferImageView; }
 		uint32_t get_mip_levels() { return mMipLevels; }
 
 		vk::SampleCountFlagBits get_num_samples() { return mNumSamples; }
@@ -39,7 +40,7 @@ namespace cgb {
 		int get_width() { return mTexWidth; }
 		int get_height() { return mTexHeight; }
 
-		void generate_mipmaps(vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+		void generate_mipmaps(vk::CommandBuffer& commandBuffer);
 
 		static std::shared_ptr<vulkan_image> generate_1px_image(uint8_t color_r, uint8_t color_g, uint8_t color_b);
 		static void blit_image(vulkan_image* srcImage, vulkan_image* targetImage,
@@ -47,10 +48,14 @@ namespace cgb {
 			vk::AccessFlagBits srcInitAccFlags, vk::AccessFlagBits srcEndAccFlags, vk::AccessFlagBits targetInitAccFlags, vk::AccessFlagBits targetEndAccFlags,
 			vk::PipelineStageFlagBits srcStage, vk::PipelineStageFlagBits targetStage,
 			vulkan_command_buffer_manager* commandBufferManager);
+		static uint32_t compute_mip_levels(uint32_t texWidth, uint32_t texHeight) {
+			return static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+		};
 	private:
 		vk::Image mImage;
 		vulkan_memory mImageMemory;
 		vk::ImageView mImageView;
+		vk::ImageView mFramebufferImageView;
 
 		// properties of image
 		uint32_t mTexWidth;
@@ -77,7 +82,8 @@ namespace cgb {
 		void copy_buffer_to_image(vulkan_buffer& buffer, vk::Image image, uint32_t width, uint32_t height);
 
 		void create_texture_image_view();
-		vk::ImageView create_image_view(vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
+		void create_image_view(vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
+
 	};
 
 }

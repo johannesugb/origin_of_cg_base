@@ -13,7 +13,7 @@ namespace cgb {
 		mImage(image), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels), mTtexChannels(texChannels),
 		mNumSamples(numSamples), mFormat(format), mUsage(usage), mAspects(aspects), mCommandBufferManager(commandBufferManager)
 	{
-		mImageView = create_image_view(mFormat, mAspects, mMipLevels);
+		create_image_view(mFormat, mAspects, mMipLevels);
 		vkImageNotControlled = true;
 
 		mTiling = {};
@@ -21,7 +21,7 @@ namespace cgb {
 
 	cgb::vulkan_image::vulkan_image(vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t texChannels, 
 		vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspects, std::shared_ptr<vulkan_command_buffer_manager> commandBufferManager) :
-		mImage(image), mImageView(imageView), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels), mTtexChannels(texChannels),
+		mImage(image), mImageView(imageView), mFramebufferImageView(imageView), mTexWidth(width), mTexHeight(height), mMipLevels(mipLevels), mTtexChannels(texChannels),
 		mNumSamples(numSamples), mFormat(format), mUsage(usage), mAspects(aspects), mCommandBufferManager(commandBufferManager)
 	{
 		vkImageViewNotControlled = true;
@@ -43,7 +43,7 @@ namespace cgb {
 		mNumSamples(numSamples), mFormat(format), mTiling(tiling), mUsage(usage), mMemoryProperties(properties), mAspects(aspects)
 	{
 		create_image(mTexWidth, mTexHeight, mMipLevels, numSamples, format, tiling, usage, properties, mImage, mImageMemory);
-		mImageView = create_image_view(format, aspects, mipLevels);
+		create_image_view(format, aspects, mipLevels);
 	}
 
 
@@ -51,6 +51,9 @@ namespace cgb {
 	{
 		if (!vkImageViewNotControlled) {
 			vkDestroyImageView(vulkan_context::instance().vulkan_context::instance().device, mImageView, nullptr);
+			if (mMipLevels > 1) {
+				vkDestroyImageView(vulkan_context::instance().vulkan_context::instance().device, mFramebufferImageView, nullptr);
+			}
 		}
 		if (!vkImageNotControlled) {
 			vkDestroyImage(vulkan_context::instance().vulkan_context::instance().device, mImage, nullptr);
@@ -59,7 +62,7 @@ namespace cgb {
 	}
 
 	void vulkan_image::create_texture_image(void* pixels, uint32_t texWidth, uint32_t texHeight, int texChannels) {
-		mMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+		mMipLevels = compute_mip_levels(texWidth, texHeight);
 
 		if (!pixels) {
 			throw std::runtime_error("failed to load texture image!");
@@ -87,7 +90,9 @@ namespace cgb {
 		update_pixels(pixels);
 
 		if (mFormat == vk::Format::eR8G8B8A8Unorm) {
-			generate_mipmaps(mFormat, texWidth, texHeight, mMipLevels);
+			vk::CommandBuffer commandBuffer = mCommandBufferManager->begin_single_time_commands();
+			generate_mipmaps(commandBuffer);
+			mCommandBufferManager->end_single_time_commands(commandBuffer);
 		}
 	}
 
@@ -231,7 +236,7 @@ namespace cgb {
 		vulkan_buffer stagingBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, mCommandBufferManager);
 		stagingBuffer.update_buffer(pixels, imageSize);
 
-		transition_image_layout(mFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mMipLevels);
+		transition_image_layout(mFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, 1);
 		copy_buffer_to_image(stagingBuffer, mImage, static_cast<uint32_t>(mTexWidth), static_cast<uint32_t>(mTexHeight));
 	}
 
@@ -269,15 +274,13 @@ namespace cgb {
 		mCommandBufferManager->end_single_time_commands(commandBuffer);
 	}
 
-	void vulkan_image::generate_mipmaps(vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+	void vulkan_image::generate_mipmaps(vk::CommandBuffer& commandBuffer) {
 		// Check if image format supports linear blitting
 		vk::FormatProperties formatProperties;
-		vulkan_context::instance().physicalDevice.getFormatProperties(imageFormat, &formatProperties);
+		vulkan_context::instance().physicalDevice.getFormatProperties(mFormat, &formatProperties);
 		if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
 			throw std::runtime_error("texture image format does not support linear blitting!");
 		}
-
-		vk::CommandBuffer commandBuffer = mCommandBufferManager->begin_single_time_commands();
 
 		vk::ImageMemoryBarrier barrier = {};
 		barrier.image = mImage;
@@ -286,12 +289,28 @@ namespace cgb {
 		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 		barrier.subresourceRange.baseArrayLayer = 0;
 		barrier.subresourceRange.layerCount = 1;
+
+		if (mMipLevels > 1) {
+			barrier.subresourceRange.levelCount = mMipLevels - 1;
+			barrier.subresourceRange.baseMipLevel = 1;
+			barrier.oldLayout = vk::ImageLayout::eUndefined;
+			barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+			barrier.srcAccessMask = {};
+			barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+			commandBuffer.pipelineBarrier(
+				vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {},
+				0, nullptr,
+				0, nullptr,
+				1, &barrier);
+		}
+
 		barrier.subresourceRange.levelCount = 1;
 
-		int32_t mipWidth = texWidth;
-		int32_t mipHeight = texHeight;
+		int32_t mipWidth = mTexWidth;
+		int32_t mipHeight = mTexHeight;
 
-		for (uint32_t i = 1; i < mipLevels; i++) {
+		for (uint32_t i = 1; i < mMipLevels; i++) {
 			barrier.subresourceRange.baseMipLevel = i - 1;
 			barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 			barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
@@ -339,7 +358,7 @@ namespace cgb {
 			if (mipHeight > 1) mipHeight /= 2;
 		}
 
-		barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+		barrier.subresourceRange.baseMipLevel = mMipLevels - 1;
 		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
@@ -350,15 +369,13 @@ namespace cgb {
 			0, nullptr,
 			0, nullptr,
 			1, &barrier);
-
-		mCommandBufferManager->end_single_time_commands(commandBuffer);
 	}
 
 	void vulkan_image::create_texture_image_view() {
-		mImageView = create_image_view(vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, mMipLevels);
+		create_image_view(vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, mMipLevels);
 	}
 
-	vk::ImageView vulkan_image::create_image_view(vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) {
+	void vulkan_image::create_image_view(vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) {
 		vk::ImageViewCreateInfo viewInfo = {};
 		viewInfo.image = mImage;
 		viewInfo.viewType = vk::ImageViewType::e2D;
@@ -374,7 +391,14 @@ namespace cgb {
 			throw std::runtime_error("failed to create texture image view!");
 		}
 
-		return imageView;
+		mImageView = imageView;
+		if (mipLevels > 1) {
+			viewInfo.subresourceRange.levelCount = 1;
+			if (vulkan_context::instance().device.createImageView(&viewInfo, nullptr, &imageView) != vk::Result::eSuccess) {
+				throw std::runtime_error("failed to create texture image view!");
+			}
+		}
+		mFramebufferImageView = imageView;
 	}
 
 	std::shared_ptr<vulkan_image> cgb::vulkan_image::generate_1px_image(uint8_t color_r, uint8_t color_g, uint8_t color_b)

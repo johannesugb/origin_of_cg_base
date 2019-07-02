@@ -42,6 +42,8 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\passthrough.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\taa.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\taa.vert" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\taa_mean_variance.frag" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\taa_mean_variance.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\vrs_cas_edge_img.comp" />
