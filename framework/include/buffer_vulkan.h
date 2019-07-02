@@ -72,6 +72,9 @@ namespace cgb
 		// Allocate the memory for the buffer:
 		auto vkMemory = cgb::context().logical_device().allocateMemoryUnique(allocInfo);
 
+		// If memory allocation was successful, then we can now associate this memory with the buffer
+		cgb::context().logical_device().bindBufferMemory(vkBuffer.get(), vkMemory.get(), 0);
+
 		cgb::buffer_t<Cfg> b;
 		b.mConfig = pConfig;
 		b.mMemoryPropertyFlags = pMemoryProperties;
@@ -99,6 +102,7 @@ namespace cgb
 		auto bufferSize = static_cast<vk::DeviceSize>(target.size());
 
 		auto memProps = target.memory_properties();
+
 		// #1: Is our memory on the CPU-SIDE? 
 		if (has_flag(memProps, vk::MemoryPropertyFlagBits::eHostVisible)) {
 			void* mapped = cgb::context().logical_device().mapMemory(target.memory_handle(), 0, bufferSize);
@@ -118,6 +122,7 @@ namespace cgb
 
 			return std::nullopt; // TODO: This should be okay, is it?
 		}
+
 		// #2: Otherwise, it must be on the GPU-SIDE!
 		else {
 			assert(has_flag(memProps, vk::MemoryPropertyFlagBits::eDeviceLocal));
@@ -130,7 +135,7 @@ namespace cgb
 				cgb::memory_usage::host_coherent, 
 				pData, 
 				nullptr, //< TODO: What about the semaphore???
-				vk::BufferUsageFlagBits::eTransferDst);
+				vk::BufferUsageFlagBits::eTransferSrc);
 
 			auto commandBuffer = cgb::context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 			commandBuffer.begin_recording();

@@ -86,7 +86,7 @@ namespace cgb
 			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
 			vk::IndexType indexType = convert_to_vk_index_type(pIndexBuffer.config().sizeof_one_element());
-			pCommandBuffer.handle().bindIndexBuffer(pVertexBuffer.buffer_handle(), 0u, indexType);
+			pCommandBuffer.handle().bindIndexBuffer(pIndexBuffer.buffer_handle(), 0u, indexType);
 			pCommandBuffer.handle().drawIndexed(pIndexBuffer.config().num_elements(), 1u, 0u, 0u, 0u);
 		}
 

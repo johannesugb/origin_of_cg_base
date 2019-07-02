@@ -283,7 +283,9 @@ public:
 		auto stagingBuffer = cgb::create_and_fill(
 			cgb::generic_buffer_data{ imageSize },
 			cgb::memory_usage::host_coherent,
-			pixels);
+			pixels,
+			nullptr,
+			vk::BufferUsageFlagBits::eTransferSrc);
 			
 		stbi_image_free(pixels);
 
@@ -292,6 +294,8 @@ public:
 		cgb::copy_buffer_to_image(stagingBuffer, img);
 		cgb::transition_image_layout(img, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 		mImage = std::make_shared<cgb::image>(std::move(img));
+
+		cgb::context().logical_device().waitIdle();
 	}
 
 	void create_depth_buffer()
@@ -552,22 +556,26 @@ public:
 
 		// create the buffer and its memory
 		create_vertex_buffer();
+		cgb::context().logical_device().waitIdle();
 		create_index_buffer();
+		cgb::context().logical_device().waitIdle();
 
 		load_model("assets/sponza_structure.obj", mModel, mModelVertices, mModelIndices, 2);
+		cgb::context().logical_device().waitIdle();
 		load_model("assets/sphere.obj", mSphere, mSphereVertices, mSphereIndices, 0);
+		cgb::context().logical_device().waitIdle();
 		create_texture_image();
 		mImageView = cgb::image_view::create(mImage, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
 		mSampler = cgb::sampler::create();
 		create_depth_buffer();
 
-		// RAY TRACING DATA start
-		create_rt_geometry();
-		mBottomLevelAccStructure = cgb::acceleration_structure::create_bottom_level(mGeometries);
-		create_rt_geometry_instances();
-		mTopLevelAccStructure = cgb::acceleration_structure::create_top_level(static_cast<uint32_t>(mGeometryInstances.size()));
-		build_acceleration_structures();
-		// RAY TRACING DATA end
+		//// RAY TRACING DATA start
+		//create_rt_geometry();
+		//mBottomLevelAccStructure = cgb::acceleration_structure::create_bottom_level(mGeometries);
+		//create_rt_geometry_instances();
+		//mTopLevelAccStructure = cgb::acceleration_structure::create_top_level(static_cast<uint32_t>(mGeometryInstances.size()));
+		//build_acceleration_structures();
+		//// RAY TRACING DATA end
 
 		// Ordinary graphics pipeline:
 		{
@@ -596,30 +604,30 @@ public:
 			mCmdBfrs = cgb::context().graphics_queue().pool().get_command_buffers(mFrameBuffers.size());
 		}
 
-		// Ray tracing pipeline OMG:
-		{
-			create_rt_descriptor_set_layout();
+		//// Ray tracing pipeline OMG:
+		//{
+		//	create_rt_descriptor_set_layout();
 
-			auto rgen = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rgen.spv"));
-			auto rchit = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rchit.spv"));
-			auto rmiss = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rmiss.spv"));
-			auto rchit2 = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rchit.spv"));
-			auto rmiss2 = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rmiss.spv"));
-			std::vector<std::tuple<cgb::shader_type, cgb::shader*>> shaderInfos;
-			shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
-			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit));
-			shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit2));
-			shaderInfos.push_back(std::make_tuple(cgb::shader_type::miss, &rmiss));
-			shaderInfos.push_back(std::make_tuple(cgb::shader_type::miss, &rmiss2));
+		//	auto rgen = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rgen.spv"));
+		//	auto rchit = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rchit.spv"));
+		//	auto rmiss = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_first.rmiss.spv"));
+		//	auto rchit2 = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rchit.spv"));
+		//	auto rmiss2 = cgb::shader::create_from_binary_code(cgb::load_binary_file("shaders/rt_09_secondary.rmiss.spv"));
+		//	std::vector<std::tuple<cgb::shader_type, cgb::shader*>> shaderInfos;
+		//	shaderInfos.push_back(std::make_tuple(cgb::shader_type::ray_generation, &rgen));
+		//	shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit));
+		//	shaderInfos.push_back(std::make_tuple(cgb::shader_type::closest_hit, &rchit2));
+		//	shaderInfos.push_back(std::make_tuple(cgb::shader_type::miss, &rmiss));
+		//	shaderInfos.push_back(std::make_tuple(cgb::shader_type::miss, &rmiss2));
 
-			mRtPipeline = cgb::context().create_ray_tracing_pipeline(shaderInfos, { mRtDescriptorSetLayout.mDescriptorSetLayout });
-			mShaderBindingTable = cgb::shader_binding_table::create(mRtPipeline);
-		}
+		//	mRtPipeline = cgb::context().create_ray_tracing_pipeline(shaderInfos, { mRtDescriptorSetLayout.mDescriptorSetLayout });
+		//	mShaderBindingTable = cgb::shader_binding_table::create(mRtPipeline);
+		//}
 
 		create_uniform_buffers();
-		create_rt_uniform_buffers();
+		//create_rt_uniform_buffers();
 		create_descriptor_sets();
-		create_rt_descriptor_set();
+		//create_rt_descriptor_set();
 
 		auto extent = cgb::context().main_window()->swap_chain_extent();
 
@@ -637,7 +645,7 @@ public:
 			// TODO: image barriers instead of wait idle!!
 			cgb::context().graphics_queue().handle().waitIdle();
 
-			cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlags(), vk::AccessFlagBits::eShaderWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral));
+			//cmdbfr.set_image_barrier(mOffscreenImages[i]->create_barrier(vk::AccessFlags(), vk::AccessFlagBits::eShaderWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral));
 
 			//cmdbfr.handle().bindPipeline(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipeline);
 			//cmdbfr.handle().bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, mRtPipeline.mPipelineLayout, 0u, { mRtDescriptorSets[i].mDescriptorSet }, {});
@@ -709,11 +717,11 @@ public:
 		//ubo.proj[1][1] *= -1;
 		auto bufferIndex = wnd->image_index_for_frame();
 		cgb::fill(mUniformBuffers[bufferIndex], &ubo);
-		cgb::fill(mRtUniformBuffers[bufferIndex][0], &ubo);
-		glm::vec4 color1(1.0, 1.0, 0.0, 0.0);
-		glm::vec4 color2(1.0, 0.0, 0.0, 0.0);
-		cgb::fill(mRtUniformBuffers[bufferIndex][1], &color1);
-		cgb::fill(mRtUniformBuffers[bufferIndex][2], &color2);
+		//cgb::fill(mRtUniformBuffers[bufferIndex][0], &ubo);
+		//glm::vec4 color1(1.0, 1.0, 0.0, 0.0);
+		//glm::vec4 color2(1.0, 0.0, 0.0, 0.0);
+		//cgb::fill(mRtUniformBuffers[bufferIndex][1], &color1);
+		//cgb::fill(mRtUniformBuffers[bufferIndex][2], &color2);
 
 		wnd->render_frame({ mCmdBfrs[bufferIndex] });
 	}
