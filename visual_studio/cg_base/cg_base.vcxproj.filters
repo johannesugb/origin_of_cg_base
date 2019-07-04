@@ -339,6 +339,12 @@
     <ClInclude Include="..\..\framework\include\buffer_data.h">
       <Filter>Header Files\data_buffers_images</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include\pipeline.h">
+      <Filter>Source Files\pipeline_and_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\descriptor_set_layout_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

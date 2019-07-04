@@ -255,6 +255,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include\descriptor_set_layout_vulkan.h" />
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="..\..\framework\include\image.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
@@ -264,6 +265,7 @@
     <ClInclude Include="..\..\framework\include\math_utils.h" />
     <ClInclude Include="..\..\framework\include\memory_usage.h" />
     <ClInclude Include="..\..\framework\include\model.h" />
+    <ClInclude Include="..\..\framework\include\pipeline.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
     <ClInclude Include="..\..\framework\include\shader_type.h" />
     <ClInclude Include="..\..\framework\include\shader_vulkan.h" />

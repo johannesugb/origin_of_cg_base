@@ -243,6 +243,15 @@ namespace cgb
 		
 	public:
 		static std::vector<const char*> sRequiredDeviceExtensions;
+
+		/** Protects access to this (single) instance for all the methods
+		 *	which can potentially be accessed by multiple threads in parallel
+		 *	in a meaningful manner (i.e. not all methods!)
+		 *
+		 *	The protected methods are:
+		 *	 -> command_pool& get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex);
+		 */
+		static std::mutex sMutex;
 		
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
@@ -264,6 +273,9 @@ namespace cgb
 		// Queue family indices are stored within the command_pool objects, thread indices in the tuple.
 		std::deque<std::tuple<std::thread::id, command_pool>> mCommandPools;
 		std::deque<descriptor_pool> mDescriptorPools;
+
+		std::deque<descriptor_set_layout> mDescriptorSetLayouts;
+		std::deque<descriptor_set> mDescriptorSets;
 		
 	};
 

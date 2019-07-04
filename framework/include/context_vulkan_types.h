@@ -371,22 +371,6 @@ namespace cgb
 		vk::Sampler mSampler;
 	};
 
-	struct descriptor_set_layout
-	{
-		descriptor_set_layout() noexcept;
-		descriptor_set_layout(const vk::DescriptorSetLayout& pDescriptorSetLayout);
-		descriptor_set_layout(const descriptor_set_layout&) = delete;
-		descriptor_set_layout(descriptor_set_layout&&) noexcept;
-		descriptor_set_layout& operator=(const descriptor_set_layout&) = delete;
-		descriptor_set_layout& operator=(descriptor_set_layout&&) noexcept;
-		~descriptor_set_layout();
-
-		static descriptor_set_layout create(const vk::DescriptorSetLayoutCreateInfo& pCreateInfo);
-
-		vk::DescriptorSetLayout mDescriptorSetLayout;
-	};
-
-
 	struct acceleration_structure_handle
 	{
 		uint64_t mHandle;
