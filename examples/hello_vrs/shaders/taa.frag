@@ -12,6 +12,8 @@ layout(binding = 1) uniform sampler2D prevFrame;
 
 layout(binding = 2) uniform sampler2D motionVecTex;
 layout(binding = 3) uniform sampler2D shadingRateTex;
+layout(binding = 4) uniform sampler2D meanVarTex;
+layout(binding = 5) uniform sampler2D var2Tex;
 
 layout(push_constant) uniform taa_prev_frame_data
 {
@@ -24,7 +26,6 @@ layout(push_constant) uniform taa_prev_frame_data
 layout(location = 0) in vec2 fragTexCoord;
 
 layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outEdge;
 
 float rgbToLuma(vec3 rgb) {
 	return sqrt(dot(rgb, vec3(0.299, 0.587, 0.114)));
@@ -90,7 +91,7 @@ vec3 YCgCoToRGB(vec3 YCgCo)
 }
 
 const float cColorBoxSigma = 1.5;
-const float cAlpha = 0.5;
+const float cAlpha = 0.1;
 
 void main() {
 	ivec2 texDim = textureSize(curFrame, 0);
@@ -118,7 +119,8 @@ void main() {
     motion = dot(m, m) > dot(motion, motion) ? m : motion;
 	
 	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
-	ivec2 shadingRateSize = ivec2(shadingRate * 4.0); //ivec2(1,1); 
+	ivec2 shadingRateSize = ivec2(shadingRate * 4.0); //ivec2(1,1);  
+	int mipLevel = int((shadingRateSize.x + shadingRateSize.y)/ 2) - 1;
 	//motion *= shadingRate * 4;
 
 	//ipos -= ivec2(motion *  + 0.5);
@@ -132,52 +134,10 @@ void main() {
     vec3 color = texelFetch(curFrame, ipos, 0).rgb;
 	float luma = rgbToLuma(color);
     color = RGBToYCgCo(color);
-    vec3 colorAvg = color;
-    vec3 colorVar = color * color;
-    vec3 c = texelFetch(curFrame, ipos + offset[0] * shadingRateSize, 0).rgb;
-	float lumaLB = rgbToLuma(c); 
-	c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-	c = texelFetch(curFrame, ipos + offset[1] * shadingRateSize, 0).rgb;
-	float lumaLT = rgbToLuma(c); 
-    c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-	c = texelFetch(curFrame, ipos + offset[2] * shadingRateSize, 0).rgb;
-	float lumaRB = rgbToLuma(c); 
-    c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-	c = texelFetch(curFrame, ipos + offset[3] * shadingRateSize, 0).rgb;
-	float lumaRT = rgbToLuma(c); 
-    c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-	c = texelFetch(curFrame, ipos + offset[4] * shadingRateSize, 0).rgb;
-	float lumaRight = rgbToLuma(c);
-    c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-	c = texelFetch(curFrame, ipos + offset[5] * shadingRateSize, 0).rgb;
-	float lumaDown = rgbToLuma(c);
-    c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-	c = texelFetch(curFrame, ipos + offset[6] * shadingRateSize, 0).rgb;
-	float lumaUp = rgbToLuma(c);
-    c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-	c = texelFetch(curFrame, ipos + offset[7] * shadingRateSize, 0).rgb;
-	float lumaLeft = rgbToLuma(c); 
-    c = RGBToYCgCo(c);
-    colorAvg += c;
-    colorVar += c * c;
-
-    float oneOverNine = 1.0 / 9.0;
-    colorAvg *= oneOverNine;
-    colorVar *= oneOverNine;
+	vec4 meanVar = texelFetch(meanVarTex, ivec2(ipos / pow(2, mipLevel)), mipLevel);
+	vec2 var2 = texelFetch(var2Tex, ivec2(ipos / pow(2, mipLevel)), mipLevel).rg;
+	vec3 colorAvg = meanVar.rgb;
+    vec3 colorVar = vec3(meanVar.a, var2.xy);
 
 	//float colorBoxSigma = cColorBoxSigma  * (-3 + shadingRate.y * shadingRate.x * 4 * 2);
 	float colorBoxSigma = cColorBoxSigma;// *shadingRate.y * shadingRate.x ;
@@ -208,21 +168,8 @@ void main() {
 	//outColor = vec4(motion.x);
 	//outColor = vec4(YCgCoToRGB(history), 0);
 	//outColor = vec4(shadingRate.x, 0, 0, 0);
-
-	// compute edge for other purposes (e.g. fxaa, or CAS with edges)
-	float lumaMin = min(min(luma, min(min(lumaUp,lumaDown), min(lumaLeft,lumaRight))),min(min(lumaLT,lumaLB), min(lumaRT,lumaRB)));
-	float lumaMax = max(max(luma, max(max(lumaUp,lumaDown), max(lumaLeft,lumaRight))),max(max(lumaLT,lumaLB), max(lumaRT,lumaRB)));
-
-	float lumaRange = lumaMax-lumaMin;
-
-	vec2 dir;
-	dir.x = -((lumaUp + lumaLeft) - (lumaDown + lumaRight));
-	dir.y = ((lumaUp + lumaDown) - (lumaLeft + lumaRight));
-
-	//outEdge = vec4(vec3(float((lumaMax-lumaMin) > 0.02) * 10), 1.0);
-	outEdge = vec4(vec3(float(lumaRange >= max(0.0612, lumaMax * 0.125)) * 10), 1.0);
-	//outEdge = vec4(vec3(float((abs(dir.x) + abs(dir.y))) ), 1.0);
-	//outEdge = vec4(vec3(0.5), 0.0);
+	//outColor = vec4(meanVar.xyz, 0);
+	//outColor = vec4(mipLevel / 4.0, 0, 0, 0);
 }
 
 

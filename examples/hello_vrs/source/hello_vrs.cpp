@@ -260,6 +260,7 @@ public:
 			}
 
 			mPostProcPipeline->bake();
+			mTAAMeanVariancePipeline->bake();
 			mTAAPipeline->bake();
 
 #if DEFERRED_SHADING
@@ -331,8 +332,8 @@ private:
 
 
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
-		renderWidth = mImagePresenter->get_swap_chain_extent().width * 1;
-		renderHeight = mImagePresenter->get_swap_chain_extent().height * 1;
+		renderWidth = mImagePresenter->get_swap_chain_extent().width * 2;
+		renderHeight = mImagePresenter->get_swap_chain_extent().height * 2;
 		cgb::vulkan_context::instance().dynamicRessourceCount = mImagePresenter->get_swap_chain_images_count();
 		drawCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(cgb::vulkan_context::instance().dynamicRessourceCount, commandPool, cgb::vulkan_context::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<cgb::vulkan_render_queue>(cgb::vulkan_context::instance().graphicsQueue);
@@ -509,11 +510,20 @@ private:
 		postProcResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		postProcResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		postProcResourceBundleLayout->add_binding(3, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
+		postProcResourceBundleLayout->add_binding(4, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
+		postProcResourceBundleLayout->add_binding(5, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eFragment);
 		postProcResourceBundleLayout->bake();
 		auto postProcBundles = std::array<std::shared_ptr<cgb::vulkan_resource_bundle>, 2>{};
 		for (int i = 0; i < postProcBundles.size(); i++) {
 			postProcBundles[i] = mResourceBundleGroup->create_resource_bundle(postProcResourceBundleLayout, true);
 		}
+
+		// Post processing
+		create_post_process_objects(postProcViewport, postProcScissor);
+
+		// TAA
+		create_TAA_objects(viewport, scissor, postProcResourceBundleLayout);
+
 		postProcBundles[0]->add_dynamic_image_resource(0, vk::ImageLayout::eShaderReadOnlyOptimal, mPostProcTextures);
 		postProcBundles[1]->add_dynamic_image_resource(0, vk::ImageLayout::eShaderReadOnlyOptimal, mPostProcTextures);
 		// add previous frame image	
@@ -524,18 +534,16 @@ private:
 		postProcBundles[1]->add_dynamic_image_resource(2, vk::ImageLayout::eShaderReadOnlyOptimal, mMotionVectorTextures);
 		postProcBundles[0]->add_dynamic_image_resource(3, vk::ImageLayout::eShaderReadOnlyOptimal, mVrsPrevRenderTextures);
 		postProcBundles[1]->add_dynamic_image_resource(3, vk::ImageLayout::eShaderReadOnlyOptimal, mVrsPrevRenderTextures);
+		postProcBundles[0]->add_dynamic_image_resource(4, vk::ImageLayout::eShaderReadOnlyOptimal, mTAAMeanVarianceTextures);
+		postProcBundles[1]->add_dynamic_image_resource(4, vk::ImageLayout::eShaderReadOnlyOptimal, mTAAMeanVarianceTextures);
+		postProcBundles[0]->add_dynamic_image_resource(5, vk::ImageLayout::eShaderReadOnlyOptimal, mTAAVariance2Textures);
+		postProcBundles[1]->add_dynamic_image_resource(5, vk::ImageLayout::eShaderReadOnlyOptimal, mTAAVariance2Textures);
 
 
 		for (int i = 0; i < mTAAFullScreenQuads.size(); i++) {
 			mPostProcFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { postProcBundles[i] });
 			mTAAFullScreenQuads[i] = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, mTAATextures[i]);
 		}
-
-		// Post processing
-		create_post_process_objects(postProcViewport, postProcScissor);
-
-		// TAA
-		create_TAA_objects(viewport, scissor, postProcResourceBundleLayout);
 
 
 		// initialize lights
@@ -1355,7 +1363,7 @@ private:
 		auto width = renderWidth;
 		auto height = renderHeight;
 		auto mipLevels = cgb::vulkan_image::compute_mip_levels(width, height);
-		vk::Format colorFormatMeanVarianceImg = vk::Format::eR16G16B16A16Unorm;
+		vk::Format colorFormatMeanVarianceImg = vk::Format::eR16G16B16A16Snorm;
 		vk::Format colorFormatVariance2Img = vk::Format::eR16G16Unorm;
 
 		mTAAMeanVarianceImages.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
@@ -1368,13 +1376,13 @@ private:
 				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
 				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			mTAAMeanVarianceImages[i]->transition_image_layout(colorFormatMeanVarianceImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
-			mTAAMeanVarianceTextures[i] = std::make_shared<cgb::vulkan_texture>(mPostProcImages[i]);
+			mTAAMeanVarianceTextures[i] = std::make_shared<cgb::vulkan_texture>(mTAAMeanVarianceImages[i]);
 
 			mTAAVariance2Images[i] = std::make_shared<cgb::vulkan_image>(width, height, mipLevels, 2, vk::SampleCountFlagBits::e1, colorFormatVariance2Img,
 				vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
 				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			mTAAVariance2Images[i]->transition_image_layout(colorFormatMeanVarianceImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
-			mTAAVariance2Textures[i] = std::make_shared<cgb::vulkan_texture>(mPostProcImages[i]);
+			mTAAVariance2Textures[i] = std::make_shared<cgb::vulkan_texture>(mTAAVariance2Images[i]);
 		}
 
 		mTAAMeanVarianceFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(
@@ -1410,7 +1418,6 @@ private:
 				renderWidth, renderHeight,
 				cgb::vulkan_context::instance().dynamicRessourceCount, vk::SampleCountFlagBits::e1);
 			mTAAFramebuffers[i]->add_dynamic_color_attachment(mTAAImages[i], vk::ImageLayout::eShaderReadOnlyOptimal);
-			mTAAFramebuffers[i]->add_dynamic_color_attachment(mVrsEdgeImages, vk::ImageLayout::eTransferSrcOptimal);
 			mTAAFramebuffers[i]->bake();
 		}
 
@@ -1420,7 +1427,6 @@ private:
 		mTAAPipeline->add_attr_desc_binding(posAndUv);
 		mTAAPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/taa.vert.spv");
 		mTAAPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/taa.frag.spv");
-		mTAAPipeline->add_color_blend_attachment_state(mTAAPipeline->get_color_blend_attachment_state(0));
 		mTAAPipeline->disable_shading_rate_image();
 		mTAAPipeline->bake();
 
