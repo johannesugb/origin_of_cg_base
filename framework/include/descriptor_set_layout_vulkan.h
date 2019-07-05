@@ -3,6 +3,7 @@
 
 namespace cgb
 {
+#pragma region detect .size() member via SFINAE (if we'll ever need this)
 	// SFINAE test
 	template <typename T>
 	class has_size_member
@@ -42,16 +43,19 @@ namespace cgb
 	typename std::enable_if<has_no_size_member<T>::value, uint32_t>::type num_elements(const T& t) {
 		return 1u;
 	}
-
-
-
-
+#pragma endregion
 
 	struct binding_data
 	{
 		uint32_t mSetId;
 		vk::DescriptorSetLayoutBinding mLayoutBinding;
 	};
+
+	bool operator ==(const binding_data& first, const binding_data& second)
+	{
+		return first.mSetId == second.mSetId
+			&& first.mLayoutBinding == second.mLayoutBinding;
+	}
 
 	template <typename T>
 	vk::DescriptorType descriptor_type_of(T&& pResource);
@@ -71,8 +75,8 @@ namespace cgb
 			pSet,
 			vk::DescriptorSetLayoutBinding{}
 				.setBinding(pBinding)
-				.setDescriptorCount(num_elements(pResource) // TODO: In which cases might this not be 1?
-				.setDescriptorType(descriptor_type_of(pResource)
+				.setDescriptorCount(num_elements(pResource)) // TODO: In which cases might this not be 1?
+				.setDescriptorType(descriptor_type_of(pResource))
 				.setPImmutableSamplers(nullptr); // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
 		};
 		return data;
@@ -84,21 +88,14 @@ namespace cgb
 		return binding(0u, pBinding, std::forward(pR))
 	}
 
-
-	struct descriptor_set_layout
+	vk::UniqueDescriptorSetLayout layout_for(std::initializer_list<binding_data> pBindings)
 	{
-		descriptor_set_layout() noexcept;
-		descriptor_set_layout(const vk::DescriptorSetLayout& pDescriptorSetLayout);
-		descriptor_set_layout(const descriptor_set_layout&) = delete;
-		descriptor_set_layout(descriptor_set_layout&&) noexcept;
-		descriptor_set_layout& operator=(const descriptor_set_layout&) = delete;
-		descriptor_set_layout& operator=(descriptor_set_layout&&) noexcept;
-		~descriptor_set_layout();
-
-		//static descriptor_set_layout create(const vk::DescriptorSetLayoutCreateInfo& pCreateInfo);
-		static descriptor_set_layout create_for(std::initializer_list<binding_data> pBindings);
-
-		vk::DescriptorSetLayout mDescriptorSetLayout;
-	};
+		std::vector<vk::DescriptorSetLayoutBinding> asdf;
+		asdf.push_back(all...);
+		auto createInfo = vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(static_cast<uint32_t>(asdf.size()))
+			.setPBindings(asdf.data());
+		return cgb::context().logical_device().createDescriptorSetLayoutUnique(createInfo);
+	}
 
 }
