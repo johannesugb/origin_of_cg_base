@@ -164,26 +164,10 @@ public:
 
 	void create_descriptor_set_layout()
 	{
-		std::array bindings = { 
-			vk::DescriptorSetLayoutBinding()
-				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-				.setDescriptorCount(1u)
-				.setStageFlags(vk::ShaderStageFlagBits::eVertex)
-				.setPImmutableSamplers(nullptr) // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
-			,
-			vk::DescriptorSetLayoutBinding()
-				.setBinding(1u)
-				.setDescriptorCount(1u)
-				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-				.setPImmutableSamplers(nullptr)
-				.setStageFlags(vk::ShaderStageFlagBits::eFragment)
-		};
-
-		auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
-			.setBindingCount(static_cast<uint32_t>(bindings.size()))
-			.setPBindings(bindings.data());
-
-		mDescriptorSetLayout = cgb::descriptor_set_layout::create(descriptorSetLayoutCreateInfo);
+		mDescriptorSetLayout = cgb::layout_for({
+			cgb::binding(0, mUniformBuffers[0]),
+			cgb::binding(1, mImageView)
+		});
 	}
 
 	void create_rt_descriptor_set_layout()
@@ -230,6 +214,11 @@ public:
 			.setPBindings(descriptorSetLayoutBindings.data());
 
 		mRtDescriptorSetLayout = cgb::descriptor_set_layout::create(descriptorSetLayoutCreateInfo);
+
+		mRtDescriptorSetLayout = cgb::layout_for({
+			cgb::binding(0, mTopLevelAccStructure),
+			cgb::binding(1, mImageView)
+			});
 	}
 
 	void create_descriptor_sets()
@@ -289,11 +278,11 @@ public:
 			
 		stbi_image_free(pixels);
 
-		auto img = cgb::image::create2D(width, height);
+		auto img = cgb::image_t::create2D(width, height);
 		cgb::transition_image_layout(img, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 		cgb::copy_buffer_to_image(stagingBuffer, img);
 		cgb::transition_image_layout(img, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-		mImage = std::make_shared<cgb::image>(std::move(img));
+		mImage = std::make_shared<cgb::image_t>(std::move(img));
 
 		cgb::context().logical_device().waitIdle();
 	}
@@ -311,7 +300,7 @@ public:
 		}
 
 		auto extent = cgb::context().main_window()->swap_chain_extent();
-		mDepthImage = std::make_shared<cgb::image>(std::move(cgb::image::create2D(
+		mDepthImage = std::make_shared<cgb::image_t>(std::move(cgb::image_t::create2D(
 			extent.width, extent.height,
 			selectedFormat,
 			vk::ImageTiling::eOptimal,
@@ -462,13 +451,13 @@ public:
 		// create an offscreen image for each one:
 		for (int i = 0; i < mFrameBuffers.size(); ++i) {
 			// image
-			auto img = cgb::image::create2D(
+			auto img = cgb::image_t::create2D(
 				extent.width, extent.height,
 				format.mFormat,
 				vk::ImageTiling::eOptimal, 
 				vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc,
 				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			mOffscreenImages.emplace_back(std::make_shared<cgb::image>(std::move(img)));
+			mOffscreenImages.emplace_back(std::make_shared<cgb::image_t>(std::move(img)));
 			// view
 			mOffscreenImageViews.emplace_back(cgb::image_view::create(mOffscreenImages[i], mOffscreenImages[i]->mInfo.format, vk::ImageAspectFlagBits::eColor));
 		}
@@ -740,9 +729,9 @@ private:
 	std::unique_ptr<cgb::model_data> mSphere;
 	std::vector<cgb::uniform_buffer_t> mUniformBuffers;
 	std::vector<std::vector<cgb::uniform_buffer_t>> mRtUniformBuffers;
-	cgb::descriptor_set_layout mDescriptorSetLayout;
-	cgb::descriptor_set_layout mRtDescriptorSetLayout;
-	std::shared_ptr<cgb::image> mImage;
+	vk::UniqueDescriptorSetLayout mDescriptorSetLayout;
+	vk::UniqueDescriptorSetLayout mRtDescriptorSetLayout;
+	std::shared_ptr<cgb::image_t> mImage;
 	cgb::vertex_buffer_t mModelVertices;
 	cgb::index_buffer_t mModelIndices;
 	cgb::vertex_buffer_t mSphereVertices;
@@ -758,7 +747,7 @@ private:
 	std::vector<cgb::descriptor_set> mRtDescriptorSets;
 	cgb::image_view mImageView;
 	cgb::sampler mSampler;
-	std::shared_ptr<cgb::image> mDepthImage;
+	std::shared_ptr<cgb::image_t> mDepthImage;
 	cgb::image_view mDepthImageView;
 
 	std::vector<vk::GeometryNV> mGeometries;
@@ -767,7 +756,7 @@ private:
 	cgb::acceleration_structure mTopLevelAccStructure;
 	cgb::shader_binding_table mShaderBindingTable;
 
-	std::vector<std::shared_ptr<cgb::image>> mOffscreenImages;
+	std::vector<std::shared_ptr<cgb::image_t>> mOffscreenImages;
 	std::vector<cgb::image_view> mOffscreenImageViews;
 
 

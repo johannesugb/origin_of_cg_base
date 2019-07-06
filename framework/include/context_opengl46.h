@@ -31,16 +31,6 @@ namespace cgb
 				 */
 		bool check_error(const char* file, int line);
 
-		texture_handle create_texture()
-		{
-			return texture_handle();
-		}
-
-		void destroy_texture(const texture_handle& pHandle)
-		{
-
-		}
-
 		/** Used to signal the context about the beginning of a composition */
 		void begin_composition();
 

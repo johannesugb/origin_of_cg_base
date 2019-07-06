@@ -3,6 +3,8 @@
 namespace cgb
 {
 
+
+
 	// Forward declare templated cgb::buffer and set up some type defs.
 	// The definition of the buffer will always be inside the context-specific implementation files.
 	//template <typename Cfg>
@@ -40,49 +42,34 @@ namespace cgb
 	using vertex_buffer			= std::variant<vertex_buffer_t, unique_vertex_buffer_t, shared_vertex_buffer_t>;
 	using index_buffer			= std::variant<index_buffer_t, unique_index_buffer_t, shared_index_buffer_t>;
 
-	using buffer = std::variant<
-		generic_buffer,
-		uniform_buffer,
-		uniform_texel_buffer,
-		storage_buffer,
-		storage_texel_buffer,
-		vertex_buffer,
-		index_buffer
-	>;
+	//using buffer = std::variant<
+	//	generic_buffer,
+	//	uniform_buffer,
+	//	uniform_texel_buffer,
+	//	storage_buffer,
+	//	storage_texel_buffer,
+	//	vertex_buffer,
+	//	index_buffer
+	//>;
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
-	 *	be it stored directly or referenced via a smart pointer.
-	 */
-	template <typename T, typename V>
-	T& get(V v)	{
-		if (std::holds_alternative<T>(v)) {
-			return std::get<T>(v);
-		}
-		if (std::holds_alternative<std::unique_ptr<T>>(v)) {
-			return *std::get<std::unique_ptr<T>>(v);
-		}
-		if (std::holds_alternative<std::shared_ptr<T>>(v)) {
-			return *std::get<std::shared_ptr<T>>(v);
-		}
-		throw std::bad_variant_access();
-	}
 
-	using buffers = std::variant<
-		std::vector<generic_buffer>,
-		std::vector<uniform_buffer>,
-		std::vector<uniform_texel_buffer>,
-		std::vector<storage_buffer>,
-		std::vector<storage_texel_buffer>,
-		std::vector<vertex_buffer>,
-		std::vector<index_buffer>
-	>;
 
-	/** Gets a reference to the data of a specific element at the given index, stored in 
-	 *	a collection of variants, regardless of how it is stored/referenced there, be 
-	 *	it stored directly or referenced via a smart pointer.
-	 */
-	template <typename T, typename V>
-	T& get_at(V v, size_t index)	{
-		return get<T>(v[index]);
-	}
+	//using buffers = std::variant<
+	//	std::vector<generic_buffer>,
+	//	std::vector<uniform_buffer>,
+	//	std::vector<uniform_texel_buffer>,
+	//	std::vector<storage_buffer>,
+	//	std::vector<storage_texel_buffer>,
+	//	std::vector<vertex_buffer>,
+	//	std::vector<index_buffer>
+	//>;
+
+	///** Gets a reference to the data of a specific element at the given index, stored in 
+	// *	a collection of variants, regardless of how it is stored/referenced there, be 
+	// *	it stored directly or referenced via a smart pointer.
+	// */
+	//template <typename T, typename V>
+	//T& get_at(V v, size_t index)	{
+	//	return get<T>(v[index]);
+	//}
 }

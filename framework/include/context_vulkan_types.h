@@ -6,100 +6,9 @@
 
 namespace cgb
 {
-	/** Represents a native texture handle for the Vulkan context */
-	struct texture_handle
-	{
-		int m_vulkan_specific_handle;
-	};
-
-	/** Represents one specific native image format for the Vulkan context */
-	struct image_format
-	{
-		image_format() noexcept;
-		image_format(const vk::Format& pFormat) noexcept;
-		image_format(const vk::SurfaceFormatKHR& pSrfFrmt) noexcept;
-
-		vk::Format mFormat;
-	};
-
-	/** Returns true if the given image format is a sRGB format
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_srgb_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in uint8-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_uint8_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in int8-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_int8_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in uint16-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_uint16_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in int16-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_int16_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in uint32-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_uint32_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in int32-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_int32_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in float16-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_float16_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in float32-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_float32_format(const image_format& pImageFormat);
-	/** Returns true if the given image format stores the color channels in float64-type storage
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_float64_format(const image_format& pImageFormat);
-	/** Returns true if the given image's color channels are ordered like follows: RGB
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_rgb_format(const image_format& pImageFormat);
-	/** Returns true if the given image's color channels are ordered like follows: RGBA
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_rgba_format(const image_format& pImageFormat);
-	/** Returns true if the given image's color channels are ordered like follows: ARGB
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_argb_format(const image_format& pImageFormat);
-	/** Returns true if the given image's color channels are ordered like follows: BGR
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_bgr_format(const image_format& pImageFormat);
-	/** Returns true if the given image's color channels are ordered like follows: BGRA
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_bgra_format(const image_format& pImageFormat);
-	/** Returns true if the given image's color channels are ordered like follows: ABGR
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool is_abgr_format(const image_format& pImageFormat);
-	/** Returns true if the given image format is a depth/depth-stencil format and has a stencil component.
-	 *	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
-	extern bool has_stencil_component(const image_format& pImageFormat);
 
 	/** Converts a given size to a `vk::IndexType` value. */
 	vk::IndexType convert_to_vk_index_type(size_t pSize);
-
-	struct image
-	{
-		image() noexcept;
-		image(const vk::ImageCreateInfo&, const vk::Image&, const vk::DeviceMemory&) noexcept;
-		image(const image&) = delete;
-		image(image&&) noexcept;
-		image& operator=(const image&) = delete;
-		image& operator=(image&&) noexcept;
-		~image();
-
-		static image create2D(int width, int height, 
-			vk::Format format = vk::Format::eR8G8B8A8Unorm, 
-			vk::ImageTiling tiling = vk::ImageTiling::eOptimal, 
-			vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-			vk::MemoryPropertyFlags properties = vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-		vk::ImageMemoryBarrier create_barrier(vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt) const;
-
-		vk::ImageCreateInfo mInfo;
-		vk::Image mImage;
-		vk::DeviceMemory mMemory;
-	};
-
 
 	// Forsward-declare the command pool
 	class command_pool;
@@ -112,7 +21,7 @@ namespace cgb
 		void end_recording();
 		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);
 		void set_image_barrier(const vk::ImageMemoryBarrier& pBarrierInfo);
-		void copy_image(const image& pSource, const vk::Image& pDestination);
+		void copy_image(const image_t& pSource, const vk::Image& pDestination);
 		void end_render_pass();
 
 		auto& begin_info() const { return mBeginInfo; }
@@ -297,10 +206,10 @@ namespace cgb
 	extern vk::ImageMemoryBarrier create_image_barrier(vk::Image pImage, vk::Format pFormat, vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt);
 
 
-	extern void transition_image_layout(const image& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout);
+	extern void transition_image_layout(const image_t& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout);
 
 	template <typename Bfr>
-	void copy_buffer_to_image(const Bfr& pSrcBuffer, const image& pDstImage)
+	void copy_buffer_to_image(const Bfr& pSrcBuffer, const image_t& pDstImage)
 	{
 		//auto commandBuffer = context().create_command_buffers_for_transfer(1);
 		auto commandBuffer = cgb::context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -321,7 +230,7 @@ namespace cgb
 				.setLayerCount(1u))
 			.setImageOffset({ 0u, 0u, 0u })
 			.setImageExtent(pDstImage.mInfo.extent);
-
+		
 		commandBuffer.handle().copyBufferToImage(
 			pSrcBuffer.buffer_handle(), 
 			pDstImage.mImage, 
@@ -339,21 +248,21 @@ namespace cgb
 	}
 
 
-	struct image_view
+	class image_view
 	{
 		image_view() noexcept;
-		image_view(const vk::ImageViewCreateInfo& pInfo, const vk::ImageView& pImageView, const std::shared_ptr<image>& pImage);
+		image_view(const vk::ImageViewCreateInfo& pInfo, const vk::ImageView& pImageView, const std::shared_ptr<image_t>& pImage);
 		image_view(const image_view&) = delete;
 		image_view(image_view&&) noexcept;
 		image_view& operator=(const image_view&) = delete;
 		image_view& operator=(image_view&&) noexcept;
 		~image_view();
 
-		static image_view create(const std::shared_ptr<image>& pImage, vk::Format pFormat, vk::ImageAspectFlags pAspectFlags);
+		static image_view create(image pImageToOwn, vk::Format pFormat, vk::ImageAspectFlags pAspectFlags);
 
 		vk::ImageViewCreateInfo mInfo;
-		vk::ImageView mImageView;
-		std::shared_ptr<image> mImage;
+		vk::UniqueImageView mImageView;
+		image mImage;
 	};
 
 	struct sampler
@@ -369,6 +278,12 @@ namespace cgb
 		static sampler create();
 
 		vk::Sampler mSampler;
+	};
+
+	struct image_sampler
+	{
+		std::shared_ptr<image_t> mImage;
+		std::shared_ptr<sampler> mSampler;
 	};
 
 	struct acceleration_structure_handle

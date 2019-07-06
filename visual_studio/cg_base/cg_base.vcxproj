@@ -78,7 +78,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\descriptors_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
+    <ClCompile Include="..\..\framework\src\image.cpp" />
+    <ClCompile Include="..\..\framework\src\image_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\input_buffer.cpp" />
     <ClCompile Include="..\..\framework\src\log.cpp" />
     <ClCompile Include="..\..\framework\src\math_utils.cpp" />
@@ -255,9 +258,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\descriptor_set_layout_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\descriptors_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\essential_utils.h" />
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="..\..\framework\include\image.h" />
+    <ClInclude Include="..\..\framework\include\image_vulkan.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
     <ClInclude Include="..\..\framework\include\key_code.h" />
     <ClInclude Include="..\..\framework\include\key_state.h" />

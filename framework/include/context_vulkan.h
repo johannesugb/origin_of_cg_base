@@ -2,6 +2,8 @@
 
 // INCLUDES:
 #include <vulkan/vulkan.hpp>
+#include "image_vulkan.h"
+#include "descriptors_vulkan.h"
 #include "vulkan_convenience_functions.h"
 #include "synchronization_vulkan.h"
 #include "window_vulkan.h"
@@ -60,15 +62,6 @@ namespace cgb
 		 *  @thread_safety This function must only be called from the main thread.
 		 */
 		window* create_window(const std::string& pTitle);
-
-		texture_handle create_texture()
-		{
-			return texture_handle();
-		}
-
-		void destroy_texture(const texture_handle& pHandle)
-		{
-		}
 
 		void draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer);
 

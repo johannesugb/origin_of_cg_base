@@ -151,6 +151,15 @@
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp">
       <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\descriptors_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\image.cpp">
+      <Filter>Source Files\data_buffers_images</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\image_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -342,7 +351,13 @@
     <ClInclude Include="..\..\framework\include\pipeline.h">
       <Filter>Source Files\pipeline_and_shaders</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\descriptor_set_layout_vulkan.h">
+    <ClInclude Include="..\..\framework\include\descriptors_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\essential_utils.h">
+      <Filter>Header Files\utilities_components_helpers\helper_functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\image_vulkan.h">
       <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClInclude>
   </ItemGroup>
