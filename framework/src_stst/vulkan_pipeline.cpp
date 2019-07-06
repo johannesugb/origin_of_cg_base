@@ -231,8 +231,34 @@ namespace cgb {
 
 		shadingRateImage.pShadingRatePalettes = &shadingRatePalette;
 
+		vk::PipelineViewportCoarseSampleOrderStateCreateInfoNV shadingRateCoarseSamplingOrder = {};
+		shadingRateCoarseSamplingOrder.sampleOrderType = vk::CoarseSampleOrderTypeNV::eCustom;
+		std::vector<vk::CoarseSampleOrderCustomNV>  coarseSampleOrders;
+
+		std::vector<vk::CoarseSampleLocationNV> coaresSampleLocations;
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 0, 0, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 0, 1, 1 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 0, 2, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 0, 3, 1 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 1, 0, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 1, 1, 1 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 1, 2, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 1, 3, 1 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 2, 0, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 2, 1, 1 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 2, 2, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 2, 3, 1 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 3, 0, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 3, 1, 1 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 3, 2, 0 });
+		coaresSampleLocations.push_back(vk::CoarseSampleLocationNV{ 3, 3, 1 });
+		coarseSampleOrders.push_back(vk::CoarseSampleOrderCustomNV{ vk::ShadingRatePaletteEntryNV::e1InvocationPer4X4Pixels, 1,(uint32_t)coaresSampleLocations.size(), coaresSampleLocations.data() });
+		shadingRateCoarseSamplingOrder.customSampleOrderCount = coarseSampleOrders.size();
+		shadingRateCoarseSamplingOrder.pCustomSampleOrders = coarseSampleOrders.data();
+
 		if (vulkan_context::instance().shadingRateImageSupported && mEnableShadingRate) {
 			viewportState.pNext = &shadingRateImage;
+			//shadingRateImage.pNext = &shadingRateCoarseSamplingOrder;
 		}
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer = {};

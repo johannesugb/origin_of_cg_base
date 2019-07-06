@@ -19,7 +19,7 @@ layout(set = 1, binding = 0) uniform sampler2D uNormalSampler;
 layout(set = 1, binding = 1) uniform sampler2D uAmbientSampler;
 layout(set = 1, binding = 2) uniform sampler2D uDiffSampler;
 layout(set = 1, binding = 3) uniform sampler2D uSpecSampler;
-layout(set = 1, binding = 4) uniform sampler2D uDepthSampler;
+layout(set = 1, binding = 4) uniform sampler2DMS uDepthSampler;
 
 // ################ output-color of fragment ################
 layout(location = 0) out vec4 oFragColor;
@@ -28,6 +28,11 @@ layout(location = 0) out vec4 oFragColor;
 vec4 FetchFromSampler(sampler2D smplr, vec2 uv)
 {
 	return texture(smplr, uv / vec2(textureSize(smplr, 0)));
+}
+
+vec4 FetchFromSampler(sampler2DMS smplr, vec2 uv, int smpl)
+{
+	return texelFetch(smplr, ivec2(uv) , smpl);
 }
 
 
@@ -174,31 +179,35 @@ void main()
 {
 	vec2 uv = gl_FragCoord.xy;
 
+	oFragColor = vec4(0);
+	for (int i = 0; i < 2; i++) {
+		float depth = texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; FetchFromSampler(uDepthSampler, uv, i).r;
 	
-	float depth = texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; FetchFromSampler(uDepthSampler, uv).r;
+		vec3 position_vs = vec3(0);
+		// Optimization: Positions from depth
+		//float linearDepth = projScale / (depth - projA);
 	
-	vec3 position_vs = vec3(0);
-	// Optimization: Positions from depth
-	//float linearDepth = projScale / (depth - projA);
-	
-	position_vs = fs_in.positionVS.xyz; // * linearDepth;
-	position_vs = NDCToView(vec3(fs_in.aVertexTexCoord, depth));
+		position_vs = fs_in.positionVS.xyz; // * linearDepth;
+		position_vs = NDCToView(vec3(fs_in.aVertexTexCoord, depth));
 
-	// initialize data from g buffer attachments
-	vec3 normal_vs = vec3(FetchFromSampler(uNormalSampler, uv));
-	vec3 ambient = uAmbientLight.color.rgb * vec3(FetchFromSampler(uAmbientSampler, uv));
-	vec4 diff = FetchFromSampler(uDiffSampler, uv);
-	vec4 spec = FetchFromSampler(uSpecSampler, uv);
-	vec3 emissive = vec3(spec.b, spec.a, diff.a);
-	vec3 diffuse_and_specular = CalculateDiffuseAndSpecularIlluminationInVS(position_vs, normal_vs, vec3(diff), vec3(spec.r), spec.g);
+		// initialize data from g buffer attachments
+		vec3 normal_vs = vec3(FetchFromSampler(uNormalSampler, uv));
+		vec3 ambient = uAmbientLight.color.rgb * vec3(FetchFromSampler(uAmbientSampler, uv));
+		vec4 diff = FetchFromSampler(uDiffSampler, uv);
+		vec4 spec = FetchFromSampler(uSpecSampler, uv);
+		vec3 emissive = vec3(spec.b, spec.a, diff.a);
+		vec3 diffuse_and_specular = CalculateDiffuseAndSpecularIlluminationInVS(position_vs, normal_vs, vec3(diff), vec3(spec.r), spec.g);
 
-	// add all together
-	oFragColor = vec4(ambient + emissive + diffuse_and_specular, 1.0);
-	//oFragColor = vec4(position_vs.z/ 100, position_vs.z/ 100,0, 1.0);
+		// add all together
+		oFragColor += vec4(ambient + emissive + diffuse_and_specular, 1.0);
+		//oFragColor = vec4(position_vs.z/ 100, position_vs.z/ 100,0, 1.0);
 	
-	//vec4 texCol = FetchFromSampler(uColorSampler, uv);
-	//oFragColor = texCol;
-	//oFragColor = vec4(normal_vs, 1);
-	gl_FragDepth = depth;
+		//vec4 texCol = FetchFromSampler(uColorSampler, uv);
+		//oFragColor = texCol;
+		//oFragColor = vec4(normal_vs, 1);
+		gl_FragDepth = depth;
+	}
+
+	oFragColor = oFragColor/2;
 }
 

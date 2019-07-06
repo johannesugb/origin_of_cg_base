@@ -90,7 +90,7 @@ vec3 YCgCoToRGB(vec3 YCgCo)
     return vec3(r, g, b);
 }
 
-const float cColorBoxSigma = 1.5;
+const float cColorBoxSigma = 2.5;
 const float cAlpha = 0.1;
 
 void main() {
@@ -139,8 +139,11 @@ void main() {
 	vec3 colorAvg = meanVar.rgb;
     vec3 colorVar = vec3(meanVar.a, var2.xy);
 
+	
+
 	//float colorBoxSigma = cColorBoxSigma  * (-3 + shadingRate.y * shadingRate.x * 4 * 2);
-	float colorBoxSigma = cColorBoxSigma;// *shadingRate.y * shadingRate.x ;
+	float colorBoxSigma = mix(0, cColorBoxSigma, clamp(1.0 - length(motion) * 1000, 0 ,1));// *shadingRate.y * shadingRate.x ;
+	//float colorBoxSigma = cColorBoxSigma;
 
     vec3 sigma = sqrt(max(vec3(0.0f), colorVar - colorAvg * colorAvg));
     vec3 colorMin = colorAvg - colorBoxSigma * sigma;
@@ -155,7 +158,10 @@ void main() {
     // https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf
     // Reduce blend factor when history is near clamping
     float distToClamp = min(abs(colorMin.x - history.x), abs(colorMax.x - history.x));
-    float alpha = clamp((cAlpha * distToClamp) / (distToClamp + colorMax.x - colorMin.x), 0.0f, 1.0f);
+
+	float alpha = mix(cAlpha, 1,  1 - clamp(length(motion) * 100, 0 ,1));
+
+    alpha = clamp((alpha * distToClamp) / (distToClamp + colorMax.x - colorMin.x), 0.0f, 1.0f);
 
 	//color =  RGBToYCgCo(bicubicSampleCatmullRom(prevFrame, (fragTexCoord + 1 * pushConst.jitter)));
     history = clamp(history, colorMin, colorMax);
@@ -170,6 +176,7 @@ void main() {
 	//outColor = vec4(shadingRate.x, 0, 0, 0);
 	//outColor = vec4(meanVar.xyz, 0);
 	//outColor = vec4(mipLevel / 4.0, 0, 0, 0);
+	//outColor = vec4(colorBoxSigma, 0, 0, 0);
 }
 
 
