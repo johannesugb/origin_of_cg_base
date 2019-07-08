@@ -81,12 +81,15 @@
     <ClCompile Include="..\..\framework\src\descriptors_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\image.cpp" />
+    <ClCompile Include="..\..\framework\src\image_sampler_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\image_view_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\image_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\input_buffer.cpp" />
     <ClCompile Include="..\..\framework\src\log.cpp" />
     <ClCompile Include="..\..\framework\src\math_utils.cpp" />
     <ClCompile Include="..\..\framework\src\model.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
+    <ClCompile Include="..\..\framework\src\sampler_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\synchronization_vulkan.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
@@ -98,6 +101,7 @@
     </ClCompile>
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp" />
+    <ClCompile Include="..\..\framework\src\vulkan_convenience_functions.cpp" />
     <ClCompile Include="..\..\framework\src\window_base.cpp" />
     <ClCompile Include="..\..\framework\src\window_vulkan.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
@@ -262,6 +266,8 @@
     <ClInclude Include="..\..\framework\include\essential_utils.h" />
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="..\..\framework\include\image.h" />
+    <ClInclude Include="..\..\framework\include\image_sampler_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\image_view_vulkan.h" />
     <ClInclude Include="..\..\framework\include\image_vulkan.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
     <ClInclude Include="..\..\framework\include\key_code.h" />
@@ -272,6 +278,7 @@
     <ClInclude Include="..\..\framework\include\model.h" />
     <ClInclude Include="..\..\framework\include\pipeline.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
+    <ClInclude Include="..\..\framework\include\sampler_vulkan.h" />
     <ClInclude Include="..\..\framework\include\shader_type.h" />
     <ClInclude Include="..\..\framework\include\shader_vulkan.h" />
     <ClInclude Include="..\..\framework\include\string_utils.h" />

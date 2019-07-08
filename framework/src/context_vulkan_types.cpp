@@ -3,19 +3,6 @@
 namespace cgb
 {
 
-
-	vk::IndexType convert_to_vk_index_type(size_t pSize)
-	{
-		if (pSize == sizeof(uint16_t)) {
-			return vk::IndexType::eUint16;
-		}
-		if (pSize == sizeof(uint32_t)) {
-			return vk::IndexType::eUint32;
-		}
-		LOG_ERROR(fmt::format("The given size[{}] does not correspond to a valid vk::IndexType", pSize));
-		return vk::IndexType::eNoneNV;
-	}
-
 #pragma region command_buffer
 	std::vector<command_buffer> command_buffer::create_many(uint32_t pCount, command_pool& pPool, vk::CommandBufferUsageFlags pUsageFlags)
 	{
@@ -485,119 +472,6 @@ namespace cgb
 		cgb::context().graphics_queue().handle().waitIdle();
 	}
 	
-	
-	image_view::image_view() noexcept
-		: mInfo()
-		, mImageView()
-		, mImage()
-	{ }
-	
-	image_view::image_view(const vk::ImageViewCreateInfo& pInfo, const vk::ImageView& pImageView, const std::shared_ptr<image_t>& pImage)
-		: mInfo(pInfo)
-		, mImageView(pImageView)
-		, mImage(pImage)
-	{ }
-	
-	image_view::image_view(image_view&& other) noexcept
-		: mInfo(std::move(other.mInfo))
-		, mImageView(std::move(other.mImageView))
-		, mImage(std::move(other.mImage))
-	{ 
-		other.mInfo = vk::ImageViewCreateInfo();
-		other.mImageView = nullptr;
-		other.mImage.reset(); // TODO: should not be neccessary, because it has already been moved from, right?
-	}
-
-	image_view& image_view::operator=(image_view&& other) noexcept
-	{ 
-		mInfo = std::move(other.mInfo);
-		mImageView = std::move(other.mImageView);
-		mImage = std::move(other.mImage);
-		other.mInfo = vk::ImageViewCreateInfo();
-		other.mImageView = nullptr;
-		other.mImage.reset(); // TODO: should not be neccessary, because it has already been moved from, right?
-		return *this;
-	}
-
-	image_view::~image_view()
-	{ 
-		if (mImageView) {
-			context().logical_device().destroyImageView(mImageView);
-			mImageView = nullptr;
-		}
-	}
-
-	image_view image_view::create(image pImageToOwn, vk::Format pFormat, vk::ImageAspectFlags pAspectFlags)
-	{ 
-		auto viewInfo = vk::ImageViewCreateInfo()
-			.setImage(pImage->mImage)
-			.setViewType(vk::ImageViewType::e2D)
-			.setFormat(pFormat)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-								 .setAspectMask(pAspectFlags)
-								 .setBaseMipLevel(0u)
-								 .setLevelCount(1u)
-								 .setBaseArrayLayer(0u)
-								 .setLayerCount(1u));
-		return image_view(viewInfo, context().logical_device().createImageView(viewInfo), pImage);
-	}
-
-	sampler::sampler() noexcept
-		: mSampler()
-	{ }
-
-	sampler::sampler(const vk::Sampler& pSampler)
-		: mSampler(pSampler)
-	{ }
-
-	sampler::sampler(sampler&& other) noexcept
-		: mSampler(std::move(other.mSampler))
-	{ 
-		other.mSampler = nullptr;
-	}
-
-	sampler& sampler::operator=(sampler&& other) noexcept
-	{
-		mSampler = std::move(other.mSampler);
-		other.mSampler = nullptr;
-		return *this;
-	}
-
-	sampler::~sampler()
-	{
-		if (mSampler) {
-			context().logical_device().destroySampler(mSampler);
-			mSampler = nullptr;
-		}
-	}
-
-	sampler sampler::create()
-	{
-		auto samplerInfo = vk::SamplerCreateInfo()
-			.setMagFilter(vk::Filter::eLinear)
-			.setMinFilter(vk::Filter::eLinear)
-			.setAddressModeU(vk::SamplerAddressMode::eRepeat)
-			.setAddressModeV(vk::SamplerAddressMode::eRepeat)
-			.setAddressModeW(vk::SamplerAddressMode::eRepeat)
-			.setAnisotropyEnable(VK_TRUE)
-			.setMaxAnisotropy(16.0f)
-			.setBorderColor(vk::BorderColor::eFloatOpaqueBlack)
-			// The unnormalizedCoordinates field specifies which coordinate system you want to use to address texels in an image. 
-			// If this field is VK_TRUE, then you can simply use coordinates within the [0, texWidth) and [0, texHeight) range.
-			// If it is VK_FALSE, then the texels are addressed using the [0, 1) range on all axes. Real-world applications almost 
-			// always use normalized coordinates, because then it's possible to use textures of varying resolutions with the exact 
-			// same coordinates. [4]
-			.setUnnormalizedCoordinates(VK_FALSE)
-			// If a comparison function is enabled, then texels will first be compared to a value, and the result of that comparison 
-			// is used in filtering operations. This is mainly used for percentage-closer filtering on shadow maps. [4]
-			.setCompareEnable(VK_FALSE)
-			.setCompareOp(vk::CompareOp::eAlways)
-			.setMipmapMode(vk::SamplerMipmapMode::eLinear)
-			.setMipLodBias(0.0f)
-			.setMinLod(0.0f)
-			.setMaxLod(0.0f);
-		return sampler(context().logical_device().createSampler(samplerInfo));
-	}
 
 	descriptor_set_layout::descriptor_set_layout() noexcept
 		: mDescriptorSetLayout()

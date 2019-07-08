@@ -247,45 +247,6 @@ namespace cgb
 		cgb::context().transfer_queue().handle().waitIdle();
 	}
 
-
-	class image_view
-	{
-		image_view() noexcept;
-		image_view(const vk::ImageViewCreateInfo& pInfo, const vk::ImageView& pImageView, const std::shared_ptr<image_t>& pImage);
-		image_view(const image_view&) = delete;
-		image_view(image_view&&) noexcept;
-		image_view& operator=(const image_view&) = delete;
-		image_view& operator=(image_view&&) noexcept;
-		~image_view();
-
-		static image_view create(image pImageToOwn, vk::Format pFormat, vk::ImageAspectFlags pAspectFlags);
-
-		vk::ImageViewCreateInfo mInfo;
-		vk::UniqueImageView mImageView;
-		image mImage;
-	};
-
-	struct sampler
-	{
-		sampler() noexcept;
-		sampler(const vk::Sampler& pSampler);
-		sampler(const sampler&) = delete;
-		sampler(sampler&&) noexcept;
-		sampler& operator=(const sampler&) = delete;
-		sampler& operator=(sampler&&) noexcept;
-		~sampler();
-
-		static sampler create();
-
-		vk::Sampler mSampler;
-	};
-
-	struct image_sampler
-	{
-		std::shared_ptr<image_t> mImage;
-		std::shared_ptr<sampler> mSampler;
-	};
-
 	struct acceleration_structure_handle
 	{
 		uint64_t mHandle;

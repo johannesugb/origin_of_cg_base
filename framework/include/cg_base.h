@@ -74,10 +74,10 @@
 #endif
 
 // -------------------- CG-Base includes --------------------
+#include "essential_utils.h"
 #include "log.h"
 #include "memory_usage.h"
 #include "context_state.h"
-#include "essential_utils.h"
 #include "image.h"
 #include "context.h"
 #include "shader_type.h"

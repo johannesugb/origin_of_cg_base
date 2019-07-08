@@ -82,4 +82,7 @@ namespace cgb
 	/** Returns true if the given image format is a depth/depth-stencil format and has a stencil component.
 	*	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
 	extern bool has_stencil_component(const image_format& pImageFormat);
+	/** Returns true if the given image format is a depth/depth-stencil format and has a stencil component.
+	*	Please note: This function does not guarantee completeness for all formats, i.e. false negatives must be expected. */
+	extern bool is_depth_format(const image_format& pImageFormat);
 }

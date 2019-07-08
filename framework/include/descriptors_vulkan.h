@@ -3,48 +3,6 @@
 
 namespace cgb
 {
-#pragma region detect .size() member via SFINAE (if we'll ever need this)
-	// SFINAE test
-	template <typename T>
-	class has_size_member
-	{
-	private:
-		typedef char YesType[1];
-		typedef char NoType[2];
-
-		template <typename C> static YesType& test( decltype(&C::size) ) ;
-		template <typename C> static NoType& test(...);
-
-	public:
-		enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
-	};
-
-	// SFINAE test
-	template <typename T>
-	class has_no_size_member
-	{
-	private:
-		typedef char YesType[1];
-		typedef char NoType[2];
-
-		template <typename C> static YesType& test( decltype(&C::size) ) ;
-		template <typename C> static NoType& test(...);
-
-	public:
-		enum { value = sizeof(test<T>(0)) != sizeof(YesType) };
-	};
-
-	template<typename T> 
-	typename std::enable_if<has_size_member<T>::value, uint32_t>::type num_elements(const T& t) {
-		return static_cast<uint32_t>(t.size());
-	}
-
-	template<typename T> 
-	typename std::enable_if<has_no_size_member<T>::value, uint32_t>::type num_elements(const T& t) {
-		return 1u;
-	}
-#pragma endregion
-
 	struct binding_data
 	{
 		uint32_t mSetId;
@@ -69,7 +27,7 @@ namespace cgb
 	template<>
 	vk::DescriptorType descriptor_type_of<storage_texel_buffer_t>(storage_texel_buffer_t&& pResource) { return vk::DescriptorType::eStorageTexelBuffer; }
 	template<>
-	vk::DescriptorType descriptor_type_of<image_sampler>(image_sampler&& pResource) { return vk::DescriptorType::eCombinedImageSampler; }
+	vk::DescriptorType descriptor_type_of<image_sampler_t>(image_sampler_t&& pResource) { return vk::DescriptorType::eCombinedImageSampler; }
 	template<>
 	vk::DescriptorType descriptor_type_of<acceleration_structure>(acceleration_structure&& pResource) { return vk::DescriptorType::eAccelerationStructureNV; }
 

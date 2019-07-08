@@ -3,6 +3,9 @@
 // INCLUDES:
 #include <vulkan/vulkan.hpp>
 #include "image_vulkan.h"
+#include "image_view_vulkan.h"
+#include "sampler_vulkan.h"
+#include "image_sampler_vulkan.h"
 #include "descriptors_vulkan.h"
 #include "vulkan_convenience_functions.h"
 #include "synchronization_vulkan.h"
@@ -194,7 +197,7 @@ namespace cgb
 			const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
 			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
-		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view& pDepthImageView);
+		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view_t& pDepthImageView);
 
 		/** Gets a command pool for the given queue family index.
 		 *	If the command pool does not exist already, it will be created.

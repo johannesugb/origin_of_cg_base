@@ -358,7 +358,20 @@ namespace cgb
 		return it != stencilFormats.end();
 	}
 
-	image_t image_t::create(int pWidth, int pHeight, image_format pFormat, memory_usage pMemoryUsage, bool pUseMipMaps = false, int pNumLayers = 1, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
+	bool is_depth_format(const image_format& pImageFormat)
+	{
+		static std::set<vk::Format> depthFormats = {
+			vk::Format::eD16Unorm,
+			vk::Format::eD16UnormS8Uint,
+			vk::Format::eD24UnormS8Uint,
+			vk::Format::eD32Sfloat,
+			vk::Format::eD32SfloatS8Uint,
+		};
+		auto it = std::find(std::begin(depthFormats), std::end(depthFormats), pImageFormat.mFormat);
+		return it != depthFormats.end();
+	}
+
+	image_t image_t::create(int pWidth, int pHeight, image_format pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
 	{
 		// Compile image usage flags and memory usage flags:
 		vk::ImageUsageFlags imageUsage = vk::ImageUsageFlagBits::eSampled;
@@ -407,7 +420,7 @@ namespace cgb
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setFlags(vk::ImageCreateFlags()); // Optional;
 
-		// Maybe do some extra config?
+		// Maybe alter the config?!
 		if (pAlterConfigBeforeCreation.mFunction) {
 			pAlterConfigBeforeCreation.mFunction(result);
 		}
@@ -416,14 +429,14 @@ namespace cgb
 		result.mImage = context().logical_device().createImageUnique(result.mInfo);
 
 		// ... and the memory:
-		auto memRequirements = context().logical_device().getImageMemoryRequirements(result.image());
+		auto memRequirements = context().logical_device().getImageMemoryRequirements(result.image_handle());
 		auto allocInfo = vk::MemoryAllocateInfo()
 			.setAllocationSize(memRequirements.size)
 			.setMemoryTypeIndex(context().find_memory_type_index(memRequirements.memoryTypeBits, memoryFlags));
 		result.mMemory = context().logical_device().allocateMemoryUnique(allocInfo);
 
 		// bind them together:
-		context().logical_device().bindImageMemory(result.image(), result.memory(), 0);
+		context().logical_device().bindImageMemory(result.image_handle(), result.memory_handle(), 0);
 		
 		return result;
 	}

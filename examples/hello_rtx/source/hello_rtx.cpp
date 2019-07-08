@@ -165,7 +165,7 @@ public:
 	void create_descriptor_set_layout()
 	{
 		mDescriptorSetLayout = cgb::layout_for({
-			cgb::binding(0, mUniformBuffers[0]),
+			cgb::binding(0, cgb::get<cgb::uniform_buffer_t>(mUniformBuffers[0])),
 			cgb::binding(1, mImageView)
 		});
 	}
@@ -278,11 +278,11 @@ public:
 			
 		stbi_image_free(pixels);
 
-		auto img = cgb::image_t::create2D(width, height);
+		auto img = cgb::image_t::create(width, height, cgb::image_format(vk::Format::eR8G8B8A8Unorm), cgb::memory_usage::device);
 		cgb::transition_image_layout(img, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 		cgb::copy_buffer_to_image(stagingBuffer, img);
 		cgb::transition_image_layout(img, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-		mImage = std::make_shared<cgb::image_t>(std::move(img));
+		mImage = cgb::make_shared(img);
 
 		cgb::context().logical_device().waitIdle();
 	}
@@ -731,7 +731,7 @@ private:
 	std::vector<std::vector<cgb::uniform_buffer_t>> mRtUniformBuffers;
 	vk::UniqueDescriptorSetLayout mDescriptorSetLayout;
 	vk::UniqueDescriptorSetLayout mRtDescriptorSetLayout;
-	std::shared_ptr<cgb::image_t> mImage;
+	image mImage;
 	cgb::vertex_buffer_t mModelVertices;
 	cgb::index_buffer_t mModelIndices;
 	cgb::vertex_buffer_t mSphereVertices;
