@@ -101,7 +101,7 @@ void main() {
 	dir.y = ((lumaUp + lumaDown) - (lumaLeft + lumaRight));
 
 	//outEdge = vec4(vec3(float((lumaMax-lumaMin) > 0.02) * 10), 1.0);
-	outEdge = vec4(vec3(float(lumaRange >= max(0.0312, lumaMax * 0.125)) * 10), 1.0);
+	outEdge = vec4(vec3(float(lumaRange >= max(0.0612, lumaMax * 0.125)) * 10), 1.0);
 	//outEdge = vec4(vec3(float((abs(dir.x) + abs(dir.y))) ), 1.0);
 	//outEdge = vec4(vec3(0.5), 0.0);
 }
