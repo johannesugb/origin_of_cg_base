@@ -205,4 +205,15 @@ namespace cgb
 	typename std::enable_if<has_no_size_member<T>::value, uint32_t>::type num_elements(const T& t) {
 		return 1u;
 	}
+
+	template<typename T, typename E> 
+	typename std::enable_if<has_size_member<T>::value, const E&>::type first_or_only_element(const T& t) {
+		return t[0];
+	}
+
+	template<typename T> 
+	typename std::enable_if<has_no_size_member<T>::value, const T&>::type first_or_only_element(const T& t) {
+		return t;
+	}
+
 }

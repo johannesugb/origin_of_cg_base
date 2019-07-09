@@ -213,12 +213,53 @@ public:
 			.setBindingCount(static_cast<uint32_t>(descriptorSetLayoutBindings.size()))
 			.setPBindings(descriptorSetLayoutBindings.data());
 
-		mRtDescriptorSetLayout = cgb::descriptor_set_layout::create(descriptorSetLayoutCreateInfo);
+		//mRtDescriptorSetLayout = cgb::descriptor_set_layout::create(descriptorSetLayoutCreateInfo);
 
-		mRtDescriptorSetLayout = cgb::layout_for({
+		//// binding 1:
+		//auto outputImageInfo = vk::DescriptorImageInfo()
+		//	.setSampler(nullptr)
+		//	.setImageView(mOffscreenImageViews[i].mImageView) // TODO: can this work? OMG? The plan is to write into the current swap chain's image view (thanks, captain Obvious)
+		//	.setImageLayout(vk::ImageLayout::eGeneral); // TODO: Dunno if that layout is the right choice
+		//auto outputImageWrite = vk::WriteDescriptorSet()
+		//	.setDstSet(mRtDescriptorSets[i].mDescriptorSet)
+		//	.setDstBinding(1u)
+		//	.setDstArrayElement(0u)
+		//	.setDescriptorCount(1u)
+		//	.setDescriptorType(vk::DescriptorType::eStorageImage)
+		//	.setPImageInfo(&outputImageInfo);
+
+		//// binding 2:
+		//auto bufferInfo = vk::DescriptorBufferInfo()
+		//	.setBuffer(mRtUniformBuffers[i][0].buffer_handle())
+		//	.setOffset(0)
+		//	.setRange(sizeof(UniformBufferObject));
+		//auto descriptorWriteBuffer = vk::WriteDescriptorSet()
+		//	.setDstSet(mRtDescriptorSets[i].mDescriptorSet) // Note: Always pay attention to reference the right descriptor set!
+		//	.setDstBinding(2u)
+		//	.setDstArrayElement(0u)
+		//	.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+		//	.setDescriptorCount(1u)
+		//	.setPBufferInfo(&bufferInfo);
+
+		//// binding 3:
+		//std::array bufferDescs = {
+		//	vk::DescriptorBufferInfo()
+		//	.setBuffer(mRtUniformBuffers[i][1].buffer_handle())
+		//	.setOffset(0)
+		//	.setRange(sizeof(UniformBufferObject))
+		//	,
+		//	vk::DescriptorBufferInfo()
+		//	.setBuffer(mRtUniformBuffers[i][2].buffer_handle())
+		//	.setOffset(0)
+		//	.setRange(sizeof(UniformBufferObject))
+		//};
+
+		mRtDescriptorSetLayout = cgb::layout_for({ // TODO: Breakpoint and check if equal to above!
 			cgb::binding(0, mTopLevelAccStructure),
-			cgb::binding(1, mImageView)
-			});
+			cgb::binding(1, cgb::get(mOffscreenImageViews[0])),
+			cgb::binding(2, mRtUniformBuffers[0][0]),
+			cgb::binding(3, std::initializer_list{ &mRtUniformBuffers[0][1], &mRtUniformBuffers[0][2] })
+		});
 	}
 
 	void create_descriptor_sets()
@@ -446,21 +487,17 @@ public:
 
 	void create_rt_descriptor_set()
 	{
-		auto extent = cgb::context().main_window()->swap_chain_extent();
+		auto [width, height] = cgb::context().main_window()->swap_chain_extent();
 		auto format = cgb::context().main_window()->swap_chain_image_format();
 
 		// create an offscreen image for each one:
 		for (int i = 0; i < mFrameBuffers.size(); ++i) {
-			// image
-			auto img = cgb::image_t::create2D(
-				extent.width, extent.height,
-				format.mFormat,
-				vk::ImageTiling::eOptimal, 
-				vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc,
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			mOffscreenImages.emplace_back(std::make_shared<cgb::image_t>(std::move(img)));
-			// view
-			mOffscreenImageViews.emplace_back(cgb::image_view::create(mOffscreenImages[i], mOffscreenImages[i]->mInfo.format, vk::ImageAspectFlagBits::eColor));
+			mOffscreenImageViews.emplace_back(
+				cgb::image_view_t::create(
+					cgb::image_t::create(width, height, format, cgb::memory_usage::device, false, 1, cgb::context_specific_function<void(cgb::image_t&)>()
+						.VK_FUNC([](cgb::image_t& image) { image.config().usage |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc; })
+					)));
+			assert((cgb::get(mOffscreenImageViews.back()).config().subresourceRange.aspectMask & vk::ImageAspectFlagBits::eColor) == vk::ImageAspectFlagBits::eColor);
 		}
 
 		// One for each framebuffer like in `void create_descriptor_sets()`, kk?!
@@ -756,7 +793,6 @@ private:
 	cgb::acceleration_structure mTopLevelAccStructure;
 	cgb::shader_binding_table mShaderBindingTable;
 
-	std::vector<std::shared_ptr<cgb::image_t>> mOffscreenImages;
 	std::vector<cgb::image_view> mOffscreenImageViews;
 
 
