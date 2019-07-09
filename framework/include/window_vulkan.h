@@ -1,9 +1,4 @@
 #pragma once
-#include <vulkan/vulkan.hpp>
-#include "window_vulkan.h"
-#include "context_vulkan_types.h"
-#include "context_generic_glfw.h"
-#include "window_base.h"
 
 namespace cgb
 {

@@ -8,7 +8,9 @@ namespace cgb
 		std::vector<vk::DescriptorSetLayoutBinding> bindingsVec;
 		bindingsVec.reserve(pBindings.size());
 		// initializer list -> vector:
-		std::transform(std::begin(pBindings), std::end(pBindings), std::back_inserter(bindingsVec), [](binding_data& element) { return element.mLayoutBinding; });
+		for (auto& b : pBindings) {
+			bindingsVec.push_back(b.mLayoutBinding);
+		}
 
 		auto createInfo = vk::DescriptorSetLayoutCreateInfo()
 			.setBindingCount(static_cast<uint32_t>(bindingsVec.size()))

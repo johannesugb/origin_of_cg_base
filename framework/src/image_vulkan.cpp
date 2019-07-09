@@ -374,7 +374,7 @@ namespace cgb
 	image_t image_t::create(int pWidth, int pHeight, image_format pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
 	{
 		// Compile image usage flags and memory usage flags:
-		vk::ImageUsageFlags imageUsage = vk::ImageUsageFlagBits::eSampled;
+		vk::ImageUsageFlags imageUsage = vk::ImageUsageFlagBits::eSampled; // This is probably a sensible default => It indicates that this image might be used to sample from
 		vk::MemoryPropertyFlags memoryFlags{};
 		switch (pMemoryUsage)
 		{
@@ -439,5 +439,161 @@ namespace cgb
 		context().logical_device().bindImageMemory(result.image_handle(), result.memory_handle(), 0);
 		
 		return result;
+	}
+
+	image_t image_t::create_depth(int pWidth, int pHeight, std::optional<image_format> pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
+	{
+		// Select a suitable depth format
+		if (!pFormat) {
+			std::array depthFormats = { vk::Format::eD32Sfloat, vk::Format::eD24UnormS8Uint, vk::Format::eD16Unorm };
+			for (auto format : depthFormats) {
+				if (cgb::context().is_format_supported(format, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment)) {
+					pFormat = format;
+					break;
+				}
+			}
+		}
+		if (!pFormat) {
+			throw std::runtime_error("No suitable depth format could be found.");
+		}
+
+		// Create the image (by default only on the device which should be sufficient for a depth buffer => see pMemoryUsage's default value):
+		return image_t::create(pWidth, pHeight, *pFormat, pMemoryUsage, pUseMipMaps, pNumLayers, [userFunc = std::move(pAlterConfigBeforeCreation)](image_t& pImageToConfigure) {
+			// 1st: my config changes
+			pImageToConfigure.config().usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+			// 2nd: user's config changes
+			if (userFunc.mFunction) {
+				userFunc.mFunction(pImageToConfigure);
+			}
+		});
+	}
+
+	image_t image_t::create_depth_stencil(int pWidth, int pHeight, std::optional<image_format> pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
+	{
+		// Select a suitable depth+stencil format
+		if (!pFormat) {
+			std::array depthFormats = { vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint, vk::Format::eD16UnormS8Uint };
+			for (auto format : depthFormats) {
+				if (cgb::context().is_format_supported(format, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment)) {
+					pFormat = format;
+					break;
+				}
+			}
+		}
+		if (!pFormat) {
+			throw std::runtime_error("No suitable depth+stencil format could be found.");
+		}
+
+		// Create the image (by default only on the device which should be sufficient for a depth+stencil buffer => see pMemoryUsage's default value):
+		return image_t::create_depth(pWidth, pHeight, *pFormat, pMemoryUsage, pUseMipMaps, pNumLayers, std::move(pAlterConfigBeforeCreation));
+	}
+
+
+
+	vk::ImageMemoryBarrier create_image_barrier(vk::Image pImage, vk::Format pFormat, vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange)
+	{
+		if (!pSubresourceRange) {
+			vk::ImageAspectFlags aspectMask;
+			if (pNewLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+				aspectMask = vk::ImageAspectFlagBits::eDepth;
+				if (has_stencil_component(cgb::image_format(pFormat))) {
+					aspectMask |= vk::ImageAspectFlagBits::eStencil;
+				}
+			}
+			else {
+				aspectMask = vk::ImageAspectFlagBits::eColor;
+			}
+
+			pSubresourceRange = vk::ImageSubresourceRange()
+				.setAspectMask(aspectMask)
+				.setBaseMipLevel(0u)
+				.setLevelCount(1u)
+				.setBaseArrayLayer(0u)
+				.setLayerCount(1u);
+		}
+
+		return vk::ImageMemoryBarrier()
+			.setOldLayout(pOldLayout)
+			.setNewLayout(pNewLayout)
+			// If you are using the barrier to transfer queue family ownership, then these two fields should be the indices of the queue 
+			// families.They must be set to VK_QUEUE_FAMILY_IGNORED if you don't want to do this (not the default value!). [3]
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(pImage)
+			.setSubresourceRange(*pSubresourceRange)
+			.setSrcAccessMask(pSrcAccessMask)
+			.setDstAccessMask(pDstAccessMask);
+	}
+
+	vk::ImageMemoryBarrier image_t::create_barrier(vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange) const
+	{
+		return create_image_barrier(image_handle(), mInfo.format, pSrcAccessMask, pDstAccessMask, pOldLayout, pNewLayout, pSubresourceRange);
+	}
+
+	void transition_image_layout(const image_t& pImage, vk::Format pFormat, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout)
+	{
+		//auto commandBuffer = context().create_command_buffers_for_graphics(1, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		auto commandBuffer = context().graphics_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+		// Immediately start recording the command buffer:
+		commandBuffer.begin_recording();
+
+		vk::AccessFlags sourceAccessMask, destinationAccessMask;
+		vk::PipelineStageFlags sourceStageFlags, destinationStageFlags;
+
+		// There are two transitions we need to handle [3]:
+		//  - Undefined --> transfer destination : transfer writes that don't need to wait on anything
+		//  - Transfer destination --> shader reading : shader reads should wait on transfer writes, specifically the shader reads in the fragment shader, because that's where we're going to use the texture
+		if (pOldLayout == vk::ImageLayout::eUndefined && pNewLayout == vk::ImageLayout::eTransferDstOptimal) {
+			sourceAccessMask = vk::AccessFlags();
+			destinationAccessMask = vk::AccessFlagBits::eTransferWrite;
+			sourceStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
+			destinationStageFlags = vk::PipelineStageFlagBits::eTransfer;
+		}
+		else if (pOldLayout == vk::ImageLayout::eTransferDstOptimal && pNewLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+			sourceAccessMask = vk::AccessFlagBits::eTransferWrite;
+			destinationAccessMask = vk::AccessFlagBits::eShaderRead;
+			sourceStageFlags = vk::PipelineStageFlagBits::eTransfer;
+			destinationStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
+		}
+		else if (pOldLayout == vk::ImageLayout::eUndefined && pNewLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+			sourceAccessMask = vk::AccessFlags();
+			destinationAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			sourceStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
+			destinationStageFlags = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		}
+		else {
+			throw std::invalid_argument("unsupported layout transition");
+		}
+
+
+		// One of the most common ways to perform layout transitions is using an image memory barrier. A pipeline barrier like that 
+		// is generally used to synchronize access to resources, like ensuring that a write to a buffer completes before reading from 
+		// it, but it can also be used to transition image layouts and transfer queue family ownership when VK_SHARING_MODE_EXCLUSIVE 
+		// is used.There is an equivalent buffer memory barrier to do this for buffers. [3]
+		auto barrier = pImage.create_barrier(sourceAccessMask, destinationAccessMask, pOldLayout, pNewLayout);
+
+		// The pipeline stages that you are allowed to specify before and after the barrier depend on how you use the resource before and 
+		// after the barrier.The allowed values are listed in this table of the specification.For example, if you're going to read from a 
+		// uniform after the barrier, you would specify a usage of VK_ACCESS_UNIFORM_READ_BIT and the earliest shader that will read from 
+		// the uniform as pipeline stage, for example VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT. It would not make sense to specify a non-shader 
+		// pipeline stage for this type of usage and the validation layers will warn you when you specify a pipeline stage that does not 
+		// match the type of usage. [3]
+		commandBuffer.handle().pipelineBarrier(
+			sourceStageFlags,
+			destinationStageFlags,
+			vk::DependencyFlags(), // The third parameter is either 0 or VK_DEPENDENCY_BY_REGION_BIT. The latter turns the barrier into a per-region condition. That means that the implementation is allowed to already begin reading from the parts of a resource that were written so far, for example. [3]
+			{},
+			{},
+			{ barrier });
+
+		// That's all
+		commandBuffer.end_recording();
+
+		auto submitInfo = vk::SubmitInfo()
+			.setCommandBufferCount(1u)
+			.setPCommandBuffers(commandBuffer.handle_addr());
+		cgb::context().graphics_queue().handle().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
+		cgb::context().graphics_queue().handle().waitIdle();
 	}
 }

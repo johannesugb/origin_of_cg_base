@@ -165,8 +165,8 @@ public:
 	void create_descriptor_set_layout()
 	{
 		mDescriptorSetLayout = cgb::layout_for({
-			cgb::binding(0, cgb::get<cgb::uniform_buffer_t>(mUniformBuffers[0])),
-			cgb::binding(1, mImageView)
+			cgb::binding(0, mUniformBuffers[0]),
+			cgb::binding(1, cgb::get(mImageView))
 		});
 	}
 
@@ -223,8 +223,14 @@ public:
 
 	void create_descriptor_sets()
 	{
-		std::vector<vk::DescriptorSetLayout> layouts;
+		
+		std::vector<vk::UniqueDescriptorSetLayout> layouts;
 		for (int i = 0; i < mFrameBuffers.size(); ++i) {
+			cgb::layout_for({
+				cgb::binding(0, )
+			});
+
+
 			layouts.push_back(mDescriptorSetLayout.mDescriptorSetLayout);
 		}
 		mDescriptorSets = cgb::context().create_descriptor_set(layouts);
@@ -289,25 +295,20 @@ public:
 
 	void create_depth_buffer()
 	{
-		// Select a suitable format
-		vk::Format selectedFormat;
-		std::array desiredFormats = { vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint };
-		for (auto& f : desiredFormats) {
-			if (cgb::context().is_format_supported(f, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment)) {
-				selectedFormat = f;
-				break;
-			}
-		}
+		auto [width, height] = cgb::context().main_window()->swap_chain_extent();
+		mDepthImageView = cgb::image_view_t::create(
+			cgb::image_t::create_depth(width, height)
+		);
+		assert((cgb::get(mDepthImageView).image().config().tiling & vk::ImageTiling::eOptimal) == vk::ImageTiling::eOptimal);
+		assert((cgb::get(mDepthImageView).image().config().usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) == vk::ImageUsageFlagBits::eDepthStencilAttachment);
+		assert((cgb::get(mDepthImageView).config().subresourceRange.aspectMask & vk::ImageAspectFlagBits::eDepth) == vk::ImageAspectFlagBits::eDepth);
 
-		auto extent = cgb::context().main_window()->swap_chain_extent();
-		mDepthImage = std::make_shared<cgb::image_t>(std::move(cgb::image_t::create2D(
-			extent.width, extent.height,
-			selectedFormat,
-			vk::ImageTiling::eOptimal,
-			vk::ImageUsageFlagBits::eDepthStencilAttachment,
-			vk::MemoryPropertyFlagBits::eDeviceLocal)));
-		mDepthImageView = cgb::image_view::create(mDepthImage, selectedFormat, vk::ImageAspectFlagBits::eDepth);
-		cgb::transition_image_layout(*mDepthImage, selectedFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		// TODO: Dont wait idle:
+		cgb::transition_image_layout(
+			cgb::get(mDepthImageView).image(), 
+			cgb::get(mDepthImageView).image().config().format, 
+			vk::ImageLayout::eUndefined, 
+			vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	}
 
 	void create_rt_geometry()
@@ -325,7 +326,7 @@ public:
 									   .setIndexData(mModelIndices.buffer_handle())
 									   .setIndexOffset(0)
 									   .setIndexCount(mModelIndices.config().num_elements())
-									   .setIndexType(cgb::convert_to_vk_index_type(mModelIndices.config().sizeof_one_element()))
+									   .setIndexType(cgb::to_vk_index_type(mModelIndices.config().sizeof_one_element()))
 									   .setTransformData(nullptr)
 									   .setTransformOffset(0)))
 			.setFlags(vk::GeometryFlagBitsNV::eOpaque); 
@@ -747,7 +748,6 @@ private:
 	std::vector<cgb::descriptor_set> mRtDescriptorSets;
 	cgb::image_view mImageView;
 	cgb::sampler mSampler;
-	std::shared_ptr<cgb::image_t> mDepthImage;
 	cgb::image_view mDepthImageView;
 
 	std::vector<vk::GeometryNV> mGeometries;

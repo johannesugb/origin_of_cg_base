@@ -2,13 +2,10 @@
 
 namespace cgb
 {
-
-
-
 	// Forward declare templated cgb::buffer and set up some type defs.
 	// The definition of the buffer will always be inside the context-specific implementation files.
-	//template <typename Cfg>
-	//struct buffer_t;
+	template <typename Cfg>
+	class buffer_t;
 
 	using generic_buffer_t = buffer_t<generic_buffer_data>;
 	using uniform_buffer_t = buffer_t<uniform_buffer_data>;

@@ -1,21 +1,5 @@
 #pragma once
 
-// INCLUDES:
-#include <vulkan/vulkan.hpp>
-#include "image_vulkan.h"
-#include "image_view_vulkan.h"
-#include "sampler_vulkan.h"
-#include "image_sampler_vulkan.h"
-#include "descriptors_vulkan.h"
-#include "vulkan_convenience_functions.h"
-#include "synchronization_vulkan.h"
-#include "window_vulkan.h"
-#include "context_vulkan_types.h"
-#include "buffer_vulkan.h"
-#include "shader_vulkan.h"
-#include "context_generic_glfw.h"
-#include "imgui_impl_vulkan.h"
-
 namespace cgb
 {
 	// ============================== VULKAN CONTEXT ================================
@@ -81,7 +65,7 @@ namespace cgb
 		{
 			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
-			vk::IndexType indexType = convert_to_vk_index_type(pIndexBuffer.config().sizeof_one_element());
+			vk::IndexType indexType = to_vk_index_typeto_vk_index_type(pIndexBuffer.config().sizeof_one_element());
 			pCommandBuffer.handle().bindIndexBuffer(pIndexBuffer.buffer_handle(), 0u, indexType);
 			pCommandBuffer.handle().drawIndexed(pIndexBuffer.config().num_elements(), 1u, 0u, 0u, 0u);
 		}
@@ -270,7 +254,6 @@ namespace cgb
 		std::deque<std::tuple<std::thread::id, command_pool>> mCommandPools;
 		std::deque<descriptor_pool> mDescriptorPools;
 
-		std::deque<descriptor_set_layout> mDescriptorSetLayouts;
 		std::deque<descriptor_set> mDescriptorSets;
 		
 	};

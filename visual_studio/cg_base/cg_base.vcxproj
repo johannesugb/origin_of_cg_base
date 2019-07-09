@@ -41,8 +41,11 @@
     </ClCompile>
     <ClCompile Include="..\..\external\universal\src\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\framework\src\acceleration_structure_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\camera.cpp" />
     <ClCompile Include="..\..\framework\src\cg_element.cpp" />
+    <ClCompile Include="..\..\framework\src\command_buffer_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\command_pool_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\composition_interface.cpp" />
     <ClCompile Include="..\..\framework\src\context.cpp" />
     <ClCompile Include="..\..\framework\src\context_generic_glfw.cpp" />
@@ -70,16 +73,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\context_vulkan_types.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\descriptors_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\descriptor_set_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
+    <ClCompile Include="..\..\framework\src\framebuffer_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\image.cpp" />
     <ClCompile Include="..\..\framework\src\image_sampler_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\image_view_vulkan.cpp" />
@@ -88,8 +85,11 @@
     <ClCompile Include="..\..\framework\src\log.cpp" />
     <ClCompile Include="..\..\framework\src\math_utils.cpp" />
     <ClCompile Include="..\..\framework\src\model.cpp" />
+    <ClCompile Include="..\..\framework\src\pipeline_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
+    <ClCompile Include="..\..\framework\src\queue_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\sampler_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\shader_binding_table_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\synchronization_vulkan.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
@@ -211,6 +211,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\framework\include\acceleration_structure_vulkan.h" />
     <ClInclude Include="..\..\framework\include\buffer.h" />
     <ClInclude Include="..\..\framework\include\buffer_data.h" />
     <ClInclude Include="..\..\framework\include\buffer_vulkan.h" />
@@ -224,6 +225,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\cg_element.h" />
+    <ClInclude Include="..\..\framework\include\command_buffer_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\command_pool_vulkan.h" />
     <ClInclude Include="..\..\framework\include\composition.h" />
     <ClInclude Include="..\..\framework\include\composition_interface.h" />
     <ClInclude Include="..\..\framework\include\context.h" />
@@ -254,17 +257,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\context_vulkan_types.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\descriptors_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\descriptor_pool_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\descriptor_set_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\device_queue_selection_strategy.h" />
     <ClInclude Include="..\..\framework\include\essential_utils.h" />
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
+    <ClInclude Include="..\..\framework\include\framebuffer_vulkan.h" />
     <ClInclude Include="..\..\framework\include\image.h" />
     <ClInclude Include="..\..\framework\include\image_sampler_vulkan.h" />
     <ClInclude Include="..\..\framework\include\image_view_vulkan.h" />
@@ -277,8 +276,11 @@
     <ClInclude Include="..\..\framework\include\memory_usage.h" />
     <ClInclude Include="..\..\framework\include\model.h" />
     <ClInclude Include="..\..\framework\include\pipeline.h" />
+    <ClInclude Include="..\..\framework\include\pipeline_vulkan.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
+    <ClInclude Include="..\..\framework\include\queue_vulkan.h" />
     <ClInclude Include="..\..\framework\include\sampler_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\shader_binding_table_vulkan.h" />
     <ClInclude Include="..\..\framework\include\shader_type.h" />
     <ClInclude Include="..\..\framework\include\shader_vulkan.h" />
     <ClInclude Include="..\..\framework\include\string_utils.h" />

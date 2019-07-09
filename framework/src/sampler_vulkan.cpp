@@ -117,6 +117,7 @@ namespace cgb
 			pAlterConfigBeforeCreation.mFunction(result);
 		}
 
-		return sampler(context().logical_device().createSampler(samplerInfo));
+		result.mSampler = context().logical_device().createSamplerUnique(result.config());
+		return result;
 	}
 }

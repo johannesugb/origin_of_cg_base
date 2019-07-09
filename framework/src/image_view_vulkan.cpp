@@ -2,7 +2,7 @@
 
 namespace cgb
 {
-	image_view_t image_view_t::create(cgb::image pImageToOwn, image_format pViewFormat, context_specific_function<void(image_view_t&)> pAlterConfigBeforeCreation)
+	image_view_t image_view_t::create(cgb::image pImageToOwn, std::optional<image_format> pViewFormat, context_specific_function<void(image_view_t&)> pAlterConfigBeforeCreation)
 	{
 		image_view_t result;
 		
@@ -25,11 +25,17 @@ namespace cgb
 			}
 			// vk::ImageAspectFlags handling is probably incomplete => Use pAlterConfigBeforeCreation to adapt the config to your requirements!
 		}
+
+		// What's the format of the image view?
+		if (!pViewFormat) {
+			pViewFormat = image_format(result.image().config().format);
+		}
+
 		// Proceed with config creation (and use the imageAspectFlags there):
 		result.mInfo = vk::ImageViewCreateInfo()
 			.setImage(result.image_handle())
 			.setViewType(to_image_view_type(result.image().config()))
-			.setFormat(pViewFormat.mFormat)
+			.setFormat(pViewFormat->mFormat)
 			.setSubresourceRange(vk::ImageSubresourceRange()
 				.setAspectMask(imageAspectFlags)
 				.setBaseMipLevel(0u)
@@ -43,5 +49,6 @@ namespace cgb
 		}
 
 		result.mImageView = context().logical_device().createImageViewUnique(result.mInfo);
+		return result;
 	}
 }

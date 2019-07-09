@@ -21,14 +21,16 @@ namespace cgb
 		const auto& image_handle() const { return cgb::get(mImage).image_handle(); }
 		/** Gets the image instance which this view has been created for. */
 		const auto& image() const { return cgb::get(mImage); }
+		/** Gets the image view's vulkan handle */
+		const auto& view_handle() const { return mImageView.get(); }
 
 		/** Creates a new image view upon a given image
 		*	@param	pImageToOwn					The image which to create an image view for
-		*	@param	pViewFormat					The format of the image view
+		*	@param	pViewFormat					The format of the image view. If none is specified, it will be set to the same format as the image.
 		*	@param	pAlterConfigBeforeCreation	A context-specific function which allows to modify the `vk::ImageViewCreateInfo` just before the image view will be created. Use `.config()` to access the configuration structure!
 		*	@return	Returns a newly created image.
 		*/
-		static image_view_t create(cgb::image pImageToOwn, image_format pViewFormat, context_specific_function<void(image_view_t&)> pAlterConfigBeforeCreation = {});
+		static image_view_t create(cgb::image pImageToOwn, std::optional<image_format> pViewFormat = std::nullopt, context_specific_function<void(image_view_t&)> pAlterConfigBeforeCreation = {});
 
 	private:
 		// OWNING handle to an image. (Make sure it gets destructed after the image view)

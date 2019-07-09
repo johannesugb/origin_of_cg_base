@@ -78,22 +78,67 @@
 #include "log.h"
 #include "memory_usage.h"
 #include "context_state.h"
-#include "image.h"
-#include "context.h"
-#include "shader_type.h"
-#include "shader_source_info.h"
+#include "device_queue_selection_strategy.h"
 #include "buffer_data.h"
 #include "buffer.h"
+
+#if defined(USE_OPENGL46_CONTEXT)
+
+#include "context_opengl46.h"
+
+#elif defined(USE_VULKAN_CONTEXT)
+
+#include <vulkan/vulkan.hpp>
+
+#include "image_vulkan.h"
+#include "context_generic_glfw_types.h"
+#include "window_base.h"
+#include "context_generic_glfw.h"
+#include "image_view_vulkan.h"
+#include "sampler_vulkan.h"
+#include "image_sampler_vulkan.h"
+#include "vulkan_convenience_functions.h"
+#include "command_buffer_vulkan.h"
+#include "command_pool_vulkan.h"
+#include "synchronization_vulkan.h"
+#include "queue_vulkan.h"
+#include "framebuffer_vulkan.h"
+#include "window_vulkan.h"
+#include "buffer_vulkan.h"
+#include "shader_vulkan.h"
+#include "descriptor_pool_vulkan.h"
+#include "descriptor_set_vulkan.h"
+#include "acceleration_structure_vulkan.h"
+#include "pipeline_vulkan.h"
+#include "shader_binding_table_vulkan.h"
+#include "descriptors_vulkan.h"
+
+#include "imgui_impl_vulkan.h"
+
+#include "context_vulkan.h"
+#include "context.h"
+
+// [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation
+// [2] Vulkan Tutorial, Vertex buffer creation, https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
+// [3] Vulkan Tutorial, Images, https://vulkan-tutorial.com/Texture_mapping/Images
+// [4] Vulkan Tutorial, Image view and sampler, https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler
+
+#endif
+
+
+#include "image.h"
+#include "shader_type.h"
+#include "shader_source_info.h"
 #include "string_utils.h"
 #include "various_utils.h"
 #include "math_utils.h"
 #include "key_code.h"
 #include "key_state.h"
-#include "window_base.h"
 #include "timer_interface.h"
 #include "timer_frame_type.h"
 #include "fixed_update_timer.h"
 #include "varying_update_timer.h"
+
 #include "input_buffer.h"
 #include "composition_interface.h"
 

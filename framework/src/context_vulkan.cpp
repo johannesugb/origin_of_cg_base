@@ -1163,12 +1163,12 @@ namespace cgb
 				context().dynamic_dispatch()));	// dynamic dispatch for extension
 	}
 
-	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view& pDepthImageView)
+	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view_t& pDepthImageView)
 	{
 		std::vector<framebuffer> framebuffers;
 		auto extent = pWindow->swap_chain_extent();
 		for (const auto& imageView : pWindow->swap_chain_image_views()) {
-			std::array attachments = { imageView.get(), pDepthImageView.mImageView };
+			std::array attachments = { imageView.get(), pDepthImageView.view_handle() };
 			auto framebufferInfo = vk::FramebufferCreateInfo()
 				.setRenderPass(renderPass)
 				.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
