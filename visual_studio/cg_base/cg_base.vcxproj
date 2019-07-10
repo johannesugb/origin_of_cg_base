@@ -73,8 +73,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\descriptors_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\descriptor_pool_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\descriptor_set_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\essential_utils.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\framebuffer_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\image.cpp" />
@@ -102,6 +103,7 @@
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\vulkan_convenience_functions.cpp" />
+    <ClCompile Include="..\..\framework\src\vulkan_helper_functions.cpp" />
     <ClCompile Include="..\..\framework\src\window_base.cpp" />
     <ClCompile Include="..\..\framework\src\window_vulkan.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
@@ -212,6 +214,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\acceleration_structure_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\binding_data_vulkan.h" />
     <ClInclude Include="..\..\framework\include\buffer.h" />
     <ClInclude Include="..\..\framework\include\buffer_data.h" />
     <ClInclude Include="..\..\framework\include\buffer_vulkan.h" />
@@ -257,7 +260,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\descriptors_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\bindings_vulkan.h" />
     <ClInclude Include="..\..\framework\include\descriptor_pool_vulkan.h" />
     <ClInclude Include="..\..\framework\include\descriptor_set_vulkan.h" />
     <ClInclude Include="..\..\framework\include\device_queue_selection_strategy.h" />
@@ -308,6 +311,7 @@
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_timer.h" />
     <ClInclude Include="..\..\framework\include\vulkan_convenience_functions.h" />
+    <ClInclude Include="..\..\framework\include\vulkan_helper_functions.h" />
     <ClInclude Include="..\..\framework\include\window_base.h" />
     <ClInclude Include="..\..\framework\include\window_opengl.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">false</ExcludedFromBuild>

@@ -148,9 +148,6 @@
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp">
       <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\descriptors_vulkan.cpp">
-      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\image.cpp">
       <Filter>Source Files\data_buffers_images</Filter>
     </ClCompile>
@@ -191,6 +188,15 @@
       <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\shader_binding_table_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\essential_utils.cpp">
+      <Filter>Source Files\utilities_components_helpers\helper_functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\descriptor_pool_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\vulkan_helper_functions.cpp">
       <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
@@ -381,9 +387,6 @@
     <ClInclude Include="..\..\framework\include\pipeline.h">
       <Filter>Source Files\pipeline_and_shaders</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\descriptors_vulkan.h">
-      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\essential_utils.h">
       <Filter>Header Files\utilities_components_helpers\helper_functions</Filter>
     </ClInclude>
@@ -427,6 +430,15 @@
       <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\shader_binding_table_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\bindings_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\binding_data_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\vulkan_helper_functions.h">
       <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClInclude>
   </ItemGroup>

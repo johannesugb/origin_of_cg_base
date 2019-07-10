@@ -3,19 +3,6 @@
 
 namespace cgb
 {
-	struct binding_data
-	{
-		uint32_t mSetId;
-		vk::DescriptorSetLayoutBinding mLayoutBinding;
-		shader_type mShaderStages;
-	};
-
-	bool operator ==(const binding_data& first, const binding_data& second)
-	{
-		return first.mSetId == second.mSetId
-			&& first.mLayoutBinding == second.mLayoutBinding;
-	}
-
 	template <typename T>
 	vk::DescriptorType descriptor_type_of(const T& pResource);
 	template <typename T>
@@ -88,8 +75,4 @@ namespace cgb
 	{
 		return binding(0u, pBinding, cgb::get(pResource), pShaderStages);
 	}
-
-
-	vk::UniqueDescriptorSetLayout layout_for(std::initializer_list<binding_data> pBindings);
-
 }

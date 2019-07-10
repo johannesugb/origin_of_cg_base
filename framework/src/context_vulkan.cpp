@@ -1184,7 +1184,6 @@ namespace cgb
 
 	command_pool& vulkan::get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex)
 	{
-		std::scoped_lock<std::mutex> guard(sMutex);
 		auto it = std::find_if(std::begin(mCommandPools), std::end(mCommandPools),
 							   [family_idx = pQueueFamilyIndex, thread_id = std::this_thread::get_id()](const std::tuple<std::thread::id, command_pool>& existing) {
 								   return std::get<0>(existing) == thread_id && std::get<1>(existing).queue_family_index() == family_idx;
@@ -1286,6 +1285,7 @@ namespace cgb
 
 	std::vector<descriptor_set> vulkan::create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData)
 	{
+
 		auto allocInfo = vk::DescriptorSetAllocateInfo()
 			.setDescriptorPool(get_descriptor_pool().mDescriptorPool)
 			.setDescriptorSetCount(static_cast<uint32_t>(pData.size()))

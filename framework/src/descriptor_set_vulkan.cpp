@@ -1,32 +1,25 @@
 namespace cgb
 {
-	descriptor_pool::descriptor_pool() noexcept
-		: mDescriptorPool()
-	{ }
-
-	descriptor_pool::descriptor_pool(const vk::DescriptorPool& pDescriptorPool)
-		: mDescriptorPool(pDescriptorPool)
-	{ }
-
-	descriptor_pool::descriptor_pool(descriptor_pool&& other) noexcept
-		: mDescriptorPool(std::move(other.mDescriptorPool))
+	descriptor_set_layout descriptor_set_layout::create(std::initializer_list<binding_data> pBindings)
 	{
-		other.mDescriptorPool = nullptr;
-	}
-
-	descriptor_pool& descriptor_pool::operator=(descriptor_pool&& other) noexcept
-	{
-		mDescriptorPool = std::move(other.mDescriptorPool);
-		other.mDescriptorPool = nullptr;
-		return *this;
-	}
-
-	descriptor_pool::~descriptor_pool()
-	{
-		if (mDescriptorPool) {
-			context().logical_device().destroyDescriptorPool(mDescriptorPool);
-			mDescriptorPool = nullptr;
+		std::vector<vk::DescriptorSetLayoutBinding> bindingsVec;
+		bindingsVec.reserve(pBindings.size());
+		// initializer list -> vector:
+		for (auto& b : pBindings) {
+			bindingsVec.push_back(b.mLayoutBinding);
 		}
+
+		auto createInfo = vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(static_cast<uint32_t>(bindingsVec.size()))
+			.setPBindings(bindingsVec.data());
+
+		// TODO: Aaaaaaach fuuuuuuck, mitten im WIP =(
+		// Weiter geht's mit std::vector<vk::DescriptorSetLayoutBinding> mOrderedBindings;
+		//  ^ dazu is noch ein operator <(const vk::DescriptorSetLayoutBinding& left, const vk::DescriptorSetLayoutBinding& right) nötig
+		//    ... oder evtl. besser kein extra operator, sondern eine order_in_set(const vk::DescriptorSetLayoutBinding& left, const vk::DescriptorSetLayoutBinding& right) evtl?
+		//    ... naja, warum nicht operator < ... aber dann nur operator < und nicht <=, weil kann das gleich sein? weiß nicht...
+
+		return cgb::context().logical_device().createDescriptorSetLayoutUnique(createInfo);
 	}
 
 	descriptor_set::descriptor_set() noexcept 

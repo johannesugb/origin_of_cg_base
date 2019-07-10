@@ -2,6 +2,16 @@
 
 namespace cgb
 {
+	/** Intended to be used to sync access to context() calls.
+	 *	I.e. if you are using a parallel executor, wrap all calls to 
+	 *	the context in the SYNC_CALL macro or use the SYNC_THIS_SCOPE macro!
+	 */
+	extern std::mutex gContextSyncMutex;
+
+#define SYNC_THIS_SCOPE std::scoped_lock<std::mutex> guard(cgb::gContextSyncMutex);
+#define SYNC_CALL(x) do { SYNC_THIS_SCOPE x; } while(false)
+
+
 	/** Calls the context's @ref check_error method, passing the current file and line to it. */
 #define CHECK_ERROR() context().check_error(__FILE__, __LINE__);
 

@@ -212,7 +212,7 @@ namespace cgb
 		 */
 		uint32_t find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties);
 
-		descriptor_pool& get_descriptor_pool();
+		std::shared_ptr<descriptor_pool> get_descriptor_pool_for_layout();
 
 		std::vector<descriptor_set> create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData);
 
@@ -223,15 +223,6 @@ namespace cgb
 		
 	public:
 		static std::vector<const char*> sRequiredDeviceExtensions;
-
-		/** Protects access to this (single) instance for all the methods
-		 *	which can potentially be accessed by multiple threads in parallel
-		 *	in a meaningful manner (i.e. not all methods!)
-		 *
-		 *	The protected methods are:
-		 *	 -> command_pool& get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex);
-		 */
-		static std::mutex sMutex;
 		
 		vk::Instance mInstance;
 		VkDebugUtilsMessengerEXT mDebugCallbackHandle;
@@ -252,10 +243,12 @@ namespace cgb
 		// Command pools are created/stored per thread and per queue family index.
 		// Queue family indices are stored within the command_pool objects, thread indices in the tuple.
 		std::deque<std::tuple<std::thread::id, command_pool>> mCommandPools;
-		std::deque<descriptor_pool> mDescriptorPools;
 
-		std::deque<descriptor_set> mDescriptorSets;
-		
+		// Descriptor pools are created/stored per thread. 
+		// If possible, it is tried to re-use a pool. Even when re-using a pool, it might happen that
+		// allocating from it might fail (due to out of memory, for instance). In such cases, a new 
+		// pool will be created.
+		std::unordered_map<std::thread::id, std::vector<std::weak_ptr<descriptor_pool>>> mDescriptorPools;
 	};
 
 	// [1] Vulkan Tutorial, Depth buffering, https://vulkan-tutorial.com/Depth_buffering
