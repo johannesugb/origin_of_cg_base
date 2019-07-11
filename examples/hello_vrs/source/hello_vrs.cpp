@@ -49,7 +49,7 @@
 #define DEFERRED_SHADING 1
 
 #define BLIT_FINAL_IMAGE 0
-#define TAA_ENABLED 1
+#define TAA_ENABLED 0
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -1268,6 +1268,9 @@ private:
 				vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			mVrsEdgeImages[i]->transition_image_layout(colorFormatVrsPrevImg, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal, 1);
 		}
+		mVrsEdgeImages[1] = mVrsEdgeImages[0];
+		mVrsEdgeImages[2] = mVrsEdgeImages[0];
+
 	}
 
 	void createVRSImageResources()
@@ -1328,6 +1331,11 @@ private:
 
 			vrsDebugTextureImages[i] = std::make_shared<cgb::vulkan_texture>(vrsDebugImages[i]);
 		}
+
+		mVrsEdgeBlitImages[1] = mVrsEdgeBlitImages[0];
+		mVrsEdgeBlitImages[2] = mVrsEdgeBlitImages[0];
+		mVrsEdgeBlitTextures[1] = mVrsEdgeBlitTextures[0];
+		mVrsEdgeBlitTextures[2] = mVrsEdgeBlitTextures[0];
 	}
 
 	void create_post_process_objects(vk::Viewport viewport, vk::Rect2D scissor) {

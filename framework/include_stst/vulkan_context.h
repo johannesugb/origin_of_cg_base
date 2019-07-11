@@ -65,7 +65,7 @@ namespace cgb {
 		std::vector<vk::PresentModeKHR> presentModes;
 	};
 
-	const int MAX_FRAMES_IN_FLIGHT = 3;
+	const int MAX_FRAMES_IN_FLIGHT = 2;
 
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;

@@ -78,7 +78,7 @@ void main() {
 
 	float lumaRange = lumaMax-lumaMin;
 	edge +=  float(lumaRange >= max(0.9912, lumaMax * 0.525)) ;
-	//edge /=2;
+	edge /=2;
 
 	//imageStore(debugImage, uv, vec4(vec3(float((lumaMax-lumaMin) > 0.09) * 10), 1.0));
 	//imageStore(debugImage, uv, vec4(vec3(float((abs(dir.x) + abs(dir.y)) > 0.09) * 10), 1.0));

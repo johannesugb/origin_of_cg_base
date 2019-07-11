@@ -90,7 +90,7 @@ vec3 YCgCoToRGB(vec3 YCgCo)
     return vec3(r, g, b);
 }
 
-const float cColorBoxSigma = 2.5;
+const float cColorBoxSigma = 0.7;
 const float cAlpha = 0.1;
 
 void main() {
@@ -126,6 +126,7 @@ void main() {
 	//ipos -= ivec2(motion *  + 0.5);
 	//vec3 colorOrig = bicubicSampleCatmullRom(curFrame, (fragTexCoord - motion)); texture(curFrame, fragTexCoord + 0 * motion).rgb;
     //colorOrig = RGBToYCgCo(colorOrig);
+	float motionStrength = length(motion);
 
 
     // Fetch the current pixel color and compute the color bounding box
@@ -142,8 +143,8 @@ void main() {
 	
 
 	//float colorBoxSigma = cColorBoxSigma  * (-3 + shadingRate.y * shadingRate.x * 4 * 2);
-	float colorBoxSigma = mix(0, cColorBoxSigma, clamp(1.0 - length(motion) * 1000, 0 ,1));// *shadingRate.y * shadingRate.x ;
-	//float colorBoxSigma = cColorBoxSigma;
+	//float colorBoxSigma = mix(0, cColorBoxSigma, clamp(1.0 - motionStrength * 1000, 0 ,1));// *shadingRate.y * shadingRate.x ;
+	float colorBoxSigma = cColorBoxSigma;
 
     vec3 sigma = sqrt(max(vec3(0.0f), colorVar - colorAvg * colorAvg));
     vec3 colorMin = colorAvg - colorBoxSigma * sigma;
@@ -159,11 +160,12 @@ void main() {
     // Reduce blend factor when history is near clamping
     float distToClamp = min(abs(colorMin.x - history.x), abs(colorMax.x - history.x));
 
-	float alpha = mix(cAlpha, 1,  1 - clamp(length(motion) * 100, 0 ,1));
+	float alpha = mix(cAlpha, 1,  clamp(motionStrength * 100, 0 ,1));
 
-    alpha = clamp((alpha * distToClamp) / (distToClamp + colorMax.x - colorMin.x), 0.0f, 1.0f);
+    //alpha = clamp((alpha * distToClamp) / (distToClamp + colorMax.x - colorMin.x), 0.0f, 1.0f);
 
 	//color =  RGBToYCgCo(bicubicSampleCatmullRom(prevFrame, (fragTexCoord + 1 * pushConst.jitter)));
+    //history = motionStrength > 0.000001  ? clamp(history, colorMin, colorMax) : history;
     history = clamp(history, colorMin, colorMax);
     vec3 result = YCgCoToRGB(mix(history, color, alpha));
 	outColor = vec4(result, 0);
@@ -171,12 +173,12 @@ void main() {
 	vec4 curColor = texture(curFrame, fragTexCoord + 1 * pushConst.jitter);
     //outColor = curColor;
 	//outColor = vec4(texture(prevFrame, fragTexCoord - motion).rgb, 0);
-	//outColor = vec4(motion.x);
+	//outColor = vec4(abs(motion.x));
 	//outColor = vec4(YCgCoToRGB(history), 0);
 	//outColor = vec4(shadingRate.x, 0, 0, 0);
 	//outColor = vec4(meanVar.xyz, 0);
 	//outColor = vec4(mipLevel / 4.0, 0, 0, 0);
-	//outColor = vec4(colorBoxSigma, 0, 0, 0);
+	//outColor = vec4(alpha, 0, 0, 0);
 }
 
 
