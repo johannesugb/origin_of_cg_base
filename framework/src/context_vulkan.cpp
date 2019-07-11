@@ -1038,17 +1038,7 @@ namespace cgb
 		auto renderPass = create_render_pass(pWindow->swap_chain_image_format(), pDepthFormat);
 
 
-		// DEPTH AND STENCIL STATE
-		auto depthStencil = vk::PipelineDepthStencilStateCreateInfo()
-			.setDepthTestEnable(true)
-			.setDepthWriteEnable(true)
-			.setDepthCompareOp(vk::CompareOp::eLess)
-			.setDepthBoundsTestEnable(VK_FALSE)
-			.setMinDepthBounds(0.0f)
-			.setMaxDepthBounds(1.0f)
-			.setStencilTestEnable(VK_FALSE)
-			.setFront(vk::StencilOpState())
-			.setBack(vk::StencilOpState());
+
 
 		// MULTISAMPLING
 		auto multisamplingInfo = pWindow->get_config_multisample_state_create_info();
@@ -1216,6 +1206,34 @@ namespace cgb
 			}
 		}
 		throw std::runtime_error("failed to find suitable memory type!");
+	}
+
+	std::shared_ptr<descriptor_pool> vulkan::get_descriptor_pool_for_layouts(std::initializer_list<descriptor_set_layout> pLayouts)
+	{
+		// We'll allocate the pools per thread
+		auto threadId = std::this_thread::get_id();
+		auto& pools = mDescriptorPools[threadId];
+
+		// Compute the requirements:
+		auto alloc_requirements = descriptor_alloc_request::create(std::move(pLayouts));
+		// First of all, do some cleanup => remove all pools which no longer exist:
+		pools.erase(std::remove_if(std::begin(pools), std::end(pools), [](const std::weak_ptr<descriptor_pool>& ptr) {
+			return ptr.expired();
+		}), std::end(pools));
+
+		// Find a pool which is capable of allocating this:
+		for (auto& pool : pools) {
+			if (auto sptr = pool.lock()) {
+				if (sptr->has_capacity_for(alloc_requirements)) {
+					return sptr;
+				}
+			}
+		}
+
+		// We weren't lucky => create a new pool:
+		auto newPool = descriptor_pool::create(alloc_requirements.accumulated_pool_sizes(), settings::gDescriptorPoolSizeFactor);
+		pools.emplace_back(newPool); // Store as a weak_ptr
+		return newPool;
 	}
 
 	descriptor_pool& vulkan::get_descriptor_pool()

@@ -2,44 +2,55 @@ namespace cgb
 {
 	descriptor_set_layout descriptor_set_layout::create(std::initializer_list<binding_data> pBindings)
 	{
-		std::vector<vk::DescriptorSetLayoutBinding> bindingsVec;
-		bindingsVec.reserve(pBindings.size());
-		// initializer list -> vector:
+		// Put elements from initializer list into vector of ORDERED bindings:
+		descriptor_set_layout result;
+		result.mBindingRequirements.reserve(pBindings.size());
+		result.mOrderedBindings.reserve(pBindings.size());
 		for (auto& b : pBindings) {
-			bindingsVec.push_back(b.mLayoutBinding);
+			// find position where to insert in vector
+			{
+				// ordered by descriptor type
+				auto entry = vk::DescriptorPoolSize{}
+					.setType(b.mLayoutBinding.descriptorType)
+					.setDescriptorCount(b.mLayoutBinding.descriptorCount);
+				auto it = std::lower_bound(std::begin(result.mBindingRequirements), std::end(result.mBindingRequirements), 
+					entry,
+					[](const vk::DescriptorPoolSize& first, const vk::DescriptorPoolSize& second) -> bool {
+						using EnumType = std::underlying_type<vk::DescriptorType>::type;
+						return static_cast<EnumType>(first.type) < static_cast<EnumType>(second.type);
+					});
+				// Maybe accumulate
+				if (it != std::end(result.mBindingRequirements) && it->type == entry.type) {
+					it->descriptorCount += entry.descriptorCount;
+				}
+				else {
+					result.mBindingRequirements.insert(it, entry);
+				}
+			}
+			{
+				// ordered by binding
+				auto it = std::lower_bound(std::begin(result.mOrderedBindings), std::end(result.mOrderedBindings), 
+					b.mLayoutBinding,
+					[](const vk::DescriptorSetLayoutBinding& first, const vk::DescriptorSetLayoutBinding& second) -> bool {
+						assert(first.binding != second.binding);
+						return first.binding < second.binding;
+					});
+				result.mOrderedBindings.insert(it, b.mLayoutBinding);
+			}
 		}
 
+		// Allocate the layout and return the result:
 		auto createInfo = vk::DescriptorSetLayoutCreateInfo()
-			.setBindingCount(static_cast<uint32_t>(bindingsVec.size()))
-			.setPBindings(bindingsVec.data());
-
-		// TODO: Aaaaaaach fuuuuuuck, mitten im WIP =(
-		// Weiter geht's mit std::vector<vk::DescriptorSetLayoutBinding> mOrderedBindings;
-		//  ^ dazu is noch ein operator <(const vk::DescriptorSetLayoutBinding& left, const vk::DescriptorSetLayoutBinding& right) nötig
-		//    ... oder evtl. besser kein extra operator, sondern eine order_in_set(const vk::DescriptorSetLayoutBinding& left, const vk::DescriptorSetLayoutBinding& right) evtl?
-		//    ... naja, warum nicht operator < ... aber dann nur operator < und nicht <=, weil kann das gleich sein? weiß nicht...
-
-		return cgb::context().logical_device().createDescriptorSetLayoutUnique(createInfo);
+			.setBindingCount(static_cast<uint32_t>(result.mOrderedBindings.size()))
+			.setPBindings(result.mOrderedBindings.data());
+		result.mLayout = cgb::context().logical_device().createDescriptorSetLayoutUnique(createInfo);
+		return result;
 	}
 
-	descriptor_set::descriptor_set() noexcept 
-		: mDescriptorSet() 
-	{ }
 
-	descriptor_set::descriptor_set(const vk::DescriptorSet& pDescriptorSet)
-		: mDescriptorSet(pDescriptorSet)
-	{ }
 
-	descriptor_set::descriptor_set(descriptor_set&& other) noexcept
-		: mDescriptorSet(std::move(other.mDescriptorSet))
-	{ 
-		other.mDescriptorSet = nullptr;
-	}
 
-	descriptor_set& descriptor_set::operator=(descriptor_set&& other) noexcept
-	{ 
-		mDescriptorSet = std::move(other.mDescriptorSet);
-		other.mDescriptorSet = nullptr;
-		return *this;
+	descriptor_set descriptor_set::create(std::initializer_list<binding_data> pBindings)
+	{
 	}
 }

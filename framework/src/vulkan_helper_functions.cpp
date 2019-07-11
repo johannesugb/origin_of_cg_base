@@ -35,4 +35,35 @@ namespace cgb
 		}
 		throw new std::runtime_error("It might be that the implementation of to_image_view_type(const vk::ImageCreateInfo& info) is incomplete. Please complete it!");
 	}
+
+	vk::Bool32 to_vk_bool(bool value)
+	{
+		return value ? VK_TRUE : VK_FALSE;
+	}
+
+	vk::StencilOpState to_vk_stencil_op_state(stencil_operation value)
+	{
+		switch (value)
+		{
+		case cgb::stencil_operation::keep:
+			return vk::StencilOp
+		case cgb::stencil_operation::zero:
+			break;
+		case cgb::stencil_operation::eReplace:
+			break;
+		case cgb::stencil_operation::increment_and_clamp:
+			break;
+		case cgb::stencil_operation::decrement_and_clamp:
+			break;
+		case cgb::stencil_operation::invert:
+			break;
+		case cgb::stencil_operation::increment_and_wrap:
+			break;
+		case cgb::stencil_operation::decrement_and_wrap:
+			break;
+		default:
+			break;
+		}
+	}
+
 }

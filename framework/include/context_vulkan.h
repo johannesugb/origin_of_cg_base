@@ -212,7 +212,7 @@ namespace cgb
 		 */
 		uint32_t find_memory_type_index(uint32_t pMemoryTypeBits, vk::MemoryPropertyFlags pMemoryProperties);
 
-		std::shared_ptr<descriptor_pool> get_descriptor_pool_for_layout();
+		std::shared_ptr<descriptor_pool> get_descriptor_pool_for_layouts(std::initializer_list<descriptor_set_layout> pLayouts);
 
 		std::vector<descriptor_set> create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData);
 
