@@ -83,7 +83,7 @@ namespace cgb
 		/** Finds a @ref cg_element by its name 
 		 *	\returns The element found or nullptr
 		 */
-		cg_element* element_by_name(const std::string& pName) override
+		cg_element* element_by_name(std::string_view pName) override
 		{
 			auto found = std::find_if(
 				std::begin(mElements), 

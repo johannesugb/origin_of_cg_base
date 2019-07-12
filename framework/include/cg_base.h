@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <string_view>
 #include <exception>
 #include <stdexcept>
 #include <unordered_map>
@@ -78,6 +79,7 @@
 #include "log.h"
 #include "memory_usage.h"
 #include "context_state.h"
+#include "context_tracker.h"
 #include "device_queue_selection_strategy.h"
 #include "buffer_data.h"
 #include "buffer.h"

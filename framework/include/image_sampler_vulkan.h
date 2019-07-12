@@ -12,11 +12,21 @@ namespace cgb
 		image_sampler_t& operator=(image_sampler_t&&) = default;
 		~image_sampler_t() = default;
 
-		static image_sampler_t create(image pImage, sampler pSampler);
+		const auto& get_image() const			{ return cgb::get(mImageView); }
+		const auto& get_sampler() const			{ return cgb::get(mSampler); }
+		const auto& view_handle() const			{ return cgb::get(mImageView).view_handle(); }
+		const auto& image_handle() const		{ return cgb::get(mImageView).image_handle(); }
+		const auto& sampler_handle() const		{ return cgb::get(mSampler).handle(); }
+		const auto& descriptor_info() const		{ return mDescriptorInfo; }
+		const auto& descriptor_type() const		{ return mDescriptorType; }
+
+		static image_sampler_t create(image_view pImageView, sampler pSampler);
 
 	private:
-		image mImage;
+		image_view mImageView;
 		sampler mSampler;
+		vk::DescriptorImageInfo mDescriptorInfo;
+		vk::DescriptorType mDescriptorType;
 	};
 
 	/** Typedef representing any kind of OWNING image-sampler representations. */

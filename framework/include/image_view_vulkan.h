@@ -24,6 +24,9 @@ namespace cgb
 		/** Gets the image view's vulkan handle */
 		const auto& view_handle() const { return mImageView.get(); }
 
+		const auto& descriptor_info() const		{ return mDescriptorInfo; }
+		const auto& descriptor_type() const		{ return mDescriptorType; }
+
 		/** Creates a new image view upon a given image
 		*	@param	pImageToOwn					The image which to create an image view for
 		*	@param	pViewFormat					The format of the image view. If none is specified, it will be set to the same format as the image.
@@ -39,6 +42,9 @@ namespace cgb
 		vk::ImageViewCreateInfo mInfo;
 		// The image view's handle. This member will contain a valid handle only after successful image view creation.
 		vk::UniqueImageView mImageView;
+		vk::DescriptorImageInfo mDescriptorInfo;
+		vk::DescriptorType mDescriptorType;
+		context_tracker<image_view_t> mTracker;
 	};
 
 	/** Typedef representing any kind of OWNING image view representations. */

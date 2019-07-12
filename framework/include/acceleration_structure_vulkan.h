@@ -15,6 +15,9 @@ namespace cgb // ========================== TODO/WIP ===========================
 		acceleration_structure& operator=(acceleration_structure&&) noexcept;
 		~acceleration_structure();
 
+		const auto& descriptor_info() const		{ return mDescriptorInfo; }
+		const auto& descriptor_type() const		{ return mDescriptorType; }
+
 		static acceleration_structure create_top_level(uint32_t pInstanceCount);
 		static acceleration_structure create_bottom_level(const std::vector<vk::GeometryNV>& pGeometries);
 		static acceleration_structure create(vk::AccelerationStructureTypeNV pType, const std::vector<vk::GeometryNV>& pGeometries, uint32_t pInstanceCount);
@@ -26,5 +29,8 @@ namespace cgb // ========================== TODO/WIP ===========================
 		acceleration_structure_handle mHandle;
 		vk::MemoryPropertyFlags mMemoryProperties;
 		vk::DeviceMemory mMemory;
+		vk::WriteDescriptorSetAccelerationStructureNV mDescriptorInfo; // TODO: set
+		vk::DescriptorType mDescriptorType;
+		context_tracker<acceleration_structure> mTracker;
 	};
 }

@@ -39,7 +39,7 @@ namespace cgb
 		 *	Find a @ref cg_element assigned to this composition_interface by name.
 		 *	If no object with the given name could be found, nullptr is returned.
 		 */
-		virtual cg_element* element_by_name(const std::string&) = 0;
+		virtual cg_element* element_by_name(std::string_view) = 0;
 
 		/** @brief Find an object by type 
 		 *	@param pType type-identifier of the @ref cg_element to be searched for

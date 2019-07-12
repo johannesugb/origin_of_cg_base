@@ -49,6 +49,11 @@ namespace cgb
 		}
 
 		result.mImageView = context().logical_device().createImageViewUnique(result.mInfo);
+		result.mDescriptorInfo = vk::DescriptorImageInfo{}
+			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal) // TODO: Set this parameter to the right value!!
+			.setImageView(result.view_handle());
+		result.mDescriptorType = vk::DescriptorType::eStorageImage; // TODO: Is it storage image or sampled image?
+		result.mTracker.setTrackee(result);
 		return result;
 	}
 }

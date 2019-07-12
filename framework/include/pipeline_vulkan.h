@@ -35,8 +35,7 @@ namespace cgb // ========================== TODO/WIP ===========================
 		pipeline& operator=(const pipeline&) = delete;
 		~pipeline() = default;
 
-		/// STUCK HERE:
-		// TODO: Weiter mit den descriptor set layouts!!
+
 		pipeline create(std::vector<descriptor_set_layout> pDescriptorSetLayouts, depth_test pDepthTest, depth_write pDepthWrite);
 
 	private:

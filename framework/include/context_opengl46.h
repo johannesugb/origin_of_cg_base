@@ -21,7 +21,7 @@ namespace cgb
 	public:
 		opengl46();
 
-		window* create_window(const std::string&);
+		window* create_window(std::string);
 
 		/** Will return true if the OpenGL 4.6 context has been initialized completely. */
 		bool initialization_completed() const { return mInitializationComplete; }

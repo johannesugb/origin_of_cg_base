@@ -17,13 +17,16 @@ namespace cgb
 		const auto& handle() const { return mShaderModule.get(); }
 		const auto* handle_addr() const { return &mShaderModule.get(); }
 
-		static shader create_from_binary_code(const std::vector<char>& code);
+		bool has_been_built();
+
+		static shader prepare(const std::string& pPath);
+		static shader create_from_binary_file(const std::string& pPath);
+		static shader create_from_binary_code(const std::vector<char>& pCode);
 
 	private:
+		std::string mPath;
 		vk::UniqueShaderModule mShaderModule;
+		context_tracker<shader> mTracker;
 	};
-
-	/** Converts a cgb::shader_type to the vulkan-specific vk::ShaderStageFlagBits type */
-	extern vk::ShaderStageFlagBits convert(shader_type p);
 
 }

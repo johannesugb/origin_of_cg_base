@@ -20,9 +20,11 @@ namespace cgb
 		return hasError;
 	}
 
-	window* opengl46::create_window(const std::string& pTitle)
+	window* opengl46::create_window(std::string pTitle)
 	{
 		auto* wnd = generic_glfw::prepare_window();
+		wnd->set_title(std::move(pTitle));
+
 		wnd->mPreCreateActions.push_back([](cgb::window & w) {
 			// Set several configuration parameters before actually creating the window:
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);

@@ -29,6 +29,8 @@ namespace cgb
 		const auto& buffer_usage_flags() const	{ return mBufferUsageFlags; }
 		const auto& buffer_handle() const		{ return mBuffer.get(); }
 		const auto* buffer_handle_addr() const	{ return &mBuffer.get(); }
+		const auto& descriptor_info() const		{ return mDescriptorInfo; }
+		const auto& descriptor_type() const		{ return mDescriptorType; }
 
 	public: // TODO: Make private
 		Cfg mConfig;
@@ -36,6 +38,9 @@ namespace cgb
 		vk::UniqueDeviceMemory mMemory;
 		vk::BufferUsageFlags mBufferUsageFlags;
 		vk::UniqueBuffer mBuffer;
+		vk::DescriptorBufferInfo mDescriptorInfo;
+		vk::DescriptorType mDescriptorType;
+		context_tracker<buffer_t<Cfg>> mTracker;
 	};
 
 
@@ -43,7 +48,7 @@ namespace cgb
 	*	If different queues are being used, ownership has to be transferred explicitely.
 	*/
 	template <typename Cfg>
-	buffer_t<Cfg> create(Cfg pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties)
+	buffer_t<Cfg> create(Cfg pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, vk::DescriptorType pDescriptorType)
 	{
 		auto bufferSize = pConfig.total_size();
 
@@ -81,6 +86,12 @@ namespace cgb
 		b.mMemory = std::move(vkMemory);
 		b.mBufferUsageFlags = pBufferUsage;
 		b.mBuffer = std::move(vkBuffer);
+		b.mDescriptorInfo = vk::DescriptorBufferInfo()
+			.setBuffer(b.buffer_handle())
+			.setOffset(0)
+			.setRange(b.size());
+		b.mDescriptorType = pDescriptorType;
+		b.mTracker.setTrackee(b);
 		return b;
 	}
 
@@ -169,9 +180,9 @@ namespace cgb
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
 		auto bufferSize = pConfig.total_size();
-
-
+		vk::DescriptorType descriptorType;
 		vk::MemoryPropertyFlags memoryFlags;
+
 		// We've got two major branches here: 
 		// 1) Memory will stay on the host and there will be no dedicated memory on the device
 		// 2) Memory will be transfered to the device. (Only in this case, we'll need to create semaphores.)
@@ -202,26 +213,32 @@ namespace cgb
 
 		if constexpr (std::is_same_v<Cfg, cgb::uniform_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformBuffer;
+			descriptorType = vk::DescriptorType::eUniformBuffer;
 		}
 		if constexpr (std::is_same_v<Cfg, cgb::uniform_texel_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
+			descriptorType = vk::DescriptorType::eUniformTexelBuffer;
 		}
 		if constexpr (std::is_same_v<Cfg, cgb::storage_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageBuffer;
+			descriptorType = vk::DescriptorType::eStorageBuffer;
 		}
 		if constexpr (std::is_same_v<Cfg, cgb::storage_texel_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
+			descriptorType = vk::DescriptorType::eStorageTexelBuffer;
 		}
 		if constexpr (std::is_same_v<Cfg, cgb::vertex_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eVertexBuffer;
+			descriptorType = vk::DescriptorType::eUniformBuffer; // TODO: Does this make sense? Or is this maybe not applicable at all for vertex buffers?
 		}
 		if constexpr (std::is_same_v<Cfg, cgb::index_buffer_data>) {
 			pUsage |= vk::BufferUsageFlagBits::eIndexBuffer;
+			descriptorType = vk::DescriptorType::eUniformBuffer; // TODO: Does this make sense? Or is this maybe not applicable at all for index buffers?
 		}
 
 		// Create buffer here to make use of named return value optimization.
 		// How it will be filled depends on where the memory is located at.
-		auto result = cgb::create(pConfig, pUsage, memoryFlags);
+		auto result = cgb::create(pConfig, pUsage, memoryFlags, descriptorType);
 		return result;
 	}
 

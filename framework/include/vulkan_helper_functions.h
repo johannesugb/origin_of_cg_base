@@ -14,5 +14,7 @@ namespace cgb
 
 	extern vk::Bool32 to_vk_bool(bool value);
 
-	extern vk::StencilOpState to_vk_stencil_op_state(stencil_operation value);
+	/** Converts a cgb::shader_type to the vulkan-specific vk::ShaderStageFlagBits type */
+	extern vk::ShaderStageFlagBits convert(shader_type p);
+
 }

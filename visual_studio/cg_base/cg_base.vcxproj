@@ -307,6 +307,7 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\timer_frame_type.h" />
     <ClInclude Include="..\..\framework\include\timer_interface.h" />
+    <ClInclude Include="..\..\framework\include\context_tracker.h" />
     <ClInclude Include="..\..\framework\include\transform.h" />
     <ClInclude Include="..\..\framework\include\various_utils.h" />
     <ClInclude Include="..\..\framework\include\varying_update_timer.h" />

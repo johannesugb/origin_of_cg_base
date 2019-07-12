@@ -1301,7 +1301,7 @@ namespace cgb
 		return mDescriptorPools[0];
 	}
 
-	std::vector<descriptor_set> vulkan::create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData)
+	std::vector<vk::DescriptorSet> vulkan::create_descriptor_set(std::vector<vk::DescriptorSetLayout> pData)
 	{
 
 		auto allocInfo = vk::DescriptorSetAllocateInfo()
@@ -1309,11 +1309,11 @@ namespace cgb
 			.setDescriptorSetCount(static_cast<uint32_t>(pData.size()))
 			.setPSetLayouts(pData.data());
 		auto descriptorSets = logical_device().allocateDescriptorSets(allocInfo); // The call to vkAllocateDescriptorSets will allocate descriptor sets, each with one uniform buffer descriptor. [10]
-		std::vector<descriptor_set> result;
+		std::vector<vk::DescriptorSet> result;
 		std::transform(std::begin(descriptorSets), std::end(descriptorSets),
 					   std::back_inserter(result),
 					   [](const auto& vkDescSet) {
-						   return descriptor_set(vkDescSet);
+						   return vkDescSet;
 					   });
 		return result;
 	}

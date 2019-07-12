@@ -38,7 +38,9 @@ namespace cgb
 
 		const auto& config() const { return mInfo; }
 		auto& config() { return mInfo; }
-		const auto& handle() const { return mSampler; }
+		const auto& handle() const { return mSampler.get(); }
+		const auto& descriptor_info() const		{ return mDescriptorInfo; }
+		const auto& descriptor_type() const		{ return mDescriptorType; }
 
 		/**	Create a new sampler with the given configuration parameters
 		 *	@param	pFilterMode					Filtering strategy for the sampler to be created
@@ -52,6 +54,9 @@ namespace cgb
 		vk::SamplerCreateInfo mInfo;
 		// Sampler handle. It will contain a valid handle only after successful sampler creation.
 		vk::UniqueSampler mSampler;
+		vk::DescriptorImageInfo mDescriptorInfo;
+		vk::DescriptorType mDescriptorType;
+		context_tracker<sampler_t> mTracker;
 	};
 
 	/** Typedef representing any kind of OWNING sampler representations. */

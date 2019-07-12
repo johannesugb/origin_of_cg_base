@@ -317,7 +317,7 @@ namespace cgb
 		});
 	}
 
-	window* generic_glfw::window_by_title(const std::string& pTitle) const
+	window* generic_glfw::window_by_title(std::string_view pTitle) const
 	{
 		auto it = std::find_if(std::begin(mWindows), std::end(mWindows),
 							   [&pTitle](const auto& w) {

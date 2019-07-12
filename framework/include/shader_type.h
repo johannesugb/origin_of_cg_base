@@ -2,7 +2,6 @@
 
 namespace cgb
 {
-
 	/** Represents one specific type of shader */
 	enum struct shader_type
 	{
@@ -37,4 +36,5 @@ namespace cgb
 		/** all of them */
 		all						= vertex | tessellation_control | tessellation_evaluation | geometry | fragment | compute | ray_generation | any_hit | closest_hit | miss | intersection | callable | task | mesh,
 	};
+
 }

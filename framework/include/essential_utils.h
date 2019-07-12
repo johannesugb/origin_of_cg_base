@@ -77,6 +77,37 @@ namespace cgb
 #define VK_FUNC(x) set_function(x)
 #endif
 
+	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	*/
+	template <typename T>
+	T& get(T& v)	
+	{
+		return v;
+	}
+
+	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	*/
+	template <typename T>
+	const T& get(const T& v)	
+	{
+		return v;
+	}
+
+	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	*/
+	template <typename T>
+	T& get(T* v)	
+	{
+		return *v;
+	}
+
+	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	*/
+	template <typename T>
+	const T& get(const T* v)	
+	{
+		return *v;
+	}
 
 	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
 	*	be it stored directly or referenced via a smart pointer.

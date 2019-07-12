@@ -41,29 +41,39 @@ namespace cgb
 		return value ? VK_TRUE : VK_FALSE;
 	}
 
-	vk::StencilOpState to_vk_stencil_op_state(stencil_operation value)
+	vk::ShaderStageFlagBits convert(shader_type p)
 	{
-		switch (value)
-		{
-		case cgb::stencil_operation::keep:
-			return vk::StencilOp
-		case cgb::stencil_operation::zero:
-			break;
-		case cgb::stencil_operation::eReplace:
-			break;
-		case cgb::stencil_operation::increment_and_clamp:
-			break;
-		case cgb::stencil_operation::decrement_and_clamp:
-			break;
-		case cgb::stencil_operation::invert:
-			break;
-		case cgb::stencil_operation::increment_and_wrap:
-			break;
-		case cgb::stencil_operation::decrement_and_wrap:
-			break;
+		switch (p) {
+		case cgb::shader_type::vertex:
+			return vk::ShaderStageFlagBits::eVertex;
+		case cgb::shader_type::tessellation_control:
+			return vk::ShaderStageFlagBits::eTessellationControl;
+		case cgb::shader_type::tessellation_evaluation:
+			return vk::ShaderStageFlagBits::eTessellationEvaluation;
+		case cgb::shader_type::geometry:
+			return vk::ShaderStageFlagBits::eGeometry;
+		case cgb::shader_type::fragment:
+			return vk::ShaderStageFlagBits::eFragment;
+		case cgb::shader_type::compute:
+			return vk::ShaderStageFlagBits::eCompute;
+		case cgb::shader_type::ray_generation:
+			return vk::ShaderStageFlagBits::eRaygenNV;
+		case cgb::shader_type::any_hit:
+			return vk::ShaderStageFlagBits::eAnyHitNV;
+		case cgb::shader_type::closest_hit:
+			return vk::ShaderStageFlagBits::eClosestHitNV;
+		case cgb::shader_type::miss:
+			return vk::ShaderStageFlagBits::eMissNV;
+		case cgb::shader_type::intersection:
+			return vk::ShaderStageFlagBits::eIntersectionNV;
+		case cgb::shader_type::callable:
+			return vk::ShaderStageFlagBits::eCallableNV;
+		case cgb::shader_type::task:
+			return vk::ShaderStageFlagBits::eTaskNV;
+		case cgb::shader_type::mesh:
+			return vk::ShaderStageFlagBits::eMeshNV;
 		default:
-			break;
+			throw std::runtime_error("Invalid shader_type");
 		}
 	}
-
 }

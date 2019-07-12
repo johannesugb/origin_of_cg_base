@@ -118,6 +118,10 @@ namespace cgb
 		}
 
 		result.mSampler = context().logical_device().createSamplerUnique(result.config());
+		result.mDescriptorInfo = vk::DescriptorImageInfo{}
+			.setSampler(result.handle());
+		result.mDescriptorType = vk::DescriptorType::eSampler;
+		result.mTracker.setTrackee(result);
 		return result;
 	}
 }
