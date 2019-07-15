@@ -2,6 +2,17 @@
 
 namespace cgb
 {
+	struct shader_info
+	{
+		static shader_info create(std::string pPath, std::string pEntryPoint = "main", bool pDontMonitorFile = false, std::optional<cgb::shader_type> pShaderType = {});
+
+		std::string mPath;
+		cgb::shader_type mShaderType;
+		std::string mEntryPoint;
+		bool mDontMonitorFile;
+	};
+
+
 	/** @brief Shader source information and shader loading options
 	 *
 	 *	This information is important especially for shader hot reloading.

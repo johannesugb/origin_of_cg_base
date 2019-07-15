@@ -199,6 +199,12 @@
     <ClCompile Include="..\..\framework\src\vulkan_helper_functions.cpp">
       <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\pipeline.cpp">
+      <Filter>Source Files\pipeline_and_shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\buffer_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -227,9 +233,6 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\key_state.h">
       <Filter>Header Files\application_structure_and_general_stuff\input</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\shader_source_info.h">
-      <Filter>Header Files\pipeline_and_shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\context_opengl46.h">
       <Filter>Header Files\context_and_context_specific_functionality\opengl46</Filter>
@@ -443,6 +446,12 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\context_tracker.h">
       <Filter>Header Files\application_structure_and_general_stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\buffer_member_format_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\shader_info.h">
+      <Filter>Header Files\pipeline_and_shaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

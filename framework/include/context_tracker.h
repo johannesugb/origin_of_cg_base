@@ -16,7 +16,7 @@ namespace cgb
 				context().track_creation(mTrackee);
 			}
 			else {
-				LOG_ERROR(fmt::format("Usage error: Do not set the trackee more than once! Type: '{}'", typeid(T)::name()));
+				LOG_ERROR(fmt::format("Usage error: Do not set the trackee more than once! Type: '{}'", typeid(T).name()));
 				context().track_destruction(mTrackee);
 				mTrackee = pTrackee;
 				context().track_creation(mTrackee);

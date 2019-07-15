@@ -33,7 +33,7 @@ namespace cgb
 
 			It it = begin;
 			while (it != end) {
-				binding_data& b = *it;
+				const binding_data& b = *it;
 
 #if defined(_DEBUG)
 				if (!setId.has_value()) {

@@ -82,7 +82,7 @@ public:
 	void create_vertex_buffer()
 	{
 		mVertexBuffer = cgb::create_and_fill(
-			cgb::vertex_buffer_data{ sizeof(mVertices[0]), mVertices.size() },
+			cgb::vertex_buffer_meta{ sizeof(mVertices[0]), mVertices.size() },
 			cgb::memory_usage::device,
 			mVertices.data());
 
@@ -106,7 +106,7 @@ public:
 	void create_index_buffer()
 	{
 		mIndexBuffer = cgb::create_and_fill(
-			cgb::index_buffer_data{ sizeof(mIndices[0]), mIndices.size() },
+			cgb::index_buffer_meta{ sizeof(mIndices[0]), mIndices.size() },
 			cgb::memory_usage::device,
 			mIndices.data());
 	}
@@ -118,14 +118,14 @@ public:
 		
 		{
 			outVertexBuffer = cgb::create_and_fill(
-				cgb::vertex_buffer_data{ mesh.m_size_one_vertex, mesh.m_vertex_data.size() / mesh.m_size_one_vertex },
+				cgb::vertex_buffer_meta{ mesh.m_size_one_vertex, mesh.m_vertex_data.size() / mesh.m_size_one_vertex },
 				cgb::memory_usage::device,
 				mesh.m_vertex_data.data());
 		}
 
 		{
 			outIndexBuffer = cgb::create_and_fill(
-				cgb::index_buffer_data{ sizeof(mesh.m_indices[0]), mesh.m_indices.size() },
+				cgb::index_buffer_meta{ sizeof(mesh.m_indices[0]), mesh.m_indices.size() },
 				cgb::memory_usage::device,
 				mesh.m_indices.data());
 		}
@@ -136,7 +136,7 @@ public:
 		for (auto i = 0; i < mFrameBuffers.size(); ++i) {
 			mUniformBuffers.push_back(
 				cgb::create(
-					cgb::uniform_buffer_data{ sizeof(UniformBufferObject) },
+					cgb::uniform_buffer_meta{ sizeof(UniformBufferObject) },
 					cgb::memory_usage::host_coherent
 				));
 
@@ -148,15 +148,15 @@ public:
 		for (auto i = 0; i < mFrameBuffers.size(); ++i) {
 			auto& vec = mRtUniformBuffers.emplace_back();
 			vec.emplace_back(cgb::create(
-				cgb::uniform_buffer_data{ sizeof(UniformBufferObject) },
+				cgb::uniform_buffer_meta{ sizeof(UniformBufferObject) },
 				cgb::memory_usage::host_coherent, vk::BufferUsageFlagBits::eRayTracingNV
 			));
 			vec.emplace_back(cgb::create( // another 2 for color values
-				cgb::uniform_buffer_data{ sizeof(glm::vec4) },
+				cgb::uniform_buffer_meta{ sizeof(glm::vec4) },
 				cgb::memory_usage::host_coherent, vk::BufferUsageFlagBits::eRayTracingNV
 			));
 			vec.emplace_back(cgb::create( // another 2 for color values
-				cgb::uniform_buffer_data{ sizeof(glm::vec4) },
+				cgb::uniform_buffer_meta{ sizeof(glm::vec4) },
 				cgb::memory_usage::host_coherent, vk::BufferUsageFlagBits::eRayTracingNV
 			));
 		}
@@ -317,7 +317,7 @@ public:
 		}
 
 		auto stagingBuffer = cgb::create_and_fill(
-			cgb::generic_buffer_data{ imageSize },
+			cgb::generic_buffer_meta{ imageSize },
 			cgb::memory_usage::host_coherent,
 			pixels,
 			nullptr,
@@ -361,13 +361,13 @@ public:
 						 .setTriangles(vk::GeometryTrianglesNV()
 									   .setVertexData(mModelVertices.buffer_handle())
 									   .setVertexOffset(0)
-									   .setVertexCount(mModelVertices.config().num_elements())
-									   .setVertexStride(mModelVertices.config().sizeof_one_element())
+									   .setVertexCount(mModelVertices.meta_data().num_elements())
+									   .setVertexStride(mModelVertices.meta_data().sizeof_one_element())
 									   .setVertexFormat(vk::Format::eR32G32B32Sfloat)
 									   .setIndexData(mModelIndices.buffer_handle())
 									   .setIndexOffset(0)
-									   .setIndexCount(mModelIndices.config().num_elements())
-									   .setIndexType(cgb::to_vk_index_type(mModelIndices.config().sizeof_one_element()))
+									   .setIndexCount(mModelIndices.meta_data().num_elements())
+									   .setIndexType(cgb::to_vk_index_type(mModelIndices.meta_data().sizeof_one_element()))
 									   .setTransformData(nullptr)
 									   .setTransformOffset(0)))
 			.setFlags(vk::GeometryFlagBitsNV::eOpaque); 
@@ -418,7 +418,7 @@ public:
 		}
 
 		mGeometryInstanceBuffer = cgb::create_and_fill(
-			cgb::generic_buffer_data{ sizeof(VkGeometryInstance) * mGeometryInstances.size() },
+			cgb::generic_buffer_meta{ sizeof(VkGeometryInstance) * mGeometryInstances.size() },
 			cgb::memory_usage::host_coherent, 
 			mGeometryInstances.data(),
 			nullptr, // There will be no semaphore because it is host coherent
@@ -429,7 +429,7 @@ public:
 	void build_acceleration_structures()
 	{
 		auto scratchBuffer = cgb::create(
-			cgb::generic_buffer_data{ std::max(mBottomLevelAccStructure.get_scratch_buffer_size(), mTopLevelAccStructure.get_scratch_buffer_size()) },
+			cgb::generic_buffer_meta{ std::max(mBottomLevelAccStructure.get_scratch_buffer_size(), mTopLevelAccStructure.get_scratch_buffer_size()) },
 			cgb::memory_usage::device,
 			vk::BufferUsageFlagBits::eRayTracingNV
 		);

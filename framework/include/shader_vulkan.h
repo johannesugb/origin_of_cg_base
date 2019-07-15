@@ -16,15 +16,17 @@ namespace cgb
 
 		const auto& handle() const { return mShaderModule.get(); }
 		const auto* handle_addr() const { return &mShaderModule.get(); }
+		const auto& info() const { return mInfo; }
 
+		static vk::UniqueShaderModule build_from_file(std::string_view pPath);
+		static vk::UniqueShaderModule build_from_binary_code(const std::vector<char>& pCode);
 		bool has_been_built();
 
-		static shader prepare(const std::string& pPath);
-		static shader create_from_binary_file(const std::string& pPath);
-		static shader create_from_binary_code(const std::vector<char>& pCode);
+		static shader prepare(shader_info pInfo);
+		static shader create(shader_info pInfo);
 
 	private:
-		std::string mPath;
+		shader_info mInfo;
 		vk::UniqueShaderModule mShaderModule;
 		context_tracker<shader> mTracker;
 	};

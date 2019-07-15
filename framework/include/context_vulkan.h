@@ -34,9 +34,9 @@ namespace cgb
 		template <typename T>
 		void track_creation(T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_creation", typeid(T)::name())); }
 		template <typename T>
-		void track_copy(T*)			{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_copy", typeid(T)::name())); }
+		void track_copy(T*, T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_copy", typeid(T)::name())); }
 		template <typename T>
-		void track_move(T*)			{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_move", typeid(T)::name())); }
+		void track_move(T*, T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_move", typeid(T)::name())); }
 		template <typename T>
 		void track_destruction(T*)	{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_destruction", typeid(T)::name())); }
 
@@ -74,9 +74,10 @@ namespace cgb
 		{
 			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
-			vk::IndexType indexType = to_vk_index_typeto_vk_index_type(pIndexBuffer.config().sizeof_one_element());
+			vk::IndexType indexType = to_vk_index_type(pIndexBuffer.config().sizeof_one_element());
 			pCommandBuffer.handle().bindIndexBuffer(pIndexBuffer.buffer_handle(), 0u, indexType);
 			pCommandBuffer.handle().drawIndexed(pIndexBuffer.config().num_elements(), 1u, 0u, 0u, 0u);
+			pCommandBuffer.handle().drawIndexedIndirect()
 		}
 
 		/** Completes all pending work on the device, blocks the current thread until then. */
@@ -274,21 +275,25 @@ namespace cgb
 	inline void vulkan::track_creation<vertex_buffer_t>(vertex_buffer_t* thing) { LOG_WARNING("TODO: implement vertex_buffer_t handling in context::track_creation."); }
 	template <>
 	inline void vulkan::track_creation<index_buffer_t>(index_buffer_t* thing) { LOG_WARNING("TODO: implement index_buffer_t handling in context::track_creation."); }
+	template <>
+	inline void vulkan::track_creation<instance_buffer_t>(instance_buffer_t* thing) { LOG_WARNING("TODO: implement instance_buffer_t handling in context::track_creation."); }
 
 	template <>
-	inline void vulkan::track_move<generic_buffer_t>(generic_buffer_t* thing) { LOG_WARNING("TODO: implement generic_buffer_t handling in context::track_move."); }
+	inline void vulkan::track_move<generic_buffer_t>(generic_buffer_t* thing, generic_buffer_t* other) { LOG_WARNING("TODO: implement generic_buffer_t handling in context::track_move."); }
 	template <>
-	inline void vulkan::track_move<uniform_buffer_t>(uniform_buffer_t* thing) { LOG_WARNING("TODO: implement uniform_buffer_t handling in context::track_move."); }
+	inline void vulkan::track_move<uniform_buffer_t>(uniform_buffer_t* thing, uniform_buffer_t* other) { LOG_WARNING("TODO: implement uniform_buffer_t handling in context::track_move."); }
 	template <>
-	inline void vulkan::track_move<uniform_texel_buffer_t>(uniform_texel_buffer_t* thing) { LOG_WARNING("TODO: implement uniform_texel_buffer_t handling in context::track_move."); }
+	inline void vulkan::track_move<uniform_texel_buffer_t>(uniform_texel_buffer_t* thing, uniform_texel_buffer_t* other) { LOG_WARNING("TODO: implement uniform_texel_buffer_t handling in context::track_move."); }
 	template <>
-	inline void vulkan::track_move<storage_buffer_t>(storage_buffer_t* thing) { LOG_WARNING("TODO: implement storage_buffer_t handling in context::track_move."); }
+	inline void vulkan::track_move<storage_buffer_t>(storage_buffer_t* thing, storage_buffer_t* other) { LOG_WARNING("TODO: implement storage_buffer_t handling in context::track_move."); }
 	template <>
-	inline void vulkan::track_move<storage_texel_buffer_t>(storage_texel_buffer_t* thing) { LOG_WARNING("TODO: implement storage_texel_buffer_t handling in context::track_move."); }
+	inline void vulkan::track_move<storage_texel_buffer_t>(storage_texel_buffer_t* thing, storage_texel_buffer_t* other) { LOG_WARNING("TODO: implement storage_texel_buffer_t handling in context::track_move."); }
 	template <>
-	inline void vulkan::track_move<vertex_buffer_t>(vertex_buffer_t* thing) { LOG_WARNING("TODO: implement vertex_buffer_t handling in context::track_move."); }
+	inline void vulkan::track_move<vertex_buffer_t>(vertex_buffer_t* thing, vertex_buffer_t* other) { LOG_WARNING("TODO: implement vertex_buffer_t handling in context::track_move."); }
 	template <>
-	inline void vulkan::track_move<index_buffer_t>(index_buffer_t* thing) { LOG_WARNING("TODO: implement index_buffer_t handling in context::track_move."); }
+	inline void vulkan::track_move<index_buffer_t>(index_buffer_t* thing, index_buffer_t* other) { LOG_WARNING("TODO: implement index_buffer_t handling in context::track_move."); }
+	template <>
+	inline void vulkan::track_move<instance_buffer_t>(instance_buffer_t* thing, instance_buffer_t* other) { LOG_WARNING("TODO: implement instance_buffer_t handling in context::track_move."); }
 
 	template <>
 	inline void vulkan::track_destruction<generic_buffer_t>(generic_buffer_t* thing) { LOG_WARNING("TODO: implement generic_buffer_t handling in context::track_destruction."); }
@@ -304,32 +309,34 @@ namespace cgb
 	inline void vulkan::track_destruction<vertex_buffer_t>(vertex_buffer_t* thing) { LOG_WARNING("TODO: implement vertex_buffer_t handling in context::track_destruction."); }
 	template <>
 	inline void vulkan::track_destruction<index_buffer_t>(index_buffer_t* thing) { LOG_WARNING("TODO: implement buffer_t<index_buffer_data> handling in context::track_destruction."); }
+	template <>
+	inline void vulkan::track_destruction<instance_buffer_t>(instance_buffer_t* thing) { LOG_WARNING("TODO: implement buffer_t<instance_buffer_t> handling in context::track_destruction."); }
 
 	template <>
-	inline void vulkan::track_creation<shader>(shader* thing)		{ LOG_WARNING("TODO: implement 'shader' handling in context::track_creation."); }
+	inline void vulkan::track_creation<shader>(shader* thing)				{ LOG_WARNING("TODO: implement 'shader' handling in context::track_creation."); }
 	template <>
-	inline void vulkan::track_move<shader>(shader* thing)			{ LOG_WARNING("TODO: implement 'shader' handling in context::track_move."); }
+	inline void vulkan::track_move<shader>(shader* thing, shader* other)	{ LOG_WARNING("TODO: implement 'shader' handling in context::track_move."); }
 	template <>
-	inline void vulkan::track_destruction<shader>(shader* thing)	{ LOG_WARNING("TODO: implement 'shader' handling in context::track_destruction."); }
+	inline void vulkan::track_destruction<shader>(shader* thing)			{ LOG_WARNING("TODO: implement 'shader' handling in context::track_destruction."); }
 
 	template <>
 	inline void vulkan::track_creation<acceleration_structure>(acceleration_structure* thing)		{ LOG_WARNING("TODO: implement 'acceleration_structure' handling in context::track_creation."); }
 	template <>
-	inline void vulkan::track_move<acceleration_structure>(acceleration_structure* thing)			{ LOG_WARNING("TODO: implement 'acceleration_structure' handling in context::track_move."); }
+	inline void vulkan::track_move<acceleration_structure>(acceleration_structure* thing, acceleration_structure* other)			{ LOG_WARNING("TODO: implement 'acceleration_structure' handling in context::track_move."); }
 	template <>
 	inline void vulkan::track_destruction<acceleration_structure>(acceleration_structure* thing)	{ LOG_WARNING("TODO: implement 'acceleration_structure' handling in context::track_destruction."); }
 
 	template <>
 	inline void vulkan::track_creation<sampler_t>(sampler_t* thing)		{ LOG_WARNING("TODO: implement 'sampler_t' handling in context::track_creation."); }
 	template <>
-	inline void vulkan::track_move<sampler_t>(sampler_t* thing)			{ LOG_WARNING("TODO: implement 'sampler_t' handling in context::track_move."); }
+	inline void vulkan::track_move<sampler_t>(sampler_t* thing, sampler_t* other)			{ LOG_WARNING("TODO: implement 'sampler_t' handling in context::track_move."); }
 	template <>
 	inline void vulkan::track_destruction<sampler_t>(sampler_t* thing)	{ LOG_WARNING("TODO: implement 'sampler_t' handling in context::track_destruction."); }
 
 	template <>
 	inline void vulkan::track_creation<image_view_t>(image_view_t* thing)		{ LOG_WARNING("TODO: implement 'image_view_t' handling in context::track_creation."); }
 	template <>
-	inline void vulkan::track_move<image_view_t>(image_view_t* thing)			{ LOG_WARNING("TODO: implement 'image_view_t' handling in context::track_move."); }
+	inline void vulkan::track_move<image_view_t>(image_view_t* thing, image_view_t* other)			{ LOG_WARNING("TODO: implement 'image_view_t' handling in context::track_move."); }
 	template <>
 	inline void vulkan::track_destruction<image_view_t>(image_view_t* thing)	{ LOG_WARNING("TODO: implement 'image_view_t' handling in context::track_destruction."); }
 

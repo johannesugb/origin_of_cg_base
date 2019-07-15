@@ -7,7 +7,7 @@ namespace cgb
 	/** Represents a Vulkan buffer along with its assigned memory, holds the 
 	*	native handle and takes care about lifetime management of the native handles.
 	*/
-	template <typename Cfg>
+	template <typename Meta>
 	class buffer_t
 	{
 		//template <typename T>
@@ -21,8 +21,8 @@ namespace cgb
 		buffer_t& operator=(buffer_t&&) = default;
 		~buffer_t() = default; // Declaration order determines destruction order (inverse!)
 
-		const auto& config() const				{ return mConfig; }
-		auto size() const						{ return mConfig.total_size(); }
+		const auto& meta_data() const			{ return mMetaData; }
+		auto size() const						{ return mMetaData.total_size(); }
 		const auto& memory_properties() const	{ return mMemoryPropertyFlags; }
 		const auto& memory_handle() const		{ return mMemory.get(); }
 		const auto* memory_handle_addr() const	{ return &mMemory.get(); }
@@ -33,22 +33,22 @@ namespace cgb
 		const auto& descriptor_type() const		{ return mDescriptorType; }
 
 	public: // TODO: Make private
-		Cfg mConfig;
+		Meta mMetaData;
 		vk::MemoryPropertyFlags mMemoryPropertyFlags;
 		vk::UniqueDeviceMemory mMemory;
 		vk::BufferUsageFlags mBufferUsageFlags;
 		vk::UniqueBuffer mBuffer;
 		vk::DescriptorBufferInfo mDescriptorInfo;
 		vk::DescriptorType mDescriptorType;
-		context_tracker<buffer_t<Cfg>> mTracker;
+		context_tracker<buffer_t<Meta>> mTracker;
 	};
 
 
 	/**	Create a buffer which is always created with exclusive access for a queue.
 	*	If different queues are being used, ownership has to be transferred explicitely.
 	*/
-	template <typename Cfg>
-	buffer_t<Cfg> create(Cfg pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, vk::DescriptorType pDescriptorType)
+	template <typename Meta>
+	buffer_t<Meta> create(Meta pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, vk::DescriptorType pDescriptorType)
 	{
 		auto bufferSize = pConfig.total_size();
 
@@ -80,8 +80,8 @@ namespace cgb
 		// If memory allocation was successful, then we can now associate this memory with the buffer
 		cgb::context().logical_device().bindBufferMemory(vkBuffer.get(), vkMemory.get(), 0);
 
-		cgb::buffer_t<Cfg> b;
-		b.mConfig = pConfig;
+		cgb::buffer_t<Meta> b;
+		b.mMetaData = pConfig;
 		b.mMemoryPropertyFlags = pMemoryProperties;
 		b.mMemory = std::move(vkMemory);
 		b.mBufferUsageFlags = pBufferUsage;
@@ -96,18 +96,18 @@ namespace cgb
 	}
 
 	// Forward-declare what comes after:
-	template <typename Cfg>
-	cgb::buffer_t<Cfg> create_and_fill(
-		Cfg pConfig, 
+	template <typename Meta>
+	cgb::buffer_t<Meta> create_and_fill(
+		Meta pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
 		std::optional<semaphore>* pSemaphoreOut,
 		vk::BufferUsageFlags pUsage);
 
 	// SET DATA
-	template <typename Cfg>
+	template <typename Meta>
 	std::optional<semaphore> fill(
-		cgb::buffer_t<Cfg>& target,
+		cgb::buffer_t<Meta>& target,
 		const void* pData)
 	{
 		auto bufferSize = static_cast<vk::DeviceSize>(target.size());
@@ -142,7 +142,7 @@ namespace cgb
 			// "somewhat temporary" means that it can not be deleted in this function, but only
 			//						after the transfer operation has completed => handle via semaphore!
 			auto stagingBuffer = create_and_fill(
-				generic_buffer_data{ target.size() }, 
+				generic_buffer_meta{ target.size() }, 
 				cgb::memory_usage::host_coherent, 
 				pData, 
 				nullptr, //< TODO: What about the semaphore???
@@ -173,9 +173,9 @@ namespace cgb
 	}
 
 	// CREATE 
-	template <typename Cfg>
-	cgb::buffer_t<Cfg> create(
-		Cfg pConfig,
+	template <typename Meta>
+	cgb::buffer_t<Meta> create(
+		Meta pConfig,
 		cgb::memory_usage pMemoryUsage,
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
@@ -211,27 +211,27 @@ namespace cgb
 			break;
 		}
 
-		if constexpr (std::is_same_v<Cfg, cgb::uniform_buffer_data>) {
+		if constexpr (std::is_same_v<Meta, cgb::uniform_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformBuffer;
 			descriptorType = vk::DescriptorType::eUniformBuffer;
 		}
-		if constexpr (std::is_same_v<Cfg, cgb::uniform_texel_buffer_data>) {
+		if constexpr (std::is_same_v<Meta, cgb::uniform_texel_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
 			descriptorType = vk::DescriptorType::eUniformTexelBuffer;
 		}
-		if constexpr (std::is_same_v<Cfg, cgb::storage_buffer_data>) {
+		if constexpr (std::is_same_v<Meta, cgb::storage_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageBuffer;
 			descriptorType = vk::DescriptorType::eStorageBuffer;
 		}
-		if constexpr (std::is_same_v<Cfg, cgb::storage_texel_buffer_data>) {
+		if constexpr (std::is_same_v<Meta, cgb::storage_texel_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
 			descriptorType = vk::DescriptorType::eStorageTexelBuffer;
 		}
-		if constexpr (std::is_same_v<Cfg, cgb::vertex_buffer_data>) {
+		if constexpr (std::is_same_v<Meta, cgb::vertex_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eVertexBuffer;
 			descriptorType = vk::DescriptorType::eUniformBuffer; // TODO: Does this make sense? Or is this maybe not applicable at all for vertex buffers?
 		}
-		if constexpr (std::is_same_v<Cfg, cgb::index_buffer_data>) {
+		if constexpr (std::is_same_v<Meta, cgb::index_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eIndexBuffer;
 			descriptorType = vk::DescriptorType::eUniformBuffer; // TODO: Does this make sense? Or is this maybe not applicable at all for index buffers?
 		}
@@ -243,14 +243,14 @@ namespace cgb
 	}
 
 	/** Create multiple buffers */
-	template <typename Cfg>
+	template <typename Meta>
 	auto create_multiple(
 		int pNumBuffers,
-		Cfg pConfig,
+		Meta pConfig,
 		cgb::memory_usage pMemoryUsage,
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
-		std::vector<buffer_t<Cfg>> bs;
+		std::vector<buffer_t<Meta>> bs;
 		bs.reserve(pNumBuffers);
 		for (int i = 0; i < pNumBuffers; ++i) {
 			bs.push_back(create(pConfig, pMemoryUsage, pUsage));
@@ -259,9 +259,9 @@ namespace cgb
 	}
 
 	// CREATE AND FILL
-	template <typename Cfg>
-	cgb::buffer_t<Cfg> create_and_fill(
-		Cfg pConfig, 
+	template <typename Meta>
+	cgb::buffer_t<Meta> create_and_fill(
+		Meta pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
 		std::optional<semaphore>* pSemaphoreOut = nullptr,

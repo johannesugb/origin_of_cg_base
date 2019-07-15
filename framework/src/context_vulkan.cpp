@@ -941,16 +941,7 @@ namespace cgb
 		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
 		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
 	{
-		// GATHER ALL THE SHADER INFORMATION
-		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-		std::transform(std::begin(pShaderInfos), std::end(pShaderInfos),
-					   std::back_inserter(shaderStages),
-					   [](const auto& tpl) {
-						   return vk::PipelineShaderStageCreateInfo()
-							   .setStage(convert(std::get<shader_type>(tpl)))
-							   .setModule(std::get<shader*>(tpl)->handle())
-							   .setPName("main"); // TODO: support different entry points?!
-					   });
+
 		
 		// DESCRIBE THE VERTEX INPUT
 		auto vertexInputinfo = vk::PipelineVertexInputStateCreateInfo()
@@ -1043,23 +1034,7 @@ namespace cgb
 		// MULTISAMPLING
 		auto multisamplingInfo = pWindow->get_config_multisample_state_create_info();
 
-		// PIPELINE CREATION
-		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()
-			.setStageCount(static_cast<uint32_t>(shaderStages.size()))
-			.setPStages(shaderStages.data())
-			.setPVertexInputState(&vertexInputinfo)
-			.setPInputAssemblyState(&inputAssembly)
-			.setPViewportState(&viewportInfo)
-			.setPRasterizationState(&rasterizer)
-			.setPMultisampleState(&multisamplingInfo)
-			.setPDepthStencilState(&depthStencil) // Optional
-			.setPColorBlendState(&colorBlendingInfo)
-			.setPDynamicState(nullptr) // Optional
-			.setLayout(pipelineLayout)
-			.setRenderPass(renderPass)
-			.setSubpass(0u)
-			.setBasePipelineHandle(nullptr) // Optional
-			.setBasePipelineIndex(-1); // Optional
+
 
 		// Create the pipeline, return it and also store the render pass and the pipeline layout in the struct!
 		return pipeline(

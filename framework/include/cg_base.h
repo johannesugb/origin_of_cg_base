@@ -75,12 +75,22 @@
 #endif
 
 // -------------------- CG-Base includes --------------------
+#include "string_utils.h"
 #include "essential_utils.h"
 #include "log.h"
 #include "memory_usage.h"
 #include "context_state.h"
 #include "context_tracker.h"
 #include "device_queue_selection_strategy.h"
+#include "shader_type.h"
+#include "shader_info.h"
+
+#if defined(USE_OPENGL46_CONTEXT)
+#elif defined(USE_VULKAN_CONTEXT)
+#include <vulkan/vulkan.hpp>
+#include "buffer_member_format_vulkan.h"
+#endif
+
 #include "buffer_data.h"
 #include "buffer.h"
 
@@ -89,8 +99,6 @@
 #include "context_opengl46.h"
 
 #elif defined(USE_VULKAN_CONTEXT)
-
-#include <vulkan/vulkan.hpp>
 
 #include "image_vulkan.h"
 #include "context_generic_glfw_types.h"
@@ -107,11 +115,11 @@
 #include "framebuffer_vulkan.h"
 #include "window_vulkan.h"
 #include "buffer_vulkan.h"
+#include "acceleration_structure_vulkan.h"
 #include "shader_vulkan.h"
 #include "binding_data_vulkan.h"
 #include "descriptor_set_vulkan.h"
 #include "descriptor_pool_vulkan.h"
-#include "acceleration_structure_vulkan.h"
 #include "pipeline_vulkan.h"
 #include "shader_binding_table_vulkan.h"
 #include "bindings_vulkan.h"
@@ -130,11 +138,8 @@
 
 #endif
 
-
+#include "pipeline.h"
 #include "image.h"
-#include "shader_type.h"
-#include "shader_source_info.h"
-#include "string_utils.h"
 #include "various_utils.h"
 #include "math_utils.h"
 #include "key_code.h"

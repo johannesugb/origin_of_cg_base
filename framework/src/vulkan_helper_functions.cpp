@@ -41,7 +41,7 @@ namespace cgb
 		return value ? VK_TRUE : VK_FALSE;
 	}
 
-	vk::ShaderStageFlagBits convert(shader_type p)
+	vk::ShaderStageFlagBits to_vk_shader_stage(shader_type p)
 	{
 		switch (p) {
 		case cgb::shader_type::vertex:

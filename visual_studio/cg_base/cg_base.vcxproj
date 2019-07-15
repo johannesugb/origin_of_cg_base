@@ -42,6 +42,7 @@
     <ClCompile Include="..\..\external\universal\src\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_widgets.cpp" />
     <ClCompile Include="..\..\framework\src\acceleration_structure_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\buffer_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\camera.cpp" />
     <ClCompile Include="..\..\framework\src\cg_element.cpp" />
     <ClCompile Include="..\..\framework\src\command_buffer_vulkan.cpp" />
@@ -86,6 +87,7 @@
     <ClCompile Include="..\..\framework\src\log.cpp" />
     <ClCompile Include="..\..\framework\src\math_utils.cpp" />
     <ClCompile Include="..\..\framework\src\model.cpp" />
+    <ClCompile Include="..\..\framework\src\pipeline.cpp" />
     <ClCompile Include="..\..\framework\src\pipeline_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
     <ClCompile Include="..\..\framework\src\queue_vulkan.cpp" />
@@ -217,6 +219,7 @@
     <ClInclude Include="..\..\framework\include\binding_data_vulkan.h" />
     <ClInclude Include="..\..\framework\include\buffer.h" />
     <ClInclude Include="..\..\framework\include\buffer_data.h" />
+    <ClInclude Include="..\..\framework\include\buffer_member_format_vulkan.h" />
     <ClInclude Include="..\..\framework\include\buffer_vulkan.h" />
     <ClInclude Include="..\..\framework\include\camera.h" />
     <ClInclude Include="..\..\framework\include\cg_base.h">
@@ -288,7 +291,7 @@
     <ClInclude Include="..\..\framework\include\shader_vulkan.h" />
     <ClInclude Include="..\..\framework\include\string_utils.h" />
     <ClInclude Include="..\..\framework\include\sequential_executor.h" />
-    <ClInclude Include="..\..\framework\include\shader_source_info.h" />
+    <ClInclude Include="..\..\framework\include\shader_info.h" />
     <ClInclude Include="..\..\framework\include\synchronization_opengl.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">true</ExcludedFromBuild>

@@ -36,11 +36,18 @@ namespace cgb // ========================== TODO/WIP ===========================
 		~pipeline() = default;
 
 
-		pipeline create(std::vector<descriptor_set_layout> pDescriptorSetLayouts, depth_test pDepthTest, depth_write pDepthWrite);
+		static pipeline prepare(
+			std::vector<shader> pShaders,
+			std::vector<descriptor_set_layout> pDescriptorSetLayouts, 
+			depth_test pDepthTestConfig, 
+			depth_write pDepthWriteConfig);
+
+		void build();
 
 	private:
+		std::vector<shader> mShaders;
 		vk::PipelineDepthStencilStateCreateInfo mDepthStencilConfig;
-		vk::PipelineLayoutCreateInfo
+		//vk::PipelineLayoutCreateInfo
 
 		vk::RenderPass mRenderPass;
 		vk::PipelineLayout mPipelineLayout;

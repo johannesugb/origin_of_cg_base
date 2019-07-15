@@ -18,6 +18,7 @@ namespace cgb
 			storage_texel_buffer_t*,
 			vertex_buffer_t*,
 			index_buffer_t*,
+			instance_buffer_t*,
 			acceleration_structure*,
 			image_view_t*,
 			sampler_t*,
@@ -29,10 +30,11 @@ namespace cgb
 			std::vector<storage_texel_buffer_t*>,
 			std::vector<vertex_buffer_t*>,
 			std::vector<index_buffer_t*>,
+			std::vector<instance_buffer_t*>,
 			std::vector<acceleration_structure*>,
 			std::vector<image_view_t*>,
 			std::vector<sampler_t*>,
-			std::vector<image_sampler_t*>,
+			std::vector<image_sampler_t*>
 		> mResourcePtr;
 
 		const vk::DescriptorImageInfo* descriptor_image_info() const
@@ -44,11 +46,13 @@ namespace cgb
 			if (std::holds_alternative<storage_texel_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<vertex_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<index_buffer_t*>(mResourcePtr)) { return nullptr; }
+			if (std::holds_alternative<instance_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<acceleration_structure*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<image_view_t*>(mResourcePtr)) { return &std::get<image_view_t*>(mResourcePtr)->descriptor_info(); }
 			if (std::holds_alternative<sampler_t*>(mResourcePtr)) { return &std::get<sampler_t*>(mResourcePtr)->descriptor_info(); }
 			if (std::holds_alternative<image_sampler_t*>(mResourcePtr)) { return &std::get<image_sampler_t*>(mResourcePtr)->descriptor_info(); }
 			// TODO: Handle array types!
+			throw std::runtime_error("Some holds_alternative calls are not implemented.");
 		}
 
 		const vk::DescriptorBufferInfo* descriptor_buffer_info() const
@@ -60,11 +64,13 @@ namespace cgb
 			if (std::holds_alternative<storage_texel_buffer_t*>(mResourcePtr)) { return &std::get<storage_texel_buffer_t*>(mResourcePtr)->descriptor_info(); }
 			if (std::holds_alternative<vertex_buffer_t*>(mResourcePtr)) { return &std::get<vertex_buffer_t*>(mResourcePtr)->descriptor_info(); }
 			if (std::holds_alternative<index_buffer_t*>(mResourcePtr)) { return &std::get<index_buffer_t*>(mResourcePtr)->descriptor_info(); }
+			if (std::holds_alternative<instance_buffer_t*>(mResourcePtr)) { return &std::get<index_buffer_t*>(mResourcePtr)->descriptor_info(); }
 			if (std::holds_alternative<acceleration_structure*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<image_view_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<sampler_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<image_sampler_t*>(mResourcePtr)) { return nullptr; }
 			// TODO: Handle array types!
+			throw std::runtime_error("Some holds_alternative calls are not implemented.");
 		}
 
 		const void* next_pointer() const
@@ -76,11 +82,13 @@ namespace cgb
 			if (std::holds_alternative<storage_texel_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<vertex_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<index_buffer_t*>(mResourcePtr)) { return nullptr; }
+			if (std::holds_alternative<instance_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<acceleration_structure*>(mResourcePtr)) { return &std::get<acceleration_structure*>(mResourcePtr)->descriptor_info(); }
 			if (std::holds_alternative<image_view_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<sampler_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<image_sampler_t*>(mResourcePtr)) { return nullptr; }
 			// TODO: Handle array types!
+			throw std::runtime_error("Some holds_alternative calls are not implemented.");
 		}
 
 		const vk::BufferView* texel_buffer_info() const
@@ -92,11 +100,13 @@ namespace cgb
 			if (std::holds_alternative<storage_texel_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<vertex_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<index_buffer_t*>(mResourcePtr)) { return nullptr; }
+			if (std::holds_alternative<instance_buffer_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<acceleration_structure*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<image_view_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<sampler_t*>(mResourcePtr)) { return nullptr; }
 			if (std::holds_alternative<image_sampler_t*>(mResourcePtr)) { return nullptr; }
 			// TODO: Handle array types!
+			throw std::runtime_error("Some holds_alternative calls are not implemented.");
 		}
 	};
 
