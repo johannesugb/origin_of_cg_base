@@ -36,6 +36,8 @@ namespace cgb
 		descriptor_pool& operator=(descriptor_pool&&) = default;
 		~descriptor_pool() = default;
 
+		const auto& handle() const { return mDescriptorPool.get(); }
+
 		bool has_capacity_for(const descriptor_alloc_request& pRequest);
 		std::vector<descriptor_set> allocate(const descriptor_alloc_request& pRequest);
 		

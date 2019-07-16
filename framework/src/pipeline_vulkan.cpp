@@ -19,6 +19,8 @@ namespace cgb
 			.setStencilTestEnable(VK_FALSE)
 			.setFront(vk::StencilOpState())
 			.setBack(vk::StencilOpState());
+
+		return result;
 	}
 
 	void pipeline::build()

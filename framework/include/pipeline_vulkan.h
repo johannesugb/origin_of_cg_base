@@ -35,6 +35,7 @@ namespace cgb // ========================== TODO/WIP ===========================
 		pipeline& operator=(const pipeline&) = delete;
 		~pipeline() = default;
 
+		const auto& handle() const { return mPipeline; }
 
 		static pipeline prepare(
 			std::vector<shader> pShaders,

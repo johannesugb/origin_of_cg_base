@@ -13,9 +13,9 @@ namespace cgb
 				auto it = std::lower_bound(std::begin(result.mAccumulatedSizes), std::end(result.mAccumulatedSizes), 
 					entry,
 					[](const vk::DescriptorPoolSize& first, const vk::DescriptorPoolSize& second) -> bool {
-					using EnumType = std::underlying_type<vk::DescriptorPoolSize>::type;
-					return static_cast<EnumType>(first.type) < static_cast<EnumType>(second.type);
-				});
+						using EnumType = std::underlying_type<vk::DescriptorType>::type;
+						return static_cast<EnumType>(first.type) < static_cast<EnumType>(second.type);
+					});
 				if (it != std::end(result.mAccumulatedSizes) && it->type == entry.type) {
 					it->descriptorCount += entry.descriptorCount;
 				}
@@ -58,8 +58,8 @@ namespace cgb
 		const auto& weHave = mCapacities;
 
 		// Accumulate all the requirements of all the sets
-		using EnumType = std::underlying_type<vk::DescriptorPoolSize>::type;
-		int n = 0, h = 0, N = weNeed.size(), H = weHave.size();
+		using EnumType = std::underlying_type<vk::DescriptorType>::type;
+		size_t n = 0, h = 0, N = weNeed.size(), H = weHave.size();
 		while (n < N && h < H) {
 			auto needType = static_cast<EnumType>(weNeed[n].type);
 			auto haveType = static_cast<EnumType>(weHave[h].type);
@@ -82,6 +82,7 @@ namespace cgb
 
 	std::vector<descriptor_set> descriptor_pool::allocate(const descriptor_alloc_request& pRequest)
 	{
-
+		std::vector<descriptor_set> result;
+		return result;
 	}
 }
