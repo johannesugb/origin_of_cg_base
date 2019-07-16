@@ -37,4 +37,25 @@ namespace cgb
 		all						= vertex | tessellation_control | tessellation_evaluation | geometry | fragment | compute | ray_generation | any_hit | closest_hit | miss | intersection | callable | task | mesh,
 	};
 
+	inline shader_type operator| (shader_type a, shader_type b)
+	{
+		typedef std::underlying_type<shader_type>::type EnumType;
+		return static_cast<shader_type>(static_cast<EnumType>(a) | static_cast<EnumType>(b));
+	}
+
+	inline shader_type operator& (shader_type a, shader_type b)
+	{
+		typedef std::underlying_type<shader_type>::type EnumType;
+		return static_cast<shader_type>(static_cast<EnumType>(a) & static_cast<EnumType>(b));
+	}
+
+	inline shader_type& operator |= (shader_type& a, shader_type b)
+	{
+		return a = a | b;
+	}
+
+	inline shader_type& operator &= (shader_type& a, shader_type b)
+	{
+		return a = a & b;
+	}
 }

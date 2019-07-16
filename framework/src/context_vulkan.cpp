@@ -956,7 +956,6 @@ namespace cgb
 			.setPrimitiveRestartEnable(VK_FALSE);
 
 		// VIEWPORT AND SCISSORS
-		auto scExtent = pWindow->swap_chain_extent();
 		auto viewport = vk::Viewport()
 			.setX(0.0f)
 			.setY(0.0f)

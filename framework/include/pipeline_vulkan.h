@@ -2,53 +2,31 @@
 
 namespace cgb // ========================== TODO/WIP =================================
 {
-	struct depth_test
-	{
-		static depth_test enabled() { return depth_test{ true }; }
-		static depth_test disabled() { return depth_test{ false }; }
-		bool mEnabled;
-	};
-
-	struct depth_write
-	{
-		static depth_write enabled() { return depth_write{ true }; }
-		static depth_write disabled() { return depth_write{ false }; }
-		bool mEnabled;
-	};
-
-
-
-
 	/** Represents data for a vulkan graphics pipeline 
 	*	The data held by such a struct is a triple of:
 	*    - render pass
 	*    - pipeline layout
 	*    - pipeline handle
 	*/
-	class pipeline
+	class graphics_pipeline
 	{
 	public:
-		pipeline() = default;
-		pipeline(pipeline&&) = default;
-		pipeline(const pipeline&) = delete;
-		pipeline& operator=(pipeline&&) = default;
-		pipeline& operator=(const pipeline&) = delete;
-		~pipeline() = default;
+		graphics_pipeline() = default;
+		graphics_pipeline(graphics_pipeline&&) = default;
+		graphics_pipeline(const graphics_pipeline&) = delete;
+		graphics_pipeline& operator=(graphics_pipeline&&) = default;
+		graphics_pipeline& operator=(const graphics_pipeline&) = delete;
+		~graphics_pipeline() = default;
 
 		const auto& handle() const { return mPipeline; }
 
-		static pipeline prepare(
-			std::vector<shader> pShaders,
-			std::vector<descriptor_set_layout> pDescriptorSetLayouts, 
-			depth_test pDepthTestConfig, 
-			depth_write pDepthWriteConfig);
-
-		void build();
+		static graphics_pipeline create(const graphics_pipeline_config& pConfig);
 
 	private:
 		std::vector<shader> mShaders;
 		vk::PipelineDepthStencilStateCreateInfo mDepthStencilConfig;
 		//vk::PipelineLayoutCreateInfo
+		vk::PipelineCreateFlagBits mPipelineCreateFlags;
 
 		vk::RenderPass mRenderPass;
 		vk::PipelineLayout mPipelineLayout;

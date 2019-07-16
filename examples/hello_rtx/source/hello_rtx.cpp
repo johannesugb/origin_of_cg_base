@@ -81,10 +81,19 @@ public:
 #ifdef USE_VULKAN_CONTEXT
 	void create_vertex_buffer()
 	{
-		mVertexBuffer = cgb::create_and_fill(
-			cgb::vertex_buffer_meta{ sizeof(mVertices[0]), mVertices.size() },
+		
+		vertex_input_binding(0, 0, &Vertex::pos);
+		vertex_input_binding(0, 1, &Vertex::color);
+		vertex_input_binding(0, 2, &Vertex::texCoord);
+
+		auto vtxBfr = cgb::create_and_fill(
+			cgb::vertex_buffer_meta::create_from_data(mVertices)
+				.describe_member_location(0, &Vertex::pos)
+				.describe_member_location(1, &Vertex::color)
+				.describe_member_location(2, &Vertex::texCoord),
 			cgb::memory_usage::device,
 			mVertices.data());
+		mVertexBuffer = std::move(vtxBfr);
 
 		// Mind the following:
 		//		void vulkan::set_sharing_mode_for_transfer(vk::BufferCreateInfo& pCreateInfo)

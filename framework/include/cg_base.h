@@ -93,6 +93,8 @@
 
 #include "buffer_data.h"
 #include "buffer.h"
+#include "input_description.h"
+#include "graphics_pipeline_config.h"
 
 #if defined(USE_OPENGL46_CONTEXT)
 
@@ -138,7 +140,6 @@
 
 #endif
 
-#include "pipeline.h"
 #include "image.h"
 #include "various_utils.h"
 #include "math_utils.h"

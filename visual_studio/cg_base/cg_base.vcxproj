@@ -84,10 +84,10 @@
     <ClCompile Include="..\..\framework\src\image_view_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\image_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\input_buffer.cpp" />
+    <ClCompile Include="..\..\framework\src\input_description.cpp" />
     <ClCompile Include="..\..\framework\src\log.cpp" />
     <ClCompile Include="..\..\framework\src\math_utils.cpp" />
     <ClCompile Include="..\..\framework\src\model.cpp" />
-    <ClCompile Include="..\..\framework\src\pipeline.cpp" />
     <ClCompile Include="..\..\framework\src\pipeline_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
     <ClCompile Include="..\..\framework\src\queue_vulkan.cpp" />
@@ -213,6 +213,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="shader_info.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\acceleration_structure_vulkan.h" />
@@ -274,6 +275,7 @@
     <ClInclude Include="..\..\framework\include\image_sampler_vulkan.h" />
     <ClInclude Include="..\..\framework\include\image_view_vulkan.h" />
     <ClInclude Include="..\..\framework\include\image_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\input_description.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
     <ClInclude Include="..\..\framework\include\key_code.h" />
     <ClInclude Include="..\..\framework\include\key_state.h" />
@@ -281,7 +283,7 @@
     <ClInclude Include="..\..\framework\include\math_utils.h" />
     <ClInclude Include="..\..\framework\include\memory_usage.h" />
     <ClInclude Include="..\..\framework\include\model.h" />
-    <ClInclude Include="..\..\framework\include\pipeline.h" />
+    <ClInclude Include="..\..\framework\include\graphics_pipeline_config.h" />
     <ClInclude Include="..\..\framework\include\pipeline_vulkan.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
     <ClInclude Include="..\..\framework\include\queue_vulkan.h" />

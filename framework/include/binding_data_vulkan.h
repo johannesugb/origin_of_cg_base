@@ -11,6 +11,7 @@ namespace cgb
 		vk::DescriptorSetLayoutBinding mLayoutBinding;
 		shader_type mShaderStages;
 		std::variant<
+			std::monostate,
 			generic_buffer_t*,
 			uniform_buffer_t*,
 			uniform_texel_buffer_t*,

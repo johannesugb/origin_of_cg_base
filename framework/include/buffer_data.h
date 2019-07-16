@@ -279,8 +279,11 @@ namespace cgb
 		/** Returns a reference to a collection of all member descriptions */
 		const auto& member_descriptions() const { return mOrderedMemberDescriptions; }
 
-		/** Create meta info from the size of one element and the number of elements. */
-		static vertex_buffer_meta create_from_element_size(size_t pSizeElement, size_t pNumElements) 
+		/** Create meta info from the size of one element and the number of elements. 
+		 *	It is legal to omit the `pNumElements` parameter for only creating an input description
+		 *	(e.g. for describing the pipeline layout)
+		 */
+		static vertex_buffer_meta create_from_element_size(size_t pSizeElement, size_t pNumElements = 0) 
 		{ 
 			vertex_buffer_meta result; 
 			result.mSizeOfOneElement = pSizeElement;
@@ -310,7 +313,7 @@ namespace cgb
 		}
 
 		/** Describe which part of an element's member gets mapped to which shader locaton. */
-		vertex_buffer_meta& describe_member_binding(uint32_t pShaderLocation, size_t pOffset, buffer_member_format pFormat)
+		vertex_buffer_meta& describe_member_location(uint32_t pShaderLocation, size_t pOffset, buffer_member_format pFormat)
 		{
 			assert(std::find_if(std::begin(mOrderedMemberDescriptions), std::end(mOrderedMemberDescriptions), [loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mOrderedMemberDescriptions.end());
 			// insert already in the right place
@@ -333,15 +336,15 @@ namespace cgb
 		 *	struct MyData { int mFirst; float mSecond; };
 		 *	std::vector<MyData> myData;
 		 *	vertex_buffer_meta meta = vertex_buffer_meta::create_from_data(myData)
-		 *								.describe_member_binding(0, &MyData::mFirst)
-		 *								.describe_member_binding(1, &MyData::mSecond);
+		 *								.describe_member_location(0, &MyData::mFirst)
+		 *								.describe_member_location(1, &MyData::mSecond);
 		 *	```
 		 */
 		template <class T, class M> 
-		vertex_buffer_meta& describe_member_binding(uint32_t pShaderLocation, M T::* pMember)
+		vertex_buffer_meta& describe_member_location(uint32_t pShaderLocation, M T::* pMember)
 		{
 			assert(std::find_if(std::begin(mMemberDescriptions), std::end(mMemberDescriptions), [loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mMemberDescriptions.end());
-			return describe_member_binding(
+			return describe_member_location(
 				pShaderLocation, 
 				((::size_t)&reinterpret_cast<char const volatile&>((((T*)0)->*pMember))),
 				format_for<M>());
@@ -371,8 +374,8 @@ namespace cgb
 		/** The total number of indices in the buffer. */
 		size_t num_elements() const { return mNumElements; }
 
-		/** Create meta info from the size of one index and the number of elements. */
-		static index_buffer_meta create_from_element_size(size_t pSizeElement, size_t pNumElements) 
+		/** Create meta info from the size of one index and the number of elements.  */
+		static index_buffer_meta create_from_element_size(size_t pSizeElement, size_t pNumElements = 0) 
 		{ 
 			index_buffer_meta result; 
 			result.mSizeOfOneElement = pSizeElement;
@@ -423,8 +426,11 @@ namespace cgb
 		/** Returns a reference to a collection of all member descriptions */
 		const auto& member_descriptions() const { return mOrderedMemberDescriptions; }
 
-		/** Create meta info from the size of one element and the number of elements. */
-		static instance_buffer_meta create_from_element_size(size_t pSizeElement, size_t pNumElements) 
+		/** Create meta info from the size of one element and the number of elements. 
+		 *	It is legal to omit the `pNumElements` parameter for only creating an input description
+		 *	(e.g. for describing the pipeline layout)
+		 */
+		static instance_buffer_meta create_from_element_size(size_t pSizeElement, size_t pNumElements = 0) 
 		{ 
 			instance_buffer_meta result; 
 			result.mSizeOfOneElement = pSizeElement;
@@ -454,7 +460,7 @@ namespace cgb
 		}
 
 		/** Describe which part of an element's member gets mapped to which shader locaton. */
-		instance_buffer_meta& describe_member_binding(uint32_t pShaderLocation, size_t pOffset, buffer_member_format pFormat)
+		instance_buffer_meta& describe_member_location(uint32_t pShaderLocation, size_t pOffset, buffer_member_format pFormat)
 		{
 			assert(std::find_if(std::begin(mOrderedMemberDescriptions), std::end(mOrderedMemberDescriptions), [loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mOrderedMemberDescriptions.end());
 			// insert already in the right place
@@ -477,15 +483,15 @@ namespace cgb
 		 *	struct MyData { int mFirst; float mSecond; };
 		 *	std::vector<MyData> myData;
 		 *	vertex_buffer_meta meta = vertex_buffer_meta::create_from_data(myData)
-		 *								.describe_member_binding(0, &MyData::mFirst)
-		 *								.describe_member_binding(1, &MyData::mSecond);
+		 *								.describe_member_location(0, &MyData::mFirst)
+		 *								.describe_member_location(1, &MyData::mSecond);
 		 *	```
 		 */
 		template <class T, class M> 
-		instance_buffer_meta& describe_member_binding(uint32_t pShaderLocation, M T::* pMember)
+		instance_buffer_meta& describe_member_location(uint32_t pShaderLocation, M T::* pMember)
 		{
 			assert(std::find_if(std::begin(mMemberDescriptions), std::end(mMemberDescriptions), [loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mMemberDescriptions.end());
-			return describe_member_binding(
+			return describe_member_location(
 				pShaderLocation, 
 				((::size_t)&reinterpret_cast<char const volatile&>((((T*)0)->*pMember))),
 				format_for<M>());
