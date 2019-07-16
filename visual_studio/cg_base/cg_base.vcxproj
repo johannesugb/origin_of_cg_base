@@ -79,6 +79,7 @@
     <ClCompile Include="..\..\framework\src\essential_utils.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\framebuffer_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\graphics_pipeline_config.cpp" />
     <ClCompile Include="..\..\framework\src\image.cpp" />
     <ClCompile Include="..\..\framework\src\image_sampler_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\image_view_vulkan.cpp" />

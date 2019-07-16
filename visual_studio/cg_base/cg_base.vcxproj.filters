@@ -208,6 +208,9 @@
     <ClCompile Include="..\..\framework\src\input_description.cpp">
       <Filter>Source Files\pipeline_and_shaders</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\graphics_pipeline_config.cpp">
+      <Filter>Source Files\pipeline_and_shaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
