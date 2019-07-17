@@ -286,6 +286,7 @@
     <ClInclude Include="..\..\framework\include\model.h" />
     <ClInclude Include="..\..\framework\include\graphics_pipeline_config.h" />
     <ClInclude Include="..\..\framework\include\pipeline_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\push_constants.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
     <ClInclude Include="..\..\framework\include\queue_vulkan.h" />
     <ClInclude Include="..\..\framework\include\sampler_vulkan.h" />

@@ -462,6 +462,9 @@
     <ClInclude Include="..\..\framework\include\graphics_pipeline_config.h">
       <Filter>Header Files\pipeline_and_shaders</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include\push_constants.h">
+      <Filter>Header Files\pipeline_and_shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
