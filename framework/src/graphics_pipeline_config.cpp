@@ -10,6 +10,8 @@ namespace cgb
 		, mPolygonDrawingModeAndConfig(polygon_drawing::config_for_filling())
 		, mRasterizerGeometryMode(rasterizer_geometry_mode::rasterize_geometry)
 		, mDepthSettings(depth_settings::config_nothing_special())
+		, mColorBlendingSettings(color_blending_settings::disable_logic_operation())
+		
 	{
 	}
 }

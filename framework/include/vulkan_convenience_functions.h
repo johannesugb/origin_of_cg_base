@@ -36,14 +36,6 @@ namespace cgb
 		add_config(config, args...);
 	}
 
-	// Add a resource binding to the pipeline config
-	template <typename... Ts>
-	void add_config(graphics_pipeline_config& pConfig, binding_data pResourceBinding, Ts... args)
-	{
-		pConfig.mResourceBindings.push_back(std::move(pResourceBinding));
-		add_config(config, args...);
-	}
-
 	// Set the depth test behavior in the pipeline config
 	template <typename... Ts>
 	void add_config(graphics_pipeline_config& pConfig, depth_test pDepthTestConfig, Ts... args)
@@ -105,6 +97,38 @@ namespace cgb
 	void add_config(graphics_pipeline_config& pConfig, depth_settings pDepthSettings, Ts... args)
 	{
 		pConfig.mDepthSettings = pDepthSettings;
+		add_config(config, args...);
+	}
+
+	// Sets some color blending parameters in the pipeline config
+	template <typename... Ts>
+	void add_config(graphics_pipeline_config& pConfig, color_blending_settings pColorBlendingSettings, Ts... args)
+	{
+		pConfig.mColorBlendingSettings = pColorBlendingSettings;
+		add_config(config, args...);
+	}
+
+	// Sets some color blending parameters in the pipeline config
+	template <typename... Ts>
+	void add_config(graphics_pipeline_config& pConfig, color_blending_config pColorBlendingConfig, Ts... args)
+	{
+		pConfig.mColorBlendingPerAttachment.push_back(std::move(pColorBlendingConfig));
+		add_config(config, args...);
+	}
+
+	// Add a resource binding to the pipeline config
+	template <typename... Ts>
+	void add_config(graphics_pipeline_config& pConfig, binding_data pResourceBinding, Ts... args)
+	{
+		pConfig.mResourceBindings.push_back(std::move(pResourceBinding));
+		add_config(config, args...);
+	}
+
+	// Add a resource binding to the pipeline config
+	template <typename... Ts>
+	void add_config(graphics_pipeline_config& pConfig, push_constant_binding_data pPushConstBinding, Ts... args)
+	{
+		pConfig.mPushConstantsBindings.push_back(std::move(pPushConstBinding));
 		add_config(config, args...);
 	}
 

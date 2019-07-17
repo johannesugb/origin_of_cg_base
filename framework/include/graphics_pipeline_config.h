@@ -60,7 +60,9 @@ namespace cgb
 				{static_cast<float>(width), static_cast<float>(height)}, 
 				minDepth, maxDepth,
 				{x, y},
-				{width, height}
+				{width, height},
+				false,
+				false
 			}; 
 		}
 
@@ -71,7 +73,9 @@ namespace cgb
 				{static_cast<float>(width), static_cast<float>(height)}, 
 				0.0f, 1.0f,
 				{x, y},
-				{width, height}
+				{width, height},
+				false,
+				false
 			}; 
 		}
 
@@ -82,7 +86,9 @@ namespace cgb
 				{static_cast<float>(width), static_cast<float>(height)}, 
 				0.0f, 1.0f,
 				{0, 0},
-				{width, height}
+				{width, height},
+				false,
+				false
 			}; 
 		}
 
@@ -94,9 +100,16 @@ namespace cgb
 				{static_cast<float>(dimensions.x), static_cast<float>(dimensions.y)}, 
 				0.0f, 1.0f,
 				{0, 0},
-				{static_cast<int32_t>(dimensions.x), static_cast<int32_t>(dimensions.y)}
+				{static_cast<int32_t>(dimensions.x), static_cast<int32_t>(dimensions.y)},
+				false,
+				false
 			}; 
 		}
+
+		viewport_depth_scissors_config& enable_dynamic_viewport() { mDynamicViewportEnabled = true; return *this; }
+		viewport_depth_scissors_config& disable_dynamic_viewport() { mDynamicViewportEnabled = false; return *this; }
+		viewport_depth_scissors_config& enable_dynamic_scissor() { mDynamicScissorEnabled = true; return *this; }
+		viewport_depth_scissors_config& disable_dynamic_scissor() { mDynamicScissorEnabled = false; return *this; }
 
 		const auto& position() const { return mPosition; }
 		auto x() const { return mPosition.x; }
@@ -112,6 +125,8 @@ namespace cgb
 		const auto& scissor_extent() const { return mScissorExtent; }
 		auto scissor_width() const { return mScissorExtent.x; }
 		auto scissor_height() const { return mScissorExtent.y; }
+		auto is_dynamic_viewport_enabled() const { return mDynamicViewportEnabled; }
+		auto is_dynamic_scissor_enabled() const { return mDynamicScissorEnabled; }
 
 		glm::vec2 mPosition;
 		glm::vec2 mDimensions;
@@ -119,6 +134,8 @@ namespace cgb
 		float mMaxDepth;
 		glm::ivec2 mScissorOffset;
 		glm::ivec2 mScissorExtent;
+		bool mDynamicViewportEnabled;
+		bool mDynamicScissorEnabled;
 	};
 
 	/** Pipeline configuration data: Culling Mode */
@@ -196,21 +213,30 @@ namespace cgb
 	/** Additional depth-related parameters for the rasterizer */
 	struct depth_settings
 	{
-		static depth_settings config_nothing_special() { return { false, false, 0.0f, 0.0f, 0.0f }; }
-		static depth_settings config_enable_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { false, true, pConstantFactor, pBiasClamp, pSlopeFactor }; }
-		static depth_settings config_enable_clamp_and_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { true, true, pConstantFactor, pBiasClamp, pSlopeFactor }; }
+		static depth_settings config_nothing_special() { return { false, false, 0.0f, 0.0f, 0.0f, false, false }; }
+		static depth_settings config_enable_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { false, true, pConstantFactor, pBiasClamp, pSlopeFactor, false, false }; }
+		static depth_settings config_enable_clamp_and_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { true, true, pConstantFactor, pBiasClamp, pSlopeFactor, false, false }; }
+
+		depth_settings& enable_dynamic_depth_bias() { mEnableDynamicDepthBias = true; return *this; }
+		depth_settings& disable_dynamic_depth_bias() { mEnableDynamicDepthBias = false; return *this; }
+		depth_settings& enable_dynamic_depth_bounds() { mEnableDynamicDepthBounds = true; return *this; }
+		depth_settings& disable_dynamic_depth_bounds() { mEnableDynamicDepthBounds = false; return *this; }
 
 		auto is_clamp_to_frustum_enabled() const { return mClampDepthToFrustum; }
 		auto is_depth_bias_enabled() const { return mEnableDepthBias; }
 		auto bias_constant_factor() const { return mDepthBiasConstantFactor; }
 		auto bias_clamp_value() const { return mDepthBiasClamp; }
 		auto bias_slope_factor() const { return mDepthBiasSlopeFactor; }
+		auto is_dynamic_depth_bias_enabled() const { return mEnableDynamicDepthBias; }
+		auto is_dynamic_depth_bounds_enabled() const { return mEnableDynamicDepthBounds; }
 
 		bool mClampDepthToFrustum;
 		bool mEnableDepthBias;
 		float mDepthBiasConstantFactor;
 		float mDepthBiasClamp;
 		float mDepthBiasSlopeFactor;
+		bool mEnableDynamicDepthBias;
+		bool mEnableDynamicDepthBounds;
 	};
 
 	/** Reference the separate color channels */
@@ -247,12 +273,6 @@ namespace cgb
 	{
 		return a = a & b;
 	}
-
-	enum struct color_blending_mode
-	{
-		color_blending,
-		logic_operation
-	};
 
 	/** Different operation types for color blending */
 	enum struct color_blending_operation
@@ -305,30 +325,142 @@ namespace cgb
 		set
 	};
 
-	/** Enable or disable color blending and set blend modes */
-	struct color_blending
+	/** Some color blending settings */
+	struct color_blending_settings
 	{
-		struct blend_attachment
-		{
-			bool mBlendingEnabled;
-			color_channel mAffectedColorChannels;
-			
-			color_blending_operation mColorBlendOperation;
-			blending_factor mColorSourceFactor;
-			blending_factor mColorDestinationFactor;
+		static color_blending_settings disable_logic_operation() { return color_blending_settings{ {}, {} }; }
+		static color_blending_settings config_blend_constants(glm::vec4 pValues) { return color_blending_settings{ {}, pValues }; }
+		static color_blending_settings enable_logic_operation(blending_logic_operation pLogicOp) { return color_blending_settings{ pLogicOp, {} }; }
 
-			color_blending_operation mAlphaBlendOperation;
-			blending_factor mAlphaSourceFactor;
-			blending_factor mAlphaDestinationFactor;
-		};
+		bool is_logic_operation_enabled() const { return mLogicOpEnabled.has_value(); }
+		blending_logic_operation logic_operation() const { return mLogicOpEnabled.value(); }
+		const auto& blend_constants() const { return mBlendConstants; }
 
-		static color_blending config_alpha_blending(); // TODO: dieses!
-		static color_blending config_additive_blending();
-
-		color_blending_mode mMode;
-		blending_logic_operation mLogicOperation;
+		std::optional<blending_logic_operation> mLogicOpEnabled;
 		glm::vec4 mBlendConstants;
-		std::vector<blend_attachment> mBlendAttachments;
+	};
+
+	/** A specific color blending config for an attachment (or for all attachments) */
+	struct color_blending_config
+	{
+		static color_blending_config disable()
+		{
+			return color_blending_config{ 
+				{},
+				false,
+				color_channel::rgba,
+				blending_factor::one, blending_factor::zero, color_blending_operation::add,
+				blending_factor::one, blending_factor::zero, color_blending_operation::add
+			};
+		}
+
+		static color_blending_config disable_blending_for_attachment(uint32_t pAttachment, color_channel pAffectedColorChannels = color_channel::rgba)
+		{
+			return color_blending_config{ 
+				pAttachment,
+				false,
+				pAffectedColorChannels,
+				blending_factor::one, blending_factor::zero, color_blending_operation::add,
+				blending_factor::one, blending_factor::zero, color_blending_operation::add
+			};
+		}
+
+		static color_blending_config enable_alpha_blending_for_all_attachments(color_channel pAffectedColorChannels = color_channel::rgba)
+		{
+			return color_blending_config{ 
+				{},
+				true,
+				pAffectedColorChannels,
+				blending_factor::source_alpha, blending_factor::one_minus_source_alpha, color_blending_operation::add,
+				blending_factor::one, blending_factor::one_minus_source_alpha, color_blending_operation::add
+			};
+		}
+
+		static color_blending_config enable_alpha_blending_for_attachment(uint32_t pAttachment, color_channel pAffectedColorChannels = color_channel::rgba)
+		{
+			return color_blending_config{
+				pAttachment,
+				true,
+				pAffectedColorChannels,
+				blending_factor::source_alpha, blending_factor::one_minus_source_alpha, color_blending_operation::add,
+				blending_factor::one, blending_factor::one_minus_source_alpha, color_blending_operation::add
+			};
+		}
+
+		static color_blending_config enable_premultiplied_alpha_blending_for_all_attachments(color_channel pAffectedColorChannels = color_channel::rgba)
+		{
+			return color_blending_config{ 
+				{},
+				true,
+				pAffectedColorChannels,
+				blending_factor::one, blending_factor::one_minus_source_alpha, color_blending_operation::add,
+				blending_factor::one, blending_factor::one_minus_source_alpha, color_blending_operation::add
+			};
+		}
+
+		static color_blending_config enable_premultiplied_alpha_blending_for_attachment(uint32_t pAttachment, color_channel pAffectedColorChannels = color_channel::rgba)
+		{
+			return color_blending_config{
+				pAttachment,
+				true,
+				pAffectedColorChannels,
+				blending_factor::one, blending_factor::one_minus_source_alpha, color_blending_operation::add,
+				blending_factor::one, blending_factor::one_minus_source_alpha, color_blending_operation::add
+			};
+		}
+
+		static color_blending_config enable_additive_for_all_attachments(color_channel pAffectedColorChannels = color_channel::rgba)
+		{
+			return color_blending_config{ 
+				{},
+				true,
+				pAffectedColorChannels,
+				blending_factor::one, blending_factor::one, color_blending_operation::add,
+				blending_factor::one, blending_factor::one, color_blending_operation::add
+			};
+		}
+
+		static color_blending_config enable_additive_for_attachment(uint32_t pAttachment, color_channel pAffectedColorChannels = color_channel::rgba)
+		{
+			return color_blending_config{
+				pAttachment,
+				true,
+				pAffectedColorChannels,
+				blending_factor::one, blending_factor::one, color_blending_operation::add,
+				blending_factor::one, blending_factor::one, color_blending_operation::add
+			};
+		}
+
+		bool has_specific_target_attachment()  const { return mTargetAttachment.has_value(); }
+		auto target_attachment() const { return mTargetAttachment; }
+		auto is_blending_enabled() const { return mEnabled; }
+		auto affected_color_channels() const { return mAffectedColorChannels; }
+		auto color_source_factor() const { return mIncomingColorFactor; }
+		auto color_destination_factor() const { return mExistingColorFactor; }
+		auto color_operation() const { return mColorOperation; }
+		auto alpha_source_factor() const { return mIncomingAlphaFactor; }
+		auto alpha_destination_factor() const { return mExistingAlphaFactor; }
+		auto alpha_operation() const { return mAlphaOperation; }
+
+		// affected color attachment
+		// This value must equal the colorAttachmentCount for the subpass in which this pipeline is used.
+		std::optional<uint32_t> mTargetAttachment;
+		// blending enabled
+		bool mEnabled;
+		// affected color channels a.k.a. write mask
+		color_channel mAffectedColorChannels;
+		// incoming a.k.a. source color
+		blending_factor mIncomingColorFactor;
+		// existing a.k.a. destination color
+		blending_factor mExistingColorFactor;
+		// incoming*factor -operation- existing*factor
+		color_blending_operation mColorOperation;
+		// incoming a.k.a. source alpha
+		blending_factor mIncomingAlphaFactor;
+		// existing a.k.a. destination alpha
+		blending_factor mExistingAlphaFactor;
+		// incoming*factor -operation- existing*factor
+		color_blending_operation mAlphaOperation;
 	};
 	
 	/** Pipeline configuration data: BIG GRAPHICS PIPELINE CONFIG STRUCT */
@@ -344,7 +476,6 @@ namespace cgb
 		pipeline_settings mPipelineSettings;
 		std::vector<input_binding_location_data> mInputBindingLocations;
 		std::vector<shader_info> mShaderInfos;
-		std::vector<binding_data> mResourceBindings;
 		depth_test mDepthTestConfig;
 		depth_write mDepthWriteConfig;
 		std::vector<viewport_depth_scissors_config> mViewportDepthConfig;
@@ -353,6 +484,10 @@ namespace cgb
 		polygon_drawing mPolygonDrawingModeAndConfig;
 		rasterizer_geometry_mode mRasterizerGeometryMode;
 		depth_settings mDepthSettings;
+		color_blending_settings mColorBlendingSettings;
+		std::vector<color_blending_config> mColorBlendingPerAttachment;
+		std::vector<binding_data> mResourceBindings;
+		std::vector<push_constant_binding_data> mPushConstantsBindings;
 	};
 
 
