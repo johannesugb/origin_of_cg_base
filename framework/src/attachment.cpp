@@ -1,6 +1,6 @@
 namespace cgb
 {
-	attachment attachment::create_color(image_format pFormat, std::optional<uint32_t> pLocation)
+	attachment attachment::create_color(image_format pFormat, bool pIsPresentable, std::optional<uint32_t> pLocation)
 	{
 #if defined(_DEBUG)
 		if (!is_depth_format(pFormat)) {
@@ -10,7 +10,8 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			false,
+			pIsPresentable,
+			false,	// is not depth
 			1,		// num samples
 			false,	// resolve
 			false	// shader input
@@ -27,7 +28,8 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			true,
+			false,	// Assume that this shall not be presented
+			true,	// is depth
 			1,		// num samples
 			false,	// resolve
 			false	// shader input
@@ -39,14 +41,15 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			is_depth_format(pFormat),
+			false,	// Assume that this shall not be presented
+			is_depth_format(pFormat), // might be depth
 			1,		// num samples
 			false,	// resolve
 			true	// shader input
 		};
 	}
 
-	attachment attachment::create_color_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, std::optional<uint32_t> pLocation)
+	attachment attachment::create_color_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, bool pIsPresentable, std::optional<uint32_t> pLocation)
 	{
 #if defined(_DEBUG)
 		if (!is_depth_format(pFormat)) {
@@ -56,6 +59,7 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
+			pIsPresentable,
 			false,
 			pSampleCount,			// num samples
 			pResolveMultisamples,	// resolve
@@ -73,7 +77,8 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			true,
+			false,					// Assume that this shall not be presented
+			true,					// is depth
 			pSampleCount,			// num samples
 			pResolveMultisamples,	// resolve
 			false					// shader input
@@ -85,7 +90,8 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			false,
+			false,					// Assume that this shall not be presented
+			false,					// is not depth
 			pSampleCount,			// num samples
 			pResolveMultisamples,	// resolve
 			true					// shader input

@@ -40,6 +40,8 @@
 
 #include <imgui.h>
 
+#include "cpplinq.hpp"
+
 // GLM: 
 #if defined(USE_VULKAN_CONTEXT)
 // DEFINES:

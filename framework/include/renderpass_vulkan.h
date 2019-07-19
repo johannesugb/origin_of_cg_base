@@ -11,7 +11,6 @@ namespace cgb
 		std::vector<vk::AttachmentReference> mOrderedDepthAttachmentRefs;
 		std::vector<vk::AttachmentReference> mOrderedResolveAttachmentRefs;
 		std::vector<vk::AttachmentReference> mOrderedInputAttachmentRefs;
-		std::vector<vk::AttachmentReference> mOrderedPreserveAttachmentRefs;
 		std::vector<vk::SubpassDescription> mSubpasses;
 		std::vector<vk::SubpassDependency> mSubpassDependencies;
 		vk::UniqueRenderPass mRenderPass;
