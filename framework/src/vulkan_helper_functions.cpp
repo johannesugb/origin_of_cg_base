@@ -41,9 +41,9 @@ namespace cgb
 		return value ? VK_TRUE : VK_FALSE;
 	}
 
-	vk::ShaderStageFlagBits to_vk_shader_stage(shader_type p)
+	vk::ShaderStageFlagBits to_vk_shader_stage(shader_type pType)
 	{
-		switch (p) {
+		switch (pType) {
 		case cgb::shader_type::vertex:
 			return vk::ShaderStageFlagBits::eVertex;
 		case cgb::shader_type::tessellation_control:
@@ -74,6 +74,28 @@ namespace cgb
 			return vk::ShaderStageFlagBits::eMeshNV;
 		default:
 			throw std::runtime_error("Invalid shader_type");
+		}
+	}
+
+	vk::SampleCountFlagBits to_vk_sample_count(int pSampleCount)
+	{
+		switch (pSampleCount) {
+		case 1:
+			return vk::SampleCountFlagBits::e1;
+		case 2:
+			return vk::SampleCountFlagBits::e2;
+		case 4:
+			return vk::SampleCountFlagBits::e4;
+		case 8:
+			return vk::SampleCountFlagBits::e8;
+		case 16:
+			return vk::SampleCountFlagBits::e16;
+		case 32:
+			return vk::SampleCountFlagBits::e32;
+		case 64:
+			return vk::SampleCountFlagBits::e64;
+		default:
+			throw std::invalid_argument("Invalid number of samples");
 		}
 	}
 }

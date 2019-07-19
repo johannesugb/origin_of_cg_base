@@ -83,34 +83,7 @@ namespace cgb
 
 	void window::set_number_of_samples(int pNumSamples)
 	{
-		vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1;
-		switch (pNumSamples) {
-		case 1:
-			samples = vk::SampleCountFlagBits::e1;
-			break;
-		case 2:
-			samples = vk::SampleCountFlagBits::e2;
-			break;
-		case 4:
-			samples = vk::SampleCountFlagBits::e4;
-			break;
-		case 8:
-			samples = vk::SampleCountFlagBits::e8;
-			break;
-		case 16:
-			samples = vk::SampleCountFlagBits::e16;
-			break;
-		case 32:
-			samples = vk::SampleCountFlagBits::e32;
-			break;
-		case 64:
-			samples = vk::SampleCountFlagBits::e64;
-			break;
-		default:
-			throw std::invalid_argument("Invalid number of samples");
-		}
-
-		mNumberOfSamplesGetter = [samples]() { return samples; };
+		mNumberOfSamplesGetter = [samples = to_vk_sample_count(pNumSamples)]() { return samples; };
 
 		mMultisampleCreateInfoBuilder = [this]() {
 			auto samples = mNumberOfSamplesGetter();

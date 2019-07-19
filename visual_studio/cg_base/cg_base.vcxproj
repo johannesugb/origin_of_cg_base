@@ -42,6 +42,7 @@
     <ClCompile Include="..\..\external\universal\src\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_widgets.cpp" />
     <ClCompile Include="..\..\framework\src\acceleration_structure_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\attachment.cpp" />
     <ClCompile Include="..\..\framework\src\buffer_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\camera.cpp" />
     <ClCompile Include="..\..\framework\src\cg_element.cpp" />
@@ -92,6 +93,7 @@
     <ClCompile Include="..\..\framework\src\pipeline_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
     <ClCompile Include="..\..\framework\src\queue_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\renderpass_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\sampler_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\shader_binding_table_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp" />
@@ -218,6 +220,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\acceleration_structure_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\attachment.h" />
     <ClInclude Include="..\..\framework\include\binding_data_vulkan.h" />
     <ClInclude Include="..\..\framework\include\buffer.h" />
     <ClInclude Include="..\..\framework\include\buffer_data.h" />
@@ -289,6 +292,7 @@
     <ClInclude Include="..\..\framework\include\push_constants.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
     <ClInclude Include="..\..\framework\include\queue_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\renderpass_vulkan.h" />
     <ClInclude Include="..\..\framework\include\sampler_vulkan.h" />
     <ClInclude Include="..\..\framework\include\shader_binding_table_vulkan.h" />
     <ClInclude Include="..\..\framework\include\shader_type.h" />

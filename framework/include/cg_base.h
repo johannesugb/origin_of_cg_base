@@ -84,6 +84,7 @@
 #include "device_queue_selection_strategy.h"
 #include "shader_type.h"
 #include "shader_info.h"
+#include "attachment.h"
 
 #if defined(USE_OPENGL46_CONTEXT)
 #elif defined(USE_VULKAN_CONTEXT)
@@ -115,6 +116,7 @@
 #include "command_pool_vulkan.h"
 #include "synchronization_vulkan.h"
 #include "queue_vulkan.h"
+#include "renderpass_vulkan.h"
 #include "framebuffer_vulkan.h"
 #include "window_vulkan.h"
 #include "buffer_vulkan.h"

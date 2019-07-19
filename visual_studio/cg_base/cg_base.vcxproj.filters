@@ -211,6 +211,12 @@
     <ClCompile Include="..\..\framework\src\graphics_pipeline_config.cpp">
       <Filter>Source Files\pipeline_and_shaders</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\renderpass_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\attachment.cpp">
+      <Filter>Source Files\data_buffers_images</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -464,6 +470,12 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\push_constants.h">
       <Filter>Header Files\pipeline_and_shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\renderpass_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\attachment.h">
+      <Filter>Header Files\data_buffers_images</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
