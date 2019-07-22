@@ -29,6 +29,7 @@
 #include <assert.h>
 
 // ----------------------- externals -----------------------
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <stb_image.h>
@@ -86,14 +87,15 @@
 #include "device_queue_selection_strategy.h"
 #include "shader_type.h"
 #include "shader_info.h"
-#include "attachment.h"
 
 #if defined(USE_OPENGL46_CONTEXT)
 #elif defined(USE_VULKAN_CONTEXT)
 #include <vulkan/vulkan.hpp>
 #include "buffer_member_format_vulkan.h"
+#include "image_vulkan.h"
 #endif
 
+#include "attachment.h"
 #include "buffer_data.h"
 #include "buffer.h"
 #include "input_description.h"
@@ -106,7 +108,6 @@
 
 #elif defined(USE_VULKAN_CONTEXT)
 
-#include "image_vulkan.h"
 #include "context_generic_glfw_types.h"
 #include "window_base.h"
 #include "context_generic_glfw.h"

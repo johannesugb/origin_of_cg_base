@@ -2,7 +2,7 @@ namespace cgb
 {
 	using namespace cpplinq;
 
-	renderpass renderpass::create(std::initializer_list<attachment> pAttachments)
+	renderpass renderpass::create(std::initializer_list<attachment> pAttachments, cgb::context_specific_function<void(renderpass&)> pAlterConfigBeforeCreation)
 	{
 		renderpass result;
 
@@ -19,7 +19,6 @@ namespace cgb
 		uint32_t maxDepthLoc = 0u;
 		uint32_t maxResolveLoc = 0u;
 		uint32_t maxInputLoc = 0u;
-		uint32_t maxPreserveLoc = 0u;
 
 		for (const auto& a : pAttachments) {
 			// 1. Create the attachment descriptions
@@ -43,7 +42,7 @@ namespace cgb
 			auto attachmentIndex = static_cast<uint32_t>(result.mAttachmentDescriptions.size() - 1);
 
 			// 2. Depending on the type, fill one or multiple of the references
-			if (a.is_color_attachment()) {
+			if (a.is_color_attachment()) { //< 2.1. COLOR ATTACHMENT
 				// Build the Reference
 				auto attachmentRef = vk::AttachmentReference().setAttachment(attachmentIndex).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 				// But where to insert it?
@@ -56,7 +55,7 @@ namespace cgb
 					mArbitraryColorLocations.push(attachmentRef);
 				}
 			}
-			if (a.is_depth_attachment()) {
+			if (a.is_depth_attachment()) { //< 2.2. DEPTH ATTACHMENT
 				// Build the Reference
 				auto attachmentRef = vk::AttachmentReference().setAttachment(attachmentIndex).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 				// But where to insert it?
@@ -69,7 +68,7 @@ namespace cgb
 					mArbitraryDepthLocations.push(attachmentRef);
 				}
 			}
-			if (a.is_to_be_resolved()) {
+			if (a.is_to_be_resolved()) { //< 2.3. RESOLVE ATTACHMENT
 				// Build the Reference
 				auto attachmentRef = vk::AttachmentReference().setAttachment(attachmentIndex).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 				// But where to insert it?
@@ -82,7 +81,7 @@ namespace cgb
 					mArbitraryResolveLocations.push(attachmentRef);
 				}
 			}
-			if (a.is_shader_input_attachment()) {
+			if (a.is_shader_input_attachment()) { //< 2.4. INPUT ATTACHMENT
 				// Build the Reference
 				auto attachmentRef = vk::AttachmentReference().setAttachment(attachmentIndex).setLayout(vk::ImageLayout::eShaderReadOnlyOptimal); // TODO: This layout?
 				// But where to insert it?
@@ -160,18 +159,100 @@ namespace cgb
 			}
 		}
 
+		// SOME SANITY CHECKS:
+		// - The resolve attachments must either be empty or there must be a entry for each color attachment 
 		assert(result.mOrderedResolveAttachmentRefs.size() == 0
 			|| result.mOrderedResolveAttachmentRefs.size() == result.mOrderedColorAttachmentRefs.size());
+		// - There must not be more than 1 depth/stencil attachements
+		assert(result.mOrderedDepthAttachmentRefs.size() <= 1);
 
 		// 4. Now we can fill the subpass description
-		auto subpass = vk::SubpassDescription()
+		result.mSubpasses.push_back(vk::SubpassDescription()
+			// pipelineBindPoint must be VK_PIPELINE_BIND_POINT_GRAPHICS [1] because subpasses are only relevant for graphics at the moment
 			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 			.setColorAttachmentCount(static_cast<uint32_t>(result.mOrderedColorAttachmentRefs.size()))
 			.setPColorAttachments(result.mOrderedColorAttachmentRefs.data())
-			.setPResolveAttachments(result.mOrderedResolveAttachmentRefs.data())
+			// If pResolveAttachments is not NULL, each of its elements corresponds to a color attachment 
+			//  (the element in pColorAttachments at the same index), and a multisample resolve operation 
+			//  is defined for each attachment. [1]
+			.setPResolveAttachments(result.mOrderedResolveAttachmentRefs.size() == 0 ? nullptr : result.mOrderedResolveAttachmentRefs.data())
+			// If pDepthStencilAttachment is NULL, or if its attachment index is VK_ATTACHMENT_UNUSED, it 
+			//  indicates that no depth/stencil attachment will be used in the subpass. [1]
+			.setPDepthStencilAttachment(result.mOrderedDepthAttachmentRefs.size() == 0 ? nullptr : &result.mOrderedDepthAttachmentRefs[0])
+			// The following two attachment types are probably totally irrelevant if we only have one subpass
+			// TODO: support more subpasses!
 			.setInputAttachmentCount(static_cast<uint32_t>(result.mOrderedInputAttachmentRefs.size()))
 			.setPInputAttachments(result.mOrderedInputAttachmentRefs.data())
-			.setPreserveAttachmentCount(static_cast<uint32_t>(result.mOrderedPreserveAttachmentRefs.size()))
-			.setPPreserveAttachments(result.mOrderedPreserveAttachmentRefs.data())
+			.setPreserveAttachmentCount(0u)
+			.setPPreserveAttachments(nullptr));
+		
+		// ======== Regarding Subpass Dependencies ==========
+		// At this point, we can not know how a subpass shall 
+		// be synchronized exactly with whatever comes before
+		// and whatever comes after. 
+		//  => Let's establish very (overly) cautious dependencies to ensure correctness:
+
+		result.mSubpassDependencies.push_back(vk::SubpassDependency()
+			// Between which two subpasses is this dependency:
+			.setSrcSubpass(VK_SUBPASS_EXTERNAL)
+			.setDstSubpass(0u)
+			// Which stage from whatever comes before are we waiting on, and which operations from whatever comes before are we waiting on:
+			.setSrcStageMask(vk::PipelineStageFlagBits::eAllGraphics) // eAllGraphics contains (among others) eColorAttachmentOutput [3] (this one in particular to wait for the swap chain)
+			.setSrcAccessMask(vk::AccessFlagBits::eInputAttachmentRead 
+							| vk::AccessFlagBits::eColorAttachmentRead
+							| vk::AccessFlagBits::eColorAttachmentWrite
+							| vk::AccessFlagBits::eDepthStencilAttachmentRead
+							| vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+			// Which stage and which operations of our subpass ZERO shall wait:
+			.setDstStageMask(vk::PipelineStageFlagBits::eAllGraphics)
+			.setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead 
+							| vk::AccessFlagBits::eColorAttachmentRead
+							| vk::AccessFlagBits::eColorAttachmentWrite
+							| vk::AccessFlagBits::eDepthStencilAttachmentRead
+							| vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+		);
+
+		result.mSubpassDependencies.push_back(vk::SubpassDependency()
+			// Between which two subpasses is this dependency:
+			.setSrcSubpass(0u)
+			.setDstSubpass(VK_SUBPASS_EXTERNAL)
+			// Which stage and which operations of our subpass ZERO shall be waited on by whatever comes after:
+			.setSrcStageMask(vk::PipelineStageFlagBits::eAllGraphics) // Super cautious, actually eColorAttachmentOutput (which is included in eAllGraphics [3]) should sufficee
+			.setSrcAccessMask(vk::AccessFlagBits::eInputAttachmentRead 
+							| vk::AccessFlagBits::eColorAttachmentRead
+							| vk::AccessFlagBits::eColorAttachmentWrite
+							| vk::AccessFlagBits::eDepthStencilAttachmentRead
+							| vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+			// Which stage of whatever comes after shall wait, and which operations from whatever comes after shall wait:
+			.setDstStageMask(vk::PipelineStageFlagBits::eAllGraphics) 
+			.setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead 
+							| vk::AccessFlagBits::eColorAttachmentRead
+							| vk::AccessFlagBits::eColorAttachmentWrite
+							| vk::AccessFlagBits::eDepthStencilAttachmentRead
+							| vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+		);
+
+		// Maybe alter the config?!
+		if (pAlterConfigBeforeCreation.mFunction) {
+			pAlterConfigBeforeCreation.mFunction(result);
+		}
+
+		// Finally, create the render pass
+		auto createInfo = vk::RenderPassCreateInfo()
+			.setAttachmentCount(static_cast<uint32_t>(result.mAttachmentDescriptions.size()))
+			.setPAttachments(result.mAttachmentDescriptions.data())
+			.setSubpassCount(static_cast<uint32_t>(result.mSubpasses.size()))
+			.setPSubpasses(result.mSubpasses.data())
+			.setDependencyCount(static_cast<uint32_t>(result.mSubpassDependencies.size()))
+			.setPDependencies(result.mSubpassDependencies.data());
+		result.mRenderPass = context().logical_device().createRenderPassUnique(createInfo);
+		return result; 
+
+		// TODO: Support VkSubpassDescriptionDepthStencilResolveKHR in order to enable resolve-settings for the depth attachment (see [1] and [2] for more details)
+		
+		// References:
+		// [1] https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkSubpassDescription.html
+		// [2] https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkSubpassDescriptionDepthStencilResolveKHR.html
+		// [3] https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkPipelineStageFlagBits.html
 	}
 }

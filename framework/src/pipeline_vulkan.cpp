@@ -1,12 +1,12 @@
 namespace cgb
 {
-	pipeline pipeline::prepare(
+	graphics_pipeline graphics_pipeline::prepare(
 		std::vector<shader> pShaders,
 		std::vector<descriptor_set_layout> pDescriptorSetLayouts, 
 		depth_test pDepthTestConfig, 
 		depth_write pDepthWriteConfig)
 	{
-		pipeline result;
+		graphics_pipeline result;
 		result.mShaders = std::move(pShaders);
 
 		result.mDepthStencilConfig
@@ -23,7 +23,7 @@ namespace cgb
 		return result;
 	}
 
-	void pipeline::build()
+	void graphics_pipeline::build()
 	{
 		// Shader Stages:
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;

@@ -12,6 +12,6 @@ namespace cgb // ========================== TODO/WIP ===========================
 		shader_binding_table& operator=(shader_binding_table&&) noexcept;
 		~shader_binding_table();
 
-		static shader_binding_table create(const pipeline& pRtPipeline);
+		static shader_binding_table create(const graphics_pipeline& pRtPipeline);
 	};
 }
