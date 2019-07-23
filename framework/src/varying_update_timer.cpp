@@ -26,7 +26,7 @@ namespace cgb
 		return static_cast<float>(mAbsTime);
 	}
 
-	float varying_update_timer::frame_time() const
+	float varying_update_timer::time_since_start() const
 	{
 		return static_cast<float>(mTimeSinceStart);
 	}

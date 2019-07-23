@@ -20,7 +20,7 @@ namespace cgb
 		void set_fixed_simulation_hertz(double pFixedSimulationHz);
 
 		float absolute_time() const override;
-		float frame_time() const override;
+		float time_since_start() const override;
 		float fixed_delta_time() const override;
 		float delta_time() const override;
 		float time_scale() const override;

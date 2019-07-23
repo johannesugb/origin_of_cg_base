@@ -142,6 +142,57 @@ namespace cgb
 		update_matrix_from_transforms();
 	}
 
+	void transform::look_along(const glm::vec3& pDirection)
+	{
+		if (glm::dot(pDirection, pDirection) < 0.0001f) {
+			LOG_ERROR("Direction vector passed to transform::look_along has (almost) zero length.");
+			return;
+		}
+
+		auto back = normalize(-pDirection);
+		auto right = glm::normalize(glm::cross(up(), back));
+		auto up = glm::normalize(glm::cross(back, right));
+
+		mMatrix = glm::mat4(
+			glm::vec4(right, 0.0f) * mScale.x,
+			glm::vec4(up   , 0.0f) * mScale.y,
+			glm::vec4(back , 0.0f) * mScale.z,
+			vec4(mTranslation, 1.0f)
+		);
+		update_transforms_from_matrix();
+
+		//// Source: opengl-tutorial, Tutorial 17 : Rotations, accessed 26.06.2019,
+		////	       http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/
+		////
+
+		//// Orient the front vector towards the given direction:
+		//auto dir = glm::normalize(pDirection);
+		//auto rot1 = rotation_between_vectors(front(), dir);
+
+		//// Recompute desiredUp so that it's perpendicular to the direction
+		//// You can skip that part if you really want to force desiredUp
+		//vec3 right = glm::cross(dir, up());
+		//vec3 desiredUp = glm::cross(right, dir);
+
+		//// Because of the 1rst rotation, the up is probably completely screwed up.
+		//// Find the rotation between the "up" of the rotated object, and the desired up
+		//vec3 newUp = rot1 * up();
+		//quat rot2 = rotation_between_vectors(newUp, desiredUp);
+
+		//mRotation = rot2 * rot1;
+		//update_matrix_from_transforms();
+	}
+
+	void transform::look_at(const glm::vec3& pTarget)
+	{
+		look_along(pTarget - position(*this));
+	}
+
+	void transform::look_at(const transform& pTarget)
+	{
+		look_along(position(pTarget) - position(*this));
+	}
+
 	const mat4& transform::local_transformation_matrix() const
 	{
 		return mMatrix;
@@ -271,8 +322,16 @@ namespace cgb
 		// TODO: How to?
 	}
 
+	glm::vec3 position(const transform& pTransform)
+	{
+		return pTransform.translation();
+	}
 
-
+	glm::vec3 position_wrt(const transform& pTransform, glm::mat4 pReference)
+	{
+		// TODO: How to?
+		return position(pTransform);
+	}
 
 
 	//// Alter current transformations 

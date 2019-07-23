@@ -151,6 +151,21 @@
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp">
       <Filter>Source Files\timer</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\cp_interpolation.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\bezier_curve.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\catmull_rom_spline.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\cubic_uniform_b_spline.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\quadratic_uniform_b_spline.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\framework\include\context.h">
@@ -329,6 +344,21 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\varying_update_timer.h">
       <Filter>Header Files\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\cp_interpolation.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\bezier_curve.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\catmull_rom_spline.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\cubic_uniform_b_spline.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\quadratic_uniform_b_spline.h">
+      <Filter>Header Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

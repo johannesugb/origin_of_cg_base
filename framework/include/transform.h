@@ -31,6 +31,16 @@ namespace cgb
 		/** sets a new scale, current scale is overwritten */
 		void set_scale(const glm::vec3& pValue);
 
+		/** Align this transform's front vector along the given direction. */
+		void look_along(const glm::vec3& pDirection);
+
+		/** Align this transform's front vector towards the given target. */
+		void look_at(const glm::vec3& pTarget);
+
+		/** Align this transform's front vector towards the given target. */
+		void look_at(const transform& pTarget);
+
+
 		/** returns the local transformation matrix, disregarding parent transforms */
 		const glm::mat4& local_transformation_matrix() const;
 		/** returns the global transformation matrix, taking parent transforms into account */
@@ -87,6 +97,12 @@ namespace cgb
 	void attach_transform(transform::ptr pParent, transform::ptr pChild);
 	void detach_transform(transform::ptr pParent, transform::ptr pChild);
 
+	static constexpr glm::vec3 back () { return glm::vec3( 0.f,  0.f,  1.f); }
+	static constexpr glm::vec3 front() { return glm::vec3( 0.f,  0.f, -1.f); }
+	static constexpr glm::vec3 right() { return glm::vec3( 1.f,  0.f,  0.f); }
+	static constexpr glm::vec3 left () { return glm::vec3(-1.f,  0.f,  0.f); }
+	static constexpr glm::vec3 up   () { return glm::vec3( 0.f,  1.f,  0.f); }
+	static constexpr glm::vec3 down () { return glm::vec3( 0.f, -1.f,  0.f); }
 	static glm::vec3 back (const transform& pTransform) { return  pTransform.z_axis(); }
 	static glm::vec3 front(const transform& pTransform) { return -pTransform.z_axis(); }
 	static glm::vec3 right(const transform& pTransform) { return  pTransform.x_axis(); }
@@ -105,6 +121,8 @@ namespace cgb
 	void translate_wrt(transform& pTransform, const glm::vec3& pTranslation, glm::mat4 pReference = glm::mat4(1.0f));
 	void rotate_wrt(transform& pTransform, const glm::quat& pRotation, glm::mat4 pReference = glm::mat4(1.0f));
 	void scale_wrt(transform& pTransform, const glm::vec3& pScale, glm::mat4 pReference = glm::mat4(1.0f));
+	glm::vec3 position(const transform& pTransform);
+	glm::vec3 position_wrt(const transform& pTransform, glm::mat4 pReference = glm::mat4(1.0f));
 
 	///**  */
 	//void LookAt(transform* target);

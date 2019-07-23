@@ -33,7 +33,9 @@
     <ClCompile Include="..\..\external\universal\src\imgui.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_demo.cpp" />
     <ClCompile Include="..\..\external\universal\src\imgui_draw.cpp" />
+    <ClCompile Include="..\..\framework\src\bezier_curve.cpp" />
     <ClCompile Include="..\..\framework\src\camera.cpp" />
+    <ClCompile Include="..\..\framework\src\catmull_rom_spline.cpp" />
     <ClCompile Include="..\..\framework\src\cg_element.cpp" />
     <ClCompile Include="..\..\framework\src\composition_interface.cpp" />
     <ClCompile Include="..\..\framework\src\context.cpp" />
@@ -58,11 +60,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\framework\src\cp_interpolation.cpp" />
+    <ClCompile Include="..\..\framework\src\cubic_uniform_b_spline.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\input_buffer.cpp" />
     <ClCompile Include="..\..\framework\src\log.cpp" />
     <ClCompile Include="..\..\framework\src\math_utils.cpp" />
     <ClCompile Include="..\..\framework\src\model.cpp" />
+    <ClCompile Include="..\..\framework\src\quadratic_uniform_b_spline.cpp" />
     <ClCompile Include="..\..\framework\src\quake_camera.cpp" />
     <ClCompile Include="..\..\framework\src\shader.cpp" />
     <ClCompile Include="..\..\framework\src\transform.cpp" />
@@ -174,7 +179,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\framework\include\bezier_curve.h" />
     <ClInclude Include="..\..\framework\include\camera.h" />
+    <ClInclude Include="..\..\framework\include\catmull_rom_spline.h" />
     <ClInclude Include="..\..\framework\include\cg_base.h" />
     <ClInclude Include="..\..\framework\include\cg_element.h" />
     <ClInclude Include="..\..\framework\include\composition.h" />
@@ -203,6 +210,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="..\..\framework\include\cp_interpolation.h" />
+    <ClInclude Include="..\..\framework\include\cubic_uniform_b_spline.h" />
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="..\..\framework\include\input_buffer.h" />
     <ClInclude Include="..\..\framework\include\key_code.h" />
@@ -210,6 +219,7 @@
     <ClInclude Include="..\..\framework\include\log.h" />
     <ClInclude Include="..\..\framework\include\math_utils.h" />
     <ClInclude Include="..\..\framework\include\model.h" />
+    <ClInclude Include="..\..\framework\include\quadratic_uniform_b_spline.h" />
     <ClInclude Include="..\..\framework\include\quake_camera.h" />
     <ClInclude Include="..\..\framework\include\string_utils.h" />
     <ClInclude Include="..\..\framework\include\sequential_executor.h" />

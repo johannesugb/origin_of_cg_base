@@ -26,7 +26,7 @@ namespace cgb
 		 *	I.e., a simulation-only update frame will have a different
 		 *	frame-time than the following update-and-render frame.
 		 */
-		virtual float frame_time() const = 0;
+		virtual float time_since_start() const = 0;
 
 		/**	@brief The duration of the fixed simulation timestep 
 		 *
