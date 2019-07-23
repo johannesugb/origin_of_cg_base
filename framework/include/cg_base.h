@@ -1,4 +1,5 @@
 #pragma once
+// ReSharper disable CppUnusedIncludeDirective
 
 // ------ commonly used stuff from the standard library ------
 #include <vector>
@@ -24,6 +25,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <cstdlib>
+#include <typeindex>
 
 #include <stdio.h>
 #include <assert.h>
@@ -100,7 +102,6 @@
 #include "buffer.h"
 #include "input_description.h"
 #include "push_constants.h"
-#include "graphics_pipeline_config.h"
 
 #if defined(USE_OPENGL46_CONTEXT)
 
@@ -126,6 +127,7 @@
 #include "acceleration_structure_vulkan.h"
 #include "shader_vulkan.h"
 #include "binding_data_vulkan.h"
+#include "graphics_pipeline_config.h"
 #include "descriptor_set_vulkan.h"
 #include "descriptor_pool_vulkan.h"
 #include "pipeline_vulkan.h"
@@ -196,3 +198,5 @@ namespace cgb
 #include "model.h"
 #include "camera.h"
 #include "quake_camera.h"
+
+// ReSharper restore CppUnusedIncludeDirective

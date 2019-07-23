@@ -2,17 +2,36 @@
 
 namespace cgb
 {
-	/** One specific input location description to a graphics pipeline,
-	 *	used to gather data for the creation of a `input_description` instance.
-	 */
-	struct input_binding_location_data
+	struct input_binding_general_data
 	{
 		enum struct kind { vertex, instance };
 
 		uint32_t mBinding;
 		size_t mStride;
 		kind mKind;
-		buffer_element_member_meta mLocation;
+	};
+
+	inline bool operator ==(const input_binding_general_data& left, const input_binding_general_data& right)
+	{
+		return left.mBinding == right.mBinding && left.mStride == right.mStride && left.mKind == right.mKind;
+	}
+
+	inline bool operator <(const input_binding_general_data& left, const input_binding_general_data& right)
+	{
+		return left.mBinding < right.mBinding 
+			|| (left.mBinding == right.mBinding && (left.mStride < right.mStride 
+												|| (left.mStride == right.mStride && left.mKind == input_binding_general_data::kind::vertex && right.mKind == input_binding_general_data::kind::instance)
+				));
+	}
+
+
+	/** One specific input location description to a graphics pipeline,
+	 *	used to gather data for the creation of a `input_description` instance.
+	 */
+	struct input_binding_location_data
+	{
+		input_binding_general_data mGeneralData;
+		buffer_element_member_meta mMemberMetaData;
 	};
 
 	/**	Describes the input to a graphics pipeline
@@ -37,9 +56,12 @@ namespace cgb
 	 *	Also, assign the input location to a specific binding point (first parameter `pBinding`).
 	 *	The binding point represents a specific buffer which provides the data for the location specified.
 	 */
-	input_binding_location_data vertex_input_binding(uint32_t pBinding, uint32_t pLocation, size_t pOffset, buffer_member_format pFormat, size_t pStride)
+	inline input_binding_location_data vertex_input_binding(uint32_t pBinding, uint32_t pLocation, size_t pOffset, buffer_member_format pFormat, size_t pStride)
 	{
-		return input_binding_location_data{ pBinding, pStride, input_binding_location_data::kind::vertex, { pLocation, pOffset, pFormat } };
+		return input_binding_location_data{ 
+			{pBinding, pStride, input_binding_general_data::kind::vertex},
+			{ pLocation, pOffset, pFormat } 
+		};
 	}
 
 #if defined _MSC_VER && !defined _CRT_USE_BUILTIN_OFFSETOF
@@ -58,12 +80,14 @@ namespace cgb
 	 *	```
 	 */
 	template <class T, class M> 
-	input_binding_location_data& vertex_input_binding(uint32_t pBinding, uint32_t pLocation, M T::* pMember)
+	input_binding_location_data vertex_input_binding(uint32_t pBinding, uint32_t pLocation, M T::* pMember)
 	{
 		return vertex_input_binding(
 			pBinding, 
 			pLocation, 
+			// ReSharper disable CppCStyleCast
 			((::size_t)&reinterpret_cast<char const volatile&>((((T*)0)->*pMember))),
+			// ReSharper restore CppCStyleCast
 			format_for<M>(),
 			sizeof(T));
 	}
@@ -75,9 +99,12 @@ namespace cgb
 	*	Also, assign the input location to a specific binding point (first parameter `pBinding`).
 	*	The binding point represents a specific buffer which provides the data for the location specified.
 	*/
-	input_binding_location_data instance_input_binding(uint32_t pBinding, uint32_t pLocation, size_t pOffset, buffer_member_format pFormat, size_t pStride)
+	inline input_binding_location_data instance_input_binding(uint32_t pBinding, uint32_t pLocation, size_t pOffset, buffer_member_format pFormat, size_t pStride)
 	{
-		return input_binding_location_data{ pBinding, pStride, input_binding_location_data::kind::instance, { pLocation, pOffset, pFormat } };
+		return input_binding_location_data{ 
+			{ pBinding, pStride, input_binding_general_data::kind::instance}, 
+			{ pLocation, pOffset, pFormat } 
+		};
 	}
 
 #if defined _MSC_VER && !defined _CRT_USE_BUILTIN_OFFSETOF
@@ -94,12 +121,14 @@ namespace cgb
 	*	```
 	*/
 	template <class T, class M> 
-	input_binding_location_data& instance_input_binding(uint32_t pBinding, uint32_t pLocation, M T::* pMember)
+	input_binding_location_data instance_input_binding(uint32_t pBinding, uint32_t pLocation, M T::* pMember)
 	{
 		return instance_input_binding(
 			pBinding, 
 			pLocation, 
+			// ReSharper disable CppCStyleCast
 			((::size_t)&reinterpret_cast<char const volatile&>((((T*)0)->*pMember))),
+			// ReSharper restore CppCStyleCast
 			format_for<M>(),
 			sizeof(T));
 	}

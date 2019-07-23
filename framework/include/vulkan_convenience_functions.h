@@ -134,11 +134,11 @@ namespace cgb
 
 	// Conveniently construct a pipeline with the given settings
 	template <typename... Ts>
-	graphics_pipeline graphics_pipeline_for(Ts... args)
+	graphics_pipeline graphics_pipeline_for(Ts... args, cgb::context_specific_function<void(graphics_pipeline&)> _AlterConfigBeforeCreation = {})
 	{
 		graphics_pipeline_config config;
 		add_config(config, args...);
 
-		return graphics_pipeline::create(config);
+		return graphics_pipeline::create(config, std::move(_AlterConfigBeforeCreation));
 	}
 }

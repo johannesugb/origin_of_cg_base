@@ -98,4 +98,16 @@ namespace cgb
 			throw std::invalid_argument("Invalid number of samples");
 		}
 	}
+
+	vk::VertexInputRate to_vk_vertex_input_rate(input_binding_general_data::kind _Value)
+	{
+		switch (_Value) {
+		case input_binding_general_data::kind::instance:
+			return vk::VertexInputRate::eInstance;
+		case input_binding_general_data::kind::vertex:
+			return vk::VertexInputRate::eVertex;
+		default:
+			throw std::invalid_argument("Invalid vertex input rate");
+		}
+	}
 }

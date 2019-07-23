@@ -18,4 +18,6 @@ namespace cgb
 	extern vk::ShaderStageFlagBits to_vk_shader_stage(shader_type pType);
 
 	extern vk::SampleCountFlagBits to_vk_sample_count(int pSampleCount);
+
+	extern vk::VertexInputRate to_vk_vertex_input_rate(input_binding_general_data::kind _Value);
 }

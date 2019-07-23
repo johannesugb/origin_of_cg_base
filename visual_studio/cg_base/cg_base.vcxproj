@@ -43,6 +43,7 @@
     <ClCompile Include="..\..\external\universal\src\imgui_widgets.cpp" />
     <ClCompile Include="..\..\framework\src\acceleration_structure_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\attachment.cpp" />
+    <ClCompile Include="..\..\framework\src\binding_data_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\buffer_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\camera.cpp" />
     <ClCompile Include="..\..\framework\src\cg_element.cpp" />
