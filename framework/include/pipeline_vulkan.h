@@ -23,25 +23,24 @@ namespace cgb // ========================== TODO/WIP ===========================
 		static graphics_pipeline create(const graphics_pipeline_config& _Config, cgb::context_specific_function<void(graphics_pipeline&)> _AlterConfigBeforeCreation = {});
 
 	private:
+		// The vertex input data:
 		std::vector<vk::VertexInputBindingDescription> mVertexInputBindingDescriptions;
+		std::vector<vk::VertexInputAttributeDescription> mVertexInputAttributeDescriptions;
 		vk::PipelineVertexInputStateCreateInfo mPipelineVertexInputStateCreateInfo;
-
-		std::vector<shader_info> mShaderInfos;
-		depth_test mDepthTestConfig;
-		depth_write mDepthWriteConfig;
-		std::vector<viewport_depth_scissors_config> mViewportDepthConfig;
-		culling_mode mCullingMode;
-		front_face mFrontFaceWindingOrder;
-		polygon_drawing mPolygonDrawingModeAndConfig;
-		rasterizer_geometry_mode mRasterizerGeometryMode;
-		depth_settings mDepthSettings;
-		color_blending_settings mColorBlendingSettings;
-		std::vector<color_blending_config> mColorBlendingPerAttachment;
-		std::vector<binding_data> mResourceBindings;
-		std::vector<push_constant_binding_data> mPushConstantsBindings;
-
-
+		// How to interpret the vertex input:
+		vk::PipelineInputAssemblyStateCreateInfo mInputAssemblyStateCreateInfo;
+		// Our precious GPU shader programs:
 		std::vector<shader> mShaders;
+		std::vector<vk::PipelineShaderStageCreateInfo> mShaderStageCreateInfos;
+		// Viewport, depth, and scissors configuration
+		std::vector<vk::Viewport> mViewports;
+		std::vector<vk::Rect2D> mScissors;
+		vk::PipelineViewportStateCreateInfo mViewportStateCreateInfo;
+		// Rasterization state:
+		vk::PipelineRasterizationStateCreateInfo mRasterizationStateCreateInfo;
+		// TODO: Proceed here
+
+
 		vk::PipelineDepthStencilStateCreateInfo mDepthStencilConfig;
 		//vk::PipelineLayoutCreateInfo
 		vk::PipelineCreateFlagBits mPipelineCreateFlags;

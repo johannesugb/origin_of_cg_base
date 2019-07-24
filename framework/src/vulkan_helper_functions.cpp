@@ -110,4 +110,76 @@ namespace cgb
 			throw std::invalid_argument("Invalid vertex input rate");
 		}
 	}
+
+	vk::PrimitiveTopology to_vk_primitive_topology(primitive_topology _Value)
+	{
+		switch (_Value) {
+		case primitive_topology::points:
+			return vk::PrimitiveTopology::ePointList;
+		case primitive_topology::lines: 
+			return vk::PrimitiveTopology::eLineList;
+		case primitive_topology::line_strip:
+			return vk::PrimitiveTopology::eLineStrip;
+		case primitive_topology::triangles: 
+			return vk::PrimitiveTopology::eTriangleList;
+		case primitive_topology::triangle_strip:
+			return vk::PrimitiveTopology::eTriangleStrip;
+		case primitive_topology::triangle_fan: 
+			return vk::PrimitiveTopology::eTriangleFan;
+		case primitive_topology::lines_with_adjacency:
+			return vk::PrimitiveTopology::eLineListWithAdjacency;
+		case primitive_topology::line_strip_with_adjacency: 
+			return vk::PrimitiveTopology::eLineStripWithAdjacency;
+		case primitive_topology::triangles_with_adjacency: 
+			return vk::PrimitiveTopology::eTriangleListWithAdjacency;
+		case primitive_topology::triangle_strip_with_adjacency: 
+			return vk::PrimitiveTopology::eTriangleStripWithAdjacency;
+		case primitive_topology::patches: 
+			return vk::PrimitiveTopology::ePatchList;
+		default:
+			throw std::invalid_argument("Invalid primitive topology");
+		}
+	}
+
+	vk::PolygonMode to_vk_polygon_mode(polygon_drawing_mode _Value)
+	{
+		switch (_Value) {
+		case polygon_drawing_mode::fill: 
+			return vk::PolygonMode::eFill;
+		case polygon_drawing_mode::line:
+			return vk::PolygonMode::eLine;
+		case polygon_drawing_mode::point:
+			return vk::PolygonMode::ePoint;
+		default:
+			throw std::invalid_argument("Invalid polygon drawing mode.");
+		}
+	}
+
+	vk::CullModeFlags to_vk_cull_mode(culling_mode _Value)
+	{
+		switch (_Value) {
+		case culling_mode::disabled:
+			return vk::CullModeFlagBits::eNone;
+		case culling_mode::cull_front_faces:
+			return vk::CullModeFlagBits::eFront;
+		case culling_mode::cull_back_faces:
+			return vk::CullModeFlagBits::eBack;
+		case culling_mode::cull_front_and_back_faces:
+			return vk::CullModeFlagBits::eFrontAndBack;
+		default:
+			throw std::invalid_argument("Invalid culling mode.");
+		}
+	}
+
+	vk::FrontFace to_vk_front_face(winding_order _Value)
+	{
+		switch (_Value) {
+		case winding_order::counter_clockwise:
+			return vk::FrontFace::eCounterClockwise;
+		case winding_order::clockwise:
+			return vk::FrontFace::eClockwise;
+		default:
+			throw std::invalid_argument("Invalid front face winding order.");
+		}
+	}
 }

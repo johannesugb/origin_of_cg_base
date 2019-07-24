@@ -20,4 +20,12 @@ namespace cgb
 	extern vk::SampleCountFlagBits to_vk_sample_count(int pSampleCount);
 
 	extern vk::VertexInputRate to_vk_vertex_input_rate(input_binding_general_data::kind _Value);
+	
+	extern vk::PrimitiveTopology to_vk_primitive_topology(primitive_topology _Value);
+
+	extern vk::PolygonMode to_vk_polygon_mode(polygon_drawing_mode _Value);
+
+	extern vk::CullModeFlags to_vk_cull_mode(culling_mode _Value);
+
+	extern vk::FrontFace to_vk_front_face(winding_order _Value);
 }

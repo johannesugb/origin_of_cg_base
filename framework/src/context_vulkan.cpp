@@ -942,52 +942,7 @@ namespace cgb
 		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
 	{
 
-		
-		// DESCRIBE THE VERTEX INPUT
-		auto vertexInputinfo = vk::PipelineVertexInputStateCreateInfo()
-			.setVertexBindingDescriptionCount(1u)
-			.setPVertexBindingDescriptions(&pBindingDesc)
-			.setVertexAttributeDescriptionCount(static_cast<uint32_t>(pNumAttributeDesc))
-			.setPVertexAttributeDescriptions(pAttributeDescDataPtr);
 
-		// HOW TO INTERPRET THE VERTEX INPUT
-		auto inputAssembly = vk::PipelineInputAssemblyStateCreateInfo()
-			.setTopology(vk::PrimitiveTopology::eTriangleList)
-			.setPrimitiveRestartEnable(VK_FALSE);
-
-		// VIEWPORT AND SCISSORS
-		auto viewport = vk::Viewport()
-			.setX(0.0f)
-			.setY(0.0f)
-			// Remember that the size of the swap chain and its images may differ from the WIDTH and HEIGHT of the window.The swap chain images will be used as framebuffers later on, so we should stick to their size. [4]
-			.setWidth(static_cast<float>(scExtent.width))
-			.setHeight(static_cast<float>(scExtent.height))
-			// These values must be within the [0.0f, 1.0f] range, but minDepth may be higher than maxDepth. If you aren't doing anything special, then you should stick to the standard values of 0.0f and 1.0f. [4]
-			.setMinDepth(0.0f)
-			.setMaxDepth(1.0f);
-		auto scissor = vk::Rect2D()
-			.setOffset(vk::Offset2D(0, 0))
-			.setExtent(scExtent);
-
-		auto viewportInfo = vk::PipelineViewportStateCreateInfo()
-			.setViewportCount(1u)
-			.setPViewports(&viewport)
-			.setScissorCount(1u)
-			.setPScissors(&scissor);
-		
-		// RASTERIZATION STATE
-		auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
-			.setDepthClampEnable(VK_FALSE) // If depthClampEnable is set to VK_TRUE, then fragments that are beyond the near and far planes are clamped to them as opposed to discarding them. [4]
-			.setRasterizerDiscardEnable(VK_FALSE) // If rasterizerDiscardEnable is set to VK_TRUE, then geometry never passes through the rasterizer stage. [4]
-			.setPolygonMode(vk::PolygonMode::eFill) // fill the polygon || draw wireframe || draw points
-			.setLineWidth(1.0f) // Even if we're not using wireframe mode, we still have to set it, otherwise we'll get a Vulkan error
-			.setCullMode(vk::CullModeFlagBits::eBack)
-			.setFrontFace(vk::FrontFace::eCounterClockwise)
-			//.setFrontFace(vk::FrontFace::eClockwise)
-			.setDepthBiasEnable(VK_FALSE) // The rasterizer can alter the depth values by adding a constant value or biasing them based on a fragment's slope. This is sometimes used for shadow mapping [4]
-			.setDepthBiasConstantFactor(0.0f) // Optional
-			.setDepthBiasClamp(0.0f) // Optional
-			.setDepthBiasSlopeFactor(0.0f); // Optional
 
 		// COLOR BLENDING
 		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState()

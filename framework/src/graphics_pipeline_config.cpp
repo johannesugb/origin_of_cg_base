@@ -2,7 +2,9 @@ namespace cgb
 {
 	// Set sensible defaults:
 	graphics_pipeline_config::graphics_pipeline_config()
-		: mPipelineSettings(pipeline_settings::nothing)
+		: mPipelineSettings{ pipeline_settings::nothing }
+		, mPrimitiveTopology{ primitive_topology::triangles }
+		// TODO: Proceed here with defining default parameters
 		, mDepthTestConfig(depth_test::enabled())
 		, mDepthWriteConfig(depth_write::enabled())
 		, mCullingMode(culling_mode::cull_back_faces)

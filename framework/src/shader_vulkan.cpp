@@ -17,9 +17,9 @@ namespace cgb
 		return shdr;
 	}
 
-	vk::UniqueShaderModule shader::build_from_file(std::string_view pPath)
+	vk::UniqueShaderModule shader::build_from_file(const std::string& pPath)
 	{
-		auto binFileContents = cgb::load_binary_file("shaders/shader.vert.spv");
+		auto binFileContents = cgb::load_binary_file(pPath);
 		return shader::build_from_binary_code(binFileContents);
 	}
 
@@ -32,7 +32,7 @@ namespace cgb
 		return context().logical_device().createShaderModuleUnique(createInfo);
 	}
 
-	bool shader::has_been_built()
+	bool shader::has_been_built() const
 	{
 		return static_cast<bool>(mShaderModule);
 	}

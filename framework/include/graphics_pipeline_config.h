@@ -462,6 +462,23 @@ namespace cgb
 		// incoming*factor -operation- existing*factor
 		color_blending_operation mAlphaOperation;
 	};
+
+	/** How the vertex input is to be interpreted topology-wise */
+	enum struct primitive_topology
+	{
+		points,
+		lines,
+		line_strip,
+		triangles,
+		triangle_strip,
+		triangle_fan,
+		lines_with_adjacency,
+		line_strip_with_adjacency,
+		triangles_with_adjacency,
+		triangle_strip_with_adjacency,
+		patches
+	};
+
 	
 	/** Pipeline configuration data: BIG GRAPHICS PIPELINE CONFIG STRUCT */
 	struct graphics_pipeline_config
@@ -473,12 +490,14 @@ namespace cgb
 		graphics_pipeline_config& operator=(const graphics_pipeline_config&) = default;
 		~graphics_pipeline_config() = default;
 
-		pipeline_settings mPipelineSettings;
-		std::vector<input_binding_location_data> mInputBindingLocations;
+		pipeline_settings mPipelineSettings; // ?
+		std::vector<input_binding_location_data> mInputBindingLocations; 
+		primitive_topology mPrimitiveTopology;
 		std::vector<shader_info> mShaderInfos;
+		std::vector<viewport_depth_scissors_config> mViewportDepthConfig;
+		// TODO: proceed here with defining default parameters
 		depth_test mDepthTestConfig;
 		depth_write mDepthWriteConfig;
-		std::vector<viewport_depth_scissors_config> mViewportDepthConfig;
 		culling_mode mCullingMode;
 		front_face mFrontFaceWindingOrder;
 		polygon_drawing mPolygonDrawingModeAndConfig;
