@@ -127,6 +127,7 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\taa_mean_variance.vert">
       <Filter>shaders</Filter>
     </None>
+    <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
@@ -136,6 +137,7 @@
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_mas_compute_drawer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\deferred_renderer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_cas_edge_compute_drawer.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_eye_tracked_blit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_image_compute_drawer.h" />
@@ -145,6 +147,7 @@
     <ClInclude Include="..\..\..\examples\hello_vrs\source\deferred_renderer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\common_structs.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_cas_edge_compute_drawer.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_eye_tracked_blit.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\framework\assets\chalet\chalet.jpg">

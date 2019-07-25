@@ -37,8 +37,8 @@ namespace cgb {
 		void transition_image_layout(vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, uint32_t mipLevels);
 		void update_pixels(void* pixels);
 
-		int get_width() { return mTexWidth; }
-		int get_height() { return mTexHeight; }
+		uint32_t get_width() { return mTexWidth; }
+		uint32_t get_height() { return mTexHeight; }
 
 		void generate_mipmaps(vk::CommandBuffer& commandBuffer);
 

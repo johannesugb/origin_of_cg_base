@@ -30,6 +30,7 @@
 #include "vrs_cas_compute_drawer.h"
 #include "vrs_cas_edge_compute_drawer.h"
 #include "vrs_mas_compute_drawer.h"
+#include "vrs_eye_tracked_blit.h"
 
 #include "eyetracking_interface.h"
 
@@ -41,9 +42,16 @@
 
 #include "deferred_renderer.h"
 
+#include "cp_interpolation.h"
+#include "bezier_curve.h"
+#include "catmull_rom_spline.h"
+#include "quadratic_uniform_b_spline.h"
+#include "cubic_uniform_b_spline.h"
+
 #define VRS_EYE 0
+#define VRS_EYE_BLIT 1
 #define VRS_CAS 0
-#define VRS_CAS_EDGE 1
+#define VRS_CAS_EDGE 0
 #define VRS_MAS 0
 
 #define DEFERRED_SHADING 1
@@ -65,6 +73,8 @@ class vrs_behavior : public cgb::cg_element
 public:
 	vrs_behavior() : m_ambient_light(glm::vec3(1 / 255.0f, 2 / 255.0f, 3 / 255.0f)), m_dir_light(glm::vec3(13 / 255.0f, 17 / 255.0f, 27 / 255.0f), glm::vec3(-0.38f, -0.78f, -0.49f)) {
 	}
+
+	cgb::quake_camera mCamera;
 private:
 
 	vk::DescriptorSetLayout vrsComputeDescriptorSetLayout;
@@ -89,6 +99,7 @@ private:
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> transferCommandBufferManager;
 	std::unique_ptr<cgb::vulkan_drawer> drawer;
 	std::unique_ptr<cgb::vrs_image_compute_drawer> mVrsImageComputeDrawer;
+	std::unique_ptr<cgb::vrs_eye_tracked_blit> mVrsEyeTrackedBlitDrawer;
 
 	// render target needed for MSAA
 	std::shared_ptr<cgb::vulkan_image> colorImage;
@@ -119,7 +130,6 @@ private:
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mMaterialResourceBundleLayout; // contains material properties staying same for all objects
 	std::shared_ptr<cgb::vulkan_resource_bundle_layout> mMaterialObjectResourceBundleLayout; // contains material properties varying for each object
 
-	cgb::quake_camera mCamera;
 
 	cgb::AmbientLight m_ambient_light;
 	cgb::DirectionalLight m_dir_light;
@@ -473,6 +483,13 @@ private:
 			mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 			mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 			mVrsImageComputeDrawer->set_eye_inf(eyeInf);
+			
+			mVrsEyeTrackedBlitDrawer = std::make_unique<cgb::vrs_eye_tracked_blit>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
+			mVrsEyeTrackedBlitDrawer->set_vrs_images(vrsImages);
+			mVrsEyeTrackedBlitDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
+			mVrsEyeTrackedBlitDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
+			mVrsEyeTrackedBlitDrawer->set_eye_inf(eyeInf);
+			mVrsEyeTrackedBlitDrawer->precompute();
 
 			// CAS
 			mVrsCasComputePipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { vrsCasResourceBundleLayout, vrsDebugResourceBundleLayout }, sizeof(vrs_cas_comp_data));
@@ -742,6 +759,7 @@ private:
 
 		drawer.reset();
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			mVrsEyeTrackedBlitDrawer.reset();
 			mVrsImageComputeDrawer.reset();
 			mVrsCasComputeDrawer.reset();
 			mVrsCasEdgeComputeDrawer.reset();
@@ -942,6 +960,8 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 #if VRS_EYE
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsImageComputeDrawer.get());
+#elif VRS_EYE_BLIT
+			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsEyeTrackedBlitDrawer.get());
 #elif VRS_CAS
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsCasComputeDrawer.get());
 #elif VRS_CAS_EDGE
@@ -1301,7 +1321,7 @@ private:
 
 		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
 			vrsImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 1, vk::SampleCountFlagBits::e1, colorFormat, vk::ImageTiling::eOptimal,
-				vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+				vk::ImageUsageFlagBits::eShadingRateImageNV | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
 			vrsImages[i]->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eShadingRateOptimalNV, 1);
 
 			vrsDefaultImage[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 1, vk::SampleCountFlagBits::e1, colorFormat, vk::ImageTiling::eOptimal,
@@ -1610,6 +1630,62 @@ private:
 	}
 };
 
+class camera_path : public cgb::cg_element
+{
+public:
+	camera_path(cgb::quake_camera& cam)
+		: mCam{ &cam } // Target camera
+		, mSpeed{ 0.1f } // How fast does it move
+		, mAutoPathActive{ true }
+	{
+		// The path to follow
+		mPath = std::make_unique<cgb::quadratic_uniform_b_spline>(std::vector<glm::vec3>{
+			glm::vec3(10.0f, 15.0f, -10.0f),
+				glm::vec3(-10.0f, 5.0f, -5.0f),
+				glm::vec3(0.0f, 0.0f, 0.0f),
+				glm::vec3(10.0f, 15.0f, 10.0f),
+				glm::vec3(10.0f, 10.0f, 0.0f)
+		});
+	}
+
+	int32_t priority() const override
+	{
+		return 5;
+	}
+
+	void initialize() override
+	{
+		mStartTime = cgb::time().time_since_start();
+	}
+
+	void update() override
+	{
+		// [Space] ... toggle auto-path
+		if (cgb::input().key_pressed(cgb::key_code::space)) {
+			mAutoPathActive = !mAutoPathActive;
+		}
+		// [R] ... reset animation:
+		if (cgb::input().key_pressed(cgb::key_code::r)) {
+			mStartTime = cgb::time().time_since_start();
+		}
+
+		// Animate along the curve:
+		if (mAutoPathActive) {
+			auto t = (cgb::time().time_since_start() - mStartTime) * mSpeed;
+			if (t >= 0.00001 && t <= 1) {
+				mCam->set_translation(mPath->value_at(t));
+				mCam->look_along(mPath->slope_at(t));
+			}
+		}
+	}
+
+private:
+	cgb::quake_camera* mCam;
+	float mStartTime;
+	float mSpeed;
+	bool mAutoPathActive;
+	std::unique_ptr<cgb::cp_interpolation> mPath;
+};
 
 int main()
 {
@@ -1631,6 +1707,7 @@ int main()
 
 		// Create a "behavior" which contains functionality of our program
 		auto vrsBehavior = vrs_behavior();
+		auto camPath = camera_path(vrsBehavior.mCamera);
 
 		// Create a composition of all things that define the essence of 
 		// our program, which there are:
@@ -1639,7 +1716,8 @@ int main()
 		//  - a window
 		//  - a behavior
 		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
-					&vrsBehavior
+					&vrsBehavior,
+					&camPath
 			});
 
 		// Let's go:

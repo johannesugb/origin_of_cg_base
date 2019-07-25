@@ -182,7 +182,8 @@ void main()
 
 	oFragColor = vec4(0);
 	for (int i = 0; i < 2; i++) {
-		float depth = FetchFromSampler(uDepthSampler, uv).r; //FetchFromSampler(uDepthSampler, uv, i).r; //texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; 
+		float depth = FetchFromSampler(uDepthSampler, uv).r; 
+		//float depth = FetchFromSampler(uDepthSampler, uv, i).r; //texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; 
 	
 		vec3 position_vs = vec3(0);
 		// Optimization: Positions from depth
@@ -210,5 +211,15 @@ void main()
 	}
 
 	oFragColor = oFragColor/2;
+
+
+	//if (gl_FragCoord.x < 1600) {
+	//	oFragColor = vec4(gl_FragmentSizeNV.x * gl_FragmentSizeNV.y/4.0);
+	//	oFragColor = vec4(gl_FragmentSizeNV.x / 4.0);
+	//} 
+	//else {
+	//	oFragColor = vec4(gl_FragmentSizeNV.y / 4.0);
+	//}
+	//oFragColor = vec4(gl_InvocationsPerPixelNV / 16.0);
 }
 

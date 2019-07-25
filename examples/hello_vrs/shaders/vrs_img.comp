@@ -17,8 +17,8 @@ layout(set = 1, binding = 0, rgba8) uniform image2D debugImage;
 void main() {
 	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
 	
-	vec2 distVec = (clamp(pushConst.eyePoint, 0, 1) - uv * 1.0 / pushConst.imgSize) * 2.0 / sqrt(2);
-	vec2 distVecInv =  (vec2(1.0) - clamp(pushConst.eyePoint, 0, 1) - uv * 1.0 / pushConst.imgSize) * 2.0 / sqrt(2); // vec2(2.0/sqrt(2)) -  distVec;
+	vec2 distVec = (clamp(pushConst.eyePoint, 0, 1) - uv * 1.0 / pushConst.imgSize) * 2.0 / sqrt(2) * 1.08;
+	vec2 distVecInv =  (vec2(1.0) - clamp(pushConst.eyePoint, 0, 1) - uv * 1.0 / pushConst.imgSize) * 2.0 / sqrt(2) * 1.08; // vec2(2.0/sqrt(2)) -  distVec;
 
 
 	uint shadingRate = int((1.0 - clamp(dot(distVec,distVec),0,1))*(1.0 - clamp(dot(distVec,distVec),0,1)) * 11.0);
