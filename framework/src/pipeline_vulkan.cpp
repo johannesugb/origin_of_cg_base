@@ -104,11 +104,42 @@ namespace cgb
 			.setCullMode(to_vk_cull_mode(_Config.mCullingMode))
 			.setFrontFace(to_vk_front_face(_Config.mFrontFaceWindingOrder.winding_order_of_front_faces()))
 			// Depth-related settings:
-			.setDepthClampEnable(to_vk_bool(_Config.mDepthSettings.is_clamp_to_frustum_enabled()))
-			.setDepthBiasEnable(to_vk_bool(_Config.mDepthSettings.is_depth_bias_enabled()))
-			.setDepthBiasConstantFactor(_Config.mDepthSettings.bias_constant_factor())
-			.setDepthBiasClamp(_Config.mDepthSettings.bias_clamp_value())
-			.setDepthBiasSlopeFactor(_Config.mDepthSettings.bias_slope_factor());
+			.setDepthClampEnable(to_vk_bool(_Config.mDepthClampBiasConfig.is_clamp_to_frustum_enabled()))
+			.setDepthBiasEnable(to_vk_bool(_Config.mDepthClampBiasConfig.is_depth_bias_enabled()))
+			.setDepthBiasConstantFactor(_Config.mDepthClampBiasConfig.bias_constant_factor())
+			.setDepthBiasClamp(_Config.mDepthClampBiasConfig.bias_clamp_value())
+			.setDepthBiasSlopeFactor(_Config.mDepthClampBiasConfig.bias_slope_factor());
+
+		// 8. Depth-stencil config
+		result.mDepthStencilConfig = vk::PipelineDepthStencilStateCreateInfo{}
+			.setDepthTestEnable(to_vk_bool(_Config.mDepthTestConfig.is_enabled()))
+			.setDepthCompareOp(to_vk_compare_op(_Config.mDepthTestConfig.depth_compare_operation()))
+			.setDepthWriteEnable(to_vk_bool(_Config.mDepthWriteConfig.is_enabled()))
+			.setDepthBoundsTestEnable(to_vk_bool(_Config.mDepthBoundsConfig.is_enabled()))
+			.setMinDepthBounds(_Config.mDepthBoundsConfig.min_bounds())
+			.setMaxDepthBounds(_Config.mDepthBoundsConfig.max_bounds())
+			.setStencilTestEnable(VK_FALSE); // TODO: Add support for stencil testing
+
+		// 9. Color Blending
+		for (const auto& attBlend : _Config.mColorBlendingPerAttachment) {
+			result.
+		}
+		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState()
+			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
+			.setBlendEnable(VK_FALSE) // If blendEnable is set to VK_FALSE, then the new color from the fragment shader is passed through unmodified. [4]
+			.setSrcColorBlendFactor(vk::BlendFactor::eOne) // Optional
+			.setDstColorBlendFactor(vk::BlendFactor::eZero) // Optional
+			.setColorBlendOp(vk::BlendOp::eAdd) // Optional
+			.setSrcAlphaBlendFactor(vk::BlendFactor::eOne) // Optional
+			.setDstAlphaBlendFactor(vk::BlendFactor::eZero) // Optional
+			.setAlphaBlendOp(vk::BlendOp::eAdd); // Optional
+		auto colorBlendingInfo = vk::PipelineColorBlendStateCreateInfo()
+			.setLogicOpEnable(VK_FALSE) // If you want to use the second method of blending (bitwise combination), then you should set logicOpEnable to VK_TRUE. The bitwise operation can then be specified in the logicOp field. [4]
+			.setLogicOp(vk::LogicOp::eCopy) // Optional
+			.setAttachmentCount(1u)
+			.setPAttachments(&colorBlendAttachment)
+			.setBlendConstants({ {0.0f, 0.0f, 0.0f, 0.0f} }); // Optional
+
 
 		// TODO: Proceed here
 
@@ -119,6 +150,9 @@ namespace cgb
 
 		// PIPELINE CREATION, a.k.a. putting it all together:
 		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()
+			// 0. Render Pass
+			.setRenderPass(renderPass)
+			.setSubpass(0u)
 			// 1., 2., and 3.
 			.setPVertexInputState(&result.mPipelineVertexInputStateCreateInfo)
 			// 4.
@@ -130,14 +164,13 @@ namespace cgb
 			.setPViewportState(&result.mViewportStateCreateInfo)
 			// 7.
 			.setPRasterizationState(&result.mRasterizationStateCreateInfo)
+			// 8.
+			.setPDepthStencilState(&result.mDepthStencilConfig)
 			// TODO: Proceed here
 			.setPMultisampleState(&multisamplingInfo)
-			.setPDepthStencilState(&mDepthStencilConfig) // Optional
 			.setPColorBlendState(&colorBlendingInfo)
 			.setPDynamicState(nullptr) // Optional
 			.setLayout(pipelineLayout)
-			.setRenderPass(renderPass)
-			.setSubpass(0u)
 			.setBasePipelineHandle(nullptr) // Optional
 			.setBasePipelineIndex(-1); // Optional
 

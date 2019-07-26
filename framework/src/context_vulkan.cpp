@@ -944,23 +944,7 @@ namespace cgb
 
 
 
-		// COLOR BLENDING
-		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState()
-			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
-			.setBlendEnable(VK_FALSE) // If blendEnable is set to VK_FALSE, then the new color from the fragment shader is passed through unmodified. [4]
-			.setSrcColorBlendFactor(vk::BlendFactor::eOne) // Optional
-			.setDstColorBlendFactor(vk::BlendFactor::eZero) // Optional
-			.setColorBlendOp(vk::BlendOp::eAdd) // Optional
-			.setSrcAlphaBlendFactor(vk::BlendFactor::eOne) // Optional
-			.setDstAlphaBlendFactor(vk::BlendFactor::eZero) // Optional
-			.setAlphaBlendOp(vk::BlendOp::eAdd); // Optional
-		auto colorBlendingInfo = vk::PipelineColorBlendStateCreateInfo()
-			.setLogicOpEnable(VK_FALSE) // If you want to use the second method of blending (bitwise combination), then you should set logicOpEnable to VK_TRUE. The bitwise operation can then be specified in the logicOp field. [4]
-			.setLogicOp(vk::LogicOp::eCopy) // Optional
-			.setAttachmentCount(1u)
-			.setPAttachments(&colorBlendAttachment)
-			.setBlendConstants({ {0.0f, 0.0f, 0.0f, 0.0f} }); // Optional
-
+		
 		// DYNAMIC STATE
 		// A limited amount of the state that we've specified in the previous structs can actually be changed without recreating the pipeline. 
 		// Examples are the size of the viewport, line width and blend constants. If you want to do that, then you'll have to fill in a vk::PipelineDynamicStateCreateInfo structure. [4]

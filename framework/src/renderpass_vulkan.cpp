@@ -2,7 +2,7 @@ namespace cgb
 {
 	using namespace cpplinq;
 
-	renderpass renderpass::create(std::initializer_list<attachment> pAttachments, cgb::context_specific_function<void(renderpass&)> pAlterConfigBeforeCreation)
+	renderpass renderpass::create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass&)> pAlterConfigBeforeCreation)
 	{
 		renderpass result;
 

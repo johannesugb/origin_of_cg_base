@@ -28,4 +28,6 @@ namespace cgb
 	extern vk::CullModeFlags to_vk_cull_mode(culling_mode _Value);
 
 	extern vk::FrontFace to_vk_front_face(winding_order _Value);
+
+	extern vk::CompareOp to_vk_compare_op(compare_operation _Value);
 }

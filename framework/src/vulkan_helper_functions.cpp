@@ -182,4 +182,28 @@ namespace cgb
 			throw std::invalid_argument("Invalid front face winding order.");
 		}
 	}
+
+	vk::CompareOp to_vk_compare_op(compare_operation _Value)
+	{
+		switch(_Value) {
+		case compare_operation::never:
+			return vk::CompareOp::eNever;
+		case compare_operation::less: 
+			return vk::CompareOp::eLess;
+		case compare_operation::equal: 
+			return vk::CompareOp::eEqual;
+		case compare_operation::less_or_equal: 
+			return vk::CompareOp::eLessOrEqual;
+		case compare_operation::greater: 
+			return vk::CompareOp::eGreater;
+		case compare_operation::not_equal: 
+			return vk::CompareOp::eNotEqual;
+		case compare_operation::greater_or_equal: 
+			return vk::CompareOp::eGreaterOrEqual;
+		case compare_operation::always: 
+			return vk::CompareOp::eAlways;
+		default:
+			throw std::invalid_argument("Invalid compare operation.");
+		}
+	}
 }

@@ -38,10 +38,11 @@ namespace cgb // ========================== TODO/WIP ===========================
 		vk::PipelineViewportStateCreateInfo mViewportStateCreateInfo;
 		// Rasterization state:
 		vk::PipelineRasterizationStateCreateInfo mRasterizationStateCreateInfo;
+		// Depth stencil config:
+		vk::PipelineDepthStencilStateCreateInfo mDepthStencilConfig;
 		// TODO: Proceed here
 
 
-		vk::PipelineDepthStencilStateCreateInfo mDepthStencilConfig;
 		//vk::PipelineLayoutCreateInfo
 		vk::PipelineCreateFlagBits mPipelineCreateFlags;
 

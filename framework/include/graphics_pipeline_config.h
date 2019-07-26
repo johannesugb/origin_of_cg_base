@@ -32,13 +32,32 @@ namespace cgb
 		return a = a & b;
 	}
 
+	/** An operation how to compare values - used for specifying how depth testing compares depth values */
+	enum struct compare_operation
+	{
+		never,
+		less,
+		equal,
+		less_or_equal,
+		greater,
+		not_equal,
+		greater_or_equal,
+		always
+	};
+
 	/** Pipeline configuration data: Depth Test settings */
 	struct depth_test
 	{
-		static depth_test enabled() { return depth_test{ true }; }
-		static depth_test disabled() { return depth_test{ false }; }
-		bool is_enabled() const { return mEnabled; }
+		static depth_test enabled() { return depth_test{ true, compare_operation::less }; }
+		static depth_test disabled() { return depth_test{ false, compare_operation::less }; }
+
+		depth_test& set_compare_operation(compare_operation& _WhichOne) { mCompareOperation = _WhichOne; return *this; }
+
+		auto is_enabled() const { return mEnabled; }
+		auto depth_compare_operation() const { return mCompareOperation; }
+
 		bool mEnabled;
+		compare_operation mCompareOperation;
 	};
 
 	/** Pipeline configuration data: Depth Write settings */
@@ -211,16 +230,14 @@ namespace cgb
 	};
 
 	/** Additional depth-related parameters for the rasterizer */
-	struct depth_settings
+	struct depth_clamp_bias
 	{
-		static depth_settings config_nothing_special() { return { false, false, 0.0f, 0.0f, 0.0f, false, false }; }
-		static depth_settings config_enable_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { false, true, pConstantFactor, pBiasClamp, pSlopeFactor, false, false }; }
-		static depth_settings config_enable_clamp_and_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { true, true, pConstantFactor, pBiasClamp, pSlopeFactor, false, false }; }
+		static depth_clamp_bias config_nothing_special() { return { false, false, 0.0f, 0.0f, 0.0f, false }; }
+		static depth_clamp_bias config_enable_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { false, true, pConstantFactor, pBiasClamp, pSlopeFactor, false }; }
+		static depth_clamp_bias config_enable_clamp_and_depth_bias(float pConstantFactor, float pBiasClamp, float pSlopeFactor) { return { true, true, pConstantFactor, pBiasClamp, pSlopeFactor, false }; }
 
-		depth_settings& enable_dynamic_depth_bias() { mEnableDynamicDepthBias = true; return *this; }
-		depth_settings& disable_dynamic_depth_bias() { mEnableDynamicDepthBias = false; return *this; }
-		depth_settings& enable_dynamic_depth_bounds() { mEnableDynamicDepthBounds = true; return *this; }
-		depth_settings& disable_dynamic_depth_bounds() { mEnableDynamicDepthBounds = false; return *this; }
+		depth_clamp_bias& enable_dynamic_depth_bias() { mEnableDynamicDepthBias = true; return *this; }
+		depth_clamp_bias& disable_dynamic_depth_bias() { mEnableDynamicDepthBias = false; return *this; }
 
 		auto is_clamp_to_frustum_enabled() const { return mClampDepthToFrustum; }
 		auto is_depth_bias_enabled() const { return mEnableDepthBias; }
@@ -228,7 +245,6 @@ namespace cgb
 		auto bias_clamp_value() const { return mDepthBiasClamp; }
 		auto bias_slope_factor() const { return mDepthBiasSlopeFactor; }
 		auto is_dynamic_depth_bias_enabled() const { return mEnableDynamicDepthBias; }
-		auto is_dynamic_depth_bounds_enabled() const { return mEnableDynamicDepthBounds; }
 
 		bool mClampDepthToFrustum;
 		bool mEnableDepthBias;
@@ -236,7 +252,22 @@ namespace cgb
 		float mDepthBiasClamp;
 		float mDepthBiasSlopeFactor;
 		bool mEnableDynamicDepthBias;
-		bool mEnableDynamicDepthBounds;
+	};
+
+	/** Settings to enable/disable depth bounds and for its range */
+	struct depth_bounds
+	{
+		static depth_bounds disable() { return {false, 0.0f, 1.0f}; }
+		static depth_bounds enable(float _RangeFrom, float _RangeTo) { return {true, _RangeFrom, _RangeTo}; }
+
+		auto is_enabled() const { return mEnabled; }
+		auto is_dynamic_depth_bounds_enabled() const { return mEnabled; }
+		auto min_bounds() const { return mMinDeptBounds; }
+		auto max_bounds() const { return mMaxDepthBounds; }
+
+		bool mEnabled;
+		float mMinDeptBounds;
+		float mMaxDepthBounds;
 	};
 
 	/** Reference the separate color channels */
@@ -491,20 +522,22 @@ namespace cgb
 		~graphics_pipeline_config() = default;
 
 		pipeline_settings mPipelineSettings; // ?
+		std::tuple<renderpass, uint32_t> mRenderPassSubpass;
 		std::vector<input_binding_location_data> mInputBindingLocations; 
 		primitive_topology mPrimitiveTopology;
 		std::vector<shader_info> mShaderInfos;
 		std::vector<viewport_depth_scissors_config> mViewportDepthConfig;
-		// TODO: proceed here with defining default parameters
-		depth_test mDepthTestConfig;
-		depth_write mDepthWriteConfig;
+		rasterizer_geometry_mode mRasterizerGeometryMode;
+		polygon_drawing mPolygonDrawingModeAndConfig;
 		culling_mode mCullingMode;
 		front_face mFrontFaceWindingOrder;
-		polygon_drawing mPolygonDrawingModeAndConfig;
-		rasterizer_geometry_mode mRasterizerGeometryMode;
-		depth_settings mDepthSettings;
-		color_blending_settings mColorBlendingSettings;
+		depth_clamp_bias mDepthClampBiasConfig;
+		depth_test mDepthTestConfig;
+		depth_write mDepthWriteConfig;
+		depth_bounds mDepthBoundsConfig;
 		std::vector<color_blending_config> mColorBlendingPerAttachment;
+		color_blending_settings mColorBlendingSettings;
+		// TODO: proceed here with defining default parameters
 		std::vector<binding_data> mResourceBindings;
 		std::vector<push_constant_binding_data> mPushConstantsBindings;
 	};
