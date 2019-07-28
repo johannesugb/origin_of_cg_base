@@ -3,6 +3,7 @@ namespace cgb
 	// Set sensible defaults:
 	graphics_pipeline_config::graphics_pipeline_config()
 		: mPipelineSettings{ pipeline_settings::nothing } // unsupported right now anyways
+		, mRenderPassSubpass {} // not set by default
 		, mPrimitiveTopology{ primitive_topology::triangles } // triangles after one another
 		, mRasterizerGeometryMode{ rasterizer_geometry_mode::rasterize_geometry } // don't discard, but rasterize!
 		, mPolygonDrawingModeAndConfig{ polygon_drawing::config_for_filling() } // Fill triangles
@@ -12,9 +13,7 @@ namespace cgb
 		, mDepthTestConfig{ depth_test::enabled() } // enable depth testing
 		, mDepthWriteConfig{ depth_write::enabled() } // enable depth writing
 		, mDepthBoundsConfig{ depth_bounds::disable() }
-		// TODO: Proceed here with defining default parameters
-		, mColorBlendingSettings{ color_blending_settings::disable_logic_operation{} }
-		
+		, mColorBlendingSettings{ color_blending_settings::disable_logic_operation() }
 	{
 	}
 }

@@ -2,9 +2,17 @@ namespace cgb
 {
 	using namespace cpplinq;
 
-	graphics_pipeline graphics_pipeline::create(const graphics_pipeline_config& _Config, cgb::context_specific_function<void(graphics_pipeline&)> _AlterConfigBeforeCreation)
+	graphics_pipeline_t graphics_pipeline_t::create(graphics_pipeline_config _Config, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation)
 	{
-		graphics_pipeline result;
+		graphics_pipeline_t result;
+
+		// 0. Own the renderpass
+		{
+			assert(_Config.mRenderPassSubpass.has_value());
+			auto [rp, sp] = std::move(_Config.mRenderPassSubpass.value());
+			result.mRenderPass = std::move(rp);
+			result.mSubpassIndex = sp;
+		}
 
 		// 1. Compile the array of vertex input binding descriptions
 		{ 
@@ -121,38 +129,160 @@ namespace cgb
 			.setStencilTestEnable(VK_FALSE); // TODO: Add support for stencil testing
 
 		// 9. Color Blending
-		for (const auto& attBlend : _Config.mColorBlendingPerAttachment) {
-			result.
+		{ 
+			// Do we have an "universal" color blending config? That means, one that is not assigned to a specific color target attachment id.
+			auto universalConfig = from(_Config.mColorBlendingPerAttachment)
+				>> where([](const color_blending_config& config) { return !config.mTargetAttachment.has_value(); })
+				>> to_vector();
+
+			if (universalConfig.size() > 1) {
+				throw std::runtime_error("Ambiguous 'universal' color blending configurations. Either provide only one 'universal' "
+					"config (which is not attached to a specific color target) or assign them to specific color target attachment ids.");
+			}
+
+			// Iterate over all color target attachments and set a color blending config
+			auto n = cgb::get(result.mRenderPass).color_attachments().size();
+			for (size_t i = 0; i < n; ++i) {
+				// Do we have a specific blending config for color attachment i?
+				auto configForI = from(_Config.mColorBlendingPerAttachment)
+					>> where([i](const color_blending_config& config) { return config.mTargetAttachment.has_value() && config.mTargetAttachment.value() == i; })
+					>> to_vector();
+				if (configForI.size() > 1) {
+					throw std::runtime_error(fmt::format("Ambiguous color blending configuration for color attachment at index {}. Provide only one config per color attachment!", i));
+				}
+				if (configForI.size() == 1) {
+					result.mBlendingConfigsForColorAttachments.push_back(vk::PipelineColorBlendAttachmentState()
+						.setColorWriteMask(to_vk_color_components(configForI[0].affected_color_channels()))
+						.setBlendEnable(to_vk_bool(configForI[0].is_blending_enabled())) // If blendEnable is set to VK_FALSE, then the new color from the fragment shader is passed through unmodified. [4]
+						.setSrcColorBlendFactor(to_vk_blend_factor(configForI[0].color_source_factor())) 
+						.setDstColorBlendFactor(to_vk_blend_factor(configForI[0].color_destination_factor()))
+						.setColorBlendOp(to_vk_blend_operation(configForI[0].color_operation()))
+						.setSrcAlphaBlendFactor(to_vk_blend_factor(configForI[0].alpha_source_factor()))
+						.setDstAlphaBlendFactor(to_vk_blend_factor(configForI[0].alpha_destination_factor()))
+						.setAlphaBlendOp(to_vk_blend_operation(configForI[0].alpha_operation()))
+					);
+				}
+			}
+
+			// General blending settings and reference to the array of color attachment blending configs
+			result.mColorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo()
+				.setLogicOpEnable(to_vk_bool(_Config.mColorBlendingSettings.is_logic_operation_enabled())) // If you want to use the second method of blending (bitwise combination), then you should set logicOpEnable to VK_TRUE. The bitwise operation can then be specified in the logicOp field. [4]
+				.setLogicOp(to_vk_logic_operation(_Config.mColorBlendingSettings.logic_operation())) 
+				.setAttachmentCount(static_cast<uint32_t>(result.mBlendingConfigsForColorAttachments.size()))
+				.setPAttachments(result.mBlendingConfigsForColorAttachments.data())
+				.setBlendConstants({
+					{
+						_Config.mColorBlendingSettings.blend_constants().r,
+						_Config.mColorBlendingSettings.blend_constants().g,
+						_Config.mColorBlendingSettings.blend_constants().b,
+						_Config.mColorBlendingSettings.blend_constants().a,
+					} 
+				});
 		}
-		auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState()
-			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
-			.setBlendEnable(VK_FALSE) // If blendEnable is set to VK_FALSE, then the new color from the fragment shader is passed through unmodified. [4]
-			.setSrcColorBlendFactor(vk::BlendFactor::eOne) // Optional
-			.setDstColorBlendFactor(vk::BlendFactor::eZero) // Optional
-			.setColorBlendOp(vk::BlendOp::eAdd) // Optional
-			.setSrcAlphaBlendFactor(vk::BlendFactor::eOne) // Optional
-			.setDstAlphaBlendFactor(vk::BlendFactor::eZero) // Optional
-			.setAlphaBlendOp(vk::BlendOp::eAdd); // Optional
-		auto colorBlendingInfo = vk::PipelineColorBlendStateCreateInfo()
-			.setLogicOpEnable(VK_FALSE) // If you want to use the second method of blending (bitwise combination), then you should set logicOpEnable to VK_TRUE. The bitwise operation can then be specified in the logicOp field. [4]
-			.setLogicOp(vk::LogicOp::eCopy) // Optional
-			.setAttachmentCount(1u)
-			.setPAttachments(&colorBlendAttachment)
-			.setBlendConstants({ {0.0f, 0.0f, 0.0f, 0.0f} }); // Optional
 
+		// 10. Multisample state
+		// TODO: Can the settings be inferred from the renderpass' color attachments? If they can't, how to handle this situation? 
+		{
+			vk::SampleCountFlagBits numSamples = vk::SampleCountFlagBits::e1;
 
-		// TODO: Proceed here
+			// See what is configured in the render pass
+			auto colorAttConfigs = from (cgb::get(result.mRenderPass).color_attachments())
+				>> where ([](const vk::AttachmentReference& colorAttachment) { return colorAttachment.attachment != VK_ATTACHMENT_UNUSED; })
+				// The color_attachments() contain indices of the actual attachment_descriptions() => select the latter!
+				>> select ([&rp = cgb::get(result.mRenderPass)](const vk::AttachmentReference& colorAttachment) { return rp.attachment_descriptions()[colorAttachment.attachment]; })
+				>> to_vector();
 
-		// Maybe alter the config?!
+			if (colorAttConfigs.size() > 0) {
+				numSamples = colorAttConfigs[0].samples;
+			}
+
+#if defined(_DEBUG) 
+			for (const vk::AttachmentDescription& config: colorAttConfigs) {
+				if (config.samples != numSamples) {
+					LOG_WARNING("Not all of the color target attachments have the same number of samples configured.");
+				}
+			}
+#endif
+
+			result.mMultisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo()
+				.setSampleShadingEnable(vk::SampleCountFlagBits::e1 == numSamples ? VK_FALSE : VK_TRUE) // disable/enable?
+				.setRasterizationSamples(numSamples)
+				.setMinSampleShading(1.0f) // Optional
+				.setPSampleMask(nullptr) // Optional
+				.setAlphaToCoverageEnable(VK_FALSE) // Optional
+				.setAlphaToOneEnable(VK_FALSE); // Optional
+			// TODO: That is probably not enough for every case. Further customization options should be added!
+		}
+
+		// 11. Dynamic state
+		{
+			// Check for viewport dynamic state
+			for (const auto& vpdc : _Config.mViewportDepthConfig) {
+				if (vpdc.is_dynamic_viewport_enabled())	{
+					result.mDynamicStateEntries.push_back(vk::DynamicState::eViewport);
+				}
+			}
+			// Check for scissor dynamic state
+			for (const auto& vpdc : _Config.mViewportDepthConfig) {
+				if (vpdc.is_dynamic_scissor_enabled())	{
+					result.mDynamicStateEntries.push_back(vk::DynamicState::eScissor);
+				}
+			}
+			// Check for dynamic line width
+			if (_Config.mPolygonDrawingModeAndConfig.dynamic_line_width()) {
+				result.mDynamicStateEntries.push_back(vk::DynamicState::eLineWidth);
+			}
+			// Check for dynamic depth bias
+			if (_Config.mDepthClampBiasConfig.is_dynamic_depth_bias_enabled()) {
+				result.mDynamicStateEntries.push_back(vk::DynamicState::eDepthBias);
+			}
+			// Check for dynamic depth bounds
+			if (_Config.mDepthBoundsConfig.is_dynamic_depth_bounds_enabled()) {
+				result.mDynamicStateEntries.push_back(vk::DynamicState::eDepthBounds);
+			}
+			// TODO: Support further dynamic states
+		}
+
+		// 12. Flags
+		// TODO: Support flags
+		result.mPipelineCreateFlags = {};
+
+		// 13. Compile the PIPELINE LAYOUT data and create-info
+		// Get the descriptor set layouts
+		result.mAllDescriptorSetLayouts = set_of_descriptor_set_layouts::prepare(std::move(_Config.mResourceBindings));
+		result.mAllDescriptorSetLayouts.allocate_all();
+		auto descriptorSetLayoutHandles = result.mAllDescriptorSetLayouts.layout_handles();
+		// Gather the push constant data
+		for (const auto& pcBinding : _Config.mPushConstantsBindings) {
+			result.mPushConstantRanges.push_back(vk::PushConstantRange{}
+				.setStageFlags(to_vk_shader_stage(pcBinding.mShaderStages))
+				.setOffset(pcBinding.mOffset)
+				.setSize(pcBinding.mSize)
+			);
+			// TODO: Push Constants need a prettier interface
+		}
+		// These uniform values (Anm.: passed to shaders) need to be specified during pipeline creation by creating a VkPipelineLayout object. [4]
+		result.mPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo{}
+			.setSetLayoutCount(static_cast<uint32_t>(descriptorSetLayoutHandles.size()))
+			.setPSetLayouts(descriptorSetLayoutHandles.data())
+			.setPushConstantRangeCount(static_cast<uint32_t>(result.mPushConstantRanges.size())) 
+			.setPPushConstantRanges(result.mPushConstantRanges.data());
+
+		// 14. Maybe alter the config?!
 		if (_AlterConfigBeforeCreation.mFunction) {
 			_AlterConfigBeforeCreation.mFunction(result);
 		}
 
-		// PIPELINE CREATION, a.k.a. putting it all together:
+		// Create the PIPELINE LAYOUT
+		result.mPipelineLayout = context().logical_device().createPipelineLayoutUnique(result.mPipelineLayoutCreateInfo);
+		assert(nullptr != result.layout_handle());
+
+		assert (_Config.mRenderPassSubpass.has_value());
+		// Create the PIPELINE, a.k.a. putting it all together:
 		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()
 			// 0. Render Pass
-			.setRenderPass(renderPass)
-			.setSubpass(0u)
+			.setRenderPass(cgb::get(result.mRenderPass).handle())
+			.setSubpass(result.mSubpassIndex)
 			// 1., 2., and 3.
 			.setPVertexInputState(&result.mPipelineVertexInputStateCreateInfo)
 			// 4.
@@ -166,39 +296,24 @@ namespace cgb
 			.setPRasterizationState(&result.mRasterizationStateCreateInfo)
 			// 8.
 			.setPDepthStencilState(&result.mDepthStencilConfig)
+			// 9.
+			.setPColorBlendState(&result.mColorBlendStateCreateInfo)
+			// 10.
+			.setPMultisampleState(&result.mMultisampleStateCreateInfo)
+			// 11.
+			.setPDynamicState(result.mDynamicStateEntries.size() == 0 ? nullptr : &result.mDynamicStateCreateInfo) // Optional
+			// 12.
+			.setFlags(result.mPipelineCreateFlags)
 			// TODO: Proceed here
-			.setPMultisampleState(&multisamplingInfo)
-			.setPColorBlendState(&colorBlendingInfo)
-			.setPDynamicState(nullptr) // Optional
-			.setLayout(pipelineLayout)
+			.setLayout(result.layout_handle())
+			// Base pipeline:
 			.setBasePipelineHandle(nullptr) // Optional
 			.setBasePipelineIndex(-1); // Optional
 
-		context().logical_device().createGraphicsPipelineUnique()
+		result.mPipeline = context().logical_device().createGraphicsPipelineUnique(nullptr, pipelineInfo);
+		result.mTracker.setTrackee(result);
 		return result;
 	}
 
-	graphics_pipeline graphics_pipeline::prepare(
-		std::vector<shader> _Shaders,
-		std::vector<descriptor_set_layout> _DescriptorSetLayouts, 
-		depth_test _DepthTestConfig, 
-		depth_write _DepthWriteConfig)
-	{
-		graphics_pipeline result;
-		result.mShaders = std::move(pShaders);
-
-		result.mDepthStencilConfig
-			.setDepthTestEnable(to_vk_bool(_DepthTestConfig.mEnabled))
-			.setDepthWriteEnable(to_vk_bool(_DepthWriteConfig.mEnabled))
-			.setDepthCompareOp(vk::CompareOp::eLess)
-			.setDepthBoundsTestEnable(VK_FALSE)
-			.setMinDepthBounds(0.0f)
-			.setMaxDepthBounds(1.0f)
-			.setStencilTestEnable(VK_FALSE)
-			.setFront(vk::StencilOpState())
-			.setBack(vk::StencilOpState());
-
-		return result;
-	}
 
 }

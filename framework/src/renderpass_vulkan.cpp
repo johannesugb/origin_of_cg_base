@@ -2,9 +2,9 @@ namespace cgb
 {
 	using namespace cpplinq;
 
-	renderpass renderpass::create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass&)> pAlterConfigBeforeCreation)
+	renderpass_t renderpass_t::create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass_t&)> pAlterConfigBeforeCreation)
 	{
-		renderpass result;
+		renderpass_t result;
 
 		std::map<uint32_t, vk::AttachmentReference> mSpecificColorLocations;
 		std::queue<vk::AttachmentReference> mArbitraryColorLocations;
@@ -246,6 +246,7 @@ namespace cgb
 			.setDependencyCount(static_cast<uint32_t>(result.mSubpassDependencies.size()))
 			.setPDependencies(result.mSubpassDependencies.data());
 		result.mRenderPass = context().logical_device().createRenderPassUnique(createInfo);
+		//result.mTracker.setTrackee(result);
 		return result; 
 
 		// TODO: Support VkSubpassDescriptionDepthStencilResolveKHR in order to enable resolve-settings for the depth attachment (see [1] and [2] for more details)

@@ -66,6 +66,14 @@ namespace cgb
 		add_config(_Config, _Attachments, args...);
 	}
 
+	// Accept a string and assume it refers to a shader file
+	template <typename... Ts>
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, std::string _ShaderPath, Ts... args)
+	{
+		_Config.mShaderInfos.push_back(shader_info::create(std::move(_ShaderPath)));
+		add_config(_Config, _Attachments, args...);
+	}
+
 	// Set the depth test behavior in the pipeline config
 	template <typename... Ts>
 	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, depth_test _DepthTestConfig, Ts... args)
@@ -164,16 +172,22 @@ namespace cgb
 
 	// Conveniently construct a pipeline with the given settings
 	template <typename... Ts>
-	graphics_pipeline graphics_pipeline_for(Ts... args, cgb::context_specific_function<void(graphics_pipeline&)> _AlterConfigBeforeCreation = {})
+	graphics_pipeline_t graphics_pipeline_for(Ts... args, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation = {})
 	{
 		std::vector<attachment> renderPassAttachments;
-		// TODO: Proceed here and check if there is data in both, the vector of attachments and the mRenderpass
-		//       - If so => throw!
-		//       - If not => fine
 
 		graphics_pipeline_config config;
 		add_config(config, &renderPassAttachments, args...);
 
-		return graphics_pipeline::create(config, std::move(_AlterConfigBeforeCreation));
+		// Check if render pass attachments are in renderPassAttachments XOR config => only in that case, it is clear how to proceed, fail in other cases
+		if (renderPassAttachments.size() > 0 == (config.mRenderPassSubpass.has_value() && cgb::get(std::get<renderpass>(*config.mRenderPassSubpass)).handle())) {
+			throw std::runtime_error("Ambiguous renderpass config! Either set a renderpass XOR provide attachments!");
+		}
+		// ^ that was the sanity check. See if we have to build the renderpass from the attachments:
+		if (renderPassAttachments.size() > 0) {
+			add_config(config &renderPassAttachments, renderpass::create(std::move(renderPassAttachments)));
+		}
+
+		return graphics_pipeline_t::create(config, std::move(_AlterConfigBeforeCreation));
 	}
 }

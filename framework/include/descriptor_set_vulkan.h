@@ -83,7 +83,7 @@ namespace cgb
 			return result;
 		}
 
-		static descriptor_set_layout prepare(std::initializer_list<binding_data> pBindings);
+		static descriptor_set_layout prepare(std::vector<binding_data> pBindings);
 
 		void allocate();
 
@@ -104,7 +104,7 @@ namespace cgb
 		set_of_descriptor_set_layouts& operator=(set_of_descriptor_set_layouts&&) = default;
 		~set_of_descriptor_set_layouts() = default;
 
-		static set_of_descriptor_set_layouts prepare(std::initializer_list<binding_data> pBindings);
+		static set_of_descriptor_set_layouts prepare(std::vector<binding_data> pBindings);
 
 		void allocate_all();
 

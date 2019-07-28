@@ -1,6 +1,6 @@
 namespace cgb
 {
-	descriptor_set_layout descriptor_set_layout::prepare(std::initializer_list<binding_data> pBindings)
+	descriptor_set_layout descriptor_set_layout::prepare(std::vector<binding_data> pBindings)
 	{
 		return prepare(std::begin(pBindings), std::end(pBindings));
 	}
@@ -20,7 +20,7 @@ namespace cgb
 	}
 
 
-	set_of_descriptor_set_layouts set_of_descriptor_set_layouts::prepare(std::initializer_list<binding_data> pBindings)
+	set_of_descriptor_set_layouts set_of_descriptor_set_layouts::prepare(std::vector<binding_data> pBindings)
 	{
 		set_of_descriptor_set_layouts result;
 		std::vector<binding_data> orderedBindings;

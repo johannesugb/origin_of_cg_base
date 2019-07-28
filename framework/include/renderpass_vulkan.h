@@ -5,14 +5,21 @@ namespace cgb
 	/** A class which represents a Vulkan renderpass and all its attachments,
 	 *	subpasses and subpass dependencies
 	 */
-	class renderpass
+	class renderpass_t
 	{
 	public:
+		renderpass_t() = default;
+		renderpass_t(renderpass_t&&) = default;
+		renderpass_t(const renderpass_t&) = delete;
+		renderpass_t& operator=(renderpass_t&&) = default;
+		renderpass_t& operator=(const renderpass_t&) = delete;
+		~renderpass_t() = default;
+
 		/** Create a renderpass from a given set of attachments.
 		 *	Also, create default subpass dependencies 
 		 *	(which are overly cautious and potentially sync more as required.)
 		 */
-		static renderpass create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass&)> pAlterConfigBeforeCreation = {});
+		static renderpass_t create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass_t&)> pAlterConfigBeforeCreation = {});
 
 		const auto& attachment_descriptions() const { return mAttachmentDescriptions; }
 		const auto& color_attachments() const { return mOrderedColorAttachmentRefs; }
@@ -57,7 +64,11 @@ namespace cgb
 
 		// The native handle
 		vk::UniqueRenderPass mRenderPass;
+
+		//context_tracker<renderpass_t> mTracker;
 	};
+
+	using renderpass = std::variant<renderpass_t, std::unique_ptr<renderpass_t>, std::shared_ptr<renderpass_t>>;
 
 	//extern bool are_compatible(const renderpass& first, const renderpass& second);
 

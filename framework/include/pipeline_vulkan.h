@@ -1,6 +1,6 @@
 #pragma once
 
-namespace cgb // ========================== TODO/WIP =================================
+namespace cgb
 {
 	/** Represents data for a vulkan graphics pipeline 
 	*	The data held by such a struct is a triple of:
@@ -8,21 +8,24 @@ namespace cgb // ========================== TODO/WIP ===========================
 	*    - pipeline layout
 	*    - pipeline handle
 	*/
-	class graphics_pipeline
+	class graphics_pipeline_t
 	{
 	public:
-		graphics_pipeline() = default;
-		graphics_pipeline(graphics_pipeline&&) = default;
-		graphics_pipeline(const graphics_pipeline&) = delete;
-		graphics_pipeline& operator=(graphics_pipeline&&) = default;
-		graphics_pipeline& operator=(const graphics_pipeline&) = delete;
-		~graphics_pipeline() = default;
+		graphics_pipeline_t() = default;
+		graphics_pipeline_t(graphics_pipeline_t&&) = default;
+		graphics_pipeline_t(const graphics_pipeline_t&) = delete;
+		graphics_pipeline_t& operator=(graphics_pipeline_t&&) = default;
+		graphics_pipeline_t& operator=(const graphics_pipeline_t&) = delete;
+		~graphics_pipeline_t() = default;
 
-		const auto& handle() const { return mPipeline; }
+		const auto& layout_handle() const { return mPipelineLayout.get(); }
+		const auto& handle() const { return mPipeline.get(); }
 
-		static graphics_pipeline create(const graphics_pipeline_config& _Config, cgb::context_specific_function<void(graphics_pipeline&)> _AlterConfigBeforeCreation = {});
+		static graphics_pipeline_t create(graphics_pipeline_config _Config, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation = {});
 
 	private:
+		renderpass mRenderPass;
+		uint32_t mSubpassIndex;
 		// The vertex input data:
 		std::vector<vk::VertexInputBindingDescription> mVertexInputBindingDescriptions;
 		std::vector<vk::VertexInputAttributeDescription> mVertexInputAttributeDescriptions;
@@ -40,14 +43,27 @@ namespace cgb // ========================== TODO/WIP ===========================
 		vk::PipelineRasterizationStateCreateInfo mRasterizationStateCreateInfo;
 		// Depth stencil config:
 		vk::PipelineDepthStencilStateCreateInfo mDepthStencilConfig;
-		// TODO: Proceed here
+		// Color blend attachments
+		std::vector<vk::PipelineColorBlendAttachmentState> mBlendingConfigsForColorAttachments;
+		vk::PipelineColorBlendStateCreateInfo mColorBlendStateCreateInfo;
+		// Multisample state
+		vk::PipelineMultisampleStateCreateInfo mMultisampleStateCreateInfo;
+		// Dynamic state
+		std::vector<vk::DynamicState> mDynamicStateEntries;
+		vk::PipelineDynamicStateCreateInfo mDynamicStateCreateInfo;
+		// Pipeline layout, i.e. resource bindings
+		set_of_descriptor_set_layouts mAllDescriptorSetLayouts;
+		std::vector<vk::PushConstantRange> mPushConstantRanges;
+		vk::PipelineLayoutCreateInfo mPipelineLayoutCreateInfo;
 
-
-		//vk::PipelineLayoutCreateInfo
+		// Where all comes together:
 		vk::PipelineCreateFlagBits mPipelineCreateFlags;
 
-		vk::RenderPass mRenderPass;
-		vk::PipelineLayout mPipelineLayout;
-		vk::Pipeline mPipeline;
+		// Handles:
+		vk::UniquePipelineLayout mPipelineLayout;
+		vk::UniquePipeline mPipeline;
+		context_tracker<graphics_pipeline_t> mTracker;
 	};
+
+	using graphics_pipeline = std::variant<graphics_pipeline_t, std::unique_ptr<graphics_pipeline_t>, std::shared_ptr<graphics_pipeline_t>>;
 }

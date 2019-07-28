@@ -99,6 +99,22 @@ namespace cgb
 		}
 	}
 
+	int to_cgb_sample_count(vk::SampleCountFlagBits pSampleCount)
+	{
+		switch (pSampleCount)
+		{
+		case vk::SampleCountFlagBits::e1: return 1;
+		case vk::SampleCountFlagBits::e2: return 2;
+		case vk::SampleCountFlagBits::e4: return 4;
+		case vk::SampleCountFlagBits::e8: return 8;
+		case vk::SampleCountFlagBits::e16: return 16;
+		case vk::SampleCountFlagBits::e32: return 32;
+		case vk::SampleCountFlagBits::e64: return 64;
+		default:
+			throw std::invalid_argument("Invalid number of samples");
+		}
+	}
+
 	vk::VertexInputRate to_vk_vertex_input_rate(input_binding_general_data::kind _Value)
 	{
 		switch (_Value) {
@@ -204,6 +220,128 @@ namespace cgb
 			return vk::CompareOp::eAlways;
 		default:
 			throw std::invalid_argument("Invalid compare operation.");
+		}
+	}
+
+	vk::ColorComponentFlags to_vk_color_components(color_channel _Value)
+	{
+		switch (_Value)	{
+		case cgb::color_channel::none:
+			return vk::ColorComponentFlags{};
+		case cgb::color_channel::red:
+			return vk::ColorComponentFlagBits::eR;
+		case cgb::color_channel::green:
+			return vk::ColorComponentFlagBits::eG;
+		case cgb::color_channel::blue:
+			return vk::ColorComponentFlagBits::eB;
+		case cgb::color_channel::alpha:
+			return vk::ColorComponentFlagBits::eA;
+		case cgb::color_channel::rg:
+			return vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG;
+		case cgb::color_channel::rgb:
+			return vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB;
+		case cgb::color_channel::rgba:
+			return vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+		default:
+			throw std::invalid_argument("Invalid color channel value.");
+		}
+	}
+
+	vk::BlendFactor to_vk_blend_factor(blending_factor _Value)
+	{
+		switch (_Value) {
+		case blending_factor::zero:
+			return vk::BlendFactor::eZero;
+		case blending_factor::one: 
+			return vk::BlendFactor::eOne;
+		case blending_factor::source_color: 
+			return vk::BlendFactor::eSrcColor;
+		case blending_factor::one_minus_source_color: 
+			return vk::BlendFactor::eOneMinusSrcColor;
+		case blending_factor::destination_color: 
+			return vk::BlendFactor::eDstColor;
+		case blending_factor::one_minus_destination_color: 
+			return vk::BlendFactor::eOneMinusDstColor;
+		case blending_factor::source_alpha: 
+			return vk::BlendFactor::eSrcAlpha;
+		case blending_factor::one_minus_source_alpha: 
+			return vk::BlendFactor::eOneMinusSrcAlpha;
+		case blending_factor::destination_alpha: 
+			return vk::BlendFactor::eDstAlpha;
+		case blending_factor::one_minus_destination_alpha:
+			return vk::BlendFactor::eOneMinusDstAlpha;
+		case blending_factor::constant_color: 
+			return vk::BlendFactor::eConstantColor;
+		case blending_factor::one_minus_constant_color: 
+			return vk::BlendFactor::eOneMinusConstantColor;
+		case blending_factor::constant_alpha: 
+			return vk::BlendFactor::eConstantAlpha;
+		case blending_factor::one_minus_constant_alpha: 
+			return vk::BlendFactor::eOneMinusConstantAlpha;
+		case blending_factor::source_alpha_saturate: 
+			return vk::BlendFactor::eSrcAlphaSaturate;
+		default:
+			throw std::invalid_argument("Invalid blend factor value.");
+		}
+	}
+
+	vk::BlendOp to_vk_blend_operation(color_blending_operation _Value)
+	{
+		switch (_Value)
+		{
+		case color_blending_operation::add: 
+			return vk::BlendOp::eAdd;
+		case color_blending_operation::subtract: 
+			return vk::BlendOp::eSubtract;
+		case color_blending_operation::reverse_subtract: 
+			return vk::BlendOp::eReverseSubtract;
+		case color_blending_operation::min: 
+			return vk::BlendOp::eMin;
+		case color_blending_operation::max: 
+			return vk::BlendOp::eMax;
+		default:
+			throw std::invalid_argument("Invalid color blending operation.");
+		}
+	}
+
+	vk::LogicOp to_vk_logic_operation(blending_logic_operation _Value)
+	{
+		switch (_Value)
+		{
+		case blending_logic_operation::clear:
+			return vk::LogicOp::eClear;
+		case blending_logic_operation::and: 
+			return vk::LogicOp::eAnd;
+		case blending_logic_operation::and_reverse: 
+			return vk::LogicOp::eAndReverse;
+		case blending_logic_operation::copy: 
+			return vk::LogicOp::eCopy;
+		case blending_logic_operation::and_inverted: 
+			return vk::LogicOp::eAndInverted;
+		case blending_logic_operation::no_op: 
+			return vk::LogicOp::eNoOp;
+		case blending_logic_operation::xor: 
+			return vk::LogicOp::eXor;
+		case blending_logic_operation::or: 
+			return vk::LogicOp::eOr;
+		case blending_logic_operation::nor: 
+			return vk::LogicOp::eNor;
+		case blending_logic_operation::equivalent: 
+			return vk::LogicOp::eEquivalent;
+		case blending_logic_operation::invert: 
+			return vk::LogicOp::eInvert;
+		case blending_logic_operation::or_reverse: 
+			return vk::LogicOp::eOrReverse;
+		case blending_logic_operation::copy_inverted: 
+			return vk::LogicOp::eCopyInverted;
+		case blending_logic_operation::or_inverted: 
+			return vk::LogicOp::eOrInverted;
+		case blending_logic_operation::nand: 
+			return vk::LogicOp::eNand;
+		case blending_logic_operation::set: 
+			return vk::LogicOp::eSet;
+		default: 
+			throw std::invalid_argument("Invalid blending logic operation.");
 		}
 	}
 }

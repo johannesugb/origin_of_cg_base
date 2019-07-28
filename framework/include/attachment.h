@@ -52,6 +52,8 @@ namespace cgb
 		 */
 		static attachment create_shader_input_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, std::optional<uint32_t> pLocation = {});
 
+		static attachment create_for(const image_view_t& _ImageView, std::optional<uint32_t> pLocation = {});
+
 		/** The color/depth/stencil format of the attachment */
 		auto format() const { return mFormat; }
 		/** True if a specific location has been configured */

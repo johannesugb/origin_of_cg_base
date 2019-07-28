@@ -95,6 +95,7 @@
 #include <vulkan/vulkan.hpp>
 #include "buffer_member_format_vulkan.h"
 #include "image_vulkan.h"
+#include "image_view_vulkan.h"
 #endif
 
 #include "attachment.h"
@@ -112,7 +113,6 @@
 #include "context_generic_glfw_types.h"
 #include "window_base.h"
 #include "context_generic_glfw.h"
-#include "image_view_vulkan.h"
 #include "sampler_vulkan.h"
 #include "image_sampler_vulkan.h"
 #include "command_buffer_vulkan.h"

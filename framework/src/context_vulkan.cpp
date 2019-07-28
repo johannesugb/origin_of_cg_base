@@ -268,9 +268,9 @@ namespace cgb
 		});
 	}
 
-	void vulkan::draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer)
+	void vulkan::draw_triangle(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer)
 	{
-		pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.handle());
+		pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, cgb::get(pPipeline).handle());
 		pCommandBuffer.handle().draw(3u, 1u, 0u, 0u);
 	}
 
@@ -933,159 +933,110 @@ namespace cgb
 		return mLogicalDevice.createRenderPass(renderPassInfo); // TODO: use this
 	}
 
-	pipeline vulkan::create_graphics_pipeline_for_window(
-		const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
-		window* pWindow,
-		image_format pDepthFormat,
-		const vk::VertexInputBindingDescription& pBindingDesc,
-		size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
-		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
-	{
 
+	//pipeline vulkan::create_ray_tracing_pipeline(
+	//	const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
+	//	const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
+	//{
+	//	// CREATE PIPELINE
+	//	auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
+	//		.setSetLayoutCount(static_cast<uint32_t>(pDescriptorSetLayouts.size()))
+	//		.setPSetLayouts(pDescriptorSetLayouts.data())
+	//		.setPushConstantRangeCount(0u)
+	//		.setPPushConstantRanges(nullptr);
+	//	auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo);
 
+	//	// Gather the shader infos
+	//	std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+	//	//std::transform(std::begin(pShaderInfos), std::end(pShaderInfos),
+	//	//			   std::back_inserter(shaderStages),
+	//	//			   [](const auto& tpl) {
+	//	//				   return vk::PipelineShaderStageCreateInfo()
+	//	//					   .setStage(convert(std::get<shader_type>(tpl)))
+	//	//					   .setModule(std::get<shader*>(tpl)->handle())
+	//	//					   .setPName("main"); // TODO: support different entry points?!
+	//	//			   });
 
-		
-		// DYNAMIC STATE
-		// A limited amount of the state that we've specified in the previous structs can actually be changed without recreating the pipeline. 
-		// Examples are the size of the viewport, line width and blend constants. If you want to do that, then you'll have to fill in a vk::PipelineDynamicStateCreateInfo structure. [4]
-		auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eLineWidth };
-		auto dynamicStateInfo = vk::PipelineDynamicStateCreateInfo()
-			.setDynamicStateCount(static_cast<uint32_t>(dynamicStates.size()))
-			.setPDynamicStates(std::begin(dynamicStates));
+	//	// Create shader groups
+	//	std::array shaderGroups = {
+	//		// group0 = [raygen]
+	//		vk::RayTracingShaderGroupCreateInfoNV()
+	//		.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
+	//		.setGeneralShader(0) // Just the ray generation shader here, nothing special
+	//		.setClosestHitShader(VK_SHADER_UNUSED_NV)
+	//		.setAnyHitShader(VK_SHADER_UNUSED_NV)
+	//		.setIntersectionShader(VK_SHADER_UNUSED_NV)
+	//		,
+	//		// group1 = [chit]
+	//		vk::RayTracingShaderGroupCreateInfoNV()
+	//		.setType(vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup)
+	//		.setGeneralShader(VK_SHADER_UNUSED_NV) // Unused because we're using the stock triangles intersection functionality
+	//		.setClosestHitShader(1u) // If we get closest hits, we'd like to have our 2nd entry to the shader table executed
+	//		.setAnyHitShader(VK_SHADER_UNUSED_NV)
+	//		.setIntersectionShader(VK_SHADER_UNUSED_NV)
+	//		,
+	//		// group2 = [chit1]
+	//		vk::RayTracingShaderGroupCreateInfoNV()
+	//		.setType(vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup)
+	//		.setGeneralShader(VK_SHADER_UNUSED_NV) 
+	//		.setClosestHitShader(2u) 
+	//		.setAnyHitShader(VK_SHADER_UNUSED_NV)
+	//		.setIntersectionShader(VK_SHADER_UNUSED_NV)
+	//		,
+	//		// group3 = [miss0]
+	//		vk::RayTracingShaderGroupCreateInfoNV()
+	//		.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
+	//		.setGeneralShader(3u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
+	//		.setClosestHitShader(VK_SHADER_UNUSED_NV)
+	//		.setAnyHitShader(VK_SHADER_UNUSED_NV)
+	//		.setIntersectionShader(VK_SHADER_UNUSED_NV)
+	//		,
+	//		// group4 = [miss1]
+	//		vk::RayTracingShaderGroupCreateInfoNV()
+	//		.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
+	//		.setGeneralShader(4u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
+	//		.setClosestHitShader(VK_SHADER_UNUSED_NV)
+	//		.setAnyHitShader(VK_SHADER_UNUSED_NV)
+	//		.setIntersectionShader(VK_SHADER_UNUSED_NV)
+	//	};
 
-		// PIPELINE LAYOUT
-		// These uniform values (Anm.: passed to shaders) need to be specified during pipeline creation by creating a VkPipelineLayout object. [4]
-		auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(static_cast<uint32_t>(pDescriptorSetLayouts.size()))
-			.setPSetLayouts(pDescriptorSetLayouts.data())
-			.setPushConstantRangeCount(0u)
-			.setPPushConstantRanges(nullptr);
-		auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo); 
+	//	// Do it:
+	//	auto pipelineCreateInfo = vk::RayTracingPipelineCreateInfoNV()
+	//		.setStageCount(static_cast<uint32_t>(shaderStages.size()))
+	//		.setPStages(shaderStages.data())
+	//		.setGroupCount(static_cast<uint32_t>(shaderGroups.size()))
+	//		.setPGroups(shaderGroups.data())
+	//		.setMaxRecursionDepth(2u) // Ho ho ho! Wir recursen!
+	//		.setLayout(pipelineLayout);
 
+	//	throw std::exception("wip");
+	//	//return pipeline(
+	//	//	pipelineLayout,
+	//	//	context().logical_device().createRayTracingPipelineNV(
+	//	//		nullptr,						// no pipeline cache
+	//	//		pipelineCreateInfo,				// pipeline description
+	//	//		nullptr,						// no allocation callbacks
+	//	//		context().dynamic_dispatch()));	// dynamic dispatch for extension
+	//}
 
-		// CREATE RENDER PASS (for sure, this is the wrong place to do so => refactor!)
-		auto renderPass = create_render_pass(pWindow->swap_chain_image_format(), pDepthFormat);
+	//std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view_t& pDepthImageView)
+	//{
+	//	std::vector<framebuffer> framebuffers;
+	//	auto extent = pWindow->swap_chain_extent();
+	//	for (const auto& imageView : pWindow->swap_chain_image_views()) {
+	//		std::array attachments = { imageView.get(), pDepthImageView.view_handle() };
+	//		auto framebufferInfo = vk::FramebufferCreateInfo()
+	//			.setRenderPass(renderPass)
+	//			.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
+	//			.setPAttachments(attachments.data())
+	//			.setWidth(extent.width)
+	//			.setHeight(extent.height)
+	//			.setLayers(1u); // number of layers in image arrays [6]
 
-
-
-
-		// MULTISAMPLING
-		auto multisamplingInfo = pWindow->get_config_multisample_state_create_info();
-
-
-		throw std::runtime_error("wip");
-		//// Create the pipeline, return it and also store the render pass and the pipeline layout in the struct!
-		//return pipeline(
-		//	pipelineLayout, 
-		//	mLogicalDevice.createGraphicsPipeline(
-		//		nullptr, // references an optional VkPipelineCache object. A pipeline cache can be used to store and reuse data relevant to pipeline creation across multiple calls to vkCreateGraphicsPipelines and even across program executions [5]
-		//		pipelineInfo),
-		//	renderPass);
-	}
-
-	pipeline vulkan::create_ray_tracing_pipeline(
-		const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
-		const std::vector<vk::DescriptorSetLayout>& pDescriptorSetLayouts)
-	{
-		// CREATE PIPELINE
-		auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(static_cast<uint32_t>(pDescriptorSetLayouts.size()))
-			.setPSetLayouts(pDescriptorSetLayouts.data())
-			.setPushConstantRangeCount(0u)
-			.setPPushConstantRanges(nullptr);
-		auto pipelineLayout = mLogicalDevice.createPipelineLayout(pipelineLayoutInfo);
-
-		// Gather the shader infos
-		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-		//std::transform(std::begin(pShaderInfos), std::end(pShaderInfos),
-		//			   std::back_inserter(shaderStages),
-		//			   [](const auto& tpl) {
-		//				   return vk::PipelineShaderStageCreateInfo()
-		//					   .setStage(convert(std::get<shader_type>(tpl)))
-		//					   .setModule(std::get<shader*>(tpl)->handle())
-		//					   .setPName("main"); // TODO: support different entry points?!
-		//			   });
-
-		// Create shader groups
-		std::array shaderGroups = {
-			// group0 = [raygen]
-			vk::RayTracingShaderGroupCreateInfoNV()
-			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
-			.setGeneralShader(0) // Just the ray generation shader here, nothing special
-			.setClosestHitShader(VK_SHADER_UNUSED_NV)
-			.setAnyHitShader(VK_SHADER_UNUSED_NV)
-			.setIntersectionShader(VK_SHADER_UNUSED_NV)
-			,
-			// group1 = [chit]
-			vk::RayTracingShaderGroupCreateInfoNV()
-			.setType(vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup)
-			.setGeneralShader(VK_SHADER_UNUSED_NV) // Unused because we're using the stock triangles intersection functionality
-			.setClosestHitShader(1u) // If we get closest hits, we'd like to have our 2nd entry to the shader table executed
-			.setAnyHitShader(VK_SHADER_UNUSED_NV)
-			.setIntersectionShader(VK_SHADER_UNUSED_NV)
-			,
-			// group2 = [chit1]
-			vk::RayTracingShaderGroupCreateInfoNV()
-			.setType(vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup)
-			.setGeneralShader(VK_SHADER_UNUSED_NV) 
-			.setClosestHitShader(2u) 
-			.setAnyHitShader(VK_SHADER_UNUSED_NV)
-			.setIntersectionShader(VK_SHADER_UNUSED_NV)
-			,
-			// group3 = [miss0]
-			vk::RayTracingShaderGroupCreateInfoNV()
-			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
-			.setGeneralShader(3u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
-			.setClosestHitShader(VK_SHADER_UNUSED_NV)
-			.setAnyHitShader(VK_SHADER_UNUSED_NV)
-			.setIntersectionShader(VK_SHADER_UNUSED_NV)
-			,
-			// group4 = [miss1]
-			vk::RayTracingShaderGroupCreateInfoNV()
-			.setType(vk::RayTracingShaderGroupTypeNV::eGeneral)
-			.setGeneralShader(4u) // Ein Miss Shader hat mit einem bestimmten Hit nix zu tun, deswegen is der nicht in der Hit Group mit dabei, sondern ein separater Eintrag
-			.setClosestHitShader(VK_SHADER_UNUSED_NV)
-			.setAnyHitShader(VK_SHADER_UNUSED_NV)
-			.setIntersectionShader(VK_SHADER_UNUSED_NV)
-		};
-
-		// Do it:
-		auto pipelineCreateInfo = vk::RayTracingPipelineCreateInfoNV()
-			.setStageCount(static_cast<uint32_t>(shaderStages.size()))
-			.setPStages(shaderStages.data())
-			.setGroupCount(static_cast<uint32_t>(shaderGroups.size()))
-			.setPGroups(shaderGroups.data())
-			.setMaxRecursionDepth(2u) // Ho ho ho! Wir recursen!
-			.setLayout(pipelineLayout);
-
-		throw std::exception("wip");
-		//return pipeline(
-		//	pipelineLayout,
-		//	context().logical_device().createRayTracingPipelineNV(
-		//		nullptr,						// no pipeline cache
-		//		pipelineCreateInfo,				// pipeline description
-		//		nullptr,						// no allocation callbacks
-		//		context().dynamic_dispatch()));	// dynamic dispatch for extension
-	}
-
-	std::vector<framebuffer> vulkan::create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view_t& pDepthImageView)
-	{
-		std::vector<framebuffer> framebuffers;
-		auto extent = pWindow->swap_chain_extent();
-		for (const auto& imageView : pWindow->swap_chain_image_views()) {
-			std::array attachments = { imageView.get(), pDepthImageView.view_handle() };
-			auto framebufferInfo = vk::FramebufferCreateInfo()
-				.setRenderPass(renderPass)
-				.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
-				.setPAttachments(attachments.data())
-				.setWidth(extent.width)
-				.setHeight(extent.height)
-				.setLayers(1u); // number of layers in image arrays [6]
-
-			framebuffers.push_back(framebuffer{ mLogicalDevice.createFramebuffer( framebufferInfo ) });
-		}
-		return framebuffers;
-	}
+	//		framebuffers.push_back(framebuffer{ mLogicalDevice.createFramebuffer( framebufferInfo ) });
+	//	}
+	//	return framebuffers;
+	//}
 
 	command_pool& vulkan::get_command_pool_for_queue_family(uint32_t pQueueFamilyIndex)
 	{

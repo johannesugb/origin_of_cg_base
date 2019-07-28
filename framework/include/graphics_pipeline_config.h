@@ -522,7 +522,7 @@ namespace cgb
 		~graphics_pipeline_config() = default;
 
 		pipeline_settings mPipelineSettings; // ?
-		std::tuple<renderpass, uint32_t> mRenderPassSubpass;
+		std::optional<std::tuple<renderpass, uint32_t>> mRenderPassSubpass;
 		std::vector<input_binding_location_data> mInputBindingLocations; 
 		primitive_topology mPrimitiveTopology;
 		std::vector<shader_info> mShaderInfos;

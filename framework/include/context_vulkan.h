@@ -16,7 +16,7 @@ namespace cgb
 		friend struct swap_chain_data;
 		friend struct shader_handle;
 		friend struct pipeline;
-		friend struct framebuffer;
+		friend class framebuffer_t;
 		friend class command_pool;
 		friend class command_buffer;
 	public:
@@ -59,10 +59,10 @@ namespace cgb
 		 */
 		window* create_window(const std::string& pTitle);
 
-		void draw_triangle(const pipeline& pPipeline, const command_buffer& pCommandBuffer);
+		void draw_triangle(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer);
 
 		template <typename Bfr>
-		void draw_vertices(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const Bfr& pVertexBuffer)
+		void draw_vertices(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const Bfr& pVertexBuffer)
 		{
 			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
@@ -70,7 +70,7 @@ namespace cgb
 		}
 
 		template <typename VBfr, typename IBfr>
-		void draw_indexed(const pipeline& pPipeline, const command_buffer& pCommandBuffer, const VBfr& pVertexBuffer, const IBfr& pIndexBuffer)
+		void draw_indexed(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const VBfr& pVertexBuffer, const IBfr& pIndexBuffer)
 		{
 			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
@@ -178,20 +178,11 @@ namespace cgb
 		/** TODO: TBD */
 		vk::RenderPass create_render_pass(image_format pImageFormat, image_format pDepthFormat);
 
-		/** TODO: TBD */
-		pipeline create_graphics_pipeline_for_window(
-			const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos, 
-			window* pWindow, 
-			image_format pDepthFormat,
-			const vk::VertexInputBindingDescription& pBindingDesc, 
-			size_t pNumAttributeDesc, const vk::VertexInputAttributeDescription* pAttributeDescDataPtr,
-			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
+		//pipeline create_ray_tracing_pipeline(
+		//	const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
+		//	const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
 
-		pipeline create_ray_tracing_pipeline(
-			const std::vector<std::tuple<shader_type, shader*>>& pShaderInfos,
-			const std::vector<vk::DescriptorSetLayout>& pDescriptorSets);
-
-		std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view_t& pDepthImageView);
+		//std::vector<framebuffer> create_framebuffers(const vk::RenderPass& renderPass, window* pWindow, const image_view_t& pDepthImageView);
 
 		/** Gets a command pool for the given queue family index.
 		 *	If the command pool does not exist already, it will be created.
@@ -339,6 +330,27 @@ namespace cgb
 	inline void vulkan::track_move<image_view_t>(image_view_t* thing, image_view_t* other)			{ LOG_WARNING("TODO: implement 'image_view_t' handling in context::track_move."); }
 	template <>
 	inline void vulkan::track_destruction<image_view_t>(image_view_t* thing)	{ LOG_WARNING("TODO: implement 'image_view_t' handling in context::track_destruction."); }
+
+	template <>
+	inline void vulkan::track_creation<renderpass_t>(renderpass_t* thing)		{ LOG_WARNING("TODO: implement 'renderpass_t' handling in context::track_creation."); }
+	template <>
+	inline void vulkan::track_move<renderpass_t>(renderpass_t* thing, renderpass_t* other)			{ LOG_WARNING("TODO: implement 'renderpass_t' handling in context::track_move."); }
+	template <>
+	inline void vulkan::track_destruction<renderpass_t>(renderpass_t* thing)	{ LOG_WARNING("TODO: implement 'renderpass_t' handling in context::track_destruction."); }
+
+	template <>
+	inline void vulkan::track_creation<graphics_pipeline_t>(graphics_pipeline_t* thing)		{ LOG_WARNING("TODO: implement 'graphics_pipeline_t' handling in context::track_creation."); }
+	template <>
+	inline void vulkan::track_move<graphics_pipeline_t>(graphics_pipeline_t* thing, graphics_pipeline_t* other)			{ LOG_WARNING("TODO: implement 'graphics_pipeline_t' handling in context::track_move."); }
+	template <>
+	inline void vulkan::track_destruction<graphics_pipeline_t>(graphics_pipeline_t* thing)	{ LOG_WARNING("TODO: implement 'graphics_pipeline_t' handling in context::track_destruction."); }
+
+	template <>
+	inline void vulkan::track_creation<framebuffer_t>(framebuffer_t* thing)		{ LOG_WARNING("TODO: implement 'framebuffer_t' handling in context::track_creation."); }
+	template <>
+	inline void vulkan::track_move<framebuffer_t>(framebuffer_t* thing, framebuffer_t* other)			{ LOG_WARNING("TODO: implement 'framebuffer_t' handling in context::track_move."); }
+	template <>
+	inline void vulkan::track_destruction<framebuffer_t>(framebuffer_t* thing)	{ LOG_WARNING("TODO: implement 'framebuffer_t' handling in context::track_destruction."); }
 
 
 	// [1] Vulkan Tutorial, Depth buffering, https://vulkan-tutorial.com/Depth_buffering
