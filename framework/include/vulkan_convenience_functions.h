@@ -185,7 +185,7 @@ namespace cgb
 		}
 		// ^ that was the sanity check. See if we have to build the renderpass from the attachments:
 		if (renderPassAttachments.size() > 0) {
-			add_config(config &renderPassAttachments, renderpass::create(std::move(renderPassAttachments)));
+			add_config(config, &renderPassAttachments, renderpass_t::create(std::move(renderPassAttachments)));
 		}
 
 		return graphics_pipeline_t::create(config, std::move(_AlterConfigBeforeCreation));

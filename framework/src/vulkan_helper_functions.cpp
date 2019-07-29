@@ -310,21 +310,21 @@ namespace cgb
 		{
 		case blending_logic_operation::clear:
 			return vk::LogicOp::eClear;
-		case blending_logic_operation::and: 
+		case blending_logic_operation::asdfand: 
 			return vk::LogicOp::eAnd;
 		case blending_logic_operation::and_reverse: 
 			return vk::LogicOp::eAndReverse;
-		case blending_logic_operation::copy: 
+		case blending_logic_operation::asdfcopy: 
 			return vk::LogicOp::eCopy;
 		case blending_logic_operation::and_inverted: 
 			return vk::LogicOp::eAndInverted;
 		case blending_logic_operation::no_op: 
 			return vk::LogicOp::eNoOp;
-		case blending_logic_operation::xor: 
+		case blending_logic_operation::asdfxor: 
 			return vk::LogicOp::eXor;
-		case blending_logic_operation::or: 
+		case blending_logic_operation::asfor: 
 			return vk::LogicOp::eOr;
-		case blending_logic_operation::nor: 
+		case blending_logic_operation::asfdnor: 
 			return vk::LogicOp::eNor;
 		case blending_logic_operation::equivalent: 
 			return vk::LogicOp::eEquivalent;
@@ -336,7 +336,7 @@ namespace cgb
 			return vk::LogicOp::eCopyInverted;
 		case blending_logic_operation::or_inverted: 
 			return vk::LogicOp::eOrInverted;
-		case blending_logic_operation::nand: 
+		case blending_logic_operation::asdfnand: 
 			return vk::LogicOp::eNand;
 		case blending_logic_operation::set: 
 			return vk::LogicOp::eSet;

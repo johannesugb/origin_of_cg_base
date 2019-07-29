@@ -7,25 +7,25 @@ namespace cgb
 	vk::DescriptorType descriptor_type_of();
 
 	template<>
-	vk::DescriptorType descriptor_type_of<uniform_buffer_t>() { return vk::DescriptorType::eUniformBuffer; }
+	inline vk::DescriptorType descriptor_type_of<uniform_buffer_t>() { return vk::DescriptorType::eUniformBuffer; }
 
 	template<>
-	vk::DescriptorType descriptor_type_of<uniform_texel_buffer_t>() { return vk::DescriptorType::eUniformTexelBuffer; }
+	inline vk::DescriptorType descriptor_type_of<uniform_texel_buffer_t>() { return vk::DescriptorType::eUniformTexelBuffer; }
 
 	template<>
-	vk::DescriptorType descriptor_type_of<storage_buffer_t>() { return vk::DescriptorType::eStorageBuffer; }
+	inline vk::DescriptorType descriptor_type_of<storage_buffer_t>() { return vk::DescriptorType::eStorageBuffer; }
 
 	template<>
-	vk::DescriptorType descriptor_type_of<storage_texel_buffer_t>() { return vk::DescriptorType::eStorageTexelBuffer; }
+	inline vk::DescriptorType descriptor_type_of<storage_texel_buffer_t>() { return vk::DescriptorType::eStorageTexelBuffer; }
 
 	template<>
-	vk::DescriptorType descriptor_type_of<image_view_t>() { return vk::DescriptorType::eStorageImage; }
+	inline vk::DescriptorType descriptor_type_of<image_view_t>() { return vk::DescriptorType::eStorageImage; }
 
 	template<>
-	vk::DescriptorType descriptor_type_of<image_sampler_t>() { return vk::DescriptorType::eCombinedImageSampler; }
+	inline vk::DescriptorType descriptor_type_of<image_sampler_t>() { return vk::DescriptorType::eCombinedImageSampler; }
 
 	template<>
-	vk::DescriptorType descriptor_type_of<acceleration_structure>() { return vk::DescriptorType::eAccelerationStructureNV; }
+	inline vk::DescriptorType descriptor_type_of<acceleration_structure>() { return vk::DescriptorType::eAccelerationStructureNV; }
 
 
 
@@ -35,6 +35,7 @@ namespace cgb
 		for (size_t i = 0; i < t.size(); ++i) {
 			results.push_back(&cgb::get(t[i]));
 		}
+		return results;
 	}
 
 	template<typename T> 

@@ -168,7 +168,7 @@ namespace cgb
 	*	It does not consider other members (like of the `mLayoutBinding` 
 	*	or the `mShaderStages` members - they are simply ignored)
 	*/
-	bool operator >=(const binding_data& first, const binding_data& second)
+	inline bool operator >=(const binding_data& first, const binding_data& second)
 	{
 		return !(first < second);
 	}

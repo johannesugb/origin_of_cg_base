@@ -37,7 +37,7 @@ class my_first_rtx_app : public cgb::cg_element
 	}
 
 private:
-	cgb::pipeline mPipeline;
+	//cgb::pipeline mPipeline;
 
 };
 

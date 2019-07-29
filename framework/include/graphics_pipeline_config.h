@@ -339,20 +339,20 @@ namespace cgb
 	enum struct blending_logic_operation
 	{
 		clear,
-		and,
+		asdfand,
 		and_reverse,
-		copy,
+		asdfcopy,
 		and_inverted,
 		no_op,
-		xor,
-		or,
-		nor,
+		asdfxor,
+		asfor,
+		asfdnor,
 		equivalent,
 		invert,
 		or_reverse,
 		copy_inverted,
 		or_inverted,
-		nand,
+		asdfnand,
 		set
 	};
 

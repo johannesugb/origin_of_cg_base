@@ -510,64 +510,64 @@ namespace cgb
 
 
 	// f32
-	template <>	buffer_member_format format_for<glm::vec<4, glm::f32, glm::defaultp>>()	{ return format_4x_fp32(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::f32, glm::defaultp>>()	{ return format_3x_fp32(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::f32, glm::defaultp>>()	{ return format_2x_fp32(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::f32, glm::defaultp>>()	{ return format_1x_fp32(); }
-	template <>	buffer_member_format format_for<float>()								{ return format_1x_fp32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::f32, glm::defaultp>>()	{ return format_4x_fp32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::f32, glm::defaultp>>()	{ return format_3x_fp32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::f32, glm::defaultp>>()	{ return format_2x_fp32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::f32, glm::defaultp>>()	{ return format_1x_fp32(); }
+	template <>	inline buffer_member_format format_for<float>()								{ return format_1x_fp32(); }
 	// f64
-	template <>	buffer_member_format format_for<glm::vec<4, glm::f64, glm::defaultp>>()	{ return format_4x_fp64(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::f64, glm::defaultp>>()	{ return format_3x_fp64(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::f64, glm::defaultp>>()	{ return format_2x_fp64(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::f64, glm::defaultp>>()	{ return format_1x_fp64(); }
-	template <>	buffer_member_format format_for<double>()								{ return format_1x_fp64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::f64, glm::defaultp>>()	{ return format_4x_fp64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::f64, glm::defaultp>>()	{ return format_3x_fp64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::f64, glm::defaultp>>()	{ return format_2x_fp64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::f64, glm::defaultp>>()	{ return format_1x_fp64(); }
+	template <>	inline buffer_member_format format_for<double>()								{ return format_1x_fp64(); }
 	// i8
-	template <>	buffer_member_format format_for<glm::vec<4, glm::i8, glm::defaultp>>()	{ return format_4x_sint8(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::i8, glm::defaultp>>()	{ return format_3x_sint8(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::i8, glm::defaultp>>()	{ return format_2x_sint8(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::i8, glm::defaultp>>()	{ return format_1x_sint8(); }
-	template <>	buffer_member_format format_for<int8_t>()								{ return format_1x_sint8(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::i8, glm::defaultp>>()	{ return format_4x_sint8(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::i8, glm::defaultp>>()	{ return format_3x_sint8(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::i8, glm::defaultp>>()	{ return format_2x_sint8(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::i8, glm::defaultp>>()	{ return format_1x_sint8(); }
+	template <>	inline buffer_member_format format_for<int8_t>()								{ return format_1x_sint8(); }
 	// i16
-	template <>	buffer_member_format format_for<glm::vec<4, glm::i16, glm::defaultp>>()	{ return format_4x_sint16(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::i16, glm::defaultp>>()	{ return format_3x_sint16(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::i16, glm::defaultp>>()	{ return format_2x_sint16(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::i16, glm::defaultp>>()	{ return format_1x_sint16(); }
-	template <>	buffer_member_format format_for<int16_t>()								{ return format_1x_sint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::i16, glm::defaultp>>()	{ return format_4x_sint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::i16, glm::defaultp>>()	{ return format_3x_sint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::i16, glm::defaultp>>()	{ return format_2x_sint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::i16, glm::defaultp>>()	{ return format_1x_sint16(); }
+	template <>	inline buffer_member_format format_for<int16_t>()								{ return format_1x_sint16(); }
 	// i32
-	template <>	buffer_member_format format_for<glm::vec<4, glm::i32, glm::defaultp>>()	{ return format_4x_sint32(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::i32, glm::defaultp>>()	{ return format_3x_sint32(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::i32, glm::defaultp>>()	{ return format_2x_sint32(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::i32, glm::defaultp>>()	{ return format_1x_sint32(); }
-	template <>	buffer_member_format format_for<int32_t>()								{ return format_1x_sint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::i32, glm::defaultp>>()	{ return format_4x_sint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::i32, glm::defaultp>>()	{ return format_3x_sint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::i32, glm::defaultp>>()	{ return format_2x_sint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::i32, glm::defaultp>>()	{ return format_1x_sint32(); }
+	template <>	inline buffer_member_format format_for<int32_t>()								{ return format_1x_sint32(); }
 	// i64
-	template <>	buffer_member_format format_for<glm::vec<4, glm::i64, glm::defaultp>>()	{ return format_4x_sint64(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::i64, glm::defaultp>>()	{ return format_3x_sint64(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::i64, glm::defaultp>>()	{ return format_2x_sint64(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::i64, glm::defaultp>>()	{ return format_1x_sint64(); }
-	template <>	buffer_member_format format_for<int64_t>()								{ return format_1x_sint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::i64, glm::defaultp>>()	{ return format_4x_sint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::i64, glm::defaultp>>()	{ return format_3x_sint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::i64, glm::defaultp>>()	{ return format_2x_sint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::i64, glm::defaultp>>()	{ return format_1x_sint64(); }
+	template <>	inline buffer_member_format format_for<int64_t>()								{ return format_1x_sint64(); }
 	// u8
-	template <>	buffer_member_format format_for<glm::vec<4, glm::u8, glm::defaultp>>()	{ return format_4x_uint8(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::u8, glm::defaultp>>()	{ return format_3x_uint8(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::u8, glm::defaultp>>()	{ return format_2x_uint8(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::u8, glm::defaultp>>()	{ return format_1x_uint8(); }
-	template <>	buffer_member_format format_for<uint8_t>()								{ return format_1x_uint8(); }
+	template <> inline buffer_member_format format_for<glm::vec<4, glm::u8, glm::defaultp>>()	{ return format_4x_uint8(); }
+	template <> inline buffer_member_format format_for<glm::vec<3, glm::u8, glm::defaultp>>()	{ return format_3x_uint8(); }
+	template <> inline buffer_member_format format_for<glm::vec<2, glm::u8, glm::defaultp>>()	{ return format_2x_uint8(); }
+	template <> inline buffer_member_format format_for<glm::vec<1, glm::u8, glm::defaultp>>()	{ return format_1x_uint8(); }
+	template <> inline buffer_member_format format_for<uint8_t>()								{ return format_1x_uint8(); }
 	// u16
-	template <>	buffer_member_format format_for<glm::vec<4, glm::u16, glm::defaultp>>()	{ return format_4x_uint16(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::u16, glm::defaultp>>()	{ return format_3x_uint16(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::u16, glm::defaultp>>()	{ return format_2x_uint16(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::u16, glm::defaultp>>()	{ return format_1x_uint16(); }
-	template <>	buffer_member_format format_for<uint16_t>()								{ return format_1x_uint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::u16, glm::defaultp>>()	{ return format_4x_uint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::u16, glm::defaultp>>()	{ return format_3x_uint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::u16, glm::defaultp>>()	{ return format_2x_uint16(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::u16, glm::defaultp>>()	{ return format_1x_uint16(); }
+	template <>	inline buffer_member_format format_for<uint16_t>()								{ return format_1x_uint16(); }
 	// u32
-	template <>	buffer_member_format format_for<glm::vec<4, glm::u32, glm::defaultp>>()	{ return format_4x_uint32(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::u32, glm::defaultp>>()	{ return format_3x_uint32(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::u32, glm::defaultp>>()	{ return format_2x_uint32(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::u32, glm::defaultp>>()	{ return format_1x_uint32(); }
-	template <>	buffer_member_format format_for<uint32_t>()								{ return format_1x_uint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::u32, glm::defaultp>>()	{ return format_4x_uint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::u32, glm::defaultp>>()	{ return format_3x_uint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::u32, glm::defaultp>>()	{ return format_2x_uint32(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::u32, glm::defaultp>>()	{ return format_1x_uint32(); }
+	template <>	inline buffer_member_format format_for<uint32_t>()								{ return format_1x_uint32(); }
 	// u64
-	template <>	buffer_member_format format_for<glm::vec<4, glm::u64, glm::defaultp>>()	{ return format_4x_uint64(); }
-	template <>	buffer_member_format format_for<glm::vec<3, glm::u64, glm::defaultp>>()	{ return format_3x_uint64(); }
-	template <>	buffer_member_format format_for<glm::vec<2, glm::u64, glm::defaultp>>()	{ return format_2x_uint64(); }
-	template <>	buffer_member_format format_for<glm::vec<1, glm::u64, glm::defaultp>>()	{ return format_1x_uint64(); }
-	template <>	buffer_member_format format_for<uint64_t>()								{ return format_1x_uint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<4, glm::u64, glm::defaultp>>()	{ return format_4x_uint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<3, glm::u64, glm::defaultp>>()	{ return format_3x_uint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<2, glm::u64, glm::defaultp>>()	{ return format_2x_uint64(); }
+	template <>	inline buffer_member_format format_for<glm::vec<1, glm::u64, glm::defaultp>>()	{ return format_1x_uint64(); }
+	template <>	inline buffer_member_format format_for<uint64_t>()								{ return format_1x_uint64(); }
 
 }

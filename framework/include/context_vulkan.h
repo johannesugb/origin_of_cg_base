@@ -32,13 +32,13 @@ namespace cgb
 		static void check_vk_result(VkResult err);
 
 		template <typename T>
-		void track_creation(T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_creation", typeid(T)::name())); }
+		void track_creation(T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_creation", typeid(T).name())); }
 		template <typename T>
-		void track_copy(T*, T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_copy", typeid(T)::name())); }
+		void track_copy(T*, T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_copy", typeid(T).name())); }
 		template <typename T>
-		void track_move(T*, T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_move", typeid(T)::name())); }
+		void track_move(T*, T*)		{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_move", typeid(T).name())); }
 		template <typename T>
-		void track_destruction(T*)	{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_destruction", typeid(T)::name())); }
+		void track_destruction(T*)	{ LOG_WARNING(fmt::format("Encountered unsupported type '{}' in context::track_destruction", typeid(T).name())); }
 
 		vk::Instance& vulkan_instance() { return mInstance; }
 		vk::PhysicalDevice& physical_device() { return mPhysicalDevice; }
@@ -64,20 +64,20 @@ namespace cgb
 		template <typename Bfr>
 		void draw_vertices(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const Bfr& pVertexBuffer)
 		{
-			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, cgb::get(pPipeline).handle());
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
-			pCommandBuffer.handle().draw(pVertexBuffer.mVertexCount, 1u, 0u, 0u);
+			pCommandBuffer.handle().draw(pVertexBuffer.mVertexCount, 1u, 0u, 0u);                      
 		}
 
 		template <typename VBfr, typename IBfr>
 		void draw_indexed(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const VBfr& pVertexBuffer, const IBfr& pIndexBuffer)
 		{
-			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.mPipeline);
+			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, cgb::get(pPipeline).handle());
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
 			vk::IndexType indexType = to_vk_index_type(pIndexBuffer.config().sizeof_one_element());
 			pCommandBuffer.handle().bindIndexBuffer(pIndexBuffer.buffer_handle(), 0u, indexType);
 			pCommandBuffer.handle().drawIndexed(pIndexBuffer.config().num_elements(), 1u, 0u, 0u, 0u);
-			pCommandBuffer.handle().drawIndexedIndirect()
+			//pCommandBuffer.handle().drawIndexedIndirect()
 		}
 
 		/** Completes all pending work on the device, blocks the current thread until then. */
