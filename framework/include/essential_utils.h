@@ -32,14 +32,14 @@ namespace cgb
 
 		context_specific_function() {}
 
-		template <typename F>
+		template <typename F, typename std::enable_if<std::is_assignable_v<std::function<T>, F>, int>::type = 0>
 		context_specific_function(F func)
 		{
 			set_function(std::move(func));
 		}
 
-		template <typename F>
-		auto& operator==(F func)
+		template <typename F, typename std::enable_if<std::is_assignable_v<std::function<T>, F>, int>::type = 0>
+		auto& operator=(F func)
 		{
 			set_function(std::move(func));
 			return *this;

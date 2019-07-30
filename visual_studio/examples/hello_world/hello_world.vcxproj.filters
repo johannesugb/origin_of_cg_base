@@ -30,27 +30,6 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\framework\shaders\shader.vert">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\..\..\framework\shaders\rt_09_first.rchit">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\..\..\framework\shaders\rt_09_first.rgen">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\..\..\framework\shaders\rt_09_first.rmiss">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\..\..\framework\shaders\rt_09_secondary.rchit">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\..\..\framework\shaders\rt_09_secondary.rmiss">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\..\..\framework\shaders\shader.frag">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="..\..\..\framework\assets\chalet\chalet.jpg">
       <Filter>assets</Filter>
     </None>
@@ -59,6 +38,12 @@
     </None>
     <None Include="..\..\..\framework\assets\sphere.obj">
       <Filter>assets</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_world\source\a_triangle.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\examples\hello_world\source\a_triangle.vert">
+      <Filter>shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

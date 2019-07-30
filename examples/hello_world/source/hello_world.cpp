@@ -1,72 +1,107 @@
 #include "cg_base.h"
 
-class my_first_rtx_app : public cgb::cg_element
+class my_first_cgb_app : public cgb::cg_element
 {
-	//void initialize() override
-	//{
-	//	cgb::context().create_sync_objects(); // <-- TODO
-	//	auto swapChain = cgb::context().create_swap_chain(cgb::context().main_window(), cgb::context().mTmpSurface);
-	//	cgb::context().mSurfSwap.emplace_back(std::make_unique<cgb::swap_chain_data>(std::move(swapChain)));
+	struct Vertex
+	{
+		glm::vec3 pos;
+		glm::vec3 color;
+		glm::vec2 texCoord;
 
-	//	mSwapChainData = cgb::context().get_surf_swap_tuple_for_window(cgb::context().main_window());
-	//	assert(mSwapChainData);
+		static vk::VertexInputBindingDescription binding_description()
+		{
+			return vk::VertexInputBindingDescription()
+				.setBinding(0u)
+				.setStride(sizeof(Vertex))
+				.setInputRate(vk::VertexInputRate::eVertex);
+		}
 
-	//	mPipeline = cgb::context().create_graphics_pipeline_for_window(
-	//		shaderInfos,
-	//		cgb::context().main_window(),
-	//		cgb::image_format(mDepthImage->mInfo.format),
-	//		Vertex::binding_description(),
-	//		vertexAttribDesc.size(),
-	//		vertexAttribDesc.data(),
-	//		{ mDescriptorSetLayout.mDescriptorSetLayout });
-	//	mFrameBuffers = cgb::context().create_framebuffers(mPipeline.mRenderPass, cgb::context().main_window(), mDepthImageView);
-	//	mCmdBfrs = cgb::context().create_command_buffers_for_graphics(mFrameBuffers.size());
-	//}
+		static auto attribute_descriptions()
+		{
+			static std::array attribDescs = {
+				vk::VertexInputAttributeDescription()
+					.setBinding(0u)
+					.setLocation(0u)
+					.setFormat(vk::Format::eR32G32B32Sfloat)
+					.setOffset(static_cast<uint32_t>(offsetof(Vertex, pos)))
+				,
+				vk::VertexInputAttributeDescription()
+					.setBinding(0u)
+					.setLocation(1u)
+					.setFormat(vk::Format::eR32G32B32Sfloat)
+					.setOffset(static_cast<uint32_t>(offsetof(Vertex, color)))
+				,
+				vk::VertexInputAttributeDescription()
+					.setBinding(0u)
+					.setLocation(2u)
+					.setFormat(vk::Format::eR32G32Sfloat)
+					.setOffset(static_cast<uint32_t>(offsetof(Vertex, texCoord)))
+			};
+			return attribDescs;
+		}
+	};
+
+	void initialize() override
+	{
+		auto swapChainFormat = cgb::context().main_window()->swap_chain_image_format();
+		auto xxx = cgb::graphics_pipeline_for(
+			"shaders/a_triangle.vert",
+			"shaders/a_triangle.frag",
+			cgb::viewport_depth_scissors_config::from_window(cgb::context().main_window()),
+			cgb::attachment::create_color(swapChainFormat, true)
+		);
+
+
+	}
 
 	void update() override
 	{
 		if (cgb::input().key_pressed(cgb::key_code::h)) {
+			// Log a message:
 			LOG_INFO_EM("Hello cg_base!");
 		}
 		if (cgb::input().key_pressed(cgb::key_code::c)) {
-			cgb::context().main_window()->set_cursor_pos({ 666.0, 100 });
+			// Center the cursor:
+			auto resolution = cgb::context().main_window()->resolution();
+			cgb::context().main_window()->set_cursor_pos({ resolution[0] / 2.0, resolution[1] / 2.0 });
 		}
 		if (cgb::input().key_pressed(cgb::key_code::escape)) {
+			// Stop the current composition:
 			cgb::current_composition().stop();
 		}
 	}
 
 private:
-	//cgb::pipeline mPipeline;
+	cgb::graphics_pipeline mPipeline;
 
 };
 
 int main()
 {
 	try {
+		// What's the name of our application
+		cgb::settings::gApplicationName = "Hello, World!";
 
-		cgb::settings::gApplicationName = "Hello World";
-
-		// Create a window which we're going to use to render to
-		auto mainWnd = cgb::context().create_window("Hello World!");
-		mainWnd->set_resolution({ 1600, 900 });
+		// Create a window and open it
+		auto mainWnd = cgb::context().create_window("Hello World Window");
+		mainWnd->set_resolution({ 320, 200 });
 		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
 		mainWnd->open(); 
 
-		// Create a "behavior" which contains functionality of our program
-		auto helloBehavior = my_first_rtx_app();
+		// Create an instance of my_first_cgb_app which, in this case,
+		// contains the entire functionality of our application. 
+		auto element = my_first_cgb_app();
 
-		// Create a composition of all things that define the essence of 
-		// our program, which there are:
+		// Create a composition of:
 		//  - a timer
 		//  - an executor
-		//  - a window
 		//  - a behavior
+		// ...
 		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
-				&helloBehavior
+				&element
 			});
 
-		// Let's go:
+		// ... and start that composition!
 		hello.start();
 	}
 	catch (std::runtime_error& re)

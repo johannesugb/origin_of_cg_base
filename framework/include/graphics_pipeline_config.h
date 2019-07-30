@@ -510,15 +510,17 @@ namespace cgb
 		patches
 	};
 
+	// Forward declare that the graphics_pipeline_t class for the context_specific_function
+	class graphics_pipeline_t;
 	
 	/** Pipeline configuration data: BIG GRAPHICS PIPELINE CONFIG STRUCT */
 	struct graphics_pipeline_config
 	{
 		graphics_pipeline_config();
 		graphics_pipeline_config(graphics_pipeline_config&&) = default;
-		graphics_pipeline_config(const graphics_pipeline_config&) = default;
+		graphics_pipeline_config(const graphics_pipeline_config&) = delete;
 		graphics_pipeline_config& operator=(graphics_pipeline_config&&) = default;
-		graphics_pipeline_config& operator=(const graphics_pipeline_config&) = default;
+		graphics_pipeline_config& operator=(const graphics_pipeline_config&) = delete;
 		~graphics_pipeline_config() = default;
 
 		pipeline_settings mPipelineSettings; // ?
@@ -537,9 +539,9 @@ namespace cgb
 		depth_bounds mDepthBoundsConfig;
 		std::vector<color_blending_config> mColorBlendingPerAttachment;
 		color_blending_settings mColorBlendingSettings;
-		// TODO: proceed here with defining default parameters
 		std::vector<binding_data> mResourceBindings;
 		std::vector<push_constant_binding_data> mPushConstantsBindings;
+		context_specific_function<void(graphics_pipeline_t&)> mAlterConfigBeforeCreationFunction;
 	};
 
 

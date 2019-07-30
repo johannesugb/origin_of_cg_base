@@ -150,18 +150,18 @@ namespace cgb
 				if (configForI.size() > 1) {
 					throw std::runtime_error(fmt::format("Ambiguous color blending configuration for color attachment at index {}. Provide only one config per color attachment!", i));
 				}
-				if (configForI.size() == 1) {
-					result.mBlendingConfigsForColorAttachments.push_back(vk::PipelineColorBlendAttachmentState()
-						.setColorWriteMask(to_vk_color_components(configForI[0].affected_color_channels()))
-						.setBlendEnable(to_vk_bool(configForI[0].is_blending_enabled())) // If blendEnable is set to VK_FALSE, then the new color from the fragment shader is passed through unmodified. [4]
-						.setSrcColorBlendFactor(to_vk_blend_factor(configForI[0].color_source_factor())) 
-						.setDstColorBlendFactor(to_vk_blend_factor(configForI[0].color_destination_factor()))
-						.setColorBlendOp(to_vk_blend_operation(configForI[0].color_operation()))
-						.setSrcAlphaBlendFactor(to_vk_blend_factor(configForI[0].alpha_source_factor()))
-						.setDstAlphaBlendFactor(to_vk_blend_factor(configForI[0].alpha_destination_factor()))
-						.setAlphaBlendOp(to_vk_blend_operation(configForI[0].alpha_operation()))
-					);
-				}
+				// Determine which color blending to use for this attachment:
+				color_blending_config toUse = configForI.size() == 1 ? configForI[0] : color_blending_config::disable();
+				result.mBlendingConfigsForColorAttachments.push_back(vk::PipelineColorBlendAttachmentState()
+					.setColorWriteMask(to_vk_color_components(toUse.affected_color_channels()))
+					.setBlendEnable(to_vk_bool(toUse.is_blending_enabled())) // If blendEnable is set to VK_FALSE, then the new color from the fragment shader is passed through unmodified. [4]
+					.setSrcColorBlendFactor(to_vk_blend_factor(toUse.color_source_factor())) 
+					.setDstColorBlendFactor(to_vk_blend_factor(toUse.color_destination_factor()))
+					.setColorBlendOp(to_vk_blend_operation(toUse.color_operation()))
+					.setSrcAlphaBlendFactor(to_vk_blend_factor(toUse.alpha_source_factor()))
+					.setDstAlphaBlendFactor(to_vk_blend_factor(toUse.alpha_destination_factor()))
+					.setAlphaBlendOp(to_vk_blend_operation(toUse.alpha_operation()))
+				);
 			}
 
 			// General blending settings and reference to the array of color attachment blending configs
@@ -181,7 +181,7 @@ namespace cgb
 		}
 
 		// 10. Multisample state
-		// TODO: Can the settings be inferred from the renderpass' color attachments? If they can't, how to handle this situation? 
+		// TODO: Can the settings be inferred from the renderpass' color attachments (as they are right now)? If they can't, how to handle this situation? 
 		{
 			vk::SampleCountFlagBits numSamples = vk::SampleCountFlagBits::e1;
 

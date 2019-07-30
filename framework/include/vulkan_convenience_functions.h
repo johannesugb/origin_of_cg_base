@@ -22,7 +22,7 @@ namespace cgb
 	template <typename... Ts>
 	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, renderpass _RenderPass, uint32_t _Subpass, Ts... args)
 	{
-		_Config.mRenderPassSubpass = std::make_tuple(std::move(_RenderPass), _Subpass);
+		_Config.mRenderPassSubpass = std::move(std::make_tuple(std::move(_RenderPass), _Subpass));
 		add_config(_Config, _Attachments, args...);
 	}
 
@@ -30,7 +30,7 @@ namespace cgb
 	template <typename... Ts>
 	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, renderpass _RenderPass, Ts... args)
 	{
-		_Config.mRenderPassSubpass = std::make_tuple(std::move(_RenderPass), 0u); // Default to the first subpass if none is specified
+		_Config.mRenderPassSubpass = std::move(std::make_tuple(std::move(_RenderPass), 0u)); // Default to the first subpass if none is specified
 		add_config(_Config, _Attachments, args...);
 	}
 
@@ -68,9 +68,9 @@ namespace cgb
 
 	// Accept a string and assume it refers to a shader file
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, std::string _ShaderPath, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, std::string_view _ShaderPath, Ts... args)
 	{
-		_Config.mShaderInfos.push_back(shader_info::create(std::move(_ShaderPath)));
+		_Config.mShaderInfos.push_back(shader_info::create(std::string(_ShaderPath)));
 		add_config(_Config, _Attachments, args...);
 	}
 
@@ -170,9 +170,17 @@ namespace cgb
 		add_config(_Config, _Attachments, args...);
 	}
 
+	// Add a resource binding to the pipeline config
+	template <typename... Ts>
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation, Ts... args)
+	{
+		_Config.mAlterConfigBeforeCreationFunction = std::move(_AlterConfigBeforeCreation);
+		add_config(_Config, _Attachments, args...);
+	}
+
 	// Conveniently construct a pipeline with the given settings
 	template <typename... Ts>
-	graphics_pipeline_t graphics_pipeline_for(Ts... args, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation = {})
+	graphics_pipeline_t graphics_pipeline_for(Ts... args)
 	{
 		std::vector<attachment> renderPassAttachments;
 
@@ -188,6 +196,6 @@ namespace cgb
 			add_config(config, &renderPassAttachments, renderpass_t::create(std::move(renderPassAttachments)));
 		}
 
-		return graphics_pipeline_t::create(config, std::move(_AlterConfigBeforeCreation));
+		return graphics_pipeline_t::create(std::move(config), std::move(config.mAlterConfigBeforeCreationFunction));
 	}
 }
