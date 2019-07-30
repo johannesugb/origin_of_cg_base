@@ -268,9 +268,9 @@ namespace cgb
 		});
 	}
 
-	void vulkan::draw_triangle(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer)
+	void vulkan::draw_triangle(const graphics_pipeline_t& pPipeline, const command_buffer& pCommandBuffer)
 	{
-		pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, cgb::get(pPipeline).handle());
+		pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline.handle());
 		pCommandBuffer.handle().draw(3u, 1u, 0u, 0u);
 	}
 
@@ -771,31 +771,25 @@ namespace cgb
 
 		auto surfaceFormat = pWindow->get_config_surface_format(pWindow->surface());
 
-		// With all settings gathered, create the swap chain!
-		auto createInfo = vk::SwapchainCreateInfoKHR()
-			.setSurface(pWindow->surface())
-			.setMinImageCount(pWindow->get_config_number_of_presentable_images())
-			.setImageFormat(surfaceFormat.format)
-			.setImageColorSpace(surfaceFormat.colorSpace)
-			.setImageExtent(vk::Extent2D(extent.x, extent.y))
-			.setImageArrayLayers(1) // The imageArrayLayers specifies the amount of layers each image consists of. This is always 1 unless you are developing a stereoscopic 3D application. [2]
-			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
-			.setPreTransform(srfCaps.currentTransform) // To specify that you do not want any transformation, simply specify the current transformation. [2]
-			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // => no blending with other windows
-			.setPresentMode(pWindow->get_config_presentation_mode(pWindow->surface()))
-			.setClipped(VK_TRUE) // we don't care about the color of pixels that are obscured, for example because another window is in front of them.  [2]
-			.setOldSwapchain({}); // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
+		pWindow->mImageCreateInfoSwapChain = vk::ImageCreateInfo{}
+			.setImageType(vk::ImageType::e2D)
+			.setFormat(surfaceFormat.format)
+			.setExtent(vk::Extent3D(extent.x, extent.y))
+			.setMipLevels(1)
+			.setArrayLayers(1)
+			.setSamples(vk::SampleCountFlagBits::e1)
+			.setTiling(vk::ImageTiling::eOptimal)
+			.setUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
+			.setInitialLayout(vk::ImageLayout::eUndefined);
 
 		auto nope = vk::QueueFlags();
-
 		// See if we can find a queue family which satisfies both criteria: graphics AND presentation (on the given surface)
 		auto allInclFamilies = find_queue_families_for_criteria(vk::QueueFlagBits::eGraphics, nope, pWindow->surface());
-		std::vector<uint32_t> queueFamilyIndices;
 		if (allInclFamilies.size() != 0) {
 			// Found a queue family which supports both!
 			// If the graphics queue family and presentation queue family are the same, which will be the case on most hardware, then we should stick to exclusive mode. [2]
-			createInfo
-				.setImageSharingMode(vk::SharingMode::eExclusive)
+			pWindow->mImageCreateInfoSwapChain
+				.setSharingMode(vk::SharingMode::eExclusive)
 				.setQueueFamilyIndexCount(0) // Optional [2]
 				.setPQueueFamilyIndices(nullptr); // Optional [2]
 		}
@@ -804,15 +798,33 @@ namespace cgb
 			auto presentFamily = find_queue_families_for_criteria(nope, nope, pWindow->surface());
 			assert(graphicsFamily.size() > 0);
 			assert(presentFamily.size() > 0);
-			queueFamilyIndices.push_back(std::get<0>(graphicsFamily[0]));
-			queueFamilyIndices.push_back(std::get<0>(presentFamily[0]));
+			pWindow->mQueueFamilyIndices.push_back(std::get<0>(graphicsFamily[0]));
+			pWindow->mQueueFamilyIndices.push_back(std::get<0>(presentFamily[0]));
 			// Have to use separate queue families!
 			// If the queue families differ, then we'll be using the concurrent mode [2]
-			createInfo
-				.setImageSharingMode(vk::SharingMode::eConcurrent)
-				.setQueueFamilyIndexCount(static_cast<uint32_t>(queueFamilyIndices.size()))
-				.setPQueueFamilyIndices(queueFamilyIndices.data());
+			pWindow->mImageCreateInfoSwapChain
+				.setSharingMode(vk::SharingMode::eConcurrent)
+				.setQueueFamilyIndexCount(static_cast<uint32_t>(pWindow->mQueueFamilyIndices.size()))
+				.setPQueueFamilyIndices(pWindow->mQueueFamilyIndices.data());
 		}
+
+		// With all settings gathered, create the swap chain!
+		auto createInfo = vk::SwapchainCreateInfoKHR()
+			.setSurface(pWindow->surface())
+			.setMinImageCount(pWindow->get_config_number_of_presentable_images())
+			.setImageFormat(pWindow->mImageCreateInfoSwapChain.format)
+			.setImageColorSpace(surfaceFormat.colorSpace)
+			.setImageExtent(vk::Extent2D{ pWindow->mImageCreateInfoSwapChain.extent.width, pWindow->mImageCreateInfoSwapChain.extent.height })
+			.setImageArrayLayers(pWindow->mImageCreateInfoSwapChain.arrayLayers) // The imageArrayLayers specifies the amount of layers each image consists of. This is always 1 unless you are developing a stereoscopic 3D application. [2]
+			.setImageUsage(pWindow->mImageCreateInfoSwapChain.usage)
+			.setPreTransform(srfCaps.currentTransform) // To specify that you do not want any transformation, simply specify the current transformation. [2]
+			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // => no blending with other windows
+			.setPresentMode(pWindow->get_config_presentation_mode(pWindow->surface()))
+			.setClipped(VK_TRUE) // we don't care about the color of pixels that are obscured, for example because another window is in front of them.  [2]
+			.setOldSwapchain({}) // TODO: This won't be enought, I'm afraid/pretty sure. => advanced chapter
+			.setImageSharingMode(pWindow->mImageCreateInfoSwapChain.sharingMode)
+			.setQueueFamilyIndexCount(pWindow->mImageCreateInfoSwapChain.queueFamilyIndexCount)
+			.setPQueueFamilyIndices(pWindow->mImageCreateInfoSwapChain.pQueueFamilyIndices);
 
 		// Finally, create the swap chain prepare a struct which stores all relevant data (for further use)
 		pWindow->mSwapChain = logical_device().createSwapchainKHRUnique(createInfo);
@@ -829,29 +841,20 @@ namespace cgb
 				  std::back_inserter(pWindow->mSwapChainImages));
 
 		// and create one image view per image
-		std::transform(std::begin(pWindow->mSwapChainImages), std::end(pWindow->mSwapChainImages),
-					   std::back_inserter(pWindow->mSwapChainImageViews),
-					   [wnd=pWindow](const auto& image) {
-						   auto viewCreateInfo = vk::ImageViewCreateInfo()
-							   .setImage(image)
-							   .setViewType(vk::ImageViewType::e2D)
-							   .setFormat(wnd->swap_chain_image_format().mFormat)
-							   .setComponents(vk::ComponentMapping() // The components field allows you to swizzle the color channels around. In our case we'll stick to the default mapping. [3]
-											  .setR(vk::ComponentSwizzle::eIdentity)
-											  .setG(vk::ComponentSwizzle::eIdentity)
-											  .setB(vk::ComponentSwizzle::eIdentity)
-											  .setA(vk::ComponentSwizzle::eIdentity))
-							   .setSubresourceRange(vk::ImageSubresourceRange() // The subresourceRange field describes what the image's purpose is and which part of the image should be accessed. Our images will be used as color targets without any mipmapping levels or multiple layers. [3]
-													.setAspectMask(vk::ImageAspectFlagBits::eColor)
-													.setBaseMipLevel(0u)
-													.setLevelCount(1u)
-													.setBaseArrayLayer(0u)
-													.setLayerCount(1u));
-						   // Note:: If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers. You could then create multiple image views for each image representing the views for the left and right eyes by accessing different layers. [3]
-						   auto imageView = context().logical_device().createImageViewUnique(viewCreateInfo);
-						   return imageView;
-					   });
+		pWindow->mSwapChainImageViews.reserve(pWindow->mSwapChainImages.size());
+		for (auto& image : pWindow->mSwapChainImages) {
+		   // Note:: If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers. You could then create multiple image views for each image representing the views for the left and right eyes by accessing different layers. [3]
+		   pWindow->mSwapChainImageViews.push_back(image_view_t::create(image, pWindow->mImageCreateInfoSwapChain, pWindow->swap_chain_image_format().mFormat));
+		}
 
+		// Create a renderpass for the back buffers
+		pWindow->mBackBufferRenderpass = renderpass_t::create({ attachment::create_for(pWindow->mSwapChainImageViews[0]) });
+
+		// Create a back buffer per image
+		pWindow->mBackBuffers.reserve(pWindow->mSwapChainImageViews.size());
+		for (auto& imView: pWindow->mSwapChainImageViews) {
+			pWindow->mBackBuffers.push_back(framebuffer_t::create(pWindow->mBackBufferRenderpass, { &imView }, imView.image_config().extent.width, imView.image_config().extent.height));
+		}
 
 		// ============= SYNCHRONIZATION OBJECTS ===========
 		// Create them here, already.

@@ -59,7 +59,7 @@ namespace cgb
 		 */
 		window* create_window(const std::string& pTitle);
 
-		void draw_triangle(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer);
+		void draw_triangle(const graphics_pipeline_t& pPipeline, const command_buffer& pCommandBuffer);
 
 		template <typename Bfr>
 		void draw_vertices(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const Bfr& pVertexBuffer)

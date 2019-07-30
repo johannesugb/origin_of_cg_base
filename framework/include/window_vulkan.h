@@ -95,7 +95,16 @@ namespace cgb
 		}
 		/** Gets this window's swap chain's image view at the specified index. */
 		const auto& swap_chain_image_view_at_index(size_t pIdx) { 
-			return mSwapChainImageViews[pIdx].get(); 
+			return mSwapChainImageViews[pIdx].view_handle(); 
+		}
+
+		/** Gets a collection containing all this window's back buffers. */
+		const auto& backbuffers() { 
+			return mBackBuffers; 
+		}
+		/** Gets this window's back buffer at the specified index. */
+		const auto& backbuffer_at_index(size_t pIdx) { 
+			return mBackBuffers[pIdx]; 
 		}
 
 		/** Gets the number of how many images there are in the swap chain. */
@@ -227,10 +236,14 @@ namespace cgb
 		image_format mSwapChainImageFormat;
 		// The swap chain's extent
 		vk::Extent2D mSwapChainExtent;
+		// Queue family indices which have shared ownership of the swap chain images
+		std::vector<uint32_t> mQueueFamilyIndices;
+		// Image data of the swap chain images
+		vk::ImageCreateInfo mImageCreateInfoSwapChain;
 		// All the images of the swap chain
 		std::vector<vk::Image> mSwapChainImages; // They don't need to be destroyed explicitely (get...()), ... 
 		// All the image views of the swap chain
-		std::vector<vk::UniqueImageView> mSwapChainImageViews; // ...but the image views do!
+		std::vector<image_view_t> mSwapChainImageViews; // ...but the image views do!
 #pragma endregion
 
 #pragma region indispensable sync elements
@@ -258,8 +271,11 @@ namespace cgb
 		std::vector<semaphore> mExtraRenderFinishedSemaphores;
 #pragma endregion
 
-		// The backbuffer of this window
-		framebuffer mBackBuffer;
+		// The renderpass used for the back buffers
+		renderpass_t mBackBufferRenderpass;
+
+		// The backbuffers of this window
+		std::vector<framebuffer_t> mBackBuffers;
 
 		// The render pass for this window's UI calls
 		vk::RenderPass mUiRenderPass;

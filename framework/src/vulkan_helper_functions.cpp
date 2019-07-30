@@ -308,37 +308,37 @@ namespace cgb
 	{
 		switch (_Value)
 		{
-		case blending_logic_operation::clear:
+		case blending_logic_operation::op_clear:
 			return vk::LogicOp::eClear;
-		case blending_logic_operation::asdfand: 
+		case blending_logic_operation::op_and: 
 			return vk::LogicOp::eAnd;
-		case blending_logic_operation::and_reverse: 
+		case blending_logic_operation::op_and_reverse: 
 			return vk::LogicOp::eAndReverse;
-		case blending_logic_operation::asdfcopy: 
+		case blending_logic_operation::op_copy: 
 			return vk::LogicOp::eCopy;
-		case blending_logic_operation::and_inverted: 
+		case blending_logic_operation::op_and_inverted: 
 			return vk::LogicOp::eAndInverted;
 		case blending_logic_operation::no_op: 
 			return vk::LogicOp::eNoOp;
-		case blending_logic_operation::asdfxor: 
+		case blending_logic_operation::op_xor: 
 			return vk::LogicOp::eXor;
-		case blending_logic_operation::asfor: 
+		case blending_logic_operation::op_or: 
 			return vk::LogicOp::eOr;
-		case blending_logic_operation::asfdnor: 
+		case blending_logic_operation::op_nor: 
 			return vk::LogicOp::eNor;
-		case blending_logic_operation::equivalent: 
+		case blending_logic_operation::op_equivalent: 
 			return vk::LogicOp::eEquivalent;
-		case blending_logic_operation::invert: 
+		case blending_logic_operation::op_invert: 
 			return vk::LogicOp::eInvert;
-		case blending_logic_operation::or_reverse: 
+		case blending_logic_operation::op_or_reverse: 
 			return vk::LogicOp::eOrReverse;
-		case blending_logic_operation::copy_inverted: 
+		case blending_logic_operation::op_copy_inverted: 
 			return vk::LogicOp::eCopyInverted;
-		case blending_logic_operation::or_inverted: 
+		case blending_logic_operation::op_or_inverted: 
 			return vk::LogicOp::eOrInverted;
-		case blending_logic_operation::asdfnand: 
+		case blending_logic_operation::op_nand: 
 			return vk::LogicOp::eNand;
-		case blending_logic_operation::set: 
+		case blending_logic_operation::op_set: 
 			return vk::LogicOp::eSet;
 		default: 
 			throw std::invalid_argument("Invalid blending logic operation.");

@@ -37,7 +37,7 @@ namespace cgb
 		auto& subpasses() { return mSubpasses; }
 		auto& subpass_dependencies() { return mSubpassDependencies; }
 
-		auto handle() const { return mRenderPass.get(); }
+		const auto& handle() const { return mRenderPass.get(); }
 
 	private:
 		// All the attachments to this renderpass

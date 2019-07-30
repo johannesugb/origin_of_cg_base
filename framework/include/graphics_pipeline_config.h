@@ -338,22 +338,22 @@ namespace cgb
 	/** Different types operation types for `color_blending_mode::logic_operation` mode */
 	enum struct blending_logic_operation
 	{
-		clear,
-		asdfand,
-		and_reverse,
-		asdfcopy,
-		and_inverted,
+		op_clear,
+		op_and,
+		op_and_reverse,
+		op_copy,
+		op_and_inverted,
 		no_op,
-		asdfxor,
-		asfor,
-		asfdnor,
-		equivalent,
-		invert,
-		or_reverse,
-		copy_inverted,
-		or_inverted,
-		asdfnand,
-		set
+		op_xor,
+		op_or,
+		op_nor,
+		op_equivalent,
+		op_invert,
+		op_or_reverse,
+		op_copy_inverted,
+		op_or_inverted,
+		op_nand,
+		op_set
 	};
 
 	/** Some color blending settings */
@@ -364,7 +364,7 @@ namespace cgb
 		static color_blending_settings enable_logic_operation(blending_logic_operation pLogicOp) { return color_blending_settings{ pLogicOp, {} }; }
 
 		bool is_logic_operation_enabled() const { return mLogicOpEnabled.has_value(); }
-		blending_logic_operation logic_operation() const { return mLogicOpEnabled.value(); }
+		blending_logic_operation logic_operation() const { return mLogicOpEnabled.value_or(blending_logic_operation::no_op); }
 		const auto& blend_constants() const { return mBlendConstants; }
 
 		std::optional<blending_logic_operation> mLogicOpEnabled;

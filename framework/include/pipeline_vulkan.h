@@ -20,6 +20,7 @@ namespace cgb
 
 		const auto& layout_handle() const { return mPipelineLayout.get(); }
 		const auto& handle() const { return mPipeline.get(); }
+		const auto& renderpass_handle() const { return cgb::get(mRenderPass).handle(); }
 
 		static graphics_pipeline_t create(graphics_pipeline_config _Config, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation = {});
 

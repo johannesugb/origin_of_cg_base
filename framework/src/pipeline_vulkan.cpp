@@ -22,7 +22,7 @@ namespace cgb
 				>> distinct() // see what I did there
 				>> orderby([](const input_binding_general_data& _GeneralData) { return _GeneralData.mBinding; })
 				>> to_vector();
-			result.mVertexInputBindingDescriptions.reserve(bindings.size());
+			result.mVertexInputBindingDescriptions.reserve(bindings.size()); // Important! Otherwise the vector might realloc and .data() will become invalid!
 
 			for (auto& bindingData : bindings) {
 
@@ -46,6 +46,7 @@ namespace cgb
 
 		// 2. Compile the array of vertex input attribute descriptions
 		//  They will reference the bindings created in step 1.
+		result.mVertexInputAttributeDescriptions.reserve(_Config.mInputBindingLocations.size()); // Important! Otherwise the vector might realloc and .data() will become invalid!
 		for (auto& attribData : _Config.mInputBindingLocations) {
 			result.mVertexInputAttributeDescriptions.push_back(vk::VertexInputAttributeDescription()
 				.setBinding(attribData.mGeneralData.mBinding)
@@ -68,6 +69,8 @@ namespace cgb
 			.setPrimitiveRestartEnable(VK_FALSE);
 
 		// 5. Compile and store the shaders:
+		result.mShaders.reserve(_Config.mShaderInfos.size()); // Important! Otherwise the vector might realloc and .data() will become invalid!
+		result.mShaderStageCreateInfos.reserve(_Config.mShaderInfos.size()); // Important! Otherwise the vector might realloc and .data() will become invalid!
 		for (auto& shaderInfo : _Config.mShaderInfos) {
 			// 5.1 Compile the shader
 			result.mShaders.push_back(std::move(shader::create(shaderInfo)));
@@ -83,6 +86,8 @@ namespace cgb
 		// 6. Viewport configuration
 		{
 			// 6.1 Viewport and depth configuration(s):
+			result.mViewports.reserve(_Config.mViewportDepthConfig.size()); // Important! Otherwise the vector might realloc and .data() will become invalid!
+			result.mScissors.reserve(_Config.mViewportDepthConfig.size()); // Important! Otherwise the vector might realloc and .data() will become invalid!
 			for (auto& vp : _Config.mViewportDepthConfig) {
 				result.mViewports.push_back(vk::Viewport{}
 					.setX(vp.x())
@@ -92,9 +97,13 @@ namespace cgb
 					.setMinDepth(vp.min_depth())
 					.setMaxDepth(vp.max_depth())
 				);
+				// 6.2 Skip scissors for now
+				// TODO: Implement scissors support properly
+				result.mScissors.push_back(vk::Rect2D{}
+					.setOffset({static_cast<int32_t>(vp.x()), static_cast<int32_t>(vp.y())})
+					.setExtent({static_cast<uint32_t>(vp.width()), static_cast<uint32_t>(vp.height())})
+				);
 			}
-			// 6.2 Skip scissors for now
-			// TODO: Add scissors later
 			// 6.3 Add everything together
 			result.mViewportStateCreateInfo = vk::PipelineViewportStateCreateInfo{}
 				.setViewportCount(static_cast<uint32_t>(result.mViewports.size()))
@@ -141,7 +150,8 @@ namespace cgb
 			}
 
 			// Iterate over all color target attachments and set a color blending config
-			auto n = cgb::get(result.mRenderPass).color_attachments().size();
+			const auto n = cgb::get(result.mRenderPass).color_attachments().size();
+			result.mBlendingConfigsForColorAttachments.reserve(n); // Important! Otherwise the vector might realloc and .data() will become invalid!
 			for (size_t i = 0; i < n; ++i) {
 				// Do we have a specific blending config for color attachment i?
 				auto configForI = from(_Config.mColorBlendingPerAttachment)
@@ -216,6 +226,8 @@ namespace cgb
 
 		// 11. Dynamic state
 		{
+			// Don't need to pre-alloc the storage for this one
+
 			// Check for viewport dynamic state
 			for (const auto& vpdc : _Config.mViewportDepthConfig) {
 				if (vpdc.is_dynamic_viewport_enabled())	{
@@ -253,6 +265,7 @@ namespace cgb
 		result.mAllDescriptorSetLayouts.allocate_all();
 		auto descriptorSetLayoutHandles = result.mAllDescriptorSetLayouts.layout_handles();
 		// Gather the push constant data
+			result.mPushConstantRanges.reserve(_Config.mPushConstantsBindings.size()); // Important! Otherwise the vector might realloc and .data() will become invalid!
 		for (const auto& pcBinding : _Config.mPushConstantsBindings) {
 			result.mPushConstantRanges.push_back(vk::PushConstantRange{}
 				.setStageFlags(to_vk_shader_stage(pcBinding.mShaderStages))

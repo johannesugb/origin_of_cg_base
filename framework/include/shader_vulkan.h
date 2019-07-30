@@ -28,6 +28,7 @@ namespace cgb
 	private:
 		shader_info mInfo;
 		vk::UniqueShaderModule mShaderModule;
+		std::string mActualShaderLoadPath;
 		context_tracker<shader> mTracker;
 	};
 

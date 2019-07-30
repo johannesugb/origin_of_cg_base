@@ -37,6 +37,7 @@ namespace cgb
 
 		// Step 2: build the separate sets
 		result.mFirstSetId = minSetId;
+		result.mLayouts.reserve(maxSetId - minSetId + 1);
 		for (uint32_t setId = minSetId; setId <= maxSetId; ++setId) {
 			auto lb = std::lower_bound(std::begin(orderedBindings), std::end(orderedBindings), binding_data{ setId },
 				[](const binding_data& first, const binding_data& second) -> bool {

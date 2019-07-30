@@ -50,30 +50,30 @@ namespace cgb
 						.setType(b.mLayoutBinding.descriptorType)
 						.setDescriptorCount(b.mLayoutBinding.descriptorCount);
 					// find position where to insert in vector
-					auto it = std::lower_bound(std::begin(result.mBindingRequirements), std::end(result.mBindingRequirements), 
+					auto pos = std::lower_bound(std::begin(result.mBindingRequirements), std::end(result.mBindingRequirements), 
 						entry,
 						[](const vk::DescriptorPoolSize& first, const vk::DescriptorPoolSize& second) -> bool {
 							using EnumType = std::underlying_type<vk::DescriptorType>::type;
 							return static_cast<EnumType>(first.type) < static_cast<EnumType>(second.type);
 						});
 					// Maybe accumulate
-					if (it != std::end(result.mBindingRequirements) && it->type == entry.type) {
-						it->descriptorCount += entry.descriptorCount;
+					if (pos != std::end(result.mBindingRequirements) && pos->type == entry.type) {
+						pos->descriptorCount += entry.descriptorCount;
 					}
 					else {
-						result.mBindingRequirements.insert(it, entry);
+						result.mBindingRequirements.insert(pos, entry);
 					}
 				}
 
 				{ // Compile the mOrderedBindings member:
 				  // ordered by binding => find position where to insert in vector
-					auto it = std::lower_bound(std::begin(result.mOrderedBindings), std::end(result.mOrderedBindings), 
+					auto pos = std::lower_bound(std::begin(result.mOrderedBindings), std::end(result.mOrderedBindings), 
 						b.mLayoutBinding,
 						[](const vk::DescriptorSetLayoutBinding& first, const vk::DescriptorSetLayoutBinding& second) -> bool {
 							assert(first.binding != second.binding);
 							return first.binding < second.binding;
 						});
-					result.mOrderedBindings.insert(it, b.mLayoutBinding);
+					result.mOrderedBindings.insert(pos, b.mLayoutBinding);
 				}
 
 				it++;

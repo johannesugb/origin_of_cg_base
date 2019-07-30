@@ -3,7 +3,7 @@ namespace cgb
 	attachment attachment::create_color(image_format pFormat, bool pIsPresentable, std::optional<uint32_t> pLocation)
 	{
 #if defined(_DEBUG)
-		if (!is_depth_format(pFormat)) {
+		if (is_depth_format(pFormat)) {
 			LOG_WARNING("The specified image_format is a depth format, but is used for a color attachment.");
 		}
 #endif
@@ -102,7 +102,7 @@ namespace cgb
 
 	attachment attachment::create_for(const image_view_t& _ImageView, std::optional<uint32_t> pLocation)
 	{
-		auto& imageInfo = _ImageView.image().config();
+		auto& imageInfo = _ImageView.image_config();
 		auto format = image_format{ imageInfo.format };
 		if (is_depth_format(format)) {
 			if (imageInfo.samples == vk::SampleCountFlagBits::e1) {
