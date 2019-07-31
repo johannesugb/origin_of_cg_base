@@ -3,54 +3,55 @@ namespace cgb
 	using namespace cpplinq;
 
 
-	renderpass_t renderpass_t::create(VkRenderPass xxx, VkFormat format)
-	{
-			VkAttachmentDescription colorAttachment = {};
-        colorAttachment.format = format;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	//owning_resource<renderpass_t> renderpass_t::create_good_renderpass(VkFormat format)
+	//{
 
-        VkAttachmentReference colorAttachmentRef = {};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	//		VkAttachmentDescription colorAttachment = {};
+ //       colorAttachment.format = format;
+ //       colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+ //       colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+ //       colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+ //       colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+ //       colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+ //       colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+ //       colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
+ //       VkAttachmentReference colorAttachmentRef = {};
+ //       colorAttachmentRef.attachment = 0;
+ //       colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+ //       VkSubpassDescription subpass = {};
+ //       subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+ //       subpass.colorAttachmentCount = 1;
+ //       subpass.pColorAttachments = &colorAttachmentRef;
 
-        VkRenderPassCreateInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
+ //       VkSubpassDependency dependency = {};
+ //       dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+ //       dependency.dstSubpass = 0;
+ //       dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+ //       dependency.srcAccessMask = 0;
+ //       dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+ //       dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-		renderpass_t asdf;
-		asdf.mAttachmentDescriptions.push_back(colorAttachment);
-		asdf.mOrderedColorAttachmentRefs.push_back(colorAttachmentRef);
-		asdf.subpasses().push_back(subpass);
-		asdf.subpass_dependencies().push_back(dependency);
-		asdf.mRenderPass = cgb::context().logical_device().createRenderPassUnique(renderPassInfo);
-		return asdf;
-	}
+ //       VkRenderPassCreateInfo renderPassInfo = {};
+ //       renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+ //       renderPassInfo.attachmentCount = 1;
+ //       renderPassInfo.pAttachments = &colorAttachment;
+ //       renderPassInfo.subpassCount = 1;
+ //       renderPassInfo.pSubpasses = &subpass;
+ //       renderPassInfo.dependencyCount = 1;
+ //       renderPassInfo.pDependencies = &dependency;
 
-	renderpass_t renderpass_t::create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass_t&)> pAlterConfigBeforeCreation)
+	//	renderpass_t asdf;
+	//	asdf.mAttachmentDescriptions.push_back(colorAttachment);
+	//	asdf.mOrderedColorAttachmentRefs.push_back(colorAttachmentRef);
+	//	asdf.subpasses().push_back(subpass);
+	//	asdf.subpass_dependencies().push_back(dependency);
+	//	asdf.mRenderPass = cgb::context().logical_device().createRenderPassUnique(renderPassInfo);
+	//	return asdf;
+	//}
+
+	owning_resource<renderpass_t> renderpass_t::create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass_t&)> pAlterConfigBeforeCreation)
 	{
 		renderpass_t result;
 
@@ -74,10 +75,11 @@ namespace cgb
 				.setFormat(a.format().mFormat)
 				.setSamples(to_vk_sample_count(a.sample_count()))
 				// At this point, we can not really make a guess about load/store ops, so.. don't care:
-				.setLoadOp(vk::AttachmentLoadOp::eDontCare)
-				.setStoreOp(vk::AttachmentStoreOp::eDontCare)
-				.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-				.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+				.setLoadOp(to_vk_load_op(a.mLoadOperation))
+				.setStoreOp(to_vk_store_op(a.mStoreOperation))
+				// Just set the same load/store ops for the stencil?!
+				.setStencilLoadOp(to_vk_load_op(a.mLoadOperation))
+				.setStencilStoreOp(to_vk_store_op(a.mStoreOperation))
 				.setInitialLayout(vk::ImageLayout::eUndefined)
 				.setFinalLayout( // The layout is a bit of an (educated) guess:
 					a.is_depth_attachment()

@@ -175,7 +175,7 @@ public:
 	{
 		mDescriptorSetLayout = cgb::layout_for({
 			cgb::binding(0, mUniformBuffers[0]),
-			cgb::binding(1, cgb::get(mImageView))
+			cgb::binding(1, mImageView)
 		});
 	}
 
@@ -265,7 +265,7 @@ public:
 
 		mRtDescriptorSetLayout = cgb::layout_for({ // TODO: Breakpoint and check if equal to above!
 			cgb::binding(0, mTopLevelAccStructure),
-			cgb::binding(1, cgb::get(mOffscreenImageViews[0])),
+			cgb::binding(1, mOffscreenImageViews[0]),
 			cgb::binding(2, mRtUniformBuffers[0][0]),
 			cgb::binding(3, std::initializer_list{ &mRtUniformBuffers[0][1], &mRtUniformBuffers[0][2] })
 		});
@@ -349,14 +349,14 @@ public:
 		mDepthImageView = cgb::image_view_t::create(
 			cgb::image_t::create_depth(width, height)
 		);
-		assert((cgb::get(mDepthImageView).image().config().tiling & vk::ImageTiling::eOptimal) == vk::ImageTiling::eOptimal);
-		assert((cgb::get(mDepthImageView).image().config().usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) == vk::ImageUsageFlagBits::eDepthStencilAttachment);
-		assert((cgb::get(mDepthImageView).config().subresourceRange.aspectMask & vk::ImageAspectFlagBits::eDepth) == vk::ImageAspectFlagBits::eDepth);
+		assert((mDepthImageView->image_config().tiling & vk::ImageTiling::eOptimal) == vk::ImageTiling::eOptimal);
+		assert((mDepthImageView->image_config().usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) == vk::ImageUsageFlagBits::eDepthStencilAttachment);
+		assert((mDepthImageView->config().subresourceRange.aspectMask & vk::ImageAspectFlagBits::eDepth) == vk::ImageAspectFlagBits::eDepth);
 
 		// TODO: Dont wait idle:
 		cgb::transition_image_layout(
-			cgb::get(mDepthImageView).image(), 
-			cgb::get(mDepthImageView).image().config().format, 
+			mDepthImageView->image_handle(), 
+			mDepthImageView->image_config().format, 
 			vk::ImageLayout::eUndefined, 
 			vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	}
@@ -506,7 +506,7 @@ public:
 					cgb::image_t::create(width, height, format, cgb::memory_usage::device, false, 1, cgb::context_specific_function<void(cgb::image_t&)>()
 						.VK_FUNC([](cgb::image_t& image) { image.config().usage |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc; })
 					)));
-			assert((cgb::get(mOffscreenImageViews.back()).config().subresourceRange.aspectMask & vk::ImageAspectFlagBits::eColor) == vk::ImageAspectFlagBits::eColor);
+			assert((mOffscreenImageViews.back()->config().subresourceRange.aspectMask & vk::ImageAspectFlagBits::eColor) == vk::ImageAspectFlagBits::eColor);
 		}
 
 		// One for each framebuffer like in `void create_descriptor_sets()`, kk?!

@@ -1,5 +1,7 @@
 namespace cgb
 {
+	using namespace cgb::cfg;
+
 	vk::IndexType to_vk_index_type(size_t pSize)
 	{
 		if (pSize == sizeof(uint16_t)) {
@@ -342,6 +344,32 @@ namespace cgb
 			return vk::LogicOp::eSet;
 		default: 
 			throw std::invalid_argument("Invalid blending logic operation.");
+		}
+	}
+
+	vk::AttachmentLoadOp to_vk_load_op(cfg::attachment_load_operation _Value)
+	{
+		switch (_Value) {
+		case attachment_load_operation::dont_care:
+			return vk::AttachmentLoadOp::eDontCare;
+		case attachment_load_operation::clear: 
+			return vk::AttachmentLoadOp::eClear;
+		case attachment_load_operation::load: 
+			return vk::AttachmentLoadOp::eLoad;
+		default:
+			throw std::invalid_argument("Invalid attachment load operation.");
+		}
+	}
+
+	vk::AttachmentStoreOp to_vk_store_op(cfg::attachment_store_operation _Value)
+	{
+		switch (_Value) {
+		case attachment_store_operation::dont_care:
+			return vk::AttachmentStoreOp::eDontCare;
+		case attachment_store_operation::store: 
+			return vk::AttachmentStoreOp::eStore;
+		default:
+			throw std::invalid_argument("Invalid attachment store operation.");
 		}
 	}
 }

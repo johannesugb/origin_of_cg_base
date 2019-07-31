@@ -2,41 +2,67 @@
 
 namespace cgb
 {
+	namespace cfg
+	{
+		enum struct attachment_load_operation
+		{
+			dont_care,
+			clear,
+			load
+		};
+
+		enum struct attachment_store_operation
+		{
+			dont_care,
+			store
+		};
+	}
+
 	/** Describes an attachment to a framebuffer or a renderpass.
 	 *	It can describe color attachments as well as depth/stencil attachments
 	 *	and holds some additional config parameters for these attachments.
 	 */
 	struct attachment
 	{
-		/** Create a new color attachment
+		/** Create a new color attachment, with the following default settings:
+		 *	 - is presentable
+		 *	 - clear on load
+		 *	 - store on store
 		 *	@param	pFormat			The color format of the new attachment
-		 *	@param	pIsPresentable	True means: The attachment shall be finally presented.
 		 *	@param	pLocation		(Optional) At which layout location shall this color attachment appear.
 		 */
-		static attachment create_color(image_format pFormat, bool pIsPresentable = true, std::optional<uint32_t> pLocation = {});
+		static attachment create_color(image_format pFormat, std::optional<uint32_t> pLocation = {});
 
-		/** Create a new depth/stencil attachment
+		/** Create a new depth/stencil attachment, with the following default settings:
+		 *	 - clear on load
+		 *	 - store on store
 		 *	@param	pFormat		The depth/stencil format of the new attachment
 		 *	@param	pLocation	(Optional) At which layout location shall this depth/stencil attachment appear.
 		 */
 		static attachment create_depth(image_format pFormat, std::optional<uint32_t> pLocation = {});
 
-		/** Create a new color attachment for use as shader input
+		/** Create a new color attachment for use as shader input, with the following default settings:
+		 *	 - load on load
+		 *	 - store on store
 		 *	@param	pFormat		The color format of the new attachment
 		 *	@param	pLocation	(Optional) At which layout location shall this color attachment appear.
 		 */
 		static attachment create_shader_input(image_format pFormat, std::optional<uint32_t> pLocation = {});
 
-		/** Create a new multisampled color attachment
+		/** Create a new multisampled color attachment, with the following default settings:
+		 *	 - is presentable
+		 *	 - clear on load
+		 *	 - store on store
 		 *	@param	pFormat					The color format of the new attachment
 		 *	@param	pSampleCount			The number of samples per fragment. A value of 1 means that multisampling is disabled.
 		 *	@param	pResolveMultisamples	If set to true, a multisample resolve pass will be set up.
-		 *	@param	pIsPresentable			True means: The attachment shall be finally presented.
 		 *	@param	pLocation				(Optional) At which layout location shall this color attachment appear.
 		 */
-		static attachment create_color_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, bool pIsPresentable = true, std::optional<uint32_t> pLocation = {});
+		static attachment create_color_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, std::optional<uint32_t> pLocation = {});
 
 		/** Create a new multisampled depth/stencil attachment
+		 *	 - clear on load
+		 *	 - store on store
 		 *	@param	pFormat					The depth/stencil format of the new attachment
 		 *	@param	pSampleCount			The number of samples per fragment. A value of 1 means that multisampling is disabled.
 		 *	@param	pResolveMultisamples	If set to true, a multisample resolve pass will be set up.
@@ -45,6 +71,8 @@ namespace cgb
 		static attachment create_depth_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, std::optional<uint32_t> pLocation = {});
 
 		/** Create a new multisampled color attachment for use as shader input
+		 *	 - load on load
+		 *	 - store on store
 		 *	@param	pFormat					The color format of the new attachment
 		 *	@param	pSampleCount			The number of samples per fragment. A value of 1 means that multisampling is disabled.
 		 *	@param	pResolveMultisamples	If set to true, a multisample resolve pass will be set up.
@@ -77,9 +105,11 @@ namespace cgb
 
 		std::optional<uint32_t> mLocation;
 		image_format mFormat;
+		cfg::attachment_load_operation mLoadOperation;
+		cfg::attachment_store_operation mStoreOperation;
+		int mSampleCount;
 		bool mIsToBePresented;
 		bool mIsDepthAttachment;
-		int mSampleCount;
 		bool mDoResolve;
 		bool mIsShaderInputAttachment;
 	};

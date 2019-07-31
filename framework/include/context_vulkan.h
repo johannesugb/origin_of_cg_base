@@ -64,7 +64,7 @@ namespace cgb
 		template <typename Bfr>
 		void draw_vertices(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const Bfr& pVertexBuffer)
 		{
-			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, cgb::get(pPipeline).handle());
+			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline->handle());
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
 			pCommandBuffer.handle().draw(pVertexBuffer.mVertexCount, 1u, 0u, 0u);                      
 		}
@@ -72,7 +72,7 @@ namespace cgb
 		template <typename VBfr, typename IBfr>
 		void draw_indexed(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const VBfr& pVertexBuffer, const IBfr& pIndexBuffer)
 		{
-			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, cgb::get(pPipeline).handle());
+			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline->handle());
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
 			vk::IndexType indexType = to_vk_index_type(pIndexBuffer.config().sizeof_one_element());
 			pCommandBuffer.handle().bindIndexBuffer(pIndexBuffer.buffer_handle(), 0u, indexType);

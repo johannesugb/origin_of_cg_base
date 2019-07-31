@@ -95,7 +95,7 @@ namespace cgb
 		}
 		/** Gets this window's swap chain's image view at the specified index. */
 		const auto& swap_chain_image_view_at_index(size_t pIdx) { 
-			return mSwapChainImageViews[pIdx].view_handle(); 
+			return mSwapChainImageViews[pIdx]; 
 		}
 
 		/** Gets a collection containing all this window's back buffers. */
@@ -200,7 +200,7 @@ namespace cgb
 		//void render_frame(CBT pCommandBuffer, CBTS... pCommandBuffers)
 		void render_frame(std::initializer_list<std::reference_wrapper<cgb::command_buffer>> pCommandBuffers);
 
-		const auto& renderpass_handle() const { return cgb::get(mBackBufferRenderpass).handle(); }
+		const auto& renderpass_handle() const { return (*mBackBufferRenderpass).handle(); }
 
 		auto& getrenderpass() const { return mBackBufferRenderpass; }
 
@@ -249,7 +249,7 @@ namespace cgb
 		// All the images of the swap chain
 		std::vector<vk::Image> mSwapChainImages; // They don't need to be destroyed explicitely (get...()), ... 
 		// All the image views of the swap chain
-		std::vector<image_view_t> mSwapChainImageViews; // ...but the image views do!
+		std::vector<image_view> mSwapChainImageViews; // ...but the image views do!
 #pragma endregion
 
 #pragma region indispensable sync elements
@@ -281,7 +281,7 @@ namespace cgb
 		renderpass mBackBufferRenderpass;
 
 		// The backbuffers of this window
-		std::vector<framebuffer_t> mBackBuffers;
+		std::vector<framebuffer> mBackBuffers;
 
 		// The render pass for this window's UI calls
 		vk::RenderPass mUiRenderPass;

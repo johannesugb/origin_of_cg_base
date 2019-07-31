@@ -53,6 +53,18 @@ namespace cgb
 			context().track_move(mTrackee, other.mTrackee);
 		}
 
+		context_tracker<T>& operator=(const context_tracker<T>& other)
+		{
+			context().track_copy(mTrackee, other.mTrackee);
+			return *this;
+		}
+
+		context_tracker<T>& operator=(context_tracker<T>&& other)
+		{
+			context().track_move(mTrackee, other.mTrackee);
+			return *this;
+		}
+
 		~context_tracker()
 		{
 			context().track_destruction(mTrackee);

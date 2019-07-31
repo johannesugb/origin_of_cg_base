@@ -33,14 +33,14 @@ namespace cgb
 	typename std::enable_if<has_size_member<T>::value, std::vector<E*>>::type gather_one_or_multiple_element_pointers(T& t) {
 		std::vector<E*> results;
 		for (size_t i = 0; i < t.size(); ++i) {
-			results.push_back(&cgb::get(t[i]));
+			results.push_back(&t[i]);
 		}
 		return results;
 	}
 
 	template<typename T> 
 	typename std::enable_if<has_no_size_member<T>::value, T*>::type gather_one_or_multiple_element_pointers(T& t) {
-		return &cgb::get(t);
+		return &t;
 	}
 
 
@@ -52,7 +52,7 @@ namespace cgb
 			vk::DescriptorSetLayoutBinding{}
 				.setBinding(pBinding)
 				.setDescriptorCount(num_elements(pResource))
-				.setDescriptorType(descriptor_type_of<decltype(cgb::get(first_or_only_element(pResource)))>())
+				.setDescriptorType(descriptor_type_of<decltype(first_or_only_element(pResource))>())
 				.setPImmutableSamplers(nullptr), // The pImmutableSamplers field is only relevant for image sampling related descriptors [3]
 			pShaderStages,
 			gather_one_or_multiple_element_pointers(pResource)

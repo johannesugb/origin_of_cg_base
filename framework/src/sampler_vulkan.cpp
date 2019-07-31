@@ -2,7 +2,7 @@
 
 namespace cgb
 {
-	sampler_t sampler_t::create(filter_mode pFilterMode, border_handling_mode pBorderHandlingMode, context_specific_function<void(sampler_t&)> pAlterConfigBeforeCreation)
+	owning_resource<sampler_t> sampler_t::create(filter_mode pFilterMode, border_handling_mode pBorderHandlingMode, context_specific_function<void(sampler_t&)> pAlterConfigBeforeCreation)
 	{
 		vk::Filter magFilter;
 		vk::Filter minFilter;

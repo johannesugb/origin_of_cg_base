@@ -47,7 +47,7 @@ namespace cgb
 		 *	@param	pBorderHandlingMode			Border handling strategy for the sampler to be created
 		 *	@param	pAlterConfigBeforeCreation	A context-specific function which allows to alter the configuration before the sampler is created.
 		 */
-		static sampler_t create(filter_mode pFilterMode, border_handling_mode pBorderHandlingMode, context_specific_function<void(sampler_t&)> pAlterConfigBeforeCreation = {});
+		static owning_resource<sampler_t> create(filter_mode pFilterMode, border_handling_mode pBorderHandlingMode, context_specific_function<void(sampler_t&)> pAlterConfigBeforeCreation = {});
 
 	private:
 		// Sampler creation configuration
@@ -60,6 +60,6 @@ namespace cgb
 	};
 
 	/** Typedef representing any kind of OWNING sampler representations. */
-	using sampler = std::variant<sampler_t, std::unique_ptr<sampler_t>, std::shared_ptr<sampler_t>>;
+	using sampler = owning_resource<sampler_t>;
 
 }

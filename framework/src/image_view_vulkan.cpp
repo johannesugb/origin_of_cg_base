@@ -5,7 +5,7 @@ namespace cgb
 	const vk::Image& image_view_t::image_handle() const
 	{
 		if (std::holds_alternative<cgb::image>(mImage)) {
-			return cgb::get(std::get<cgb::image>(mImage)).image_handle();
+			return std::get<cgb::image>(mImage)->image_handle();
 		}
 		//assert(std::holds_alternative<std::tuple<vk::Image, vk::ImageCreateInfo>>(mImage));
 		return std::get<vk::Image>(std::get<std::tuple<vk::Image, vk::ImageCreateInfo>>(mImage));	
@@ -14,13 +14,13 @@ namespace cgb
 	const vk::ImageCreateInfo& image_view_t::image_config() const
 	{
 		if (std::holds_alternative<cgb::image>(mImage)) {
-			return cgb::get(std::get<cgb::image>(mImage)).config();
+			return std::get<cgb::image>(mImage)->config();
 		}
 		//assert(std::holds_alternative<std::tuple<vk::Image, vk::ImageCreateInfo>>(mImage));
 		return std::get<vk::ImageCreateInfo>(std::get<std::tuple<vk::Image, vk::ImageCreateInfo>>(mImage));
 	}
 
-	image_view_t image_view_t::create(cgb::image _ImageToOwn, std::optional<image_format> _ViewFormat, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation)
+	owning_resource<image_view_t> image_view_t::create(cgb::image _ImageToOwn, std::optional<image_format> _ViewFormat, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation)
 	{
 		image_view_t result;
 		
@@ -37,7 +37,7 @@ namespace cgb
 		return result;
 	}
 
-	image_view_t image_view_t::create(vk::Image _ImageToReference, vk::ImageCreateInfo _ImageInfo, std::optional<image_format> _ViewFormat, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation)
+	owning_resource<image_view_t> image_view_t::create(vk::Image _ImageToReference, vk::ImageCreateInfo _ImageInfo, std::optional<image_format> _ViewFormat, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation)
 	{
 		image_view_t result;
 		

@@ -1,8 +1,9 @@
 namespace cgb
 {
 	using namespace cpplinq;
+	using namespace cgb::cfg;
 
-	graphics_pipeline_t graphics_pipeline_t::create(graphics_pipeline_config _Config, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation)
+	owning_resource<graphics_pipeline_t> graphics_pipeline_t::create(graphics_pipeline_config _Config, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation)
 	{
 		graphics_pipeline_t result;
 
@@ -150,7 +151,7 @@ namespace cgb
 			}
 
 			// Iterate over all color target attachments and set a color blending config
-			const auto n = cgb::get(result.mRenderPass).color_attachments().size();
+			const auto n = (*result.mRenderPass).color_attachments().size();
 			result.mBlendingConfigsForColorAttachments.reserve(n); // Important! Otherwise the vector might realloc and .data() will become invalid!
 			for (size_t i = 0; i < n; ++i) {
 				// Do we have a specific blending config for color attachment i?
@@ -196,10 +197,10 @@ namespace cgb
 			vk::SampleCountFlagBits numSamples = vk::SampleCountFlagBits::e1;
 
 			// See what is configured in the render pass
-			auto colorAttConfigs = from (cgb::get(result.mRenderPass).color_attachments())
+			auto colorAttConfigs = from ((*result.mRenderPass).color_attachments())
 				>> where ([](const vk::AttachmentReference& colorAttachment) { return colorAttachment.attachment != VK_ATTACHMENT_UNUSED; })
 				// The color_attachments() contain indices of the actual attachment_descriptions() => select the latter!
-				>> select ([&rp = cgb::get(result.mRenderPass)](const vk::AttachmentReference& colorAttachment) { return rp.attachment_descriptions()[colorAttachment.attachment]; })
+				>> select ([&rp = (*result.mRenderPass)](const vk::AttachmentReference& colorAttachment) { return rp.attachment_descriptions()[colorAttachment.attachment]; })
 				>> to_vector();
 
 			if (colorAttConfigs.size() > 0) {
@@ -294,7 +295,7 @@ namespace cgb
 		// Create the PIPELINE, a.k.a. putting it all together:
 		auto pipelineInfo = vk::GraphicsPipelineCreateInfo()
 			// 0. Render Pass
-			.setRenderPass(cgb::get(result.mRenderPass).handle())
+			.setRenderPass((*result.mRenderPass).handle())
 			.setSubpass(result.mSubpassIndex)
 			// 1., 2., and 3.
 			.setPVertexInputState(&result.mPipelineVertexInputStateCreateInfo)

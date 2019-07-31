@@ -77,135 +77,135 @@ namespace cgb
 #define VK_FUNC(x) set_function(x)
 #endif
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
-	*/
-	template <typename T>
-	T& get(T& v)	
-	{
-		return v;
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	//*/
+	//template <typename T>
+	//T& get(T& v)	
+	//{
+	//	return v;
+	//}
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
-	*/
-	template <typename T>
-	const T& get(const T& v)	
-	{
-		return v;
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	//*/
+	//template <typename T>
+	//const T& get(const T& v)	
+	//{
+	//	return v;
+	//}
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
-	*/
-	template <typename T>
-	T& get(T* v)	
-	{
-		return *v;
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	//*/
+	//template <typename T>
+	//T& get(T* v)	
+	//{
+	//	return *v;
+	//}
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
-	*/
-	template <typename T>
-	const T& get(const T* v)	
-	{
-		return *v;
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced 
+	//*/
+	//template <typename T>
+	//const T& get(const T* v)	
+	//{
+	//	return *v;
+	//}
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
-	*	be it stored directly or referenced via a smart pointer.
-	*/
-	template <typename T, typename V>
-	T& get(V& v)	
-	{
-		if (std::holds_alternative<T>(v)) {
-			return std::get<T>(v);
-		}
-		if (std::holds_alternative<std::unique_ptr<T>>(v)) {
-			return *std::get<std::unique_ptr<T>>(v);
-		}
-		if (std::holds_alternative<std::shared_ptr<T>>(v)) {
-			return *std::get<std::shared_ptr<T>>(v);
-		}
-		throw std::bad_variant_access();
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
+	//*	be it stored directly or referenced via a smart pointer.
+	//*/
+	//template <typename T, typename V>
+	//T& get(V& v)	
+	//{
+	//	if (std::holds_alternative<T>(v)) {
+	//		return std::get<T>(v);
+	//	}
+	//	if (std::holds_alternative<std::unique_ptr<T>>(v)) {
+	//		return *std::get<std::unique_ptr<T>>(v);
+	//	}
+	//	if (std::holds_alternative<std::shared_ptr<T>>(v)) {
+	//		return *std::get<std::shared_ptr<T>>(v);
+	//	}
+	//	throw std::bad_variant_access();
+	//}
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
-	*	be it stored directly or referenced via a smart pointer.
-	*/
-	template <typename T, typename V>
-	const T& get(const V& v)	
-	{
-		if (std::holds_alternative<T>(v)) {
-			return std::get<T>(v);
-		}
-		if (std::holds_alternative<std::unique_ptr<T>>(v)) {
-			return *std::get<std::unique_ptr<T>>(v);
-		}
-		if (std::holds_alternative<std::shared_ptr<T>>(v)) {
-			return *std::get<std::shared_ptr<T>>(v);
-		}
-		throw std::bad_variant_access();
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
+	//*	be it stored directly or referenced via a smart pointer.
+	//*/
+	//template <typename T, typename V>
+	//const T& get(const V& v)	
+	//{
+	//	if (std::holds_alternative<T>(v)) {
+	//		return std::get<T>(v);
+	//	}
+	//	if (std::holds_alternative<std::unique_ptr<T>>(v)) {
+	//		return *std::get<std::unique_ptr<T>>(v);
+	//	}
+	//	if (std::holds_alternative<std::shared_ptr<T>>(v)) {
+	//		return *std::get<std::shared_ptr<T>>(v);
+	//	}
+	//	throw std::bad_variant_access();
+	//}
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
-	*	be it stored directly or referenced via a smart pointer.
-	*/
-	template <typename T>
-	T& get(std::variant<T, std::unique_ptr<T>, std::shared_ptr<T>>& v)	
-	{
-		if (std::holds_alternative<T>(v)) {
-			return std::get<T>(v);
-		}
-		if (std::holds_alternative<std::unique_ptr<T>>(v)) {
-			return *std::get<std::unique_ptr<T>>(v);
-		}
-		if (std::holds_alternative<std::shared_ptr<T>>(v)) {
-			return *std::get<std::shared_ptr<T>>(v);
-		}
-		throw std::bad_variant_access();
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
+	//*	be it stored directly or referenced via a smart pointer.
+	//*/
+	//template <typename T>
+	//T& get(std::variant<T, std::unique_ptr<T>, std::shared_ptr<T>>& v)	
+	//{
+	//	if (std::holds_alternative<T>(v)) {
+	//		return std::get<T>(v);
+	//	}
+	//	if (std::holds_alternative<std::unique_ptr<T>>(v)) {
+	//		return *std::get<std::unique_ptr<T>>(v);
+	//	}
+	//	if (std::holds_alternative<std::shared_ptr<T>>(v)) {
+	//		return *std::get<std::shared_ptr<T>>(v);
+	//	}
+	//	throw std::bad_variant_access();
+	//}
 
-	/** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
-	*	be it stored directly or referenced via a smart pointer.
-	*/
-	template <typename T>
-	const T& get(const std::variant<T, std::unique_ptr<T>, std::shared_ptr<T>>& v)	
-	{
-		if (std::holds_alternative<T>(v)) {
-			return std::get<T>(v);
-		}
-		if (std::holds_alternative<std::unique_ptr<T>>(v)) {
-			return *std::get<std::unique_ptr<T>>(v);
-		}
-		if (std::holds_alternative<std::shared_ptr<T>>(v)) {
-			return *std::get<std::shared_ptr<T>>(v);
-		}
-		throw std::bad_variant_access();
-	}
+	///** Gets a reference to the data stored in a variant, regardless of how it is stored/referenced there,
+	//*	be it stored directly or referenced via a smart pointer.
+	//*/
+	//template <typename T>
+	//const T& get(const std::variant<T, std::unique_ptr<T>, std::shared_ptr<T>>& v)	
+	//{
+	//	if (std::holds_alternative<T>(v)) {
+	//		return std::get<T>(v);
+	//	}
+	//	if (std::holds_alternative<std::unique_ptr<T>>(v)) {
+	//		return *std::get<std::unique_ptr<T>>(v);
+	//	}
+	//	if (std::holds_alternative<std::shared_ptr<T>>(v)) {
+	//		return *std::get<std::shared_ptr<T>>(v);
+	//	}
+	//	throw std::bad_variant_access();
+	//}
 
-	/** Transform an element into a unique_ptr by moving from it.
-	 *	The parameter must be an r-value reference and will not be usable 
-	 *	after this function call anymore because it has been moved from.
-	 *
-	 *	Example:
-	 *    `buffer b = cgb::make_unique(cgb::create(cgb::vertex_buffer{1,2}, ...));`
-	 */
-	template <typename T>
-	std::unique_ptr<T> make_unique(T&& t)
-	{
-		return std::make_unique<T>(std::move(t));
-	}
+	///** Transform an element into a unique_ptr by moving from it.
+	// *	The parameter must be an r-value reference and will not be usable 
+	// *	after this function call anymore because it has been moved from.
+	// *
+	// *	Example:
+	// *    `buffer b = cgb::make_unique(cgb::create(cgb::vertex_buffer{1,2}, ...));`
+	// */
+	//template <typename T>
+	//std::unique_ptr<T> make_unique(T&& t)
+	//{
+	//	return std::make_unique<T>(std::move(t));
+	//}
 
-	/** Transform an element into a shared_ptr by moving from it.
-	*	The parameter must be an r-value reference and will not be usable 
-	*	after this function call anymore because it has been moved from.
-	*
-	*	Example:
-	*    `buffer b = cgb::make_shared(cgb::create(cgb::vertex_buffer{1,2}, ...));`
-	*/
-	template <typename T>
-	std::shared_ptr<T> make_shared(T&& t)
-	{
-		return std::make_shared<T>(std::move(t));
-	}
+	///** Transform an element into a shared_ptr by moving from it.
+	//*	The parameter must be an r-value reference and will not be usable 
+	//*	after this function call anymore because it has been moved from.
+	//*
+	//*	Example:
+	//*    `buffer b = cgb::make_shared(cgb::create(cgb::vertex_buffer{1,2}, ...));`
+	//*/
+	//template <typename T>
+	//std::shared_ptr<T> make_shared(T&& t)
+	//{
+	//	return std::make_shared<T>(std::move(t));
+	//}
 
 	// SFINAE test for detecting if a type has a `.size()` member
 	template <typename T>
@@ -256,5 +256,86 @@ namespace cgb
 	typename std::enable_if<has_no_size_member<T>::value, const T&>::type first_or_only_element(const T& t) {
 		return t;
 	}
+
+
+
+	template <typename T>
+	class owning_resource : public std::variant<std::monostate, T, std::shared_ptr<T>>
+	{
+	public:
+		owning_resource() : std::variant<std::monostate, T, std::shared_ptr<T>>() {}
+		owning_resource(T&& r) : std::variant<std::monostate, T, std::shared_ptr<T>>(std::move(r)) {}
+		owning_resource(const T&) = delete;
+		owning_resource(owning_resource<T>&&) = default;
+		owning_resource(const owning_resource<T>& other)
+		{
+			if (!other.is_shared_ownership_enabled()) {
+				throw std::logic_error("Can only copy construct owning_resources which have shared ownership enabled.");
+			}
+			*this_as_variant() = std::get<std::shared_ptr<T>>(other);
+		}
+		owning_resource<T>& operator=(T&& r) { *this = std::move(r); return *this; }
+		owning_resource<T>& operator=(const T&) = delete;
+		owning_resource<T>& operator=(owning_resource<T>&& r) = default;
+		owning_resource<T>& operator=(const owning_resource<T>& other)
+		{
+			if (!other.is_shared_ownership_enabled()) {
+				throw std::logic_error("Can only copy assign owning_resources which have shared ownership enabled.");
+			}
+			*this_as_variant() = std::get<std::shared_ptr<T>>(other);
+			return *this;
+		}
+
+		bool is_shared_ownership_enabled() const { return std::holds_alternative<std::shared_ptr<T>>(*this); }
+		bool holds_item_directly() const { return std::holds_alternative<T>(*this); }
+		const std::variant<std::monostate, T, std::shared_ptr<T>>* this_as_variant() const { return static_cast<const std::variant<std::monostate, T, std::shared_ptr<T>>*>(this); }
+		std::variant<std::monostate, T, std::shared_ptr<T>>* this_as_variant() { return static_cast<std::variant<std::monostate, T, std::shared_ptr<T>>*>(this); }
+
+		void enable_shared_ownership()
+		{
+			if (is_shared_ownership_enabled()) {
+				return; // Already established
+			}
+			if (std::holds_alternative<std::monostate>(*this)) {
+				throw std::logic_error("This owning_resource is uninitialized, i.e. std::monostate.");
+			}
+			*this_as_variant() = std::make_shared<T>(std::move(std::get<T>(*this)));
+		}
+
+		operator const T&() const 
+		{ 
+			if (is_shared_ownership_enabled()) { return *std::get<std::shared_ptr<T>>(*this_as_variant()); }
+			if (holds_item_directly()) { return std::get<T>(*this_as_variant()); }
+			throw std::logic_error("This owning_resource is uninitialized, i.e. std::monostate.");
+		}
+
+		operator T&() 
+		{ 
+			if (is_shared_ownership_enabled()) { return *std::get<std::shared_ptr<T>>(*this_as_variant()); }
+			if (holds_item_directly()) { return std::get<T>(*this_as_variant()); }
+			throw std::logic_error("This owning_resource is uninitialized, i.e. std::monostate.");
+		}
+		
+		const T& operator*() const
+		{
+			return this->operator const T&();
+		}
+		
+		T& operator*()
+		{
+			return this->operator T&();
+		}
+		
+		const T* operator->() const
+		{
+			return &this->operator const T&();
+		}
+		
+		T* operator->()
+		{
+			return &this->operator T&();
+		}
+	};
+
 
 }

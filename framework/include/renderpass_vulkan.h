@@ -19,8 +19,8 @@ namespace cgb
 		 *	Also, create default subpass dependencies 
 		 *	(which are overly cautious and potentially sync more as required.)
 		 */
-		static renderpass_t create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass_t&)> pAlterConfigBeforeCreation = {});
-		static renderpass_t create(VkRenderPass xxx, VkFormat format);
+		static owning_resource<renderpass_t> create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass_t&)> pAlterConfigBeforeCreation = {});
+		//static owning_resource<renderpass_t> create_good_renderpass(VkFormat format);
 
 		const auto& attachment_descriptions() const { return mAttachmentDescriptions; }
 		const auto& color_attachments() const { return mOrderedColorAttachmentRefs; }
@@ -69,9 +69,10 @@ namespace cgb
 		//context_tracker<renderpass_t> mTracker;
 	};
 
-	using renderpass = std::variant<renderpass_t, std::unique_ptr<renderpass_t>, std::shared_ptr<renderpass_t>>;
+	using renderpass = owning_resource<renderpass_t>;
+	
 
-	//extern bool are_compatible(const renderpass& first, const renderpass& second);
+	extern bool are_compatible(const renderpass& first, const renderpass& second);
 
 	//// Helper function:
 	//template <typename V>

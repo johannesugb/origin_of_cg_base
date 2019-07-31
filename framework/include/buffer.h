@@ -16,32 +16,14 @@ namespace cgb
 	using index_buffer_t = buffer_t<index_buffer_meta>;
 	using instance_buffer_t = buffer_t<instance_buffer_meta>;
 
-	using unique_generic_buffer_t = std::unique_ptr<buffer_t<generic_buffer_meta>>;
-	using unique_uniform_buffer_t = std::unique_ptr<buffer_t<uniform_buffer_meta>>;
-	using unique_uniform_texel_buffer_t = std::unique_ptr<buffer_t<uniform_texel_buffer_meta>>;
-	using unique_storage_buffer_t = std::unique_ptr<buffer_t<storage_buffer_meta>>;
-	using unique_storage_texel_buffer_t = std::unique_ptr<buffer_t<storage_texel_buffer_meta>>;
-	using unique_vertex_buffer_t = std::unique_ptr<buffer_t<vertex_buffer_meta>>;
-	using unique_index_buffer_t = std::unique_ptr<buffer_t<index_buffer_meta>>;
-	using unique_instance_buffer_t = std::unique_ptr<buffer_t<instance_buffer_meta>>;
-
-	using shared_generic_buffer_t = std::shared_ptr<buffer_t<generic_buffer_meta>>;
-	using shared_uniform_buffer_t = std::shared_ptr<buffer_t<uniform_buffer_meta>>;
-	using shared_uniform_texel_buffer_t = std::shared_ptr<buffer_t<uniform_texel_buffer_meta>>;
-	using shared_storage_buffer_t = std::shared_ptr<buffer_t<storage_buffer_meta>>;
-	using shared_storage_texel_buffer_t = std::shared_ptr<buffer_t<storage_texel_buffer_meta>>;
-	using shared_vertex_buffer_t = std::shared_ptr<buffer_t<vertex_buffer_meta>>;
-	using shared_index_buffer_t = std::shared_ptr<buffer_t<index_buffer_meta>>;
-	using shared_instance_buffer_t = std::shared_ptr<buffer_t<instance_buffer_meta>>;
-
-	using generic_buffer		= std::variant<generic_buffer_t, unique_generic_buffer_t, shared_generic_buffer_t>;
-	using uniform_buffer		= std::variant<uniform_buffer_t, unique_uniform_buffer_t, shared_uniform_buffer_t>;
-	using uniform_texel_buffer	= std::variant<uniform_texel_buffer_t, unique_uniform_texel_buffer_t, shared_uniform_texel_buffer_t>;
-	using storage_buffer		= std::variant<storage_buffer_t, unique_storage_buffer_t, shared_storage_buffer_t>;
-	using storage_texel_buffer	= std::variant<storage_texel_buffer_t, unique_storage_texel_buffer_t, shared_storage_texel_buffer_t>;
-	using vertex_buffer			= std::variant<vertex_buffer_t, unique_vertex_buffer_t, shared_vertex_buffer_t>;
-	using index_buffer			= std::variant<index_buffer_t, unique_index_buffer_t, shared_index_buffer_t>;
-	using instance_buffer		= std::variant<instance_buffer_t, unique_instance_buffer_t, shared_instance_buffer_t>;
+	using generic_buffer		= owning_resource<generic_buffer_t>;
+	using uniform_buffer		= owning_resource<uniform_buffer_t>;
+	using uniform_texel_buffer	= owning_resource<uniform_texel_buffer_t>;
+	using storage_buffer		= owning_resource<storage_buffer_t>;
+	using storage_texel_buffer	= owning_resource<storage_texel_buffer_t>;
+	using vertex_buffer			= owning_resource<vertex_buffer_t>;
+	using index_buffer			= owning_resource<index_buffer_t>;
+	using instance_buffer		= owning_resource<instance_buffer_t>;
 
 	//using buffer = std::variant<
 	//	generic_buffer,

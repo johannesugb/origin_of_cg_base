@@ -20,9 +20,9 @@ namespace cgb
 
 		const auto& layout_handle() const { return mPipelineLayout.get(); }
 		const auto& handle() const { return mPipeline.get(); }
-		const auto& renderpass_handle() const { return cgb::get(mRenderPass).handle(); }
+		const auto& renderpass_handle() const { return (*mRenderPass).handle(); }
 
-		static graphics_pipeline_t create(graphics_pipeline_config _Config, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation = {});
+		static owning_resource<graphics_pipeline_t> create(graphics_pipeline_config _Config, cgb::context_specific_function<void(graphics_pipeline_t&)> _AlterConfigBeforeCreation = {});
 
 	private:
 		renderpass mRenderPass;
@@ -66,5 +66,5 @@ namespace cgb
 		context_tracker<graphics_pipeline_t> mTracker;
 	};
 
-	using graphics_pipeline = std::variant<graphics_pipeline_t, std::unique_ptr<graphics_pipeline_t>, std::shared_ptr<graphics_pipeline_t>>;
+	using graphics_pipeline = owning_resource<graphics_pipeline_t>;
 }

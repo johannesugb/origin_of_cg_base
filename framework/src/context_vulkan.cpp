@@ -843,17 +843,21 @@ namespace cgb
 		// and create one image view per image
 		pWindow->mSwapChainImageViews.reserve(pWindow->mSwapChainImages.size());
 		for (auto& image : pWindow->mSwapChainImages) {
-		   // Note:: If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers. You could then create multiple image views for each image representing the views for the left and right eyes by accessing different layers. [3]
-		   pWindow->mSwapChainImageViews.push_back(image_view_t::create(image, pWindow->mImageCreateInfoSwapChain, pWindow->swap_chain_image_format().mFormat));
+			// Note:: If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers. You could then create multiple image views for each image representing the views for the left and right eyes by accessing different layers. [3]
+			pWindow->mSwapChainImageViews.push_back(image_view_t::create(image, pWindow->mImageCreateInfoSwapChain, pWindow->swap_chain_image_format().mFormat));
+			pWindow->mSwapChainImageViews.back().enable_shared_ownership();
 		}
 
 		// Create a renderpass for the back buffers
-		pWindow->mBackBufferRenderpass =  cgb::make_shared( renderpass_t::create({ attachment::create_for(pWindow->mSwapChainImageViews[0]) }) );
+		pWindow->mBackBufferRenderpass = renderpass_t::create({ attachment::create_for(pWindow->mSwapChainImageViews[0]) });
+		//pWindow->mBackBufferRenderpass = renderpass_t::create_good_renderpass((VkFormat)pWindow->mSwapChainImageViews[0]->config().format);
+		pWindow->mBackBufferRenderpass.enable_shared_ownership();
 
 		// Create a back buffer per image
 		pWindow->mBackBuffers.reserve(pWindow->mSwapChainImageViews.size());
 		for (auto& imView: pWindow->mSwapChainImageViews) {
-			pWindow->mBackBuffers.push_back(framebuffer_t::create(cgb::get(pWindow->mBackBufferRenderpass), { &imView }, imView.image_config().extent.width, imView.image_config().extent.height));
+			auto imExtent = imView->image_config().extent;
+			pWindow->mBackBuffers.push_back(framebuffer_t::create(pWindow->mBackBufferRenderpass, { imView }, imExtent.width, imExtent.height));
 		}
 
 		// ============= SYNCHRONIZATION OBJECTS ===========

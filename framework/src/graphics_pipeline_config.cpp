@@ -1,5 +1,7 @@
 namespace cgb
 {
+	using namespace cgb::cfg;
+
 	// Set sensible defaults:
 	graphics_pipeline_config::graphics_pipeline_config()
 		: mPipelineSettings{ pipeline_settings::nothing } // unsupported right now anyways

@@ -33,9 +33,9 @@ namespace cgb
 		*	@param	_AlterConfigBeforeCreation	A context-specific function which allows to modify the `vk::ImageViewCreateInfo` just before the image view will be created. Use `.config()` to access the configuration structure!
 		*	@return	Returns a newly created image.
 		*/
-		static image_view_t create(cgb::image _ImageToOwn, std::optional<image_format> _ViewFormat = std::nullopt, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation = {});
+		static owning_resource<image_view_t> create(cgb::image _ImageToOwn, std::optional<image_format> _ViewFormat = std::nullopt, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation = {});
 
-		static image_view_t create(vk::Image _ImageToReference, vk::ImageCreateInfo _ImageInfo, std::optional<image_format> _ViewFormat = std::nullopt, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation = {});
+		static owning_resource<image_view_t> create(vk::Image _ImageToReference, vk::ImageCreateInfo _ImageInfo, std::optional<image_format> _ViewFormat = std::nullopt, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation = {});
 
 	private:
 		void finish_configuration(image_format _ViewFormat, context_specific_function<void(image_view_t&)> _AlterConfigBeforeCreation);
@@ -52,5 +52,5 @@ namespace cgb
 	};
 
 	/** Typedef representing any kind of OWNING image view representations. */
-	using image_view = std::variant<image_view_t, std::unique_ptr<image_view_t>, std::shared_ptr<image_view_t>>;
+	using image_view = owning_resource<image_view_t>;
 }

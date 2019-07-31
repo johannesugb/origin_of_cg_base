@@ -371,7 +371,7 @@ namespace cgb
 		return it != depthFormats.end();
 	}
 
-	image_t image_t::create(int pWidth, int pHeight, image_format pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
+	owning_resource<image_t> image_t::create(int pWidth, int pHeight, image_format pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
 	{
 		// Compile image usage flags and memory usage flags:
 		vk::ImageUsageFlags imageUsage = vk::ImageUsageFlagBits::eSampled; // This is probably a sensible default => It indicates that this image might be used to sample from
@@ -441,7 +441,7 @@ namespace cgb
 		return result;
 	}
 
-	image_t image_t::create_depth(int pWidth, int pHeight, std::optional<image_format> pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
+	owning_resource<image_t> image_t::create_depth(int pWidth, int pHeight, std::optional<image_format> pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
 	{
 		// Select a suitable depth format
 		if (!pFormat) {
@@ -468,7 +468,7 @@ namespace cgb
 		});
 	}
 
-	image_t image_t::create_depth_stencil(int pWidth, int pHeight, std::optional<image_format> pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
+	owning_resource<image_t> image_t::create_depth_stencil(int pWidth, int pHeight, std::optional<image_format> pFormat, memory_usage pMemoryUsage, bool pUseMipMaps, int pNumLayers, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation)
 	{
 		// Select a suitable depth+stencil format
 		if (!pFormat) {

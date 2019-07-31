@@ -43,7 +43,7 @@ namespace cgb
 		 *	@param	pAlterConfigBeforeCreation	A context-specific function which allows to modify the `vk::ImageCreateInfo` just before the image will be created. Use `.config()` to access the configuration structure!
 		 *	@return	Returns a newly created image.
 		 */
-		static image_t create(int pWidth, int pHeight, image_format pFormat, memory_usage pMemoryUsage, bool pUseMipMaps = false, int pNumLayers = 1, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation = {});
+		static owning_resource<image_t> create(int pWidth, int pHeight, image_format pFormat, memory_usage pMemoryUsage, bool pUseMipMaps = false, int pNumLayers = 1, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation = {});
 
 		/** Creates a new image
 		*	@param	pWidth						The width of the depth buffer to be created
@@ -55,7 +55,7 @@ namespace cgb
 		*	@param	pAlterConfigBeforeCreation	A context-specific function which allows to modify the `vk::ImageCreateInfo` just before the image will be created. Use `.config()` to access the configuration structure!
 		*	@return	Returns a newly created depth buffer.
 		*/
-		static image_t create_depth(int pWidth, int pHeight, std::optional<image_format> pFormat = std::nullopt, memory_usage pMemoryUsage = memory_usage::device, bool pUseMipMaps = false, int pNumLayers = 1, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation = {});
+		static owning_resource<image_t> create_depth(int pWidth, int pHeight, std::optional<image_format> pFormat = std::nullopt, memory_usage pMemoryUsage = memory_usage::device, bool pUseMipMaps = false, int pNumLayers = 1, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation = {});
 
 		/** Creates a new image
 		*	@param	pWidth						The width of the depth+stencil buffer to be created
@@ -67,7 +67,7 @@ namespace cgb
 		*	@param	pAlterConfigBeforeCreation	A context-specific function which allows to modify the `vk::ImageCreateInfo` just before the image will be created. Use `.config()` to access the configuration structure!
 		*	@return	Returns a newly created depth+stencil buffer.
 		*/
-		static image_t create_depth_stencil(int pWidth, int pHeight, std::optional<image_format> pFormat = std::nullopt, memory_usage pMemoryUsage = memory_usage::device, bool pUseMipMaps = false, int pNumLayers = 1, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation = {});
+		static owning_resource<image_t> create_depth_stencil(int pWidth, int pHeight, std::optional<image_format> pFormat = std::nullopt, memory_usage pMemoryUsage = memory_usage::device, bool pUseMipMaps = false, int pNumLayers = 1, context_specific_function<void(image_t&)> pAlterConfigBeforeCreation = {});
 
 		// TODO: What to do with this one: ??
 		vk::ImageMemoryBarrier create_barrier(vk::AccessFlags pSrcAccessMask, vk::AccessFlags pDstAccessMask, vk::ImageLayout pOldLayout, vk::ImageLayout pNewLayout, std::optional<vk::ImageSubresourceRange> pSubresourceRange = std::nullopt) const;
@@ -82,7 +82,7 @@ namespace cgb
 	};
 
 	/** Typedef representing any kind of OWNING image representations. */
-	using image	= std::variant<image_t, std::unique_ptr<image_t>, std::shared_ptr<image_t>>;
+	using image	= owning_resource<image_t>;
 
 
 

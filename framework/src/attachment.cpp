@@ -1,6 +1,6 @@
 namespace cgb
 {
-	attachment attachment::create_color(image_format pFormat, bool pIsPresentable, std::optional<uint32_t> pLocation)
+	attachment attachment::create_color(image_format pFormat, std::optional<uint32_t> pLocation)
 	{
 #if defined(_DEBUG)
 		if (is_depth_format(pFormat)) {
@@ -10,11 +10,13 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			pIsPresentable,
-			false,	// is not depth
-			1,		// num samples
-			false,	// resolve
-			false	// shader input
+			cfg::attachment_load_operation::clear,
+			cfg::attachment_store_operation::store,
+			1,				// num samples
+			true,		// => present enabled
+			false,		// => not depth
+			false,			// => no need to resolve
+			false	// => not a shader input attachment
 		};
 	}
 
@@ -28,11 +30,13 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			false,	// Assume that this shall not be presented
-			true,	// is depth
-			1,		// num samples
-			false,	// resolve
-			false	// shader input
+			cfg::attachment_load_operation::clear,
+			cfg::attachment_store_operation::store,
+			1,				// num samples
+			false,		// => present disabled
+			true,		// => is depth
+			false,			// => no need to resolve
+			false	// => not a shader input attachment
 		};
 	}
 
@@ -41,15 +45,17 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			false,	// Assume that this shall not be presented
-			is_depth_format(pFormat), // might be depth
-			1,		// num samples
-			false,	// resolve
-			true	// shader input
+			cfg::attachment_load_operation::load,
+			cfg::attachment_store_operation::store,
+			1,				// num samples
+			false,		// => present disabled
+			false,		// => not depth
+			false,			// => no need to resolve
+			true	// => is a shader input attachment
 		};
 	}
 
-	attachment attachment::create_color_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, bool pIsPresentable, std::optional<uint32_t> pLocation)
+	attachment attachment::create_color_multisampled(image_format pFormat, int pSampleCount, bool pResolveMultisamples, std::optional<uint32_t> pLocation)
 	{
 #if defined(_DEBUG)
 		if (!is_depth_format(pFormat)) {
@@ -59,11 +65,13 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			pIsPresentable,
-			false,
-			pSampleCount,			// num samples
-			pResolveMultisamples,	// resolve
-			false					// shader input
+			cfg::attachment_load_operation::clear,
+			cfg::attachment_store_operation::store,
+			pSampleCount,				// num samples
+			true,		// => present enabled
+			false,		// => not depth
+			pResolveMultisamples,		// do it or don't?
+			false	// => not a shader input attachment
 		};
 	}
 
@@ -77,11 +85,13 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			false,					// Assume that this shall not be presented
-			true,					// is depth
-			pSampleCount,			// num samples
-			pResolveMultisamples,	// resolve
-			false					// shader input
+			cfg::attachment_load_operation::clear,
+			cfg::attachment_store_operation::store,
+			pSampleCount,				// num samples
+			false,		// => present disabled
+			true,		// => is depth
+			pResolveMultisamples,		// do it or don't?
+			false	// => not a shader input attachment
 		};
 	}
 
@@ -90,15 +100,15 @@ namespace cgb
 		return attachment{
 			pLocation,
 			pFormat,
-			false,					// Assume that this shall not be presented
-			false,					// is not depth
-			pSampleCount,			// num samples
-			pResolveMultisamples,	// resolve
-			true					// shader input
+			cfg::attachment_load_operation::load,
+			cfg::attachment_store_operation::store,
+			pSampleCount,				// num samples
+			false,		// => present disabled
+			false,		// => not depth
+			pResolveMultisamples,		// do it or don't?
+			true	// => is a shader input attachment
 		};
 	}
-
-
 
 	attachment attachment::create_for(const image_view_t& _ImageView, std::optional<uint32_t> pLocation)
 	{
@@ -115,11 +125,11 @@ namespace cgb
 		}
 		else { // must be color format
 			if (imageInfo.samples == vk::SampleCountFlagBits::e1) {
-				return attachment::create_color(format, true, pLocation);
+				return attachment::create_color(format, pLocation);
 			}
 			else {	
 				// TODO: Should "is presentable" really be true by default?
-				return attachment::create_color_multisampled(format, to_cgb_sample_count(imageInfo.samples), true, true, pLocation);
+				return attachment::create_color_multisampled(format, to_cgb_sample_count(imageInfo.samples), true, pLocation);
 			}
 		}
 		throw std::runtime_error("Unable to create an attachment for the given image view");

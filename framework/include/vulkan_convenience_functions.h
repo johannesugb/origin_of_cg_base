@@ -12,7 +12,7 @@ namespace cgb
 
 	// Add a specific pipeline setting to the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, pipeline_settings _Setting, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::pipeline_settings _Setting, Ts... args)
 	{
 		_Config.mPipelineSettings |= _Setting;
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -52,7 +52,7 @@ namespace cgb
 
 	// Set the topology of the input attributes
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, primitive_topology _Topology, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::primitive_topology _Topology, Ts... args)
 	{
 		_Config.mPrimitiveTopology = _Topology;
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -76,7 +76,7 @@ namespace cgb
 
 	// Set the depth test behavior in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, depth_test _DepthTestConfig, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::depth_test _DepthTestConfig, Ts... args)
 	{
 		_Config.mDepthTestConfig = std::move(_DepthTestConfig);
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -84,7 +84,7 @@ namespace cgb
 
 	// Set the depth write behavior in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, depth_write _DepthWriteConfig, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::depth_write _DepthWriteConfig, Ts... args)
 	{
 		_Config.mDepthWriteConfig = std::move(_DepthWriteConfig);
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -92,7 +92,7 @@ namespace cgb
 
 	// Add a viewport, depth, and scissors entry to the pipeline configuration
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, viewport_depth_scissors_config _ViewportDepthScissorsConfig, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::viewport_depth_scissors_config _ViewportDepthScissorsConfig, Ts... args)
 	{
 		_Config.mViewportDepthConfig.push_back(std::move(_ViewportDepthScissorsConfig));
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -100,7 +100,7 @@ namespace cgb
 
 	// Set the culling mode in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, culling_mode _CullingMode, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::culling_mode _CullingMode, Ts... args)
 	{
 		_Config.mCullingMode = _CullingMode;
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -108,7 +108,7 @@ namespace cgb
 
 	// Set the definition of front faces in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, front_face _FrontFace, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::front_face _FrontFace, Ts... args)
 	{
 		_Config.mFrontFaceWindingOrder = std::move(_FrontFace);
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -116,7 +116,7 @@ namespace cgb
 
 	// Set how to draw polygons in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, polygon_drawing _PolygonDrawingConfig, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::polygon_drawing _PolygonDrawingConfig, Ts... args)
 	{
 		_Config.mPolygonDrawingModeAndConfig = std::move(_PolygonDrawingConfig);
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -124,7 +124,7 @@ namespace cgb
 
 	// Set how the rasterizer handles geometry in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, rasterizer_geometry_mode _RasterizerGeometryMode, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::rasterizer_geometry_mode _RasterizerGeometryMode, Ts... args)
 	{
 		_Config.mRasterizerGeometryMode = _RasterizerGeometryMode;
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -132,7 +132,7 @@ namespace cgb
 
 	// Sets if there should be some special depth handling in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, depth_clamp_bias _DepthSettings, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::depth_clamp_bias _DepthSettings, Ts... args)
 	{
 		_Config.mDepthClampBiasConfig = _DepthSettings;
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -140,7 +140,7 @@ namespace cgb
 
 	// Sets some color blending parameters in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, color_blending_settings _ColorBlendingSettings, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::color_blending_settings _ColorBlendingSettings, Ts... args)
 	{
 		_Config.mColorBlendingSettings = _ColorBlendingSettings;
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -148,7 +148,7 @@ namespace cgb
 
 	// Sets some color blending parameters in the pipeline config
 	template <typename... Ts>
-	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, color_blending_config _ColorBlendingConfig, Ts... args)
+	void add_config(graphics_pipeline_config& _Config, std::vector<attachment>* _Attachments, cfg::color_blending_config _ColorBlendingConfig, Ts... args)
 	{
 		_Config.mColorBlendingPerAttachment.push_back(std::move(_ColorBlendingConfig));
 		add_config(_Config, _Attachments, std::move(args)...);
@@ -180,7 +180,7 @@ namespace cgb
 
 	// Conveniently construct a pipeline with the given settings
 	template <typename... Ts>
-	graphics_pipeline_t graphics_pipeline_for(Ts... args)
+	owning_resource<graphics_pipeline_t> graphics_pipeline_for(Ts... args)
 	{
 		std::vector<attachment> renderPassAttachments;
 
@@ -188,7 +188,10 @@ namespace cgb
 		add_config(config, &renderPassAttachments, std::move(args)...);
 
 		// Check if render pass attachments are in renderPassAttachments XOR config => only in that case, it is clear how to proceed, fail in other cases
-		if (renderPassAttachments.size() > 0 == (config.mRenderPassSubpass.has_value() && cgb::get(std::get<renderpass>(*config.mRenderPassSubpass)).handle())) {
+		if (renderPassAttachments.size() > 0 == (config.mRenderPassSubpass.has_value() && nullptr != std::get<renderpass>(*config.mRenderPassSubpass)->handle())) {
+			if (renderPassAttachments.size() == 0) {
+				throw std::runtime_error("No renderpass config provided! Please provide a renderpass or attachments!");
+			}
 			throw std::runtime_error("Ambiguous renderpass config! Either set a renderpass XOR provide attachments!");
 		}
 		// ^ that was the sanity check. See if we have to build the renderpass from the attachments:
