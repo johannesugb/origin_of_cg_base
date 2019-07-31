@@ -16,13 +16,13 @@ namespace cgb
 			std::back_inserter(buffers),
 			// ...transform them into `cgb::command_buffer` objects:
 			[usageFlags = pUsageFlags](auto& vkCb) {
-			command_buffer result;
-			result.mBeginInfo = vk::CommandBufferBeginInfo()
-				.setFlags(usageFlags)
-				.setPInheritanceInfo(nullptr);
-			result.mCommandBuffer = std::move(vkCb);
-			return result;
-		});
+				command_buffer result;
+				result.mBeginInfo = vk::CommandBufferBeginInfo()
+					.setFlags(usageFlags)
+					.setPInheritanceInfo(nullptr);
+				result.mCommandBuffer = std::move(vkCb);
+				return result;
+			});
 		return buffers;
 	}
 
@@ -46,7 +46,7 @@ namespace cgb
 	{
 		std::array clearValues = {
 			vk::ClearValue(vk::ClearColorValue{ make_array<float>( 0.5f, 0.0f, 0.5f, 1.0f ) }),
-			vk::ClearValue(vk::ClearDepthStencilValue{ 1.0f, 0 })
+			//vk::ClearValue(vk::ClearDepthStencilValue{ 1.0f, 0 })
 		};
 		// TODO: how to determine the number of attachments => and the number of clear-values? omg...
 

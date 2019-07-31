@@ -848,12 +848,12 @@ namespace cgb
 		}
 
 		// Create a renderpass for the back buffers
-		pWindow->mBackBufferRenderpass = renderpass_t::create({ attachment::create_for(pWindow->mSwapChainImageViews[0]) });
+		pWindow->mBackBufferRenderpass =  cgb::make_shared( renderpass_t::create({ attachment::create_for(pWindow->mSwapChainImageViews[0]) }) );
 
 		// Create a back buffer per image
 		pWindow->mBackBuffers.reserve(pWindow->mSwapChainImageViews.size());
 		for (auto& imView: pWindow->mSwapChainImageViews) {
-			pWindow->mBackBuffers.push_back(framebuffer_t::create(pWindow->mBackBufferRenderpass, { &imView }, imView.image_config().extent.width, imView.image_config().extent.height));
+			pWindow->mBackBuffers.push_back(framebuffer_t::create(cgb::get(pWindow->mBackBufferRenderpass), { &imView }, imView.image_config().extent.width, imView.image_config().extent.height));
 		}
 
 		// ============= SYNCHRONIZATION OBJECTS ===========

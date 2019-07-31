@@ -200,6 +200,12 @@ namespace cgb
 		//void render_frame(CBT pCommandBuffer, CBTS... pCommandBuffers)
 		void render_frame(std::initializer_list<std::reference_wrapper<cgb::command_buffer>> pCommandBuffers);
 
+		const auto& renderpass_handle() const { return cgb::get(mBackBufferRenderpass).handle(); }
+
+		auto& getrenderpass() const { return mBackBufferRenderpass; }
+
+
+
 	protected:
 		
 
@@ -272,7 +278,7 @@ namespace cgb
 #pragma endregion
 
 		// The renderpass used for the back buffers
-		renderpass_t mBackBufferRenderpass;
+		renderpass mBackBufferRenderpass;
 
 		// The backbuffers of this window
 		std::vector<framebuffer_t> mBackBuffers;

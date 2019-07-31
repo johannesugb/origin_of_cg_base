@@ -260,11 +260,13 @@ namespace cgb
 
 	void window::render_frame(std::initializer_list<std::reference_wrapper<cgb::command_buffer>> pCommandBuffers)
 	{
+		vk::Result result;
+
 		// Wait for the fence before proceeding, GPU -> CPU synchronization via fence
 		const auto& fence = fence_for_frame();
 		cgb::context().logical_device().waitForFences(1u, fence.handle_addr(), VK_TRUE, std::numeric_limits<uint64_t>::max());
-		cgb::context().logical_device().resetFences(1u, fence.handle_addr());
-
+		result = cgb::context().logical_device().resetFences(1u, fence.handle_addr());
+		assert (vk::Result::eSuccess == result);
 
 		//
 		//
@@ -327,7 +329,8 @@ namespace cgb
 			.setPSignalSemaphores(toSignalAfterExecute.data());
 		// Finally, submit to the graphics queue.
 		// Also provide a fence for GPU -> CPU sync which will be waited on next time we need this frame (top of this method).
-		cgb::context().graphics_queue().handle().submit(1u, &submitInfo, fence.handle());
+		result = cgb::context().graphics_queue().handle().submit(1u, &submitInfo, fence.handle());
+		assert (vk::Result::eSuccess == result);
 
 		// Present as soon as the render finished semaphore has been signalled:
 		auto presentInfo = vk::PresentInfoKHR()
@@ -337,7 +340,8 @@ namespace cgb
 			.setPSwapchains(&swap_chain())
 			.setPImageIndices(&imageIndex)
 			.setPResults(nullptr);
-		cgb::context().presentation_queue().handle().presentKHR(presentInfo);
+		result = cgb::context().presentation_queue().handle().presentKHR(presentInfo);
+		assert (vk::Result::eSuccess == result);
 
 		// increment frame counter
 		++mCurrentFrame;

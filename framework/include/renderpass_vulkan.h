@@ -20,6 +20,7 @@ namespace cgb
 		 *	(which are overly cautious and potentially sync more as required.)
 		 */
 		static renderpass_t create(std::vector<attachment> pAttachments, cgb::context_specific_function<void(renderpass_t&)> pAlterConfigBeforeCreation = {});
+		static renderpass_t create(VkRenderPass xxx, VkFormat format);
 
 		const auto& attachment_descriptions() const { return mAttachmentDescriptions; }
 		const auto& color_attachments() const { return mOrderedColorAttachmentRefs; }

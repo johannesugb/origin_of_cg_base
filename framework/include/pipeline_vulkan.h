@@ -58,7 +58,7 @@ namespace cgb
 		vk::PipelineLayoutCreateInfo mPipelineLayoutCreateInfo;
 
 		// Where all comes together:
-		vk::PipelineCreateFlagBits mPipelineCreateFlags;
+		vk::PipelineCreateFlags mPipelineCreateFlags;
 
 		// Handles:
 		vk::UniquePipelineLayout mPipelineLayout;
