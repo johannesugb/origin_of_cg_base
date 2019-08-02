@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\examples\hello_world\source\hello_world.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="assets">
       <UniqueIdentifier>{24240a51-8fdb-478f-8c1c-27cbca7adc3f}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
@@ -13,10 +10,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\examples\hello_world\source\a_triangle.frag">
+    <ClCompile Include="..\..\..\examples\vertex_buffers\source\vertex_buffers.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\examples\vertex_buffers\source\color.frag">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\..\..\examples\hello_world\source\a_triangle.vert">
+    <None Include="..\..\..\examples\vertex_buffers\source\passthrough.vert">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

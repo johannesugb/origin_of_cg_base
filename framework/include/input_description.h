@@ -64,8 +64,7 @@ namespace cgb
 		};
 	}
 
-#if defined _MSC_VER && !defined _CRT_USE_BUILTIN_OFFSETOF
-#ifdef __cplusplus
+#if defined(_MSC_VER) && defined(__cplusplus)
 	/** Describe an input location for a pipeline's vertex input.
 	 *	Also, assign the input location to a specific binding point (first parameter `pBinding`).
 	 *	The binding point represents a specific buffer which provides the data for the location specified.
@@ -92,7 +91,6 @@ namespace cgb
 			sizeof(T));
 	}
 #endif
-#endif
 
 
 	/** Describe an input location for a pipeline's instance input.
@@ -107,8 +105,8 @@ namespace cgb
 		};
 	}
 
-#if defined _MSC_VER && !defined _CRT_USE_BUILTIN_OFFSETOF
-#ifdef __cplusplus
+#if defined(_MSC_VER) && defined(__cplusplus)
+
 	/** Describe an input location for a pipeline's instance input.
 	*	Also, assign the input location to a specific binding point (first parameter `pBinding`).
 	*	The binding point represents a specific buffer which provides the data for the location specified.
@@ -132,6 +130,5 @@ namespace cgb
 			format_for<M>(),
 			sizeof(T));
 	}
-#endif
 #endif
 }

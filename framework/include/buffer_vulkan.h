@@ -115,12 +115,12 @@ namespace cgb
 		auto memProps = target.memory_properties();
 
 		// #1: Is our memory on the CPU-SIDE? 
-		if (has_flag(memProps, vk::MemoryPropertyFlagBits::eHostVisible)) {
+		if (cgb::has_flag(memProps, vk::MemoryPropertyFlagBits::eHostVisible)) {
 			void* mapped = cgb::context().logical_device().mapMemory(target.memory_handle(), 0, bufferSize);
 			memcpy(mapped, pData, bufferSize);
 			cgb::context().logical_device().unmapMemory(target.memory_handle());
 			// Coherent memory is done; non-coherent memory not yet
-			if (!has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCoherent)) {
+			if (!cgb::has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCoherent)) {
 				// Setup the range 
 				auto range = vk::MappedMemoryRange()
 					.setMemory(target.memory_handle())
@@ -136,13 +136,13 @@ namespace cgb
 
 		// #2: Otherwise, it must be on the GPU-SIDE!
 		else {
-			assert(has_flag(memProps, vk::MemoryPropertyFlagBits::eDeviceLocal));
+			assert(cgb::has_flag(memProps, vk::MemoryPropertyFlagBits::eDeviceLocal));
 
 			// Okay, we have to create a (somewhat temporary) staging buffer and transfer it to the GPU
 			// "somewhat temporary" means that it can not be deleted in this function, but only
 			//						after the transfer operation has completed => handle via semaphore!
 			auto stagingBuffer = create_and_fill(
-				generic_buffer_meta{ target.size() }, 
+				generic_buffer_meta::create_from_size(target.size()),
 				cgb::memory_usage::host_coherent, 
 				pData, 
 				nullptr, //< TODO: What about the semaphore???
@@ -211,29 +211,34 @@ namespace cgb
 			break;
 		}
 
+		// TODO: generic_buffer_meta not supported
 		if constexpr (std::is_same_v<Meta, cgb::uniform_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformBuffer;
 			descriptorType = vk::DescriptorType::eUniformBuffer;
 		}
-		if constexpr (std::is_same_v<Meta, cgb::uniform_texel_buffer_meta>) {
+		else if constexpr (std::is_same_v<Meta, cgb::uniform_texel_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
 			descriptorType = vk::DescriptorType::eUniformTexelBuffer;
 		}
-		if constexpr (std::is_same_v<Meta, cgb::storage_buffer_meta>) {
+		else if constexpr (std::is_same_v<Meta, cgb::storage_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageBuffer;
 			descriptorType = vk::DescriptorType::eStorageBuffer;
 		}
-		if constexpr (std::is_same_v<Meta, cgb::storage_texel_buffer_meta>) {
+		else if constexpr (std::is_same_v<Meta, cgb::storage_texel_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
 			descriptorType = vk::DescriptorType::eStorageTexelBuffer;
 		}
-		if constexpr (std::is_same_v<Meta, cgb::vertex_buffer_meta>) {
+		else if constexpr (std::is_same_v<Meta, cgb::vertex_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eVertexBuffer;
 			descriptorType = vk::DescriptorType::eUniformBuffer; // TODO: Does this make sense? Or is this maybe not applicable at all for vertex buffers?
 		}
-		if constexpr (std::is_same_v<Meta, cgb::index_buffer_meta>) {
+		else if constexpr (std::is_same_v<Meta, cgb::index_buffer_meta>) {
 			pUsage |= vk::BufferUsageFlagBits::eIndexBuffer;
 			descriptorType = vk::DescriptorType::eUniformBuffer; // TODO: Does this make sense? Or is this maybe not applicable at all for index buffers?
+		}
+		else {
+			//assert(false);
+			static_assert(false, "Unsupported Meta type for buffer_t");
 		}
 
 		// Create buffer here to make use of named return value optimization.

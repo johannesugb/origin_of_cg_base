@@ -127,7 +127,7 @@ namespace cgb
 		static generic_buffer_meta create_from_data(const T& pData)
 		{
 			generic_buffer_meta result; 
-			result.mSize = num_elements(pData) * sizeof(first_or_only_element(pData)); 
+			result.mSize = how_many_elements(pData) * sizeof(first_or_only_element(pData)); 
 			return result; 
 		}
 
@@ -159,7 +159,7 @@ namespace cgb
 		static uniform_buffer_meta create_from_data(const T& pData)
 		{
 			uniform_buffer_meta result; 
-			result.mSize = num_elements(pData) * sizeof(first_or_only_element(pData)); 
+			result.mSize = how_many_elements(pData) * sizeof(first_or_only_element(pData)); 
 			return result; 
 		}
 
@@ -191,7 +191,7 @@ namespace cgb
 		static uniform_texel_buffer_meta create_from_data(const T& pData)
 		{
 			uniform_texel_buffer_meta result; 
-			result.mSize = num_elements(pData) * sizeof(first_or_only_element(pData)); 
+			result.mSize = how_many_elements(pData) * sizeof(first_or_only_element(pData)); 
 			return result; 
 		}
 
@@ -223,7 +223,7 @@ namespace cgb
 		static storage_buffer_meta create_from_data(const T& pData)
 		{
 			storage_buffer_meta result; 
-			result.mSize = num_elements(pData) * sizeof(first_or_only_element(pData)); 
+			result.mSize = how_many_elements(pData) * sizeof(first_or_only_element(pData)); 
 			return result; 
 		}
 
@@ -255,7 +255,7 @@ namespace cgb
 		static storage_texel_buffer_meta create_from_data(const T& pData)
 		{
 			storage_texel_buffer_meta result; 
-			result.mSize = num_elements(pData) * sizeof(first_or_only_element(pData)); 
+			result.mSize = how_many_elements(pData) * sizeof(first_or_only_element(pData)); 
 			return result; 
 		}
 
@@ -308,7 +308,7 @@ namespace cgb
 		{
 			vertex_buffer_meta result; 
 			result.mSizeOfOneElement = sizeof(first_or_only_element(pData)); 
-			result.mNumElements = num_elements(pData);
+			result.mNumElements = how_many_elements(pData);
 			return result; 
 		}
 
@@ -326,8 +326,7 @@ namespace cgb
 			return *this;
 		}
 
-#if defined _MSC_VER && !defined _CRT_USE_BUILTIN_OFFSETOF
-	#ifdef __cplusplus
+#if defined(_MSC_VER) && defined(__cplusplus)
 		/** Describe which part of an element's member gets mapped to which shader locaton,
 		 *	and let the compiler figure out offset and format.
 		 *	
@@ -343,13 +342,13 @@ namespace cgb
 		template <class T, class M> 
 		vertex_buffer_meta& describe_member_location(uint32_t pShaderLocation, M T::* pMember)
 		{
-			assert(std::find_if(std::begin(mMemberDescriptions), std::end(mMemberDescriptions), [loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mMemberDescriptions.end());
+			assert(std::find_if(std::begin(mOrderedMemberDescriptions), std::end(mOrderedMemberDescriptions), 
+				[loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mOrderedMemberDescriptions.end());
 			return describe_member_location(
 				pShaderLocation, 
 				((::size_t)&reinterpret_cast<char const volatile&>((((T*)0)->*pMember))),
 				format_for<M>());
 		}
-	#endif
 #endif
 
 	private:
@@ -400,7 +399,7 @@ namespace cgb
 		{
 			index_buffer_meta result; 
 			result.mSizeOfOneElement = sizeof(first_or_only_element(pData)); 
-			result.mNumElements = num_elements(pData);
+			result.mNumElements = how_many_elements(pData);
 			return result; 
 		}
 
@@ -455,7 +454,7 @@ namespace cgb
 		{
 			instance_buffer_meta result; 
 			result.mSizeOfOneElement = sizeof(first_or_only_element(pData)); 
-			result.mNumElements = num_elements(pData);
+			result.mNumElements = how_many_elements(pData);
 			return result; 
 		}
 
@@ -473,8 +472,7 @@ namespace cgb
 			return *this;
 		}
 
-#if defined _MSC_VER && !defined _CRT_USE_BUILTIN_OFFSETOF
-	#ifdef __cplusplus
+#if defined(_MSC_VER) && defined(__cplusplus)
 		/** Describe which part of an element's member gets mapped to which shader locaton,
 		 *	and let the compiler figure out offset and format.
 		 *	
@@ -490,13 +488,13 @@ namespace cgb
 		template <class T, class M> 
 		instance_buffer_meta& describe_member_location(uint32_t pShaderLocation, M T::* pMember)
 		{
-			assert(std::find_if(std::begin(mMemberDescriptions), std::end(mMemberDescriptions), [loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mMemberDescriptions.end());
+			assert(std::find_if(std::begin(mOrderedMemberDescriptions), std::end(mOrderedMemberDescriptions),
+				[loc = pShaderLocation](const buffer_element_member_meta& e) { return e.mLocation == loc; }) == mOrderedMemberDescriptions.end());
 			return describe_member_location(
 				pShaderLocation, 
 				((::size_t)&reinterpret_cast<char const volatile&>((((T*)0)->*pMember))),
 				format_for<M>());
 		}
-	#endif
 #endif
 
 	private:

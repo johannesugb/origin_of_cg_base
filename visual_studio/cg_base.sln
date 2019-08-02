@@ -22,6 +22,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_vrs", "examples\hello
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hello_vrs", "hello_vrs", "{DA546586-102A-4F46-A1CA-A1061BD584BA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vertex_buffers", "vertex_buffers", "{990D83B1-144C-4EC4-A22E-7D59170AE513}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vertex_buffers", "examples\vertex_buffers\vertex_buffers.vcxproj", "{8E7CC991-65C1-4B5B-9F18-F650A5378404}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_GL46|x64 = Debug_GL46|x64
@@ -86,6 +90,18 @@ Global
 		{E177242B-2397-4AD3-8501-2B3426D95736}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
 		{E177242B-2397-4AD3-8501-2B3426D95736}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
 		{E177242B-2397-4AD3-8501-2B3426D95736}.Release_Vulkan|x64.Build.0 = Release_Vulkan|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Debug_GL46|x64.ActiveCfg = Debug_GL46|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Debug_GL46|x64.Build.0 = Debug_GL46|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Debug_Vulkan|x64.ActiveCfg = Debug_Vulkan|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Debug_Vulkan|x64.Build.0 = Debug_Vulkan|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Publish_GL46|x64.ActiveCfg = Publish_GL46|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Publish_GL46|x64.Build.0 = Publish_GL46|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Publish_Vulkan|x64.ActiveCfg = Publish_Vulkan|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Publish_Vulkan|x64.Build.0 = Publish_Vulkan|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Release_GL46|x64.ActiveCfg = Release_GL46|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Release_GL46|x64.Build.0 = Release_GL46|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Release_Vulkan|x64.ActiveCfg = Release_Vulkan|x64
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404}.Release_Vulkan|x64.Build.0 = Release_Vulkan|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -98,6 +114,8 @@ Global
 		{F1107676-C46E-4071-94D7-A9C800FD92C2} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
 		{E177242B-2397-4AD3-8501-2B3426D95736} = {DA546586-102A-4F46-A1CA-A1061BD584BA}
 		{DA546586-102A-4F46-A1CA-A1061BD584BA} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
+		{990D83B1-144C-4EC4-A22E-7D59170AE513} = {42ECE233-FCB5-4525-BBC9-024CE075FC38}
+		{8E7CC991-65C1-4B5B-9F18-F650A5378404} = {990D83B1-144C-4EC4-A22E-7D59170AE513}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A8961D43-F08D-46E3-B3BB-29BA8AA39C3E}

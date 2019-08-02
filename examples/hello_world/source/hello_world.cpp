@@ -1,46 +1,7 @@
 #include "cg_base.h"
 
-class my_first_cgb_app : public cgb::cg_element
+class draw_a_triangle_app : public cgb::cg_element
 {
-	struct Vertex
-	{
-		glm::vec3 pos;
-		glm::vec3 color;
-		glm::vec2 texCoord;
-
-		static vk::VertexInputBindingDescription binding_description()
-		{
-			return vk::VertexInputBindingDescription()
-				.setBinding(0u)
-				.setStride(sizeof(Vertex))
-				.setInputRate(vk::VertexInputRate::eVertex);
-		}
-
-		static auto attribute_descriptions()
-		{
-			static std::array attribDescs = {
-				vk::VertexInputAttributeDescription()
-					.setBinding(0u)
-					.setLocation(0u)
-					.setFormat(vk::Format::eR32G32B32Sfloat)
-					.setOffset(static_cast<uint32_t>(offsetof(Vertex, pos)))
-				,
-				vk::VertexInputAttributeDescription()
-					.setBinding(0u)
-					.setLocation(1u)
-					.setFormat(vk::Format::eR32G32B32Sfloat)
-					.setOffset(static_cast<uint32_t>(offsetof(Vertex, color)))
-				,
-				vk::VertexInputAttributeDescription()
-					.setBinding(0u)
-					.setLocation(2u)
-					.setFormat(vk::Format::eR32G32Sfloat)
-					.setOffset(static_cast<uint32_t>(offsetof(Vertex, texCoord)))
-			};
-			return attribDescs;
-		}
-	};
-
 	/*void createGraphicsPipeline() {
         auto vertShaderCode = cgb::shader::create(cgb::shader_info::create("shaders/a_triangle.vert"));
         auto fragShaderCode = cgb::shader::create(cgb::shader_info::create("shaders/a_triangle.frag"));
@@ -159,12 +120,10 @@ class my_first_cgb_app : public cgb::cg_element
 	{
 		auto swapChainFormat = cgb::context().main_window()->swap_chain_image_format();
 		mPipeline = cgb::graphics_pipeline_for(
-			"shaders/a_triangle.vert",
-			"shaders/a_triangle.frag",
+			cgb::vertex_shader("shaders/a_triangle.vert"),
+			cgb::fragment_shader("shaders/a_triangle.frag"),
 			cgb::cfg::front_face::define_front_faces_to_be_clockwise(),
 			cgb::cfg::viewport_depth_scissors_config::from_window(cgb::context().main_window()),
-			//cgb::renderpass(cgb::renderpass_t::create_good_renderpass((VkFormat)cgb::context().main_window()->swap_chain_image_format().mFormat))
-			//std::get<std::shared_ptr<cgb::renderpass_t>>(cgb::context().main_window()->getrenderpass())
 			cgb::attachment::create_color(swapChainFormat)
 		);
 
@@ -258,7 +217,7 @@ int main()
 
 		// Create an instance of my_first_cgb_app which, in this case,
 		// contains the entire functionality of our application. 
-		auto element = my_first_cgb_app();
+		auto element = draw_a_triangle_app();
 
 		// Create a composition of:
 		//  - a timer

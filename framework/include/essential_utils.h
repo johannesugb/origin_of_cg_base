@@ -238,17 +238,17 @@ namespace cgb
 	};
 
 	template<typename T> 
-	typename std::enable_if<has_size_member<T>::value, uint32_t>::type num_elements(const T& t) {
+	typename std::enable_if<has_size_member<T>::value, uint32_t>::type how_many_elements(const T& t) {
 		return static_cast<uint32_t>(t.size());
 	}
 
 	template<typename T> 
-	typename std::enable_if<has_no_size_member<T>::value, uint32_t>::type num_elements(const T& t) {
+	typename std::enable_if<has_no_size_member<T>::value, uint32_t>::type how_many_elements(const T& t) {
 		return 1u;
 	}
 
-	template<typename T, typename E> 
-	typename std::enable_if<has_size_member<T>::value, const E&>::type first_or_only_element(const T& t) {
+	template<typename T> 
+	typename std::enable_if<has_size_member<T>::value, const typename T::value_type&>::type first_or_only_element(const T& t) {
 		return t[0];
 	}
 
