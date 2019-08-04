@@ -32,6 +32,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\examples\hello_vrs\assets\models\island\island_final.dae" />
     <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\blinnphong_nm.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\deferred\blinnphong_nm_geo.frag" />

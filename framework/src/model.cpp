@@ -95,7 +95,7 @@ namespace cgb
 			flags_for_assimp_importer |= aiProcess_CalcTangentSpace;
 
 		//flags_for_assimp_importer |= aiProcess_MakeLeftHanded | aiProcess_FlipUVs | aiProcess_FlipWindingOrder;
-		flags_for_assimp_importer |= aiProcess_FlipUVs;
+		flags_for_assimp_importer |= aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices;
 		return flags_for_assimp_importer;
 	}
 
@@ -173,6 +173,15 @@ namespace cgb
 		}
 
 		InitTransformationMatrices(scene->mRootNode, aiMatrix4x4());
+
+		int size = 0;
+		for (unsigned int i = 0; i < m_meshes.size(); i++) {
+			if (m_meshes[i].m_indices.size() != 0) {
+				m_meshes[size] = m_meshes[i];
+				size++;
+			}
+		}
+		m_meshes.resize(size);
 
 		return true;
 	}
@@ -342,17 +351,38 @@ namespace cgb
 
 		
 		// store the indices in a vector
-		size_t indicesCount = paiMesh->mNumFaces * kNumFaceVertices;
-		m_meshes[index].m_indices.reserve(indicesCount);
-		for (unsigned int i = 0; i < paiMesh->mNumFaces; i++)
-		{
-			// we're working with triangulated meshes only
-			const aiFace& Face = paiMesh->mFaces[i];
-			m_meshes[index].m_indices.push_back(Face.mIndices[0]);
-			m_meshes[index].m_indices.push_back(Face.mIndices[1]);
-			m_meshes[index].m_indices.push_back(Face.mIndices[2]);
-		}
+		//size_t indicesCount = paiMesh->mNumFaces * kNumFaceVertices;
+		//m_meshes[index].m_indices.reserve(indicesCount);
+		//for (unsigned int i = 0; i < paiMesh->mNumFaces; i++)
+		//{
+		//	// we're working with triangulated meshes only
+		//	const aiFace& Face = paiMesh->mFaces[i];
+		//	m_meshes[index].m_indices.push_back(Face.mIndices[0]);
+		//	m_meshes[index].m_indices.push_back(Face.mIndices[1]);
+		//	m_meshes[index].m_indices.push_back(Face.mIndices[2]);
+		//}
 
+		//std::vector<unsigned int> indices = std::vector<unsigned int>();
+		for (unsigned int j = 0; j < paiMesh->mNumFaces; j++)
+		{
+			const aiFace& face = paiMesh->mFaces[j];
+
+			//ignore non triangle "faces" (triangulate will make all faces with <= 3 edges, why a line is a face?)
+			if (face.mNumIndices < 3) {
+				continue;
+			}
+
+			if (face.mNumIndices > 3) {
+				continue;
+			}
+
+			for (unsigned int k = 0; k < 3; k++)
+			{
+				//indices.push_back(face.mIndices[k]);
+				m_meshes[index].m_indices.push_back(face.mIndices[k]);
+			}
+		}
+		//m_meshes[index].m_indices = indices;
 		m_meshes[index].m_patch_size = 3;
 
 		return true;

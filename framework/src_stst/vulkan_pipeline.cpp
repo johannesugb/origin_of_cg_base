@@ -226,8 +226,8 @@ namespace cgb {
 
 
 		vk::ShadingRatePaletteNV shadingRatePalette = {};
-		shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntries.size();
-		shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntries.data();
+		shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntriesAll.size();
+		shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntriesAll.data();
 
 		shadingRateImage.pShadingRatePalettes = &shadingRatePalette;
 
@@ -266,7 +266,7 @@ namespace cgb {
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		rasterizer.polygonMode = vk::PolygonMode::eFill;
 		rasterizer.lineWidth = 1.0f;
-		rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+		rasterizer.cullMode = vk::CullModeFlagBits::eNone;
 		rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
 
 		rasterizer.depthBiasEnable = VK_FALSE;

@@ -22,6 +22,9 @@
     <Filter Include="shaders\deferred">
       <UniqueIdentifier>{283c0252-727c-44d0-a924-6e83903278ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assets\models\island">
+      <UniqueIdentifier>{6a452659-15ef-44e9-92aa-2917fd6d6a89}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\examples\hello_vrs\shaders\triangle.frag">
@@ -128,6 +131,10 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="@(NativeLibs)" />
+    <None Include="@(NativeLibs)" />
+    <None Include="..\..\..\examples\hello_vrs\assets\models\island\island_final.dae">
+      <Filter>assets\models\island</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
