@@ -16,7 +16,6 @@ namespace cgb
 		, mDepthWriteConfig{ depth_write::enabled() } // enable depth writing
 		, mDepthBoundsConfig{ depth_bounds::disable() }
 		, mColorBlendingSettings{ color_blending_settings::disable_logic_operation() }
-		, mAlterConfigBeforeCreationFunction {}
 	{
 	}
 }

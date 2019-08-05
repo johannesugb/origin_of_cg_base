@@ -863,14 +863,13 @@ namespace cgb
 		// ============= SYNCHRONIZATION OBJECTS ===========
 		// Create them here, already.
 		auto numSyncObjects = pWindow->get_config_number_of_concurrent_frames();
-
-		auto fenceInfo = vk::FenceCreateInfo()
-			.setFlags(vk::FenceCreateFlagBits::eSignaled);
-		auto semaphoreInfo = vk::SemaphoreCreateInfo();
+		pWindow->mFences.reserve(numSyncObjects);
+		pWindow->mImageAvailableSemaphores.reserve(numSyncObjects);
+		pWindow->mRenderFinishedSemaphores.reserve(numSyncObjects);
 		for (uint32_t i = 0; i < numSyncObjects; ++i) {
-			pWindow->mFences.push_back(fence::create(fenceInfo));
-			pWindow->mImageAvailableSemaphores.push_back(semaphore::create(semaphoreInfo));
-			pWindow->mRenderFinishedSemaphores.push_back(semaphore::create(semaphoreInfo));
+			pWindow->mFences.push_back(fence_t::create(false)); // false => Create the fences in UNsignalled state
+			pWindow->mImageAvailableSemaphores.push_back(semaphore_t::create());
+			pWindow->mRenderFinishedSemaphores.push_back(semaphore_t::create());
 		}
 	}
 

@@ -274,7 +274,7 @@ namespace cgb
 			}
 			*this_as_variant() = std::get<std::shared_ptr<T>>(other);
 		}
-		owning_resource<T>& operator=(T&& r) { *this = std::move(r); return *this; }
+		owning_resource<T>& operator=(T&& r) { *this_as_variant() = std::move(r); return *this; }
 		owning_resource<T>& operator=(const T&) = delete;
 		owning_resource<T>& operator=(owning_resource<T>&& r) = default;
 		owning_resource<T>& operator=(const owning_resource<T>& other)

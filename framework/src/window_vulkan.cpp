@@ -239,7 +239,7 @@ namespace cgb
 	{
 		for (const auto& [frameId, sem] : mExtraSemaphoreDependencies) {
 			if (frameId == pFrameId) {
-				pSemaphores.push_back(sem.handle());
+				pSemaphores.push_back(sem->handle());
 			}
 		}
 	}
@@ -249,7 +249,7 @@ namespace cgb
 		// TODO: Fill mExtraRenderFinishedSemaphores with meaningful data
 		auto si = sync_index_for_frame();
 		for (auto i = si; i < si + mNumExtraRenderFinishedSemaphoresPerFrame; ++i) {
-			pSemaphores.push_back(mExtraRenderFinishedSemaphores[i].handle());
+			pSemaphores.push_back(mExtraRenderFinishedSemaphores[i]->handle());
 		}
 	}
 
@@ -264,8 +264,8 @@ namespace cgb
 
 		// Wait for the fence before proceeding, GPU -> CPU synchronization via fence
 		const auto& fence = fence_for_frame();
-		cgb::context().logical_device().waitForFences(1u, fence.handle_addr(), VK_TRUE, std::numeric_limits<uint64_t>::max());
-		result = cgb::context().logical_device().resetFences(1u, fence.handle_addr());
+		cgb::context().logical_device().waitForFences(1u, fence->handle_addr(), VK_TRUE, std::numeric_limits<uint64_t>::max());
+		result = cgb::context().logical_device().resetFences(1u, fence->handle_addr());
 		assert (vk::Result::eSuccess == result);
 
 		//
@@ -292,7 +292,7 @@ namespace cgb
 		cgb::context().logical_device().acquireNextImageKHR(
 			swap_chain(), // the swap chain from which we wish to acquire an image 
 			std::numeric_limits<uint64_t>::max(), // a timeout in nanoseconds for an image to become available. Using the maximum value of a 64 bit unsigned integer disables the timeout. [1]
-			imgAvailableSem.handle(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
+			imgAvailableSem->handle(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
 			nullptr,
 			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
 
@@ -308,7 +308,7 @@ namespace cgb
 
 		// ...and submit them. But also assemble several GPU -> GPU sync objects for both, inbound and outbound sync:
 		// Wait for some extra semaphores, if there are any; i.e. GPU -> GPU sync from acquire to the following submit
-		std::vector<vk::Semaphore> waitBeforeExecuteSemaphores = { imgAvailableSem.handle() };
+		std::vector<vk::Semaphore> waitBeforeExecuteSemaphores = { imgAvailableSem->handle() };
 		fill_in_extra_semaphore_dependencies_for_frame(waitBeforeExecuteSemaphores, current_frame());
 		// For every semaphore, also add a entry for the corresponding stage:
 		std::vector<vk::PipelineStageFlags> waitBeforeExecuteStages;
@@ -317,7 +317,7 @@ namespace cgb
 						[](const auto & s) { return vk::PipelineStageFlagBits::eColorAttachmentOutput; });
 		// Signal at least one semaphore when done, potentially also more.
 		const auto& renderFinishedSem = render_finished_semaphore_for_frame();
-		std::vector<vk::Semaphore> toSignalAfterExecute = { renderFinishedSem.handle() };
+		std::vector<vk::Semaphore> toSignalAfterExecute = { renderFinishedSem->handle() };
 		fill_in_extra_render_finished_semaphores_for_frame(toSignalAfterExecute, current_frame());
 		auto submitInfo = vk::SubmitInfo()
 			.setWaitSemaphoreCount(static_cast<uint32_t>(waitBeforeExecuteSemaphores.size()))
@@ -329,13 +329,13 @@ namespace cgb
 			.setPSignalSemaphores(toSignalAfterExecute.data());
 		// Finally, submit to the graphics queue.
 		// Also provide a fence for GPU -> CPU sync which will be waited on next time we need this frame (top of this method).
-		result = cgb::context().graphics_queue().handle().submit(1u, &submitInfo, fence.handle());
+		result = cgb::context().graphics_queue().handle().submit(1u, &submitInfo, fence->handle());
 		assert (vk::Result::eSuccess == result);
 
 		// Present as soon as the render finished semaphore has been signalled:
 		auto presentInfo = vk::PresentInfoKHR()
 			.setWaitSemaphoreCount(1u)
-			.setPWaitSemaphores(&renderFinishedSem.handle())
+			.setPWaitSemaphores(&renderFinishedSem->handle())
 			.setSwapchainCount(1u)
 			.setPSwapchains(&swap_chain())
 			.setPImageIndices(&imageIndex)

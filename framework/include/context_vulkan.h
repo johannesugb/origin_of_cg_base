@@ -69,14 +69,13 @@ namespace cgb
 			pCommandBuffer.handle().draw(pVertexBuffer.mVertexCount, 1u, 0u, 0u);                      
 		}
 
-		template <typename VBfr, typename IBfr>
-		void draw_indexed(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const VBfr& pVertexBuffer, const IBfr& pIndexBuffer)
+		void draw_indexed(const graphics_pipeline& pPipeline, const command_buffer& pCommandBuffer, const vertex_buffer_t& pVertexBuffer, const index_buffer_t& pIndexBuffer)
 		{
 			pCommandBuffer.handle().bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline->handle());
 			pCommandBuffer.handle().bindVertexBuffers(0u, { pVertexBuffer.buffer_handle() }, { 0 });
-			vk::IndexType indexType = to_vk_index_type(pIndexBuffer.config().sizeof_one_element());
+			vk::IndexType indexType = to_vk_index_type(pIndexBuffer.meta_data().sizeof_one_element());
 			pCommandBuffer.handle().bindIndexBuffer(pIndexBuffer.buffer_handle(), 0u, indexType);
-			pCommandBuffer.handle().drawIndexed(pIndexBuffer.config().num_elements(), 1u, 0u, 0u, 0u);
+			pCommandBuffer.handle().drawIndexed(pIndexBuffer.meta_data().num_elements(), 1u, 0u, 0u, 0u);
 			//pCommandBuffer.handle().drawIndexedIndirect()
 		}
 
@@ -287,7 +286,9 @@ namespace cgb
 	inline void vulkan::track_move<instance_buffer_t>(instance_buffer_t* thing, instance_buffer_t* other) { LOG_WARNING("TODO: implement instance_buffer_t handling in context::track_move."); }
 
 	template <>
-	inline void vulkan::track_destruction<generic_buffer_t>(generic_buffer_t* thing) { LOG_WARNING("TODO: implement generic_buffer_t handling in context::track_destruction."); }
+	inline void vulkan::track_destruction<generic_buffer_t>(generic_buffer_t* thing) {
+		LOG_WARNING("TODO: implement generic_buffer_t handling in context::track_destruction."); 
+	}
 	template <>
 	inline void vulkan::track_destruction<uniform_buffer_t>(uniform_buffer_t* thing) { LOG_WARNING("TODO: implement uniform_buffer_t handling in context::track_destruction."); }
 	template <>

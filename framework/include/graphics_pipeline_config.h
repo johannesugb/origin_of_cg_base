@@ -544,7 +544,6 @@ namespace cgb
 		cfg::color_blending_settings mColorBlendingSettings;
 		std::vector<binding_data> mResourceBindings;
 		std::vector<push_constant_binding_data> mPushConstantsBindings;
-		context_specific_function<void(graphics_pipeline_t&)> mAlterConfigBeforeCreationFunction;
 	};
 
 

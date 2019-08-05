@@ -79,6 +79,7 @@
     <ClCompile Include="..\..\framework\src\descriptor_pool_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\descriptor_set_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\essential_utils.cpp" />
+    <ClCompile Include="..\..\framework\src\fence_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\fixed_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\framebuffer_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\graphics_pipeline_config.cpp" />
@@ -96,16 +97,9 @@
     <ClCompile Include="..\..\framework\src\queue_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\renderpass_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\sampler_vulkan.cpp" />
+    <ClCompile Include="..\..\framework\src\semaphore_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\shader_binding_table_vulkan.cpp" />
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp" />
-    <ClCompile Include="..\..\framework\src\synchronization_vulkan.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\transform.cpp" />
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp" />
     <ClCompile Include="..\..\framework\src\vulkan_convenience_functions.cpp" />
@@ -274,6 +268,7 @@
     <ClInclude Include="..\..\framework\include\descriptor_set_vulkan.h" />
     <ClInclude Include="..\..\framework\include\device_queue_selection_strategy.h" />
     <ClInclude Include="..\..\framework\include\essential_utils.h" />
+    <ClInclude Include="..\..\framework\include\fence_vulkan.h" />
     <ClInclude Include="..\..\framework\include\fixed_update_timer.h" />
     <ClInclude Include="..\..\framework\include\framebuffer_vulkan.h" />
     <ClInclude Include="..\..\framework\include\image.h" />
@@ -295,6 +290,7 @@
     <ClInclude Include="..\..\framework\include\queue_vulkan.h" />
     <ClInclude Include="..\..\framework\include\renderpass_vulkan.h" />
     <ClInclude Include="..\..\framework\include\sampler_vulkan.h" />
+    <ClInclude Include="..\..\framework\include\semaphore_vulkan.h" />
     <ClInclude Include="..\..\framework\include\shader_binding_table_vulkan.h" />
     <ClInclude Include="..\..\framework\include\shader_type.h" />
     <ClInclude Include="..\..\framework\include\shader_vulkan.h" />
@@ -308,14 +304,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="..\..\framework\include\synchronization_vulkan.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Publish_Vulkan|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_GL46|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Vulkan|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\..\framework\include\timer_frame_type.h" />
     <ClInclude Include="..\..\framework\include\timer_interface.h" />

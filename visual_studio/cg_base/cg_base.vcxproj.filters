@@ -142,9 +142,6 @@
     <ClCompile Include="..\..\framework\src\varying_update_timer.cpp">
       <Filter>Source Files\application_structure_and_general_stuff\timers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\framework\src\synchronization_vulkan.cpp">
-      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\framework\src\shader_vulkan.cpp">
       <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClCompile>
@@ -218,6 +215,12 @@
       <Filter>Source Files\data_buffers_images</Filter>
     </ClCompile>
     <ClCompile Include="..\..\framework\src\binding_data_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\fence_vulkan.cpp">
+      <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\framework\src\semaphore_vulkan.cpp">
       <Filter>Source Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
@@ -369,9 +372,6 @@
     <ClInclude Include="..\..\framework\include\buffer.h">
       <Filter>Header Files\data_buffers_images</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\framework\include\synchronization_vulkan.h">
-      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\framework\include\window_opengl.h">
       <Filter>Header Files\context_and_context_specific_functionality\opengl46</Filter>
     </ClInclude>
@@ -479,6 +479,12 @@
     </ClInclude>
     <ClInclude Include="..\..\framework\include\attachment.h">
       <Filter>Header Files\data_buffers_images</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\semaphore_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\framework\include\fence_vulkan.h">
+      <Filter>Header Files\context_and_context_specific_functionality\vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

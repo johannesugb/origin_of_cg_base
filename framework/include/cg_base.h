@@ -26,6 +26,8 @@
 #include <condition_variable>
 #include <cstdlib>
 #include <typeindex>
+#include <type_traits>
+#include <utility>
 
 #include <stdio.h>
 #include <assert.h>
@@ -117,12 +119,13 @@
 #include "image_sampler_vulkan.h"
 #include "command_buffer_vulkan.h"
 #include "command_pool_vulkan.h"
-#include "synchronization_vulkan.h"
+#include "buffer_vulkan.h"
+#include "semaphore_vulkan.h"
+#include "fence_vulkan.h"
 #include "queue_vulkan.h"
 #include "renderpass_vulkan.h"
 #include "framebuffer_vulkan.h"
 #include "window_vulkan.h"
-#include "buffer_vulkan.h"
 #include "acceleration_structure_vulkan.h"
 #include "shader_vulkan.h"
 #include "binding_data_vulkan.h"
@@ -132,13 +135,13 @@
 #include "pipeline_vulkan.h"
 #include "shader_binding_table_vulkan.h"
 #include "bindings_vulkan.h"
+#include "vulkan_helper_functions.h"
 
 #include "imgui_impl_vulkan.h"
 
 #include "context_vulkan.h"
 #include "context.h"
 
-#include "vulkan_helper_functions.h"
 #include "vulkan_convenience_functions.h"
 
 // [1] Vulkan Tutorial, Rendering and presentation, https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation

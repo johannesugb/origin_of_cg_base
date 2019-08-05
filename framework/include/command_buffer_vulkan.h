@@ -8,6 +8,13 @@ namespace cgb // ========================== TODO/WIP ===========================
 	class command_buffer
 	{
 	public:
+		command_buffer() = default;
+		command_buffer(command_buffer&&) = default;
+		command_buffer(const command_buffer&) = delete;
+		command_buffer& operator=(command_buffer&&) = default;
+		command_buffer& operator=(const command_buffer&) = default;
+		~command_buffer() = default;
+
 		void begin_recording();
 		void end_recording();
 		void begin_render_pass(const vk::RenderPass& pRenderPass, const vk::Framebuffer& pFramebuffer, const vk::Offset2D& pOffset, const vk::Extent2D& pExtent);

@@ -33,21 +33,50 @@ class vertex_buffers_app : public cgb::cg_element
 		}
 	};
 
+	cgb::vertex_buffer mVertexBuffer;
+	cgb::index_buffer mIndexBuffer;
+
 	void initialize() override
 	{
+		cgb::buffer_t<cgb::generic_buffer_meta> b;
+		b.mTracker.setTrackee(b);
+		auto a = std::move(b);
+		cgb::generic_buffer x = std::move(a);
+
+
+		// Create my vertex data
 		const std::vector<Vertex> vertices = {
 		    {{ 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
 		    {{ 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
 		    {{-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}
 		};
-
-		auto vertexBuffer = cgb::create_and_fill<cgb::vertex_buffer_meta>(
+		std::optional<cgb::semaphore> vertexSemaphore;
+		mVertexBuffer = cgb::create_and_fill(
 			cgb::vertex_buffer_meta::create_from_data(vertices)
 					.describe_member_location(0, &Vertex::pos)
 					.describe_member_location(1, &Vertex::color),
 			cgb::memory_usage::device,
-			vertices.data()
+			vertices.data(),
+			&vertexSemaphore
 		);
+		if (vertexSemaphore) {
+			(*vertexSemaphore)->designated_queue()->handle().waitIdle();
+		}
+
+		const std::vector<uint16_t> indices = {
+			0, 1, 2, 2, 3, 0
+		};
+		std::optional<cgb::semaphore> indexSemaphore;
+		mIndexBuffer = cgb::create_and_fill(
+			cgb::index_buffer_meta::create_from_data(indices),
+			cgb::memory_usage::device,
+			indices.data(),
+			&indexSemaphore
+		);
+		if (indexSemaphore) {
+			(*indexSemaphore)->designated_queue()->handle().waitIdle();
+		}
+
 
 		auto swapChainFormat = cgb::context().main_window()->swap_chain_image_format();
 		mPipeline = cgb::graphics_pipeline_for(
@@ -76,7 +105,7 @@ class vertex_buffers_app : public cgb::cg_element
 			//cmdbfr.handle().draw(3u, 1u, 0u, 0u);
 			//cgb::context().draw_triangle(cgb::get(mPipeline), cmdbfr);
 			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
-			//cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
+			cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
 			//cgb::context().draw_indexed(mPipeline, cmdbfr, mModelVertices, mModelIndices);
 			cmdbfr.end_render_pass();
 

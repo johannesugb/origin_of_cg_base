@@ -1,17 +1,17 @@
 #pragma once
-#include "buffer_data.h"
-#include "synchronization_vulkan.h"
 
 namespace cgb
 {
+	class semaphore_t;
+
 	/** Represents a Vulkan buffer along with its assigned memory, holds the 
 	*	native handle and takes care about lifetime management of the native handles.
 	*/
 	template <typename Meta>
 	class buffer_t
 	{
-		//template <typename T>
-		//friend buffer_t<T> create(T pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties);
+		template <typename T>
+		friend cgb::owning_resource<buffer_t<T>> create(T pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, std::optional<vk::DescriptorType> pDescriptorType);
 
 	public:
 		buffer_t() = default;
@@ -30,16 +30,17 @@ namespace cgb
 		const auto& buffer_handle() const		{ return mBuffer.get(); }
 		const auto* buffer_handle_addr() const	{ return &mBuffer.get(); }
 		const auto& descriptor_info() const		{ return mDescriptorInfo; }
-		const auto& descriptor_type() const		{ return mDescriptorType; }
+		auto has_descriptor_type() const		{ return mDescriptorType.has_value(); }
+		auto descriptor_type() const			{ return mDescriptorType.value(); } //< might throw
 
-	public: // TODO: Make private
+	public:
 		Meta mMetaData;
 		vk::MemoryPropertyFlags mMemoryPropertyFlags;
 		vk::UniqueDeviceMemory mMemory;
 		vk::BufferUsageFlags mBufferUsageFlags;
 		vk::UniqueBuffer mBuffer;
 		vk::DescriptorBufferInfo mDescriptorInfo;
-		vk::DescriptorType mDescriptorType;
+		std::optional<vk::DescriptorType> mDescriptorType;
 		context_tracker<buffer_t<Meta>> mTracker;
 	};
 
@@ -48,7 +49,7 @@ namespace cgb
 	*	If different queues are being used, ownership has to be transferred explicitely.
 	*/
 	template <typename Meta>
-	buffer_t<Meta> create(Meta pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, vk::DescriptorType pDescriptorType)
+	cgb::owning_resource<buffer_t<Meta>> create(Meta pConfig, vk::BufferUsageFlags pBufferUsage, vk::MemoryPropertyFlags pMemoryProperties, std::optional<vk::DescriptorType> pDescriptorType = {})
 	{
 		auto bufferSize = pConfig.total_size();
 
@@ -92,21 +93,21 @@ namespace cgb
 			.setRange(b.size());
 		b.mDescriptorType = pDescriptorType;
 		b.mTracker.setTrackee(b);
-		return b;
+		return std::move(b);
 	}
 
 	// Forward-declare what comes after:
 	template <typename Meta>
-	cgb::buffer_t<Meta> create_and_fill(
+	cgb::owning_resource<buffer_t<Meta>> create_and_fill(
 		Meta pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
-		std::optional<semaphore>* pSemaphoreOut,
+		std::optional<owning_resource<semaphore_t>>* pSemaphoreOut,
 		vk::BufferUsageFlags pUsage);
 
 	// SET DATA
 	template <typename Meta>
-	std::optional<semaphore> fill(
+	std::optional<owning_resource<semaphore_t>> fill(
 		cgb::buffer_t<Meta>& target,
 		const void* pData)
 	{
@@ -138,14 +139,14 @@ namespace cgb
 		else {
 			assert(cgb::has_flag(memProps, vk::MemoryPropertyFlagBits::eDeviceLocal));
 
-			// Okay, we have to create a (somewhat temporary) staging buffer and transfer it to the GPU
+			// We have to create a (somewhat temporary) staging buffer and transfer it to the GPU
 			// "somewhat temporary" means that it can not be deleted in this function, but only
 			//						after the transfer operation has completed => handle via semaphore!
 			auto stagingBuffer = create_and_fill(
 				generic_buffer_meta::create_from_size(target.size()),
 				cgb::memory_usage::host_coherent, 
 				pData, 
-				nullptr, //< TODO: What about the semaphore???
+				nullptr, //< It's host coherent memory => no semaphore will be created.
 				vk::BufferUsageFlagBits::eTransferSrc);
 
 			auto commandBuffer = cgb::context().transfer_queue().pool().get_command_buffer(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -155,32 +156,48 @@ namespace cgb
 				.setSrcOffset(0u)
 				.setDstOffset(0u)
 				.setSize(bufferSize);
-			commandBuffer.handle().copyBuffer(stagingBuffer.buffer_handle(), target.buffer_handle(), { copyRegion });
+			commandBuffer.handle().copyBuffer(stagingBuffer->buffer_handle(), target.buffer_handle(), { copyRegion });
 
-			// That's all
+			// That's in terms of Vk-commands
 			commandBuffer.end_recording();
+
+			// Create a semaphore which can, or rather, MUST be used to wait for the results
+			auto transferCompleteSemaphore = semaphore_t::create();
+			transferCompleteSemaphore->set_designated_queue(cgb::context().transfer_queue()); //< Just store the info
+			// Let the semaphore take care of the buffer's lifetime:
 
 			auto submitInfo = vk::SubmitInfo{}
 				.setCommandBufferCount(1u)
-				.setPCommandBuffers(commandBuffer.handle_addr());
-			cgb::context().transfer_queue().handle().submit({ submitInfo }, nullptr); // not using fence... TODO: maybe use fence!
-			cgb::context().transfer_queue().handle().waitIdle();
+				.setPCommandBuffers(commandBuffer.handle_addr())
+				.setSignalSemaphoreCount(1u)
+				.setPSignalSemaphores(transferCompleteSemaphore->handle_addr());
+				
+			cgb::context().transfer_queue().handle().submit({ submitInfo }, nullptr); // TODO: Is there any situation where we would want to use a fence here?
 
 			// TODO: Handle has_flag(memProps, vk::MemoryPropertyFlagBits::eHostCached) case
 
-			return std::nullopt; // TODO: Create a semaphore FFS!
+			// Take care of the lifetime handling of the two buffers which 
+			// we may not delete yet, because they are still in use: 
+			//  - stagingBuffer, and
+			//  - commandBuffer
+			stagingBuffer.enable_shared_ownership(); //< Have to turn it into a shared_ptr, otherwise std::function won't accept it. (std::function doesn't accept move-only types)
+			transferCompleteSemaphore->set_custom_deleter([ 
+				ownedStagingBuffer{ std::move(stagingBuffer) },
+				ownedCommandBuffer{ std::move( std::make_shared<command_buffer>(std::move(commandBuffer)) ) } //< Same here, this is ugly
+			]() { /* Nothing to do here, the buffers' destructors will do the cleanup, the lambda is just holding them. */ });
+			return std::move(transferCompleteSemaphore);
 		}
 	}
 
 	// CREATE 
 	template <typename Meta>
-	cgb::buffer_t<Meta> create(
+	cgb::owning_resource<buffer_t<Meta>> create(
 		Meta pConfig,
 		cgb::memory_usage pMemoryUsage,
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
 		auto bufferSize = pConfig.total_size();
-		vk::DescriptorType descriptorType;
+		std::optional<vk::DescriptorType> descriptorType = {};
 		vk::MemoryPropertyFlags memoryFlags;
 
 		// We've got two major branches here: 
@@ -236,46 +253,41 @@ namespace cgb
 			pUsage |= vk::BufferUsageFlagBits::eIndexBuffer;
 			descriptorType = vk::DescriptorType::eUniformBuffer; // TODO: Does this make sense? Or is this maybe not applicable at all for index buffers?
 		}
-		else {
-			//assert(false);
-			static_assert(false, "Unsupported Meta type for buffer_t");
-		}
 
 		// Create buffer here to make use of named return value optimization.
 		// How it will be filled depends on where the memory is located at.
-		auto result = cgb::create(pConfig, pUsage, memoryFlags, descriptorType);
-		return result;
+		return cgb::create(pConfig, pUsage, memoryFlags, descriptorType);
 	}
 
-	/** Create multiple buffers */
-	template <typename Meta>
-	auto create_multiple(
-		int pNumBuffers,
-		Meta pConfig,
-		cgb::memory_usage pMemoryUsage,
-		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
-	{
-		std::vector<buffer_t<Meta>> bs;
-		bs.reserve(pNumBuffers);
-		for (int i = 0; i < pNumBuffers; ++i) {
-			bs.push_back(create(pConfig, pMemoryUsage, pUsage));
-		}
-		return bs;
-	}
+	///** Create multiple buffers */
+	//template <typename Meta>
+	//auto create_multiple(
+	//	int pNumBuffers,
+	//	Meta pConfig,
+	//	cgb::memory_usage pMemoryUsage,
+	//	vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
+	//{
+	//	std::vector<buffer_t<Meta>> bs;
+	//	bs.reserve(pNumBuffers);
+	//	for (int i = 0; i < pNumBuffers; ++i) {
+	//		bs.push_back(create(pConfig, pMemoryUsage, pUsage));
+	//	}
+	//	return bs;
+	//}
 
 	// CREATE AND FILL
 	template <typename Meta>
-	cgb::buffer_t<Meta> create_and_fill(
+	cgb::owning_resource<buffer_t<Meta>> create_and_fill(
 		Meta pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
-		std::optional<semaphore>* pSemaphoreOut = nullptr,
+		std::optional<owning_resource<semaphore_t>>* pSemaphoreOut = nullptr,
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
 		// Does NRVO also apply here? I hope so...
-		auto result = create(pConfig, pMemoryUsage, pUsage);
+		cgb::owning_resource<buffer_t<Meta>> result = create(pConfig, pMemoryUsage, pUsage);
 
-		auto semaphore = fill(result, pData);
+		auto semaphore = fill(static_cast<buffer_t<Meta>&>(result), pData);
 		if (semaphore.has_value()) {
 			// If we have a semaphore, we have to do something with it!
 			if (nullptr != pSemaphoreOut) {
@@ -286,6 +298,6 @@ namespace cgb
 			}
 		}
 		
-		return result;
+		return std::move(result);
 	}
 }

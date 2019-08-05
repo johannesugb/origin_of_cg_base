@@ -66,7 +66,7 @@ namespace cgb
 		// The native handle
 		vk::UniqueRenderPass mRenderPass;
 
-		//context_tracker<renderpass_t> mTracker;
+		context_tracker<renderpass_t> mTracker;
 	};
 
 	using renderpass = owning_resource<renderpass_t>;
