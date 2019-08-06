@@ -93,6 +93,9 @@ namespace cgb
 			flags_for_assimp_importer |= aiProcess_LimitBoneWeights;
 		if (modelLoaderFlags & MOLF_calcTangentSpace)
 			flags_for_assimp_importer |= aiProcess_CalcTangentSpace;
+		
+		if (modelLoaderFlags & MOLF_pretransformVertices)
+			flags_for_assimp_importer |= aiProcess_PreTransformVertices;
 
 		//flags_for_assimp_importer |= aiProcess_MakeLeftHanded | aiProcess_FlipUVs | aiProcess_FlipWindingOrder;
 		flags_for_assimp_importer |= aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices;

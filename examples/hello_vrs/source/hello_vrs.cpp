@@ -1487,7 +1487,7 @@ private:
 		//auto path = "assets/models/sponza/sponza_structure.obj";
 		auto path = "assets/models/island/island_final.dae";
 		auto transform = glm::scale(glm::vec3(1.01f));
-		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace;
+		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace | cgb::MOLF_pretransformVertices;
 		mSponzaModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
 		mSponzaModel->create_render_objects(mMaterialObjectResourceBundleLayout);
 

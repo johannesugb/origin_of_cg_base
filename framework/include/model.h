@@ -13,21 +13,23 @@ namespace cgb
 {
 	enum ModelLoaderFlags
 	{
-		MOLF_none = 0x00000000,
+		MOLF_none					= 0x00000000,
 		// Assimp flags
-		MOLF_triangulate = 0x000001,
-		MOLF_smoothNormals = 0x000002,
-		MOLF_faceNormals = 0x000004,
-		MOLF_flipUVs = 0x000008,
-		MOLF_limitBoneWeights = 0x000010,
-		MOLF_calcTangentSpace = 0x000020,
+		MOLF_triangulate			= 0x000001,
+		MOLF_smoothNormals			= 0x000002,
+		MOLF_faceNormals			= 0x000004,
+		MOLF_flipUVs				= 0x000008,
+		MOLF_limitBoneWeights		= 0x000010,
+		MOLF_calcTangentSpace		= 0x000020,
 		// vertex-data flags
-		MOLF_loadNormals = 0x010000,
-		MOLF_loadColors = 0x020000,
-		MOLF_loadTexCoords = 0x040000,
-		MOLF_loadTexCoords2 = 0x080000,
-		MOLF_loadTexCoords3 = 0x100000,
-		MOLF_loadBones = 0x200000,
+		MOLF_loadNormals			= 0x010000,
+		MOLF_loadColors				= 0x020000,
+		MOLF_loadTexCoords			= 0x040000,
+		MOLF_loadTexCoords2			= 0x080000,
+		MOLF_loadTexCoords3			= 0x100000,
+		MOLF_loadBones				= 0x200000,
+		// more flags
+		MOLF_pretransformVertices	= 0x400000,
 		// the default flags
 		MOLF_default = MOLF_triangulate | MOLF_smoothNormals | MOLF_limitBoneWeights,
 	};
