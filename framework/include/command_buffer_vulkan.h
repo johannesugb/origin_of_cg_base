@@ -12,7 +12,7 @@ namespace cgb // ========================== TODO/WIP ===========================
 		command_buffer(command_buffer&&) = default;
 		command_buffer(const command_buffer&) = delete;
 		command_buffer& operator=(command_buffer&&) = default;
-		command_buffer& operator=(const command_buffer&) = default;
+		command_buffer& operator=(const command_buffer&) = delete;
 		~command_buffer() = default;
 
 		void begin_recording();

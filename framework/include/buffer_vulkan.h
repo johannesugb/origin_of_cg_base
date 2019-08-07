@@ -180,10 +180,9 @@ namespace cgb
 			// we may not delete yet, because they are still in use: 
 			//  - stagingBuffer, and
 			//  - commandBuffer
-			stagingBuffer.enable_shared_ownership(); //< Have to turn it into a shared_ptr, otherwise std::function won't accept it. (std::function doesn't accept move-only types)
 			transferCompleteSemaphore->set_custom_deleter([ 
 				ownedStagingBuffer{ std::move(stagingBuffer) },
-				ownedCommandBuffer{ std::move( std::make_shared<command_buffer>(std::move(commandBuffer)) ) } //< Same here, this is ugly
+				ownedCommandBuffer{ std::move(commandBuffer) } //< Same here, this is ugly
 			]() { /* Nothing to do here, the buffers' destructors will do the cleanup, the lambda is just holding them. */ });
 			return std::move(transferCompleteSemaphore);
 		}

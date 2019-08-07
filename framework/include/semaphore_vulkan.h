@@ -22,6 +22,15 @@ namespace cgb
 		 */
 		semaphore_t& set_designated_queue(device_queue& _Queue);
 
+		/** Hand over control of another semaphore which this semaphore implicitly depends on.
+		 *	I.e. the dependent semaphore shall complete before this semaphore.
+		 */
+		semaphore_t& set_dependent_semaphore(owning_resource<semaphore_t> _DependentSemaphore)
+		{
+			mDependentSemaphore = std::make_unique<owning_resource<semaphore_t>>( std::move(_DependentSemaphore) );
+			return *this;
+		}
+
 		template <typename F>
 		semaphore_t& set_custom_deleter(F&& _Deleter) 
 		{
@@ -44,18 +53,18 @@ namespace cgb
 
 		// --- Some advanced features of a semaphore object ---
 
-		/** An optional dependant semaphore. This means: The dependant
+		/** An optional dependent semaphore. This means: The dependent
 		*	semaphore can be assumed to be finished when this semaphore
 		*	has finished.
 		*	The point here is that some internal function might wait on it,
 		*	that shall be somewhat opaque to the user in some cases.
-		*	The dependant semaphore child object ensures that the semaphore
+		*	The dependent semaphore child object ensures that the semaphore
 		*	does not get destructed prematurely.
 		*/
-		//std::optional<semaphore> mDependantSemaphore;
+		std::unique_ptr<owning_resource<semaphore_t>> mDependentSemaphore;
 
 		/** A custom deleter function called upon destruction of this semaphore */
-		std::optional<std::function<void()>> mCustomDeleter;
+		std::optional<cgb::unique_function<void()>> mCustomDeleter;
 	};
 
 	// Typedef for a variable representing an owner of a semaphore

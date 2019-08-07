@@ -338,4 +338,121 @@ namespace cgb
 	};
 
 
+
+
+
+
+	template<typename T>
+	class unique_function : protected std::function<T>
+	{
+	    template<typename Fn, typename En = void>
+	    struct wrapper;
+
+	    // specialization for CopyConstructible Fn
+	    template<typename Fn>
+	    struct wrapper<Fn, std::enable_if_t< std::is_copy_constructible<Fn>::value >>
+	    {
+	        Fn fn;
+
+	        template<typename... Args>
+	        auto operator()(Args&&... args) { return fn(std::forward<Args>(args)...); }
+	    };
+
+	    // specialization for MoveConstructible-only Fn
+	    template<typename Fn>
+	    struct wrapper<Fn, std::enable_if_t< !std::is_copy_constructible<Fn>::value
+											 && std::is_move_constructible<Fn>::value >>
+	    {
+	        Fn fn;
+
+	        wrapper(Fn fn) : fn(std::move(fn)) { }
+
+	        wrapper(wrapper&&) = default;
+	        wrapper& operator=(wrapper&&) = default;
+
+	        // these two functions are instantiated by std::function and are never called
+	        wrapper(const wrapper& rhs) : fn(const_cast<Fn&&>(rhs.fn)) { throw std::logic_error("never called"); } // hack to initialize fn for non-DefaultContructible types
+	        wrapper& operator=(const wrapper&) { throw std::logic_error("never called"); }
+
+			~wrapper() = default;
+
+	        template<typename... Args>
+	        auto operator()(Args&&... args) { return fn(std::forward<Args>(args)...); }
+	    };
+
+	    using base = std::function<T>;
+
+	public:
+		unique_function() = default;
+		unique_function(std::nullptr_t) : base(nullptr) {}
+		unique_function(const unique_function&) = default;
+		unique_function(unique_function&&) = default;
+
+		template<class Fn> 
+		unique_function(Fn f) : base( wrapper<Fn>{ std::move(f) }) {}
+
+		~unique_function() = default;
+
+		unique_function& operator=(const unique_function& other) = default;
+		unique_function& operator=(unique_function&& other) = default;
+		unique_function& operator=(std::nullptr_t)
+		{
+			base::operator=(nullptr); return *this;
+		}
+
+		template<typename Fn>
+	    unique_function& operator=(Fn&& f)
+	    { base::operator=(wrapper<Fn>{ std::forward<Fn>(f) }); return *this; }
+
+		template<typename Fn>
+	    unique_function& operator=(std::reference_wrapper<Fn> f)
+	    { base::operator=(wrapper<Fn>{ std::move(f) }); return *this; }
+
+		template<class Fn> 
+		Fn* target()
+		{ return &base::template target<wrapper<Fn>>()->fn; }
+
+		template<class Fn> 
+		Fn* target() const
+		{ return &base::template target<wrapper<Fn>>()->fn; }
+
+		template<class Fn> 
+		const std::type_info& target_type() const
+		{ return typeid(*target<Fn>()); }
+
+		using base::swap;
+	    using base::operator();
+		using base::operator bool;
+	};
+
+		
+	template< class R, class... Args >
+	static void swap( unique_function<R(Args...)> &lhs, unique_function<R(Args...)> &rhs )
+	{
+		lhs.swap(rhs);
+	}
+
+	template< class R, class... ArgTypes >
+	static bool operator==( const unique_function<R(ArgTypes...)>& f, std::nullptr_t )
+	{
+		return !f;
+	}
+
+	template< class R, class... ArgTypes >
+	static bool operator==( std::nullptr_t, const unique_function<R(ArgTypes...)>& f )
+	{
+		return !f;
+	}
+
+	template< class R, class... ArgTypes >
+	static bool operator!=( const unique_function<R(ArgTypes...)>& f, std::nullptr_t )
+	{
+		return static_cast<bool>(f);
+	}
+
+	template< class R, class... ArgTypes >
+	static bool operator!=( std::nullptr_t, const unique_function<R(ArgTypes...)>& f )
+	{
+		return static_cast<bool>(f);
+	}
 }
