@@ -16,15 +16,15 @@ namespace cgb
 		timer_frame_type tick();
 
 		float absolute_time() const override;
-		float frame_time() const override;
+		float time_since_start() const override;
 		float fixed_delta_time() const override;
 		float delta_time() const override;
 		float time_scale() const override;
-		double precise_absolute_time() const override;
-		double precise_frame_time() const override;
-		double precise_fixed_delta_time() const override;
-		double precise_delta_time() const override;
-		double precise_time_scale() const override;
+		double absolute_time_dp() const override;
+		double time_since_start_dp() const override;
+		double fixed_delta_time_dp() const override;
+		double delta_time_dp() const override;
+		double time_scale_dp() const override;
 
 	private:
 		double mStartTime;

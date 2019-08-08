@@ -161,21 +161,21 @@ namespace cgb
 		*	@param pCurrentFrameOffset	Leave at the default of 0 to request the image index for the current frame.
 		*								Specify a negative offset to refer to a previous frame.
 		*/
-		const auto& image_view_for_frame(int64_t pCurrentFrameOffset = 0) const {
+		const image_view_t& image_view_for_frame(int64_t pCurrentFrameOffset = 0) const {
 			return mSwapChainImageViews[image_index_for_frame(pCurrentFrameOffset)];
 		}
 		/** Returns the fence for the requested frame.
 		*	@param pCurrentFrameOffset	Leave at the default of 0 to request the image index for the current frame.
 		*								Specify a negative offset to refer to a previous frame.
 		*/
-		const auto& fence_for_frame(int64_t pCurrentFrameOffset = 0) const {
+		const fence_t& fence_for_frame(int64_t pCurrentFrameOffset = 0) const {
 			return mFences[sync_index_for_frame(pCurrentFrameOffset)];
 		}
 		/** Returns the "image available"-semaphore for the requested frame.
 		*	@param pCurrentFrameOffset	Leave at the default of 0 to request the image index for the current frame.
 		*								Specify a negative offset to refer to a previous frame.
 		*/
-		const auto& image_available_semaphore_for_frame(int64_t pCurrentFrameOffset = 0) const {
+		const semaphore_t& image_available_semaphore_for_frame(int64_t pCurrentFrameOffset = 0) const {
 			return mImageAvailableSemaphores[sync_index_for_frame(pCurrentFrameOffset)];
 		}
 		/** Returns the "render finished"-semaphore for the requested frame.
@@ -186,7 +186,15 @@ namespace cgb
 			return mRenderFinishedSemaphores[sync_index_for_frame(pCurrentFrameOffset)];
 		}
 
-		void set_extra_semaphore_dependency_for_frame(semaphore pSemaphore, uint64_t pFrameId);
+		/**	Add an extra semaphore to wait on for the given frame id.
+		 *	@param	pSemaphore		The semaphore to take ownership for and to set as dependency for a (future) frame.
+		 *	@param	pFrameId		The (future) frame-id which this semaphore shall be a dependency for.
+		 *							If the parameter is not set, the semaphore will be assigned to the current_frame()-id,
+		 *							which means for the next frame which will be rendered. The next frame which will be 
+		 *							rendered is the frame with the id current_frame(), assuming this function is called 
+		 *							before render_frame() is called.
+		 */
+		void set_extra_semaphore_dependency(semaphore pSemaphore, std::optional<uint64_t> pFrameId = {});
 
 		std::vector<semaphore> remove_all_extra_semaphore_dependencies_for_frame(uint64_t pFrameId);
 
@@ -274,7 +282,7 @@ namespace cgb
 		// Contains the extra semaphores to be signalled per frame
 		// The length of this vector will be: number_of_concurrent_frames() * mNumExtraSemaphoresPerFrame
 		// These semaphores will be signalled together with the mRenderFinishedSemaphores
-		std::vector<semaphore> mExtraRenderFinishedSemaphores;
+		std::deque<semaphore> mExtraRenderFinishedSemaphores;
 #pragma endregion
 
 		// The renderpass used for the back buffers

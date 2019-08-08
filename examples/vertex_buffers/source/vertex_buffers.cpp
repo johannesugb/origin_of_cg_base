@@ -2,83 +2,72 @@
 
 class vertex_buffers_app : public cgb::cg_element
 {
+	// Define a struct for our vertex input data:
 	struct Vertex {
-	    glm::vec2 pos;
+	    glm::vec3 pos;
 	    glm::vec3 color;
-
-		static vk::VertexInputBindingDescription binding_description()
-		{
-			return vk::VertexInputBindingDescription()
-				.setBinding(0u)
-				.setStride(sizeof(Vertex))
-				.setInputRate(vk::VertexInputRate::eVertex);
-		}
-
-		static auto attribute_descriptions()
-		{
-			static std::array attribDescs = {
-				vk::VertexInputAttributeDescription()
-					.setBinding(0u)
-					.setLocation(0u)
-					.setFormat(vk::Format::eR32G32B32Sfloat)
-					.setOffset(static_cast<uint32_t>(offsetof(Vertex, pos)))
-				,
-				vk::VertexInputAttributeDescription()
-					.setBinding(0u)
-					.setLocation(1u)
-					.setFormat(vk::Format::eR32G32B32Sfloat)
-					.setOffset(static_cast<uint32_t>(offsetof(Vertex, color)))
-			};
-			return attribDescs;
-		}
 	};
 
-	cgb::vertex_buffer mVertexBuffer;
+	// Vertex data for drawing a pyramid:
+	const std::vector<Vertex> mVertexData = {
+		// pyramid front
+		{{ 0.0f, -0.5f, 0.5f},  {1.0f, 0.0f, 0.0f}},
+		{{ 0.3f,  0.5f, 0.2f},  {0.5f, 0.5f, 0.5f}},
+		{{-0.3f,  0.5f, 0.2f},  {0.5f, 0.5f, 0.5f}},
+		// pyramid right
+		{{ 0.0f, -0.5f, 0.5f},  {1.0f, 0.0f, 0.0f}},
+		{{ 0.3f,  0.5f, 0.8f},  {0.6f, 0.6f, 0.6f}},
+		{{ 0.3f,  0.5f, 0.2f},  {0.6f, 0.6f, 0.6f}},
+		// pyramid back
+		{{ 0.0f, -0.5f, 0.5f},  {1.0f, 0.0f, 0.0f}},
+		{{-0.3f,  0.5f, 0.8f},  {0.5f, 0.5f, 0.5f}},
+		{{ 0.3f,  0.5f, 0.8f},  {0.5f, 0.5f, 0.5f}},
+		// pyramid left
+		{{ 0.0f, -0.5f, 0.5f},  {1.0f, 0.0f, 0.0f}},
+		{{-0.3f,  0.5f, 0.2f},  {0.4f, 0.4f, 0.4f}},
+		{{-0.3f,  0.5f, 0.8f},  {0.4f, 0.4f, 0.4f}},
+	};
+
+	// Indices for the faces (triangles) of the pyramid:
+	const std::vector<uint16_t> mIndices = {
+		 0, 1, 2,  3, 4, 5,  6, 7, 8,  9, 10, 11
+	};
+
+	std::vector<cgb::vertex_buffer> mVertexBuffers;
 	cgb::index_buffer mIndexBuffer;
 
 	void initialize() override
 	{
-		cgb::buffer_t<cgb::generic_buffer_meta> b;
-		b.mTracker.setTrackee(b);
-		auto a = std::move(b);
-		cgb::generic_buffer x = std::move(a);
-
-
-		// Create my vertex data
-		const std::vector<Vertex> vertices = {
-		    {{ 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		    {{ 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
-		    {{-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}
-		};
-		std::optional<cgb::semaphore> vertexSemaphore;
-		mVertexBuffer = cgb::create_and_fill(
-			cgb::vertex_buffer_meta::create_from_data(vertices)
-					.describe_member_location(0, &Vertex::pos)
-					.describe_member_location(1, &Vertex::color),
-			cgb::memory_usage::device,
-			vertices.data(),
-			&vertexSemaphore
-		);
-		if (vertexSemaphore) {
-			(*vertexSemaphore)->designated_queue()->handle().waitIdle();
+		// Create vertex buffers, but don't upload vertices yet; we'll do that in the render() method.
+		// Create multiple vertex buffers because we'll update the data every frame and frames run concurrently.
+		mVertexBuffers.reserve(cgb::context().main_window()->number_of_concurrent_frames()); // TODO: Comment and it will crash!
+		for (size_t i = 0; i < cgb::context().main_window()->number_of_concurrent_frames(); ++i) {
+			mVertexBuffers.push_back(
+				cgb::create(
+					cgb::vertex_buffer_meta::create_from_data(mVertexData)
+						.describe_member_location(0, &Vertex::pos)
+						.describe_member_location(1, &Vertex::color),
+					cgb::memory_usage::device
+				)
+			);
 		}
 
-		const std::vector<uint16_t> indices = {
-			0, 1, 2, 2, 3, 0
-		};
-		std::optional<cgb::semaphore> indexSemaphore;
+		// Create and upload the indices now, since we won't change them ever:
 		mIndexBuffer = cgb::create_and_fill(
-			cgb::index_buffer_meta::create_from_data(indices),
+			cgb::index_buffer_meta::create_from_data(mIndices),
+			// Where to put our memory? => On the device
 			cgb::memory_usage::device,
-			indices.data(),
-			&indexSemaphore
+			// Pass pointer to the data:
+			mIndices.data(),
+			// Handle the semaphore, if one gets created (which will happen 
+			// since we've requested to upload the buffer to the device)
+			[] (auto _Semaphore) { 
+				cgb::context().main_window()->set_extra_semaphore_dependency(std::move(_Semaphore)); 
+			}
 		);
-		if (indexSemaphore) {
-			(*indexSemaphore)->designated_queue()->handle().waitIdle();
-		}
-
 
 		auto swapChainFormat = cgb::context().main_window()->swap_chain_image_format();
+		// Create our rasterization graphics pipeline with the required configuration:
 		mPipeline = cgb::graphics_pipeline_for(
 			cgb::vertex_input_binding(0, 0, &Vertex::pos),
 			cgb::vertex_input_binding(0, 1, &Vertex::color),
@@ -105,7 +94,7 @@ class vertex_buffers_app : public cgb::cg_element
 			//cmdbfr.handle().draw(3u, 1u, 0u, 0u);
 			//cgb::context().draw_triangle(cgb::get(mPipeline), cmdbfr);
 			//cgb::context().draw_vertices(mPipeline, cmdbfr, mVertexBuffer);
-			cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffer, mIndexBuffer);
+			cgb::context().draw_indexed(mPipeline, cmdbfr, mVertexBuffers[i], mIndexBuffer);
 			//cgb::context().draw_indexed(mPipeline, cmdbfr, mModelVertices, mModelIndices);
 			cmdbfr.end_render_pass();
 
@@ -117,6 +106,29 @@ class vertex_buffers_app : public cgb::cg_element
 
 	void render() override
 	{
+		// Modify our vertex data according to our rotation animation and upload this frame's vertex data:
+		auto rotAngle = glm::radians(90.0f) * cgb::time().time_since_start();
+		auto rotMatrix = glm::rotate(rotAngle, glm::vec3(0.f, 1.f, 0.f));
+		auto translateZ = glm::translate(glm::vec3{ 0.0f, 0.0f, -0.5f });
+		auto invTranslZ = glm::inverse(translateZ);
+
+		std::vector<Vertex> vertexDataCurrentFrame;
+		for (const Vertex& vtx : mVertexData) {
+			glm::vec4 origPos{ vtx.pos, 1.0f };
+			vertexDataCurrentFrame.push_back({
+				glm::vec3(invTranslZ * rotMatrix * translateZ * origPos),
+				vtx.color
+			});
+		}
+
+		cgb::fill(
+			mVertexBuffers[cgb::context().main_window()->sync_index_for_frame()],
+			vertexDataCurrentFrame.data(), 
+			[] (auto _Semaphore) { 
+				cgb::context().main_window()->set_extra_semaphore_dependency(std::move(_Semaphore)); 
+			}
+		);
+
 		auto bufferIndex = cgb::context().main_window()->image_index_for_frame();
 		//auto& lol = cgb::context().main_window()->backbuffer_at_index(cgb::context().main_window()->image_index_for_frame(cgb::context().main_window()->current_frame()));
 		//LOG_INFO(fmt::format("Current Frame's back buffer id: {}", fmt::ptr(&lol.handle())));

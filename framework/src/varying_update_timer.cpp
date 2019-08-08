@@ -26,7 +26,7 @@ namespace cgb
 		return static_cast<float>(mAbsTime);
 	}
 
-	float varying_update_timer::frame_time() const
+	float varying_update_timer::time_since_start() const
 	{
 		return static_cast<float>(mTimeSinceStart);
 	}
@@ -46,27 +46,27 @@ namespace cgb
 		return 1.0f;
 	}
 
-	double varying_update_timer::precise_absolute_time() const
+	double varying_update_timer::absolute_time_dp() const
 	{
 		return mAbsTime;
 	}
 
-	double varying_update_timer::precise_frame_time() const
+	double varying_update_timer::time_since_start_dp() const
 	{
 		return mTimeSinceStart;
 	}
 
-	double varying_update_timer::precise_fixed_delta_time() const
+	double varying_update_timer::fixed_delta_time_dp() const
 	{
 		return mDeltaTime;
 	}
 
-	double varying_update_timer::precise_delta_time() const
+	double varying_update_timer::delta_time_dp() const
 	{
 		return mDeltaTime;
 	}
 
-	double varying_update_timer::precise_time_scale() const
+	double varying_update_timer::time_scale_dp() const
 	{
 		return 1.0;
 	}

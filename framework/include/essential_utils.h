@@ -339,9 +339,6 @@ namespace cgb
 
 
 
-
-
-
 	template<typename T>
 	class unique_function : protected std::function<T>
 	{

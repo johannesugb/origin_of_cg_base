@@ -20,4 +20,7 @@
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\examples\vertex_buffers\source\vulkan.hpp" />
+  </ItemGroup>
 </Project>

@@ -38,6 +38,9 @@
     <None Include="..\..\..\examples\vertex_buffers\source\color.frag" />
     <None Include="..\..\..\examples\vertex_buffers\source\passthrough.vert" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\examples\vertex_buffers\source\vulkan.hpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{8e7cc991-65c1-4b5b-9f18-f650a5378404}</ProjectGuid>

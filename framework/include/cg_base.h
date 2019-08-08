@@ -3,6 +3,7 @@
 
 // ------ commonly used stuff from the standard library ------
 #include <vector>
+#include <deque>
 #include <array>
 #include <string>
 #include <string_view>
@@ -83,8 +84,8 @@
 
 // -------------------- CG-Base includes --------------------
 #include "string_utils.h"
-#include "essential_utils.h"
 #include "log.h"
+#include "essential_utils.h"
 #include "memory_usage.h"
 #include "context_state.h"
 #include "context_tracker.h"
@@ -119,9 +120,9 @@
 #include "image_sampler_vulkan.h"
 #include "command_buffer_vulkan.h"
 #include "command_pool_vulkan.h"
-#include "buffer_vulkan.h"
 #include "semaphore_vulkan.h"
 #include "fence_vulkan.h"
+#include "buffer_vulkan.h"
 #include "queue_vulkan.h"
 #include "renderpass_vulkan.h"
 #include "framebuffer_vulkan.h"

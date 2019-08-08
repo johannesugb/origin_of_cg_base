@@ -212,9 +212,12 @@ namespace cgb
 		return mNumberOfConcurrentFramesGetter();
 	}
 
-	void window::set_extra_semaphore_dependency_for_frame(semaphore pSemaphore, uint64_t pFrameId)
+	void window::set_extra_semaphore_dependency(semaphore pSemaphore, std::optional<uint64_t> pFrameId)
 	{
-		mExtraSemaphoreDependencies.emplace_back(pFrameId, std::move(pSemaphore));
+		if (!pFrameId.has_value()) {
+			pFrameId = current_frame();
+		}
+		mExtraSemaphoreDependencies.emplace_back(pFrameId.value(), std::move(pSemaphore));
 	}
 
 	std::vector<semaphore> window::remove_all_extra_semaphore_dependencies_for_frame(uint64_t pFrameId)
@@ -264,9 +267,13 @@ namespace cgb
 
 		// Wait for the fence before proceeding, GPU -> CPU synchronization via fence
 		const auto& fence = fence_for_frame();
-		cgb::context().logical_device().waitForFences(1u, fence->handle_addr(), VK_TRUE, std::numeric_limits<uint64_t>::max());
-		result = cgb::context().logical_device().resetFences(1u, fence->handle_addr());
+		cgb::context().logical_device().waitForFences(1u, fence.handle_addr(), VK_TRUE, std::numeric_limits<uint64_t>::max());
+		result = cgb::context().logical_device().resetFences(1u, fence.handle_addr());
 		assert (vk::Result::eSuccess == result);
+
+		// At this point we are certain that frame which used the current fence before is done.
+		//  => Clean up the resources of that previous frame!
+		remove_all_extra_semaphore_dependencies_for_frame(current_frame() - number_of_concurrent_frames());
 
 		//
 		//
@@ -292,7 +299,7 @@ namespace cgb
 		cgb::context().logical_device().acquireNextImageKHR(
 			swap_chain(), // the swap chain from which we wish to acquire an image 
 			std::numeric_limits<uint64_t>::max(), // a timeout in nanoseconds for an image to become available. Using the maximum value of a 64 bit unsigned integer disables the timeout. [1]
-			imgAvailableSem->handle(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
+			imgAvailableSem.handle(), // The next two parameters specify synchronization objects that are to be signaled when the presentation engine is finished using the image [1]
 			nullptr,
 			&imageIndex); // a variable to output the index of the swap chain image that has become available. The index refers to the VkImage in our swapChainImages array. We're going to use that index to pick the right command buffer. [1]
 
@@ -308,7 +315,7 @@ namespace cgb
 
 		// ...and submit them. But also assemble several GPU -> GPU sync objects for both, inbound and outbound sync:
 		// Wait for some extra semaphores, if there are any; i.e. GPU -> GPU sync from acquire to the following submit
-		std::vector<vk::Semaphore> waitBeforeExecuteSemaphores = { imgAvailableSem->handle() };
+		std::vector<vk::Semaphore> waitBeforeExecuteSemaphores = { imgAvailableSem.handle() };
 		fill_in_extra_semaphore_dependencies_for_frame(waitBeforeExecuteSemaphores, current_frame());
 		// For every semaphore, also add a entry for the corresponding stage:
 		std::vector<vk::PipelineStageFlags> waitBeforeExecuteStages;
@@ -329,7 +336,7 @@ namespace cgb
 			.setPSignalSemaphores(toSignalAfterExecute.data());
 		// Finally, submit to the graphics queue.
 		// Also provide a fence for GPU -> CPU sync which will be waited on next time we need this frame (top of this method).
-		result = cgb::context().graphics_queue().handle().submit(1u, &submitInfo, fence->handle());
+		result = cgb::context().graphics_queue().handle().submit(1u, &submitInfo, fence.handle());
 		assert (vk::Result::eSuccess == result);
 
 		// Present as soon as the render finished semaphore has been signalled:

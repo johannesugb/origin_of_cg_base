@@ -2,8 +2,6 @@
 
 namespace cgb
 {
-	class semaphore_t;
-
 	/** Represents a Vulkan buffer along with its assigned memory, holds the 
 	*	native handle and takes care about lifetime management of the native handles.
 	*/
@@ -102,13 +100,13 @@ namespace cgb
 		Meta pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
-		std::optional<owning_resource<semaphore_t>>* pSemaphoreOut,
+		std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler,
 		vk::BufferUsageFlags pUsage);
 
 	// SET DATA
 	template <typename Meta>
-	std::optional<owning_resource<semaphore_t>> fill(
-		cgb::buffer_t<Meta>& target,
+	std::optional<owning_resource<semaphore_t>> fill_and_get_semaphore(
+		const cgb::buffer_t<Meta>& target,
 		const void* pData)
 	{
 		auto bufferSize = static_cast<vk::DeviceSize>(target.size());
@@ -182,11 +180,47 @@ namespace cgb
 			//  - commandBuffer
 			transferCompleteSemaphore->set_custom_deleter([ 
 				ownedStagingBuffer{ std::move(stagingBuffer) },
-				ownedCommandBuffer{ std::move(commandBuffer) } //< Same here, this is ugly
+				ownedCommandBuffer{ std::move(commandBuffer) } 
 			]() { /* Nothing to do here, the buffers' destructors will do the cleanup, the lambda is just holding them. */ });
 			return std::move(transferCompleteSemaphore);
 		}
 	}
+
+	template <typename Meta>
+	void fill(
+		const cgb::buffer_t<Meta>& target,
+		const void* pData,
+		std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)
+	{
+		auto semaphore = fill_and_get_semaphore(target, pData);
+		if (semaphore.has_value()) {
+			// If we got a semaphore back from `fill_and_get_semaphore`, we have to do something with it!
+			if (pSemaphoreHandler) { // Did the user provide a handler?
+				pSemaphoreHandler( std::move(*semaphore) ); // Transfer ownership and be done with it
+			}
+			else {
+				if (semaphore.value()->has_designated_queue()) {
+					LOG_WARNING("No semaphore handler was provided but a semaphore emerged. Will block the queue via waitIdle until the operation has completed.");
+					semaphore.value()->designated_queue()->handle().waitIdle();
+				}
+				else {
+					LOG_WARNING("No semaphore handler was provided but a semaphore emerged. Will block the device via waitIdle until the operation has completed.");
+					cgb::context().logical_device().waitIdle();
+				}
+			}
+		}
+	}
+
+	// For convenience:
+
+	inline void fill(const generic_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)			{ fill<generic_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
+	inline void fill(const uniform_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)			{ fill<uniform_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
+	inline void fill(const uniform_texel_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)	{ fill<uniform_texel_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
+	inline void fill(const storage_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)			{ fill<storage_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
+	inline void fill(const storage_texel_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)	{ fill<storage_texel_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
+	inline void fill(const vertex_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)			{ fill<vertex_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
+	inline void fill(const index_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)			{ fill<index_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
+	inline void fill(const instance_buffer_t& target, const void* pData, std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr)			{ fill<instance_buffer_meta>(target, pData, std::move(pSemaphoreHandler)); }
 
 	// CREATE 
 	template <typename Meta>
@@ -280,23 +314,11 @@ namespace cgb
 		Meta pConfig, 
 		cgb::memory_usage pMemoryUsage, 
 		const void* pData, 
-		std::optional<owning_resource<semaphore_t>>* pSemaphoreOut = nullptr,
+		std::function<void(owning_resource<semaphore_t>)> pSemaphoreHandler = nullptr,
 		vk::BufferUsageFlags pUsage = vk::BufferUsageFlags())
 	{
-		// Does NRVO also apply here? I hope so...
 		cgb::owning_resource<buffer_t<Meta>> result = create(pConfig, pMemoryUsage, pUsage);
-
-		auto semaphore = fill(static_cast<buffer_t<Meta>&>(result), pData);
-		if (semaphore.has_value()) {
-			// If we have a semaphore, we have to do something with it!
-			if (nullptr != pSemaphoreOut) {
-				*pSemaphoreOut = std::move(*semaphore);
-			}
-			else {
-				LOG_ERROR("An unhandled semaphore emerged in create_and_fill. You have to take care of it!");
-			}
-		}
-		
+		fill(static_cast<const cgb::buffer_t<Meta>&>(result), pData, std::move(pSemaphoreHandler));
 		return std::move(result);
 	}
 }
