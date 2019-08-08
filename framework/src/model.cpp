@@ -13,6 +13,9 @@
 #include "MaterialData.h"
 #include "VertexAttribLocation.h"
 
+#include <string>
+#include<iostream>
+
 namespace cgb
 {
 	const char* Model::kIndent = "    ";
@@ -98,7 +101,7 @@ namespace cgb
 			flags_for_assimp_importer |= aiProcess_PreTransformVertices;
 
 		//flags_for_assimp_importer |= aiProcess_MakeLeftHanded | aiProcess_FlipUVs | aiProcess_FlipWindingOrder;
-		flags_for_assimp_importer |= aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices;
+		flags_for_assimp_importer |= aiProcess_FlipUVs;
 		return flags_for_assimp_importer;
 	}
 
@@ -109,6 +112,10 @@ namespace cgb
 		Assimp::Importer importer;
 		const auto assimp_importer_flags = CompileAssimpImportFlags(modelLoaderFlags);
 		const aiScene* scene = importer.ReadFile(path.c_str(), assimp_importer_flags);
+		if (!scene) {
+			std::string error("Failed parsing mesh: ");
+			throw std::runtime_error(error + importer.GetErrorString());
+		}
 		return PostLoadProcessing(importer, scene, &path);
 	}
 

@@ -49,7 +49,7 @@ namespace cgb
 			stbi_uc* pixels = stbi_load(complete_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 			if (!pixels) {
-				LOG_ERROR("Failed to load LDR image from path [%s]", path.c_str());
+				LOG_ERROR("Failed to load LDR image from path [%s]", complete_path.c_str());
 			}
 
 			// TODO validate channels set correct channels on texture, currently default of texture is used!

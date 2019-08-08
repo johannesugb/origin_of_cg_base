@@ -986,9 +986,8 @@ private:
 			renderObjects.push_back(sponzaRenderObject.get());
 		}
 		for (auto parallelPipesRenderObject : mParallelPipesModel->get_render_objects()) {
-			renderObjects.push_back(parallelPipesRenderObject.get());
+			//renderObjects.push_back(parallelPipesRenderObject.get());
 		}
-
 		//cgb::vulkan_context::instance().currentFrame = oldFrameIdx;
 
 #if DEFERRED_SHADING
@@ -1487,7 +1486,7 @@ private:
 		//auto path = "assets/models/sponza/sponza_structure.obj";
 		auto path = "assets/models/island/island_final.dae";
 		auto transform = glm::scale(glm::vec3(1.01f));
-		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace | cgb::MOLF_pretransformVertices;
+		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace;
 		mSponzaModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
 		mSponzaModel->create_render_objects(mMaterialObjectResourceBundleLayout);
 
