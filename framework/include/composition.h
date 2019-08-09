@@ -218,6 +218,30 @@ namespace cgb
 					
 					// 7. render_gui
 					thiz->mExecutor.execute_render_guis(thiz->mElements);
+
+					// Gather all the command buffers per window
+					std::unordered_map<window*, std::vector<std::reference_wrapper<const cgb::command_buffer>>> toRender;
+					for (auto& e : thiz->mElements)	{
+						for (auto [cb, wnd] : e->mSubmittedCommandBufferReferences) {
+							if (nullptr == wnd) {
+								wnd = cgb::context().main_window();
+							}
+							toRender[wnd].push_back(cb);
+						}
+					}
+					// Render per window
+					for (auto& [wnd, cbs] : toRender) {
+						wnd->render_frame(std::move(cbs));
+					}
+					// Transfer ownership of the command buffers in the elements' mSubmittedCommandBufferInstances to the respective window
+					for (auto& e : thiz->mElements)	{
+						for (auto& [cb, wnd] : e->mSubmittedCommandBufferInstances) {
+							wnd->set_one_time_submit_command_buffer(std::move(cb), wnd->current_frame() - 1);
+						}
+						// Also, cleanup the elements:
+						e->mSubmittedCommandBufferReferences.clear();
+						e->mSubmittedCommandBufferInstances.clear();
+					}
 				}
 				else
 				{

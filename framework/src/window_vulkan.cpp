@@ -220,6 +220,14 @@ namespace cgb
 		mExtraSemaphoreDependencies.emplace_back(pFrameId.value(), std::move(pSemaphore));
 	}
 
+	void window::set_one_time_submit_command_buffer(command_buffer pCommandBuffer, std::optional<uint64_t> pFrameId)
+	{
+		if (!pFrameId.has_value()) {
+			pFrameId = current_frame();
+		}
+		mOneTimeSubmitCommandBuffers.emplace_back(pFrameId.value(), std::move(pCommandBuffer));
+	}
+
 	std::vector<semaphore> window::remove_all_extra_semaphore_dependencies_for_frame(uint64_t pFrameId)
 	{
 		// Find all to remove
@@ -236,6 +244,24 @@ namespace cgb
 		// Erase and return
 		mExtraSemaphoreDependencies.erase(to_remove, std::end(mExtraSemaphoreDependencies));
 		return moved_semaphores;
+	}
+
+	std::vector<command_buffer> window::remove_all_one_time_submit_command_buffers_for_frame(uint64_t pFrameId)
+	{
+		// Find all to remove
+		auto to_remove = std::remove_if(
+			std::begin(mOneTimeSubmitCommandBuffers), std::end(mOneTimeSubmitCommandBuffers),
+			[frameId = pFrameId](const auto& tpl) {
+				return std::get<uint64_t>(tpl) == frameId;
+			});
+		// return ownership of all the command_buffers to remove to the caller
+		std::vector<command_buffer> moved_command_buffers;
+		for (decltype(to_remove) it = to_remove; it != std::end(mOneTimeSubmitCommandBuffers); ++it) {
+			moved_command_buffers.push_back(std::move(std::get<command_buffer>(*it)));
+		}
+		// Erase and return
+		mOneTimeSubmitCommandBuffers.erase(to_remove, std::end(mOneTimeSubmitCommandBuffers));
+		return moved_command_buffers;
 	}
 
 	void window::fill_in_extra_semaphore_dependencies_for_frame(std::vector<vk::Semaphore>& pSemaphores, uint64_t pFrameId)
@@ -261,7 +287,7 @@ namespace cgb
 
 	}*/
 
-	void window::render_frame(std::initializer_list<std::reference_wrapper<cgb::command_buffer>> pCommandBuffers)
+	void window::render_frame(std::vector<std::reference_wrapper<const cgb::command_buffer>> _CommandBufferRefs)
 	{
 		vk::Result result;
 
@@ -274,6 +300,7 @@ namespace cgb
 		// At this point we are certain that frame which used the current fence before is done.
 		//  => Clean up the resources of that previous frame!
 		remove_all_extra_semaphore_dependencies_for_frame(current_frame() - number_of_concurrent_frames());
+		remove_all_one_time_submit_command_buffers_for_frame(current_frame() - number_of_concurrent_frames());
 
 		//
 		//
@@ -309,7 +336,7 @@ namespace cgb
 						  //	pCommandBuffers.mCommandBuffer... 
 						  //}};
 		std::vector<vk::CommandBuffer> cmdBuffers;
-		for (auto cb : pCommandBuffers) {
+		for (auto cb : _CommandBufferRefs) {
 			cmdBuffers.push_back(cb.get().handle());
 		}
 

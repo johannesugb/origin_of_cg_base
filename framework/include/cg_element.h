@@ -93,6 +93,21 @@ namespace cgb
 		 */
 		virtual void update() {}
 
+		void submit_command_buffer_ref(const cgb::command_buffer& _CommandBuffer, cgb::window* _Window = nullptr)
+		{
+			mSubmittedCommandBufferReferences.emplace_back(std::cref(_CommandBuffer), _Window);
+		}
+
+		void submit_command_buffer_ownership(cgb::command_buffer _CommandBuffer, cgb::window* _Window = nullptr)
+		{
+			auto& ref = mSubmittedCommandBufferInstances.emplace_back(std::move(_CommandBuffer), _Window);
+			// Also add to the references to keep the submission order intact
+			mSubmittedCommandBufferReferences.emplace_back(std::cref(std::get<command_buffer>(ref)), std::get<window*>(ref));
+		}
+
+		void clear_command_buffer_refs() { mSubmittedCommandBufferReferences.clear(); }
+		
+
 		/**	@brief Render this cg_element 
 		 *
 		 *	This method is called whenever this cg_element should
@@ -261,6 +276,14 @@ namespace cgb
 
 		/** @brief Returns whether rendering this element's gui is enabled or not. */
 		bool is_render_gui_enabled() const { return mRenderGuiEnabled; }
+
+		/** Command buffers to be submitted to a window at the end of the current frame. */
+		std::vector<std::tuple<std::reference_wrapper<const cgb::command_buffer>, cgb::window*>> mSubmittedCommandBufferReferences;
+
+		/** Command buffers to be submitted to a window at the end of the current frame,
+		 *	AND ownership/lifetime management of which is to be handled internally (which means, by the window).
+		 */
+		std::vector<std::tuple<cgb::command_buffer, cgb::window*>> mSubmittedCommandBufferInstances;
 
 	private:
 		inline static int32_t sGeneratedNameId = 0;

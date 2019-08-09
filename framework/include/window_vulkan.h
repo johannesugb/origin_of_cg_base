@@ -196,7 +196,11 @@ namespace cgb
 		 */
 		void set_extra_semaphore_dependency(semaphore pSemaphore, std::optional<uint64_t> pFrameId = {});
 
+		void set_one_time_submit_command_buffer(command_buffer pCommandBuffer, std::optional<uint64_t> pFrameId = {});
+
 		std::vector<semaphore> remove_all_extra_semaphore_dependencies_for_frame(uint64_t pFrameId);
+
+		std::vector<command_buffer> remove_all_one_time_submit_command_buffers_for_frame(uint64_t pFrameId);
 
 		void fill_in_extra_semaphore_dependencies_for_frame(std::vector<vk::Semaphore>& pSemaphores, uint64_t pFrameId);
 
@@ -206,7 +210,7 @@ namespace cgb
 
 		//template<typename CBT, typename... CBTS>
 		//void render_frame(CBT pCommandBuffer, CBTS... pCommandBuffers)
-		void render_frame(std::initializer_list<std::reference_wrapper<cgb::command_buffer>> pCommandBuffers);
+		void render_frame(std::vector<std::reference_wrapper<const cgb::command_buffer>> _CommandBufferRefs);
 
 		const auto& renderpass_handle() const { return (*mBackBufferRenderpass).handle(); }
 
@@ -293,5 +297,8 @@ namespace cgb
 
 		// The render pass for this window's UI calls
 		vk::RenderPass mUiRenderPass;
+
+		// Command buffers which are only submitted once; taking their ownership, handling their lifetime.
+		std::vector<std::tuple<uint64_t, command_buffer>> mOneTimeSubmitCommandBuffers;
 	};
 }
