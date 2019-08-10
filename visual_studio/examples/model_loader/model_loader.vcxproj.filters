@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="assets">
+      <UniqueIdentifier>{24240a51-8fdb-478f-8c1c-27cbca7adc3f}</UniqueIdentifier>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{1d345cf5-0451-42e0-83a8-6a3f5a7203ca}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\examples\model_loader\source\model_loader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\examples\model_loader\source\color.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\examples\model_loader\source\passthrough.vert">
+      <Filter>shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="..\..\..\framework\assets\models\sponza\sponza_structure.obj">
+      <Filter>assets</Filter>
+    </Object>
+  </ItemGroup>
+</Project>

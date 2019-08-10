@@ -236,6 +236,9 @@ namespace cgb
 					// Transfer ownership of the command buffers in the elements' mSubmittedCommandBufferInstances to the respective window
 					for (auto& e : thiz->mElements)	{
 						for (auto& [cb, wnd] : e->mSubmittedCommandBufferInstances) {
+							if (nullptr == wnd) {
+								wnd = cgb::context().main_window();
+							}
 							wnd->set_one_time_submit_command_buffer(std::move(cb), wnd->current_frame() - 1);
 						}
 						// Also, cleanup the elements:

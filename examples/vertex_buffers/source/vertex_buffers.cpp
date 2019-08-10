@@ -9,24 +9,19 @@ class vertex_buffers_app : public cgb::cg_element
 		mVertexBuffers.reserve(cgb::context().main_window()->number_of_concurrent_frames()); // TODO: Comment and it will crash!
 		for (size_t i = 0; i < cgb::context().main_window()->number_of_concurrent_frames(); ++i) {
 			mVertexBuffers.push_back(
-				cgb::create(
-					cgb::vertex_buffer_meta::create_from_data(mVertexData)
-						.describe_member_location(0, &Vertex::pos)
-						.describe_member_location(1, &Vertex::color),
-					cgb::memory_usage::device
-				)
+				// We want our buffer to "live" in GPU memory
+				cgb::create(cgb::vertex_buffer_meta::create_from_data(mVertexData),	cgb::memory_usage::device)
 			);
 		}
 
 		// Create and upload the indices now, since we won't change them ever:
 		mIndexBuffer = cgb::create_and_fill(
-			cgb::index_buffer_meta::create_from_data(mIndices),
-			// Where to put our memory? => On the device
-			cgb::memory_usage::device,
-			// Pass pointer to the data:
+			// Also this buffer should "live" in GPU memory
+			cgb::index_buffer_meta::create_from_data(mIndices),	cgb::memory_usage::device,
+			// We're calling `create_and_fill`, so already pass a pointer to the data:
 			mIndices.data(),
-			// Handle the semaphore, if one gets created (which will happen 
-			// since we've requested to upload the buffer to the device)
+			// Handle the semaphore, if one gets created (which will actually happen in 
+			// this case since we've requested to upload the buffer to the device)
 			[] (auto _Semaphore) { 
 				cgb::context().main_window()->set_extra_semaphore_dependency(std::move(_Semaphore)); 
 			}
@@ -35,8 +30,8 @@ class vertex_buffers_app : public cgb::cg_element
 		auto swapChainFormat = cgb::context().main_window()->swap_chain_image_format();
 		// Create our rasterization graphics pipeline with the required configuration:
 		mPipeline = cgb::graphics_pipeline_for(
-			cgb::vertex_input_binding(0, 0, &Vertex::pos),
-			cgb::vertex_input_binding(0, 1, &Vertex::color),
+			cgb::vertex_input_location(0, &Vertex::pos),
+			cgb::vertex_input_location(1, &Vertex::color),
 			"shaders/passthrough.vert",
 			"shaders/color.frag",
 			cgb::cfg::front_face::define_front_faces_to_be_clockwise(),
