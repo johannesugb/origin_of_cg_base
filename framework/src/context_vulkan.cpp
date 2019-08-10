@@ -681,13 +681,23 @@ namespace cgb
 			// Gather all the queue create infos:
 			std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 			std::vector<std::vector<float>> queuePriorities;
-			for (const auto& pq : device_queue::sPreparedQueues) {
+			for (size_t q = 0; q < device_queue::sPreparedQueues.size(); ++q) {
+				auto& pq = device_queue::sPreparedQueues[q];
 				bool handled = false;
-				for (auto i = 0; i < queueCreateInfos.size(); ++i) {
+				for (size_t i = 0; i < queueCreateInfos.size(); ++i) {
 					if (queueCreateInfos[i].queueFamilyIndex == pq.family_index()) {
-						// found, i.e. increase count
-						queueCreateInfos[i].queueCount += 1;
-						queuePriorities[i].push_back(pq.priority());
+						// found, i.e. increase count IF it has a different queue index as all before
+						bool isDifferent = true;
+						for (size_t v = 0; v < q; ++v) {
+							if (device_queue::sPreparedQueues[v].family_index() == pq.family_index()
+								&& device_queue::sPreparedQueues[v].queue_index() == pq.queue_index()) {
+								isDifferent = false;
+							}
+						}
+						if (isDifferent) {
+							queueCreateInfos[i].queueCount += 1;
+							queuePriorities[i].push_back(pq.priority());
+						}
 						handled = true; 
 						break; // done
 					}

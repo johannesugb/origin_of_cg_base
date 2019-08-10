@@ -42,7 +42,7 @@ namespace cgb
 					if (sPreparedQueues.end() != alreadyInUse) {
 						// find combination, that's good in this case
 						familyIndex = std::get<0>(family);
-						queueIndex = qi;
+						queueIndex = 0; // => 0 ... i.e. everything on queue #0
 						goto found_indices;
 					}
 					break;

@@ -155,6 +155,7 @@ int main()
 	try {
 		// What's the name of our application
 		cgb::settings::gApplicationName = "Hello, World!";
+		cgb::settings::gQueueSelectionPreference = cgb::device_queue_selection_strategy::prefer_everything_on_single_queue;
 
 		// Create a window and open it
 		auto mainWnd = cgb::context().create_window("Hello World Window");
