@@ -49,15 +49,16 @@
 #include "cubic_uniform_b_spline.h"
 
 #define VRS_EYE 0
-#define VRS_EYE_BLIT 1
+#define VRS_EYE_BLIT 0
 #define VRS_CAS 0
 #define VRS_CAS_EDGE 0
 #define VRS_MAS 0
+#define VRS_TAA 1
 
 #define DEFERRED_SHADING 1
 
 #define BLIT_FINAL_IMAGE 0
-#define TAA_ENABLED 0
+#define TAA_ENABLED 1
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -219,6 +220,16 @@ private:
 
 	std::shared_ptr<deferred_renderer> mDefRend;
 
+
+	// VRS: TAA based shading rate
+
+	std::unique_ptr<vrs_mas_compute_drawer> mVrsTAAClipComputeDrawer;
+	std::shared_ptr<cgb::vulkan_pipeline> mVrsTAAClipComputePipeline;
+
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsTAAClipImages;
+	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsTAAClipBlitImages;
+	std::vector<std::shared_ptr<cgb::vulkan_texture>> mVrsTAAClipBlitTextures;
+
 	// super sampling
 	uint32_t renderWidth;
 	uint32_t renderHeight;
@@ -267,6 +278,7 @@ public:
 				mVrsCasComputePipeline->bake();
 				mVrsCasEdgeComputePipeline->bake();
 				mVrsMasComputePipeline->bake();
+				mVrsTAAClipComputePipeline->bake();
 			}
 
 			mPostProcPipeline->bake();
@@ -364,6 +376,7 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			createVRSImageResources();
 		}
+		createVRSTAAImageResources();
 
 		mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(renderWidth, renderHeight,
 			cgb::vulkan_context::instance().dynamicRessourceCount, cgb::vulkan_context::instance().msaaSamples);
@@ -453,10 +466,15 @@ private:
 		vrsMasResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
 		vrsMasResourceBundleLayout->bake();
 		auto vrsMasResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsMasResourceBundleLayout, true);
+		auto vrsTAAClipResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsMasResourceBundleLayout, true);
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			vrsMasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
 			vrsMasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsMasMotionVecBlitTextures);
 			vrsMasResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitTextures);
+
+			vrsTAAClipResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
+			vrsTAAClipResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsTAAClipBlitTextures);
+			vrsTAAClipResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitTextures);
 		}
 
 		auto vrsDebugResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
@@ -518,6 +536,16 @@ private:
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mMotionVectorImages, mVrsMasMotionVecBlitImages);
 			mVrsMasComputeDrawer->set_vrs_images(vrsImages);
 			mVrsMasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
+
+			// VRS TAA
+			mVrsTAAClipComputePipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { vrsMasResourceBundleLayout, vrsDebugResourceBundleLayout }, sizeof(vrs_cas_comp_data));
+			mVrsTAAClipComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_taa_based_img.comp.spv");
+			mVrsTAAClipComputePipeline->bake();
+
+			mVrsTAAClipComputeDrawer = std::make_unique<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsTAAClipComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsTAAClipResourceBundle, vrsDebugResourceBundle },
+				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mVrsTAAClipImages, mVrsTAAClipBlitImages);
+			mVrsTAAClipComputeDrawer->set_vrs_images(vrsImages);
+			mVrsTAAClipComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 		}
 		mVrsDebugFullscreenQuad = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, vrsDebugTextureImages);
 
@@ -689,6 +717,8 @@ private:
 		mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/vrs_debug.frag.spv");
+		mVrsDebugPipeline->add_color_blend_attachment_state(mTAAMeanVariancePipeline->get_color_blend_attachment_state(0));
+
 
 		auto& colorBlend = mVrsDebugPipeline->get_color_blend_attachment_state(0);
 		colorBlend.blendEnable = VK_TRUE;
@@ -701,6 +731,7 @@ private:
 			mVrsDebugDrawer->set_vrs_images(vrsImages);
 			mResourceBundleGroup->allocate_resource_bundle(vrsCasResourceBundle.get());
 			mResourceBundleGroup->allocate_resource_bundle(vrsMasResourceBundle.get());
+			mResourceBundleGroup->allocate_resource_bundle(vrsTAAClipResourceBundle.get());
 			mResourceBundleGroup->allocate_resource_bundle(vrsDebugResourceBundle.get());
 		}
 
@@ -764,6 +795,7 @@ private:
 			mVrsCasComputeDrawer.reset();
 			mVrsCasEdgeComputeDrawer.reset();
 			mVrsMasComputeDrawer.reset();
+			mVrsTAAClipComputeDrawer.reset();
 			mVrsDebugDrawer.reset();
 		}
 		mMaterialDrawer.reset();
@@ -772,6 +804,7 @@ private:
 		mVrsCasComputePipeline.reset();
 		mVrsCasComputePipeline.reset();
 		mVrsMasComputePipeline.reset();
+		mVrsTAAClipComputePipeline.reset();
 		mVrsDebugPipeline.reset();
 		mVulkanFramebuffer.reset();
 
@@ -886,6 +919,8 @@ private:
 			mVrsCasEdgeComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 #elif VRS_MAS
 			mVrsMasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
+#elif VRS_TAA
+			mVrsTAAClipComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 #endif
 		}
 		uboCam.proj = glm::translate(glm::vec3(uboCam.frameOffset.x * 2.0f, uboCam.frameOffset.y * 2.0f, 0.0f)) * uboCam.proj;
@@ -968,6 +1003,8 @@ private:
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsCasEdgeComputeDrawer.get());
 #elif VRS_MAS
 			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsMasComputeDrawer.get());
+#elif VRS_TAA
+			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsTAAClipComputeDrawer.get());
 #endif
 		}
 
@@ -1059,7 +1096,7 @@ private:
 		//frame = (frame + int(0 == cgb::vulkan_context::instance().currentFrame)) % jitter.size();
 		frame = (frame + 1) % jitter.size();
 		mPrevFrameData[0]->imgSize = glm::vec2(renderWidth, renderHeight);
-		mPrevFrameData[0]->mvpMatrix = mCamera.projection_matrix() * mCamera.view_matrix();
+		mPrevFrameData[0]->mvpMatrix = mCamera.projection_matrix() * uboCam.view;
 
 		//Sleep(280);
 	}
@@ -1290,6 +1327,17 @@ private:
 		mVrsEdgeImages[1] = mVrsEdgeImages[0];
 		mVrsEdgeImages[2] = mVrsEdgeImages[0];
 
+
+		mVrsTAAClipImages.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+
+		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
+			mVrsTAAClipImages[i] = std::make_shared<cgb::vulkan_image>(renderWidth, renderHeight, 1, 4, vk::SampleCountFlagBits::e1, colorFormat, vk::ImageTiling::eOptimal,
+				vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			mVrsTAAClipImages[i]->transition_image_layout(colorFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+		}
+
+		mVrsTAAClipImages[1] = mVrsTAAClipImages[0];
+		mVrsTAAClipImages[2] = mVrsTAAClipImages[0];
 	}
 
 	void createVRSImageResources()
@@ -1355,6 +1403,28 @@ private:
 		mVrsEdgeBlitImages[2] = mVrsEdgeBlitImages[0];
 		mVrsEdgeBlitTextures[1] = mVrsEdgeBlitTextures[0];
 		mVrsEdgeBlitTextures[2] = mVrsEdgeBlitTextures[0];
+	}
+
+	void createVRSTAAImageResources()
+	{
+		vk::Format colorFormatSwapChain = mImagePresenter->get_swap_chain_image_format();
+		auto width = renderWidth / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.width;
+		auto height = renderHeight / cgb::vulkan_context::instance().shadingRateImageProperties.shadingRateTexelSize.height;
+
+		mVrsTAAClipBlitImages.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+		mVrsTAAClipBlitTextures.resize(cgb::vulkan_context::instance().dynamicRessourceCount);
+
+		for (int i = 0; i < cgb::vulkan_context::instance().dynamicRessourceCount; i++) {
+			mVrsTAAClipBlitImages[i] = std::make_shared<cgb::vulkan_image>(width, height, 1, 4, vk::SampleCountFlagBits::e1, colorFormatSwapChain, vk::ImageTiling::eOptimal,
+				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor);
+			mVrsTAAClipBlitImages[i]->transition_image_layout(colorFormatSwapChain, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, 1);
+			mVrsTAAClipBlitTextures[i] = std::make_shared<cgb::vulkan_texture>(mVrsTAAClipBlitImages[i]);
+		}
+
+		mVrsTAAClipBlitImages[1] = mVrsTAAClipBlitImages[0];
+		mVrsTAAClipBlitImages[2] = mVrsTAAClipBlitImages[0];
+		mVrsTAAClipBlitTextures[1] = mVrsTAAClipBlitTextures[0];
+		mVrsTAAClipBlitTextures[2] = mVrsTAAClipBlitTextures[0];
 	}
 
 	void create_post_process_objects(vk::Viewport viewport, vk::Rect2D scissor) {
@@ -1445,6 +1515,7 @@ private:
 				renderWidth, renderHeight,
 				cgb::vulkan_context::instance().dynamicRessourceCount, vk::SampleCountFlagBits::e1);
 			mTAAFramebuffers[i]->add_dynamic_color_attachment(mTAAImages[i], vk::ImageLayout::eShaderReadOnlyOptimal);
+			mTAAFramebuffers[i]->add_dynamic_color_attachment(mVrsTAAClipImages, vk::ImageLayout::eGeneral);
 			mTAAFramebuffers[i]->bake();
 		}
 
@@ -1454,6 +1525,7 @@ private:
 		mTAAPipeline->add_attr_desc_binding(posAndUv);
 		mTAAPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/taa.vert.spv");
 		mTAAPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/taa.frag.spv");
+		mTAAPipeline->add_color_blend_attachment_state(mTAAMeanVariancePipeline->get_color_blend_attachment_state(0));
 		mTAAPipeline->disable_shading_rate_image();
 		mTAAPipeline->bake();
 

@@ -28,7 +28,8 @@ layout(location = 0) out vec4 oFragColor;
 // ####### FRAGMENT SHADER MAIN and helper functions ########
 vec4 FetchFromSampler(sampler2D smplr, vec2 uv)
 {
-	return texture(smplr, uv / vec2(textureSize(smplr, 0)));
+	//return texture(smplr, uv / vec2(textureSize(smplr, 0)));
+	return texelFetch(smplr, ivec2(uv) , 0);
 }
 
 vec4 FetchFromSampler(sampler2DMS smplr, vec2 uv, int smpl)

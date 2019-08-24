@@ -170,7 +170,7 @@ void vrs_mas_compute_drawer::blit_image(vk::CommandBuffer & commandBuffer)
 	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
 	srcBarrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-	srcBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	srcBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	srcBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
 	srcBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
@@ -180,7 +180,7 @@ void vrs_mas_compute_drawer::blit_image(vk::CommandBuffer & commandBuffer)
 	motionVecBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
 	srcMotionVecBarrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-	srcMotionVecBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	srcMotionVecBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	srcMotionVecBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
 	srcMotionVecBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 

@@ -85,7 +85,7 @@ void main() {
 	//imageStore(debugImage, uv, vec4(vec3((uv.y%2)), 1.0));
 	//imageStore(debugImage, uv, vec4(vec3(float(edge.x > 0.05 )) * 10, 1.0));
 
-	float shadingRate = (edge.x * 10); // edge intensity / differntial
+	float shadingRate = (edge.x); // edge intensity / differntial
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	prevShadingRate = clamp(prevShadingRate, shadingRate - 1, shadingRate + 2);
 	//shadingRate =  mix(prevShadingRate, shadingRate, 0.6);

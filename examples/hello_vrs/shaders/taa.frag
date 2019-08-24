@@ -26,6 +26,7 @@ layout(push_constant) uniform taa_prev_frame_data
 layout(location = 0) in vec2 fragTexCoord;
 
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outClipDist;
 
 float rgbToLuma(vec3 rgb) {
 	return sqrt(dot(rgb, vec3(0.299, 0.587, 0.114)));
@@ -167,6 +168,8 @@ void main() {
 	//color =  RGBToYCgCo(bicubicSampleCatmullRom(prevFrame, (fragTexCoord + 1 * pushConst.jitter)));
     //history = motionStrength > 0.000001  ? clamp(history, colorMin, colorMax) : history;
     history = clamp(history, colorMin, colorMax);
+
+
     vec3 result = YCgCoToRGB(mix(history, color, alpha));
 	outColor = vec4(result, 0);
 
@@ -179,6 +182,11 @@ void main() {
 	//outColor = vec4(meanVar.xyz, 0);
 	//outColor = vec4(mipLevel / 4.0, 0, 0, 0);
 	//outColor = vec4(alpha, 0, 0, 0);
+	
+	// taa based vrs
+	vec3 clampDist = clamp(abs(colorAvg-history), 0, 1);// - colorBoxSigma * sigma, 0, 1);
+	outClipDist = vec4(vec3(length(clampDist * 100)), 0);
+	//outColor = vec4(vec3(length(clampDist)), 0);
 }
 
 
