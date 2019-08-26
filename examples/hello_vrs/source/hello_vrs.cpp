@@ -58,7 +58,7 @@
 #define DEFERRED_SHADING 1
 
 #define BLIT_FINAL_IMAGE 0
-#define TAA_ENABLED 1
+#define TAA_ENABLED 0
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -1023,7 +1023,7 @@ private:
 			renderObjects.push_back(sponzaRenderObject.get());
 		}
 		for (auto parallelPipesRenderObject : mParallelPipesModel->get_render_objects()) {
-			//renderObjects.push_back(parallelPipesRenderObject.get());
+			renderObjects.push_back(parallelPipesRenderObject.get());
 		}
 		//cgb::vulkan_context::instance().currentFrame = oldFrameIdx;
 
@@ -1555,9 +1555,9 @@ private:
 
 	void load_models()
 	{
-		//auto path = "assets/models/sponza/sponza_structure.obj";
-		auto path = "assets/models/island/island_final.dae";
-		auto transform = glm::scale(glm::vec3(1.01f));
+		auto path = "assets/models/sponza/sponza_structure.obj";
+		//auto path = "assets/models/island/island_final.dae";
+		auto transform = glm::scale(glm::vec3(0.01f));
 		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace;
 		mSponzaModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
 		mSponzaModel->create_render_objects(mMaterialObjectResourceBundleLayout);

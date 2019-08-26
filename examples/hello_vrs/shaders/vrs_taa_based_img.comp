@@ -47,14 +47,24 @@ void main() {
 	vec4 frameVal = texture(texelDiffsAndDepthImage, newPosNDC.xy);
 	vec4 clampDist = texture(taaClipDistImage, newPosNDC.xy);
 
-	uvec4 prevShadingRate = imageLoad(targetImage, uv);
+	float prevShadingRate = imageLoad(targetImage, uv).x;
 
 	float shadingRate = clampDist.x; // clip dist
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
-	//shadingRate = 4;
+	prevShadingRate = clamp(prevShadingRate, shadingRate - 1, shadingRate + 2);
+	//shadingRate =  mix(prevShadingRate, shadingRate, 0.6);
+	shadingRate =  max(prevShadingRate, shadingRate);
+	
+	//shadingRate = 11;
 
-	imageStore(targetImage, newUV, uvec4(clamp(shadingRate, 0, 11),0,0,0));
+	//if (any(greaterThan(vec2(newPosNDC), vec2(1,1))) ||
+	//any(lessThan(vec2(newPosNDC), vec2(0,0)))) {
+	//	shadingRate = 11;
+	//}
+
+	//uv = newUV;
+	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 
 	// debug image
-	imageStore(debugImage, newUV, vec4(vec3(shadingRate / 12.0), 0.9));
+	imageStore(debugImage, uv, vec4(vec3(shadingRate / 12.0), 0.9));
 }
