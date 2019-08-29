@@ -5,7 +5,7 @@
 vrs_mas_compute_drawer::vrs_mas_compute_drawer(std::shared_ptr<cgb::vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<cgb::vulkan_pipeline> pipeline,
 	std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> globalResourceBundles, std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderImages,
 	std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages, std::vector<std::shared_ptr<cgb::vulkan_image>> motionVecImages,
-	std::vector<std::shared_ptr<cgb::vulkan_image>> motionVecBlitImages) : vulkan_drawer(commandBufferManager, pipeline, globalResourceBundles),
+	std::vector<std::shared_ptr<cgb::vulkan_image>> motionVecBlitImages) : vrs_image_compute_drawer_base(commandBufferManager, pipeline, globalResourceBundles),
 	mVrsPrevRenderImages(vrsPrevRenderImages), mVrsPrevRenderBlitImages(vrsPrevRenderBlitImages), mMotionVecImages(motionVecImages), 
 	mMotionVecBlitImages(motionVecBlitImages)
 {

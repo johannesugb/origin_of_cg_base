@@ -4,7 +4,7 @@
 
 vrs_cas_compute_drawer::vrs_cas_compute_drawer(std::shared_ptr<cgb::vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<cgb::vulkan_pipeline> pipeline,
 	std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> globalResourceBundles, std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderImages,
-	std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages) : vulkan_drawer(commandBufferManager, pipeline, globalResourceBundles),
+	std::vector<std::shared_ptr<cgb::vulkan_image>> vrsPrevRenderBlitImages) : vrs_image_compute_drawer_base(commandBufferManager, pipeline, globalResourceBundles),
 	mVrsPrevRenderImages(mVrsPrevRenderImages), mVrsPrevRenderBlitImages(vrsPrevRenderBlitImages)
 {
 	mCurrPushConstData = vrs_cas_comp_data{};

@@ -51,9 +51,9 @@
 #define VRS_EYE 0
 #define VRS_EYE_BLIT 0
 #define VRS_CAS 0
-#define VRS_CAS_EDGE 0
+#define VRS_CAS_EDGE 1
 #define VRS_MAS 0
-#define VRS_TAA 1
+#define VRS_TAA 0
 
 #define DEFERRED_SHADING 1
 
@@ -99,8 +99,8 @@ private:
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> drawCommandBufferManager;
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> transferCommandBufferManager;
 	std::unique_ptr<cgb::vulkan_drawer> drawer;
-	std::unique_ptr<cgb::vrs_image_compute_drawer> mVrsImageComputeDrawer;
-	std::unique_ptr<cgb::vrs_eye_tracked_blit> mVrsEyeTrackedBlitDrawer;
+	std::unique_ptr<vrs_image_compute_drawer> mVrsImageComputeDrawer;
+	std::unique_ptr<vrs_eye_tracked_blit> mVrsEyeTrackedBlitDrawer;
 
 	// render target needed for MSAA
 	std::shared_ptr<cgb::vulkan_image> colorImage;
@@ -496,13 +496,13 @@ private:
 			mComputeVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_img.comp.spv");
 			mComputeVulkanPipeline->add_resource_bundle_layout(std::make_shared<cgb::vulkan_resource_bundle_layout>(vrsComputeDescriptorSetLayout));
 
-			mVrsImageComputeDrawer = std::make_unique<cgb::vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
+			mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
 			mVrsImageComputeDrawer->set_vrs_images(vrsImages);
 			mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 			mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 			mVrsImageComputeDrawer->set_eye_inf(eyeInf);
 			
-			mVrsEyeTrackedBlitDrawer = std::make_unique<cgb::vrs_eye_tracked_blit>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
+			mVrsEyeTrackedBlitDrawer = std::make_unique<vrs_eye_tracked_blit>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
 			mVrsEyeTrackedBlitDrawer->set_vrs_images(vrsImages);
 			mVrsEyeTrackedBlitDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 			mVrsEyeTrackedBlitDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
@@ -1555,9 +1555,9 @@ private:
 
 	void load_models()
 	{
-		auto path = "assets/models/sponza/sponza_structure.obj";
-		//auto path = "assets/models/island/island_final.dae";
-		auto transform = glm::scale(glm::vec3(0.01f));
+		//auto path = "assets/models/sponza/sponza_structure.obj";
+		auto path = "assets/models/island/island_final.dae";
+		auto transform = glm::scale(glm::vec3(1.01f));
 		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace;
 		mSponzaModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
 		mSponzaModel->create_render_objects(mMaterialObjectResourceBundleLayout);

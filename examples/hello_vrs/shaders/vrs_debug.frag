@@ -12,6 +12,11 @@ layout(location = 0) out vec4 outColor;
 //in int gl_InvocationsPerPixelNV;
 
 void main() {
+	outColor = 0.1 *  vec4(0,0,0,0.1);
+
+	//if (gl_FragCoord.x < 1600) {
+	//	return;
+	//}
 	//float shadingRate = gl_InvocationsPerPixelNV / 16.0;
 	//float shadingRate = gl_FragmentSizeNV.x / 4.0;
 	//float shadingRate = gl_FragmentSizeNV.y / 4.0;
@@ -30,4 +35,13 @@ void main() {
 	//outColor = vec4(vec3(gl_FragmentSizeNV.x / 4.0f), 0.5f);
 	//outColor =  vec4( 0.1 * texture(texSampler, fragTexCoord).xyz, 0.5);
 	//outColor =  vec4( 0.1 * texelFetch(texSampler, ivec2(fragTexCoord * textureSize(texSampler, 0)), 0).xyz, 0.5);
+	
+	if (mod(gl_FragCoord.y/64, 2) <= 1 
+	//&& mod(gl_FragCoord.x/32, 2) <= 1 ||
+	//mod(gl_FragCoord.y/32, 2) >= 1 &&
+	//mod(gl_FragCoord.x/32, 2) >= 1
+	) {
+		//outColor = 0.1 *  vec4(1,1,1,0.1);
+	}
+	//outColor = vec4(gl_FragCoord.x/1600);
 }

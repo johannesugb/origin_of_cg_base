@@ -70,9 +70,9 @@ void main() {
 
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
 
-	float scaledVal = abs(clamp(frameVal.x * 2 - 0.75,-1,1));
+	float scaledVal = abs(clamp(frameVal.x * 4 * 2 - 1,-1,1));
 	float shadingRate = (scaledVal * scaledVal); // current texel diff
-	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
+	shadingRate =  (clamp(shadingRate, 0, 1)) * 12.0;
 	//shadingRate = (shadingRate * 2/4 + prevShadingRate.x * 2/4);
 	//shadingRate = 0;
 	//shadingRate = shadingRate / (frameVal.y * frameVal.z * 16.0);

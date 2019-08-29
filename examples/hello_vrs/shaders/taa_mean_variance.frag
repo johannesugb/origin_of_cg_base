@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-const int offsetMul = 1;
+const int offsetMul = 1; // 4 // for better edges
 const ivec2 offset[8] = { ivec2(-1, -1) * offsetMul, ivec2(-1,  1) * offsetMul,
                             ivec2( 1, -1) * offsetMul, ivec2( 1,  1) * offsetMul, 
                             ivec2(1,  0) * offsetMul, ivec2( 0, -1) * offsetMul, 
@@ -97,11 +97,11 @@ void main() {
 	float lumaRange = lumaMax-lumaMin;
 
 	vec2 dir;
-	dir.x = -((lumaUp + lumaLeft) - (lumaDown + lumaRight));
+	dir.x = ((lumaUp + lumaLeft) - (lumaDown + lumaRight));
 	dir.y = ((lumaUp + lumaDown) - (lumaLeft + lumaRight));
 
-	//outEdge = vec4(vec3(float((lumaMax-lumaMin) > 0.02) * 10), 1.0);
-	outEdge = vec4(vec3(float(lumaRange >= max(0.0512, lumaMax * 0.125)) * 10), 1.0);
-	//outEdge = vec4(vec3(float((abs(dir.x) + abs(dir.y))) ), 1.0);
+	//outEdge = vec4(vec3(float((lumaMax-lumaMin) > 0.01) * 10), 1.0);
+	//outEdge = vec4(vec3(float(lumaRange >= max(0.0512, lumaMax * 0.125)) * 10), 1.0);
+	outEdge = vec4(vec3(float((abs(dir.x) + abs(dir.y))) > 0.01), 1.0);
 	//outEdge = vec4(vec3(0.5), 0.0);
 }

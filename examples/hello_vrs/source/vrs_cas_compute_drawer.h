@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan_drawer.h"
+#include "vrs_image_compute_drawer_base.h"
 
 struct vrs_cas_comp_data
 {
@@ -11,7 +11,7 @@ struct vrs_cas_comp_data
 } ;
 
 class vrs_cas_compute_drawer :
-	public cgb::vulkan_drawer
+	public vrs_image_compute_drawer_base
 {
 public:
 	vrs_cas_compute_drawer(std::shared_ptr<cgb::vulkan_command_buffer_manager> commandBufferManager, std::shared_ptr<cgb::vulkan_pipeline> pipeline,
@@ -23,16 +23,11 @@ public:
 
 	void set_width_height(int width, int height) { mWidth = width; mHeight = height; }
 
-	void set_cam_data(UniformBufferObject camData, float nearPlane, float farPlane);
+	virtual void set_cam_data(UniformBufferObject camData, float nearPlane, float farPlane);
 
 	vrs_cas_comp_data get_push_constant_data() { return mCurrPushConstData; }
 
 protected:
-	static const int WORKGROUP_SIZE = 16;
-
-	int mWidth;
-	int mHeight;
-
 	std::vector<UniformBufferObject> mCamData;
 	std::vector<UniformBufferObject> mPrevCamData;
 	float mNearPlane;
