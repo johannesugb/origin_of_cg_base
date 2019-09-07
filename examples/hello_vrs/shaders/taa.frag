@@ -186,7 +186,10 @@ void main() {
 	// taa based vrs
 	vec3 clampDist = clamp(abs(colorAvg-history), 0, 1);// - colorBoxSigma * sigma, 0, 1);
 	outClipDist = vec4(vec3(length(clampDist * 100)), 0);
-	//outColor = vec4(vec3(length(clampDist)), 0);
+	
+	//if (gl_FragCoord.x < 1600) {
+	//	outColor = vec4(vec3(length(clampDist) * 100), 0);
+	//}
 }
 
 

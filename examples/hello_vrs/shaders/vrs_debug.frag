@@ -17,6 +17,11 @@ void main() {
 	//if (gl_FragCoord.x < 1600) {
 	//	return;
 	//}
+
+	
+	// *****************************
+	// analytical based
+	// *****************************
 	//float shadingRate = gl_InvocationsPerPixelNV / 16.0;
 	//float shadingRate = gl_FragmentSizeNV.x / 4.0;
 	//float shadingRate = gl_FragmentSizeNV.y / 4.0;
@@ -28,6 +33,28 @@ void main() {
 	float greenToBlue = smoothstep(0.5, 1, shadingRate);
 	//outColor = 0.1 * vec4(mix(mix(vec3(0,0,1), vec3(0,1,0), redToGreen), mix(vec3(0,1,0), vec3(1,0,0), greenToBlue), greenOrBlue), 0.5f);
 	//outColor = vec4(shadingRate);
+
+	
+	// *****************************
+	// color palette based
+	// *****************************
+	//shadingRate = gl_FragmentSizeNV.x + gl_FragmentSizeNV.y/2.0;
+	shadingRate = int(gl_FragmentSizeNV.y/2) * 2 + int(gl_FragmentSizeNV.x/2);
+	shadingRate = 1.0 - shadingRate/6.0;
+	//outColor = vec4(shadingRate/10.0);
+
+	greenOrBlue = step(0.5, shadingRate);
+	redToGreen = smoothstep(0, 0.5, shadingRate);
+	greenToBlue = smoothstep(0.5, 1, shadingRate);
+	//outColor = vec4(mix(mix(vec3(0,0,1), vec3(0,1,0), redToGreen), mix(vec3(0,1,0), vec3(1,0,0), greenToBlue), greenOrBlue), 0.5f);
+	//outColor = 0.1 * vec4(mix(vec3(0,0,1), vec3(0,1,0), shadingRate), 1.0);
+
+
+	
+	// *****************************
+	// experiments
+	// *****************************
+
 
 	//outColor = vec4(vec3(gl_InvocationsPerPixelNV / 16.0f), 0.5f);
 	//outColor = vec4(vec3(gl_FragmentSizeNV.x * gl_FragmentSizeNV.y / 16.0f), 0.5f);
@@ -44,4 +71,6 @@ void main() {
 		//outColor = 0.1 *  vec4(1,1,1,0.1);
 	}
 	//outColor = vec4(gl_FragCoord.x/1600);
+
+
 }

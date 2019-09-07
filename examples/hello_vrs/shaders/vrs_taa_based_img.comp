@@ -53,7 +53,7 @@ void main() {
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	prevShadingRate = clamp(prevShadingRate, shadingRate - 1, shadingRate + 2);
 	//shadingRate =  mix(prevShadingRate, shadingRate, 0.6);
-	shadingRate =  max(prevShadingRate, shadingRate);
+	//shadingRate =  max(prevShadingRate, shadingRate);
 	
 	//shadingRate = 11;
 

@@ -68,14 +68,88 @@ const int MAX_COUNT_POINT_LIGHTS = 100;
 
 const std::string TEXTURE_PATH = "assets/chalet/chalet.jpg";
 
+
+
+class camera_path : public cgb::cg_element
+{
+public:
+	camera_path(cgb::quake_camera& cam)
+		: mCam{ &cam } // Target camera
+		, mSpeed{ 0.1f } // How fast does it move
+		, mAutoPathActive{ true }
+	{
+		// The path to follow
+		mPath = std::make_unique<cgb::quadratic_uniform_b_spline>(std::vector<glm::vec3>{
+			glm::vec3(10.0f, 15.0f, -10.0f),
+				glm::vec3(-10.0f, 5.0f, -5.0f),
+				glm::vec3(0.0f, 0.0f, 0.0f),
+				glm::vec3(10.0f, 15.0f, 10.0f),
+				glm::vec3(10.0f, 10.0f, 0.0f)
+		});
+	}
+
+	int32_t priority() const override
+	{
+		return 5;
+	}
+
+	void initialize() override
+	{
+		mStartTime = cgb::time().time_since_start();
+	}
+
+	void update() override
+	{
+		// [Space] ... toggle auto-path
+		if (cgb::input().key_pressed(cgb::key_code::space)) {
+			mAutoPathActive = !mAutoPathActive;
+		}
+		// [R] ... reset animation:
+		if (cgb::input().key_pressed(cgb::key_code::r)) {
+			resetAnimation();
+		}
+
+		// Animate along the curve:
+		if (mAutoPathActive) {
+			auto t = computeT();
+			if (t >= 0.00001 && t <= 1) {
+				mCam->set_translation(mPath->value_at(t));
+				mCam->look_along(mPath->slope_at(t));
+			}
+		}
+	}
+
+	void resetAnimation() {
+		mAutoPathActive = true;
+		mStartTime = cgb::time().time_since_start();
+	}
+
+	bool animationFinished() {
+		auto t = computeT();
+		return (t >= 1.0);
+	}
+
+private:
+	cgb::quake_camera* mCam;
+	float mStartTime;
+	float mSpeed;
+	bool mAutoPathActive;
+	std::unique_ptr<cgb::cp_interpolation> mPath;
+
+	float computeT() {
+		return (cgb::time().time_since_start() - mStartTime) * mSpeed;
+	}
+};
+
 class vrs_behavior : public cgb::cg_element
 {
 
 public:
-	vrs_behavior() : m_ambient_light(glm::vec3(1 / 255.0f, 2 / 255.0f, 3 / 255.0f)), m_dir_light(glm::vec3(13 / 255.0f, 17 / 255.0f, 27 / 255.0f), glm::vec3(-0.38f, -0.78f, -0.49f)) {
-	}
-
 	cgb::quake_camera mCamera;
+	camera_path mCameraPath;
+
+	vrs_behavior() : m_ambient_light(glm::vec3(1 / 255.0f, 2 / 255.0f, 3 / 255.0f)), m_dir_light(glm::vec3(13 / 255.0f, 17 / 255.0f, 27 / 255.0f), glm::vec3(-0.38f, -0.78f, -0.49f)), mCameraPath(mCamera) {
+	}
 private:
 
 	vk::DescriptorSetLayout vrsComputeDescriptorSetLayout;
@@ -99,8 +173,8 @@ private:
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> drawCommandBufferManager;
 	std::shared_ptr<cgb::vulkan_command_buffer_manager> transferCommandBufferManager;
 	std::unique_ptr<cgb::vulkan_drawer> drawer;
-	std::unique_ptr<vrs_image_compute_drawer> mVrsImageComputeDrawer;
-	std::unique_ptr<vrs_eye_tracked_blit> mVrsEyeTrackedBlitDrawer;
+	std::shared_ptr<vrs_image_compute_drawer> mVrsImageComputeDrawer;
+	std::shared_ptr<vrs_eye_tracked_blit> mVrsEyeTrackedBlitDrawer;
 
 	// render target needed for MSAA
 	std::shared_ptr<cgb::vulkan_image> colorImage;
@@ -159,17 +233,17 @@ private:
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsPrevRenderBlitImages;
 	std::vector<std::shared_ptr<cgb::vulkan_texture>> mVrsPrevRenderBlitTextures;
 
-	std::unique_ptr<vrs_cas_compute_drawer> mVrsCasComputeDrawer;
+	std::shared_ptr<vrs_cas_compute_drawer> mVrsCasComputeDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mVrsCasComputePipeline;
 
-	std::unique_ptr<vrs_cas_edge_compute_drawer> mVrsCasEdgeComputeDrawer;
+	std::shared_ptr<vrs_cas_edge_compute_drawer> mVrsCasEdgeComputeDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mVrsCasEdgeComputePipeline;
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsEdgeImages;
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsEdgeBlitImages;
 	std::vector<std::shared_ptr<cgb::vulkan_texture>> mVrsEdgeBlitTextures;
 
 	// VRS: motion adaptive shading
-	std::unique_ptr<vrs_mas_compute_drawer> mVrsMasComputeDrawer;
+	std::shared_ptr<vrs_mas_compute_drawer> mVrsMasComputeDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mVrsMasComputePipeline;
 
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsMasMotionVecBlitImages;
@@ -223,7 +297,7 @@ private:
 
 	// VRS: TAA based shading rate
 
-	std::unique_ptr<vrs_mas_compute_drawer> mVrsTAAClipComputeDrawer;
+	std::shared_ptr<vrs_mas_compute_drawer> mVrsTAAClipComputeDrawer;
 	std::shared_ptr<cgb::vulkan_pipeline> mVrsTAAClipComputePipeline;
 
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsTAAClipImages;
@@ -244,6 +318,8 @@ private:
 
 	bool captureFrameTime = false;
 	std::vector<frame_time_data> frameTimeDataVector;
+
+	std::shared_ptr<vrs_image_compute_drawer_base> mCurrentVrsImageComputeDrawer;
 
 
 public:
@@ -295,6 +371,60 @@ public:
 		if (cgb::input().key_pressed(cgb::key_code::f8)) {
 			end_capture_frame_data();
 		}
+
+		// EVALUATION
+		static int shadingRateStrategyIndex = 0;
+		static bool evalStarted = false;
+		static std::string namePostfix = "default";
+		if (cgb::input().key_pressed(cgb::key_code::f9)) {
+			evalStarted = true;
+			mCameraPath.resetAnimation();
+			start_capture_frame_data();
+			mCurrentVrsImageComputeDrawer = mVrsImageComputeDrawer;					
+			namePostfix = "VRS_EYE";
+		}
+
+		if (evalStarted && mCameraPath.animationFinished()) {
+			mCameraPath.resetAnimation();
+			end_capture_frame_data(namePostfix);
+			shadingRateStrategyIndex = (shadingRateStrategyIndex + 1);
+
+			if (shadingRateStrategyIndex < 6) {
+				start_capture_frame_data();
+
+				if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+					// VRS_EYE_BLIT
+					if (shadingRateStrategyIndex == 1) {
+						mCurrentVrsImageComputeDrawer = mVrsEyeTrackedBlitDrawer;
+						namePostfix = "VRS_EYE_BLIT";
+					}
+					// VRS_CAS
+					else if (shadingRateStrategyIndex == 2) {
+						mCurrentVrsImageComputeDrawer = mVrsCasComputeDrawer;
+						namePostfix = "VRS_CAS";
+					}
+					// VRS_CAS_EDGE
+					else if (shadingRateStrategyIndex == 3) {
+						mCurrentVrsImageComputeDrawer = mVrsCasEdgeComputeDrawer;
+						namePostfix = "VRS_CAS_EDGE";
+					}
+					// VRS_MAS
+					else if (shadingRateStrategyIndex == 4) {
+						mCurrentVrsImageComputeDrawer = mVrsMasComputeDrawer;
+						namePostfix = "VRS_MAS";
+					}
+					// VRS_TAA
+					else if (shadingRateStrategyIndex == 5) {
+						mCurrentVrsImageComputeDrawer = mVrsTAAClipComputeDrawer;
+						namePostfix = "VRS_TAA";
+					}
+				}
+			}
+			else {
+				evalStarted = false;
+			}
+		}
+
 		if (cgb::input().key_pressed(cgb::key_code::tab)) {
 			if (mCamera.is_enabled()) {
 				mCamera.disable();
@@ -446,18 +576,14 @@ private:
 		vrsCasResourceBundleLayout->add_binding(0, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
 		//vrsCasResourceBundleLayout->add_binding(1, vk::DescriptorType::eStorageImage, cgb::ShaderStageFlagBits::eCompute);
 		vrsCasResourceBundleLayout->add_binding(1, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
-#if VRS_CAS_EDGE
-		vrsCasResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute);
-#endif
+		vrsCasResourceBundleLayout->add_binding(2, vk::DescriptorType::eCombinedImageSampler, cgb::ShaderStageFlagBits::eCompute); // only needed for VRS_CAS_EDGE
 		vrsCasResourceBundleLayout->bake();
 		auto vrsCasResourceBundle = mResourceBundleGroup->create_resource_bundle(vrsCasResourceBundleLayout, true);
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			vrsCasResourceBundle->add_dynamic_image_resource(0, vk::ImageLayout::eGeneral, vrsImages);
 			//vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitImages);
 			vrsCasResourceBundle->add_dynamic_image_resource(1, vk::ImageLayout::eGeneral, mVrsPrevRenderBlitTextures);
-#if VRS_CAS_EDGE
-			vrsCasResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eGeneral, mVrsEdgeBlitTextures);
-#endif
+			vrsCasResourceBundle->add_dynamic_image_resource(2, vk::ImageLayout::eGeneral, mVrsEdgeBlitTextures);  // only needed for VRS_CAS_EDGE
 		}
 
 		auto vrsMasResourceBundleLayout = std::make_shared<cgb::vulkan_resource_bundle_layout>();
@@ -496,13 +622,13 @@ private:
 			mComputeVulkanPipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_img.comp.spv");
 			mComputeVulkanPipeline->add_resource_bundle_layout(std::make_shared<cgb::vulkan_resource_bundle_layout>(vrsComputeDescriptorSetLayout));
 
-			mVrsImageComputeDrawer = std::make_unique<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
+			mVrsImageComputeDrawer = std::make_shared<vrs_image_compute_drawer>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
 			mVrsImageComputeDrawer->set_vrs_images(vrsImages);
 			mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 			mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 			mVrsImageComputeDrawer->set_eye_inf(eyeInf);
 			
-			mVrsEyeTrackedBlitDrawer = std::make_unique<vrs_eye_tracked_blit>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
+			mVrsEyeTrackedBlitDrawer = std::make_shared<vrs_eye_tracked_blit>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
 			mVrsEyeTrackedBlitDrawer->set_vrs_images(vrsImages);
 			mVrsEyeTrackedBlitDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 			mVrsEyeTrackedBlitDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
@@ -514,7 +640,7 @@ private:
 			mVrsCasComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_cas_img.comp.spv");
 			mVrsCasComputePipeline->bake();
 
-			mVrsCasComputeDrawer = std::make_unique<vrs_cas_compute_drawer>(drawCommandBufferManager, mVrsCasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsCasResourceBundle, vrsDebugResourceBundle },
+			mVrsCasComputeDrawer = std::make_shared<vrs_cas_compute_drawer>(drawCommandBufferManager, mVrsCasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsCasResourceBundle, vrsDebugResourceBundle },
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages);
 			mVrsCasComputeDrawer->set_vrs_images(vrsImages);
 			mVrsCasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
@@ -522,7 +648,7 @@ private:
 			mVrsCasEdgeComputePipeline = std::make_shared<cgb::vulkan_pipeline>(std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { vrsCasResourceBundleLayout, vrsDebugResourceBundleLayout }, sizeof(vrs_cas_comp_data));
 			mVrsCasEdgeComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_cas_edge_img.comp.spv");
 			mVrsCasEdgeComputePipeline->bake();
-			mVrsCasEdgeComputeDrawer = std::make_unique<vrs_cas_edge_compute_drawer>(drawCommandBufferManager, mVrsCasEdgeComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsCasResourceBundle, vrsDebugResourceBundle },
+			mVrsCasEdgeComputeDrawer = std::make_shared<vrs_cas_edge_compute_drawer>(drawCommandBufferManager, mVrsCasEdgeComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsCasResourceBundle, vrsDebugResourceBundle },
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mVrsEdgeImages, mVrsEdgeBlitImages);
 			mVrsCasEdgeComputeDrawer->set_vrs_images(vrsImages);
 			mVrsCasEdgeComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
@@ -532,7 +658,7 @@ private:
 			mVrsMasComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_mas_img.comp.spv");
 			mVrsMasComputePipeline->bake();
 
-			mVrsMasComputeDrawer = std::make_unique<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsMasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsMasResourceBundle, vrsDebugResourceBundle },
+			mVrsMasComputeDrawer = std::make_shared<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsMasComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsMasResourceBundle, vrsDebugResourceBundle },
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mMotionVectorImages, mVrsMasMotionVecBlitImages);
 			mVrsMasComputeDrawer->set_vrs_images(vrsImages);
 			mVrsMasComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
@@ -542,7 +668,7 @@ private:
 			mVrsTAAClipComputePipeline->add_shader(cgb::ShaderStageFlagBits::eCompute, "shaders/vrs_taa_based_img.comp.spv");
 			mVrsTAAClipComputePipeline->bake();
 
-			mVrsTAAClipComputeDrawer = std::make_unique<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsTAAClipComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsTAAClipResourceBundle, vrsDebugResourceBundle },
+			mVrsTAAClipComputeDrawer = std::make_shared<vrs_mas_compute_drawer>(drawCommandBufferManager, mVrsTAAClipComputePipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { vrsTAAClipResourceBundle, vrsDebugResourceBundle },
 				mVrsPrevRenderImages, mVrsPrevRenderBlitImages, mVrsTAAClipImages, mVrsTAAClipBlitImages);
 			mVrsTAAClipComputeDrawer->set_vrs_images(vrsImages);
 			mVrsTAAClipComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
@@ -739,6 +865,23 @@ private:
 		for (int i = 0; i < mPrevFrameData.size(); i++) {
 			mPrevFrameData[i] = std::make_shared<prev_frame_data>();
 		}
+
+
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+#if VRS_EYE
+			mCurrentVrsImageComputeDrawer = mVrsImageComputeDrawer;
+#elif VRS_EYE_BLIT
+			mCurrentVrsImageComputeDrawer = mVrsEyeTrackedBlitDrawer;
+#elif VRS_CAS
+			mCurrentVrsImageComputeDrawer = mVrsCasComputeDrawer;
+#elif VRS_CAS_EDGE
+			mCurrentVrsImageComputeDrawer = mVrsCasEdgeComputeDrawer;
+#elif VRS_MAS
+			mCurrentVrsImageComputeDrawer = mVrsMasComputeDrawer;
+#elif VRS_TAA
+			mCurrentVrsImageComputeDrawer = mVrsTAAClipComputeDrawer;
+#endif
+		}
 	}
 
 	void cleanup()
@@ -797,6 +940,7 @@ private:
 			mVrsMasComputeDrawer.reset();
 			mVrsTAAClipComputeDrawer.reset();
 			mVrsDebugDrawer.reset();
+			mCurrentVrsImageComputeDrawer.reset();
 		}
 		mMaterialDrawer.reset();
 		mRenderVulkanPipeline.reset();
@@ -913,15 +1057,7 @@ private:
 		float nearPlane = mCamera.near_plane_distance();
 		float farPlane = mCamera.far_plane_distance();
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-#if VRS_CAS
-			mVrsCasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
-#elif VRS_CAS_EDGE
-			mVrsCasEdgeComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
-#elif VRS_MAS
-			mVrsMasComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
-#elif VRS_TAA
-			mVrsTAAClipComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
-#endif
+			mCurrentVrsImageComputeDrawer->set_cam_data(uboCam, nearPlane, farPlane);
 		}
 		uboCam.proj = glm::translate(glm::vec3(uboCam.frameOffset.x * 2.0f, uboCam.frameOffset.y * 2.0f, 0.0f)) * uboCam.proj;
 
@@ -993,19 +1129,7 @@ private:
 		}
 		// start drawing, record draw commands, etc.
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-#if VRS_EYE
-			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsImageComputeDrawer.get());
-#elif VRS_EYE_BLIT
-			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsEyeTrackedBlitDrawer.get());
-#elif VRS_CAS
-			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsCasComputeDrawer.get());
-#elif VRS_CAS_EDGE
-			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsCasEdgeComputeDrawer.get());
-#elif VRS_MAS
-			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsMasComputeDrawer.get());
-#elif VRS_TAA
-			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mVrsTAAClipComputeDrawer.get());
-#endif
+			mVrsRenderer->render(std::vector<cgb::vulkan_render_object*>{}, mCurrentVrsImageComputeDrawer.get());
 		}
 
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
@@ -1555,9 +1679,9 @@ private:
 
 	void load_models()
 	{
-		//auto path = "assets/models/sponza/sponza_structure.obj";
-		auto path = "assets/models/island/island_final.dae";
-		auto transform = glm::scale(glm::vec3(1.01f));
+		auto path = "assets/models/sponza/sponza_structure.obj";
+		//auto path = "assets/models/island/island_final.dae";
+		auto transform = glm::scale(glm::vec3(0.01f));
 		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace;
 		mSponzaModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
 		mSponzaModel->create_render_objects(mMaterialObjectResourceBundleLayout);
@@ -1688,11 +1812,11 @@ private:
 		frameTimeDataVector.clear();
 	}
 
-	void end_capture_frame_data() {
+	void end_capture_frame_data(std::string filePostifx = "") {
 		captureFrameTime = false;
 
 		std::ofstream outFile;
-		outFile.open("frame_times");
+		outFile.open("frame_times_" + filePostifx);
 		for (frame_time_data ftd : frameTimeDataVector) {
 			outFile << ftd.sum_t / ftd.frame_count << "\t" << ftd.sum_t << "\t" << ftd.frame_count << "\n";
 		}
@@ -1700,63 +1824,6 @@ private:
 
 		frameTimeDataVector.clear();
 	}
-};
-
-class camera_path : public cgb::cg_element
-{
-public:
-	camera_path(cgb::quake_camera& cam)
-		: mCam{ &cam } // Target camera
-		, mSpeed{ 0.1f } // How fast does it move
-		, mAutoPathActive{ true }
-	{
-		// The path to follow
-		mPath = std::make_unique<cgb::quadratic_uniform_b_spline>(std::vector<glm::vec3>{
-			glm::vec3(10.0f, 15.0f, -10.0f),
-				glm::vec3(-10.0f, 5.0f, -5.0f),
-				glm::vec3(0.0f, 0.0f, 0.0f),
-				glm::vec3(10.0f, 15.0f, 10.0f),
-				glm::vec3(10.0f, 10.0f, 0.0f)
-		});
-	}
-
-	int32_t priority() const override
-	{
-		return 5;
-	}
-
-	void initialize() override
-	{
-		mStartTime = cgb::time().time_since_start();
-	}
-
-	void update() override
-	{
-		// [Space] ... toggle auto-path
-		if (cgb::input().key_pressed(cgb::key_code::space)) {
-			mAutoPathActive = !mAutoPathActive;
-		}
-		// [R] ... reset animation:
-		if (cgb::input().key_pressed(cgb::key_code::r)) {
-			mStartTime = cgb::time().time_since_start();
-		}
-
-		// Animate along the curve:
-		if (mAutoPathActive) {
-			auto t = (cgb::time().time_since_start() - mStartTime) * mSpeed;
-			if (t >= 0.00001 && t <= 1) {
-				mCam->set_translation(mPath->value_at(t));
-				mCam->look_along(mPath->slope_at(t));
-			}
-		}
-	}
-
-private:
-	cgb::quake_camera* mCam;
-	float mStartTime;
-	float mSpeed;
-	bool mAutoPathActive;
-	std::unique_ptr<cgb::cp_interpolation> mPath;
 };
 
 int main()
@@ -1779,7 +1846,6 @@ int main()
 
 		// Create a "behavior" which contains functionality of our program
 		auto vrsBehavior = vrs_behavior();
-		auto camPath = camera_path(vrsBehavior.mCamera);
 
 		// Create a composition of all things that define the essence of 
 		// our program, which there are:
@@ -1789,7 +1855,7 @@ int main()
 		//  - a behavior
 		auto hello = cgb::composition<cgb::varying_update_timer, cgb::sequential_executor>({
 					&vrsBehavior,
-					&camPath
+					&(vrsBehavior.mCameraPath)
 			});
 
 		// Let's go:
