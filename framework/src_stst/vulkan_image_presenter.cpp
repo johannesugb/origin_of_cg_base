@@ -26,9 +26,9 @@ namespace cgb {
 	void vulkan_image_presenter::recreate_swapchain() {
 		int width = 0, height = 0;
 		while (width == 0 || height == 0) {
-			GLFWwindow* window = mWindow.get();
+			GLFWwindow* window = cgb::context().main_window()->handle()->mHandle;
 			glfwGetFramebufferSize(window, &width, &height);
-			glfwWaitEvents();
+			//glfwWaitEvents();
 		}
 
 		vkDeviceWaitIdle(vulkan_context::instance().device);
@@ -44,7 +44,6 @@ namespace cgb {
 		vk::Result result = vulkan_context::instance().device.acquireNextImageKHR(mSwapChain, std::numeric_limits<uint64_t>::max(), signalSemaphore, nullptr, &imageIndex);
 
 		if (result == vk::Result::eErrorOutOfDateKHR) {
-			recreate_swapchain();
 			mSwapChainRecreated = true;
 			return;
 		}
@@ -72,7 +71,6 @@ namespace cgb {
 
 		if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
 			mSwapChainRecreated = true;
-			recreate_swapchain();
 		}
 		else if (result != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to present swap chain image!");

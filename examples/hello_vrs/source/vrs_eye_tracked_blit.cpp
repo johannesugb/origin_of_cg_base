@@ -187,7 +187,7 @@ void vrs_eye_tracked_blit::draw_initial(vk::CommandBuffer& commandBuffer)
 	vk::ImageMemoryBarrier imgMemBarrier = {};
 	imgMemBarrier.srcAccessMask = {};
 	imgMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
-	imgMemBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	imgMemBarrier.oldLayout = vk::ImageLayout::eGeneral;
 	imgMemBarrier.newLayout = vk::ImageLayout::eGeneral;
 	imgMemBarrier.image = mVrsDebugImages[cgb::vulkan_context::instance().currentFrame]->get_image();
 	imgMemBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -312,6 +312,6 @@ void vrs_eye_tracked_blit::blit_initial_image(vk::CommandBuffer& commandBuffer)
 	imgMemBarrier.image = mPrecomputedImage->get_image();
 
 	commandBuffer.pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eShadingRateImageNV, {},
+		vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eShadingRateImageNV | vk::PipelineStageFlagBits::eTransfer, {},
 		{}, {}, { imgMemBarrier, precomputedBarrier });
 }

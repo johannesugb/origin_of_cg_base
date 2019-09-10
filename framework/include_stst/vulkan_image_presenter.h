@@ -14,6 +14,7 @@ namespace cgb {
 		void present_image(std::vector<vk::Semaphore> waitSemaphores);
 
 		bool is_swap_chain_recreated() { return mSwapChainRecreated; }
+		void reset_swap_chain_recreated() { mSwapChainRecreated = false; }
 		void recreate_swapchain();
 
 		vk::Format get_swap_chain_image_format() { return mSwapChainImageFormat; }

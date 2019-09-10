@@ -19,8 +19,8 @@ layout(set = 1, binding = 0) uniform sampler2D uNormalSampler;
 layout(set = 1, binding = 1) uniform sampler2D uAmbientSampler;
 layout(set = 1, binding = 2) uniform sampler2D uDiffSampler;
 layout(set = 1, binding = 3) uniform sampler2D uSpecSampler;
-//layout(set = 1, binding = 4) uniform sampler2DMS uDepthSampler;
-layout(set = 1, binding = 4) uniform sampler2D uDepthSampler;
+layout(set = 1, binding = 4) uniform sampler2DMS uDepthSampler;
+//layout(set = 1, binding = 4) uniform sampler2D uDepthSampler;
 
 // ################ output-color of fragment ################
 layout(location = 0) out vec4 oFragColor;
@@ -183,8 +183,8 @@ void main()
 
 	oFragColor = vec4(0);
 	for (int i = 0; i < 2; i++) {
-		float depth = FetchFromSampler(uDepthSampler, uv).r; 
-		//float depth = FetchFromSampler(uDepthSampler, uv, i).r; //texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; 
+		//float depth = FetchFromSampler(uDepthSampler, uv).r; 
+		float depth = FetchFromSampler(uDepthSampler, uv, i).r; //texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; 
 	
 		vec3 position_vs = vec3(0);
 		// Optimization: Positions from depth

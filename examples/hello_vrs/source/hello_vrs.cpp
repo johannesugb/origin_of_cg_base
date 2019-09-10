@@ -327,6 +327,10 @@ public:
 	{
 		eyeInf = std::make_shared<eyetracking_interface>();
 		//initWindow();
+
+		auto window = cgb::context().main_window()->handle()->mHandle;
+		glfwSetWindowUserPointer(window, this);
+		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 		initVulkan();
 	}
 
@@ -342,6 +346,13 @@ public:
 	{
 		if (cgb::input().key_pressed(cgb::key_code::escape)) {
 			cgb::current_composition().stop();
+		}
+
+		if (mImagePresenter->is_swap_chain_recreated() || cgb::input().key_pressed(cgb::key_code::f4) || framebufferResized) {
+			framebufferResized = false;
+			mImagePresenter->recreate_swapchain();
+			recreateSwapChain();
+			mImagePresenter->reset_swap_chain_recreated();
 		}
 		if (cgb::input().key_pressed(cgb::key_code::f5)) {
 			cgb::vulkan_context::instance().device.waitIdle();
@@ -475,17 +486,21 @@ private:
 	{
 		cgb::vulkan_context::instance().initVulkan();
 
-		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
-
 		createCommandPools();
 
 		transferCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(transferCommandPool, cgb::vulkan_context::instance().graphicsQueue);
 		cgb::vulkan_context::instance().transferCommandBufferManager = transferCommandBufferManager;
-
-
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
+		init_swapchain_objects();
+	}
+
+	void init_swapchain_objects()
+	{
+
+		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e2;
 		renderWidth = mImagePresenter->get_swap_chain_extent().width * 2;
 		renderHeight = mImagePresenter->get_swap_chain_extent().height * 2;
+
 		cgb::vulkan_context::instance().dynamicRessourceCount = mImagePresenter->get_swap_chain_images_count();
 		drawCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(cgb::vulkan_context::instance().dynamicRessourceCount, commandPool, cgb::vulkan_context::instance().graphicsQueue);
 		mVulkanRenderQueue = std::make_shared<cgb::vulkan_render_queue>(cgb::vulkan_context::instance().graphicsQueue);
@@ -843,13 +858,12 @@ private:
 		mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/vrs_debug.frag.spv");
-		mVrsDebugPipeline->add_color_blend_attachment_state(mTAAMeanVariancePipeline->get_color_blend_attachment_state(0));
-
+		//mVrsDebugPipeline->add_color_blend_attachment_state(mTAAMeanVariancePipeline->get_color_blend_attachment_state(0));
 
 		auto& colorBlend = mVrsDebugPipeline->get_color_blend_attachment_state(0);
 		colorBlend.blendEnable = VK_TRUE;
 		colorBlend.dstColorBlendFactor = vk::BlendFactor::eOne;
-		//mVrsDebugPipeline->add_color_blend_attachment_state(colorBlend);
+		mVrsDebugPipeline->add_color_blend_attachment_state(colorBlend);
 		//mVrsDebugPipeline->disable_shading_rate_image();
 		mVrsDebugPipeline->bake();
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
@@ -886,23 +900,8 @@ private:
 
 	void cleanup()
 	{
-#if DEFERRED_SHADING
-		mDefRend.reset();
-#endif // DEFERRED_SHADING
 		cleanupSwapChain();
 
-		mResourceBundleGroup.reset();
-		cgb::vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
-
-		mVrsDebugFullscreenQuad.reset();
-		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
-			sponzaRenderObject.reset();
-		}
-		for (auto sponzaRenderObject : mParallelPipesModel->get_render_objects()) {
-			sponzaRenderObject.reset();
-		}
-		texture.reset();
-		textureImage.reset();
 		transferCommandBufferManager.reset();
 		mVulkanRenderQueue.reset();
 		drawCommandBufferManager.reset();
@@ -911,7 +910,7 @@ private:
 		cgb::vulkan_context::instance().device.destroyCommandPool(commandPool);
 
 		// destroy instance (in context)
-
+		mImagePresenter.reset();
 	}
 
 	//void initWindow()
@@ -950,6 +949,7 @@ private:
 		mVrsMasComputePipeline.reset();
 		mVrsTAAClipComputePipeline.reset();
 		mVrsDebugPipeline.reset();
+
 		mVulkanFramebuffer.reset();
 
 		mPostProcDrawer.reset();
@@ -963,8 +963,6 @@ private:
 		for (int i = 0; i < mTAAFramebuffers.size(); i++) {
 			mTAAFramebuffers[i].reset();
 		}
-
-		mImagePresenter.reset();
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			mVrsRenderer.reset();
 		}
@@ -973,41 +971,60 @@ private:
 		mTAARenderer.reset();
 		mTAAMeanVarianceRenderer.reset();
 		mPostProcRenderer.reset();
+#if DEFERRED_SHADING
+		mDefRend.reset();
+#endif // DEFERRED_SHADING
+
+		// not part of the swapchain but free anyway
+		mResourceBundleGroup.reset();
+		cgb::vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
+
+		mVrsDebugFullscreenQuad.reset();
+		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
+			sponzaRenderObject.reset();
+		}
+		for (auto sponzaRenderObject : mParallelPipesModel->get_render_objects()) {
+			sponzaRenderObject.reset();
+		}
+		texture.reset();
+		textureImage.reset();
 	}
 
-	//void recreateSwapChain()
-	//{
-	//	int width = 0, height = 0;
-	//	while (width == 0 || height == 0) {
-	//		glfwGetFramebufferSize(cgb::current_composition().window_in_focus()->handle()->mHandle, &width, &height);
-	//		glfwWaitEvents();
-	//	}
+	void recreateSwapChain()
+	{
+		//int width = 0, height = 0;
+		//while (width == 0 || height == 0) {
+		//	glfwGetFramebufferSize(cgb::current_composition().window_in_focus()->handle()->mHandle, &width, &height);
+		//	glfwWaitEvents();
+		//}
 
-	//	cgb::vulkan_context::instance().device.waitIdle();
+		//cgb::vulkan_context::instance().device.waitIdle();
 
-	//	cleanupSwapChain();
+		cleanupSwapChain();
 
-	//	imagePresenter = std::make_shared<vkImagePresenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
-	//	mRenderer = std::make_unique<cgb::vulkan_renderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
-	//	createColorResources();
-	//	createDepthResources();
-	//	mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(cgb::vulkan_context::instance().msaaSamples, colorImage, depthImage, imagePresenter);
+		init_swapchain_objects();
 
-	//	vk::Viewport viewport = {};
-	//	viewport.x = 0.0f;
-	//	viewport.y = 0.0f;
-	//	viewport.width = (float)imagePresenter->get_swap_chain_extent().width;
-	//	viewport.height = (float)imagePresenter->get_swap_chain_extent().height;
-	//	viewport.minDepth = 0.0f;
-	//	viewport.maxDepth = 1.0f;
+		//imagePresenter = std::make_shared<vkImagePresenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
+		//mRenderer = std::make_unique<cgb::vulkan_renderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
+		//createColorResources();
+		//createDepthResources();
+		//mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(cgb::vulkan_context::instance().msaaSamples, colorImage, depthImage, imagePresenter);
 
-	//	vk::Rect2D scissor = {};
-	//	scissor.offset = { 0, 0 };
-	//	scissor.extent = imagePresenter->get_swap_chain_extent();
+		//vk::Viewport viewport = {};
+		//viewport.x = 0.0f;
+		//viewport.y = 0.0f;
+		//viewport.width = (float)imagePresenter->get_swap_chain_extent().width;
+		//viewport.height = (float)imagePresenter->get_swap_chain_extent().height;
+		//viewport.minDepth = 0.0f;
+		//viewport.maxDepth = 1.0f;
 
-	//	mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, descriptorSetLayout);
-	//	drawer = std::make_unique<vkDrawer>(drawCommandBufferManager, mRenderVulkanPipeline);
-	//}
+		//vk::Rect2D scissor = {};
+		//scissor.offset = { 0, 0 };
+		//scissor.extent = imagePresenter->get_swap_chain_extent();
+
+		//mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, descriptorSetLayout);
+		//drawer = std::make_unique<vkDrawer>(drawCommandBufferManager, mRenderVulkanPipeline);
+	}
 
 	void createCommandPools()
 	{
@@ -1713,6 +1730,7 @@ private:
 
 	void create_lots_of_lights()
 	{
+		mPointLights.clear();
 		std::vector<glm::vec3> light_colors;
 		light_colors.emplace_back(1.0f, 1.0f, 1.0f);
 		light_colors.emplace_back(0.878f, 1.000f, 1.000f);
