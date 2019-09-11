@@ -316,6 +316,7 @@ private:
 	};
 
 	bool captureFrameTime = false;
+	bool captureFrameTimeReset = false;
 	std::vector<frame_time_data> frameTimeDataVector;
 
 	std::shared_ptr<vrs_image_compute_drawer_base> mCurrentVrsImageComputeDrawer;
@@ -463,7 +464,20 @@ public:
 					recreateSwapChain();
 				}
 				else {
-					evalStarted = false;
+
+					if ((int)cgb::vulkan_context::instance().msaaSamples <= 8) {
+						cgb::vulkan_context::instance().msaaSamples = (vk::SampleCountFlagBits)((int)cgb::vulkan_context::instance().msaaSamples * 2);
+						// reset values for 
+						resolutionStrategyIndex = 0;
+						shadingRateStrategyIndex = -2;
+						title = "NONE";
+
+						cgb::vulkan_context::instance().shadingRateImageSupported = false;
+						recreateSwapChain();
+					}
+					else {
+						evalStarted = false;
+					}
 				}
 			}
 		}
@@ -473,8 +487,8 @@ public:
 			shadingRateStrategyIndex = -2;
 			resolutionStrategyIndex = 0;
 			title = "NONE";
-			msaaSamples = 1;
 			renderResMultiplier = 1.0;
+			cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
 
 			cgb::vulkan_context::instance().shadingRateImageSupported = false;
 			recreateSwapChain();
@@ -513,6 +527,12 @@ public:
 		frame_count++;
 
 		sum_t += cgb::time().delta_time();
+
+		if (captureFrameTimeReset) {
+			captureFrameTimeReset = false;
+			sum_t = 0;
+			frame_count = 0;
+		}
 		if (sum_t >= 1.0f) {
 			cgb::context().main_window()->set_title(std::to_string(1.0f / cgb::time().delta_time()).c_str());
 			if (captureFrameTime) {
@@ -538,12 +558,12 @@ private:
 		cgb::vulkan_context::instance().transferCommandBufferManager = transferCommandBufferManager;
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
 		init_swapchain_objects();
+
+		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
 	}
 
 	void init_swapchain_objects()
 	{
-
-		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e2;
 		renderWidth = mImagePresenter->get_swap_chain_extent().width * renderResMultiplier;
 		renderHeight = mImagePresenter->get_swap_chain_extent().height * renderResMultiplier;
 
@@ -1862,6 +1882,7 @@ private:
 
 	void start_capture_frame_data() {
 		captureFrameTime = true;
+		captureFrameTimeReset = true;
 		frameTimeDataVector.clear();
 	}
 
