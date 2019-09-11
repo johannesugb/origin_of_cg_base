@@ -98,7 +98,7 @@ namespace cgb {
 		vk::SurfaceKHR surface;
 		vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
 
-		vulkan_memory_manager* memoryManager;
+		std::unique_ptr<vulkan_memory_manager> memoryManager;
 
 		// updated per frame/pass
 		int currentFrame;

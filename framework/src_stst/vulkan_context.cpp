@@ -1,5 +1,7 @@
 #include "vulkan_context.h"
 
+#include "vulkan_memory_manager.h"
+
 #include <set>
 
 namespace cgb {
@@ -46,6 +48,8 @@ namespace cgb {
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
+
+		memoryManager = std::make_unique<vulkan_memory_manager>();
 	}
 
 	void vulkan_context::createInstance() {

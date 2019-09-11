@@ -25,6 +25,7 @@
 #include "vulkan_resource_bundle_layout.h"
 #include "vulkan_resource_bundle_group.h"
 #include "vulkan_resource_bundle.h"
+#include "vulkan_memory_manager.h"
 
 #include "vrs_image_compute_drawer.h"
 #include "vrs_cas_compute_drawer.h"
@@ -59,9 +60,6 @@
 
 #define BLIT_FINAL_IMAGE 0
 #define TAA_ENABLED 0
-
-const int WIDTH = 1920;
-const int HEIGHT = 1080;
 
 
 const int MAX_COUNT_POINT_LIGHTS = 100;
@@ -307,6 +305,7 @@ private:
 	// super sampling
 	uint32_t renderWidth;
 	uint32_t renderHeight;
+	double renderResMultiplier = 1;
 
 
 	// capture frame times
@@ -350,7 +349,6 @@ public:
 
 		if (mImagePresenter->is_swap_chain_recreated() || cgb::input().key_pressed(cgb::key_code::f4) || framebufferResized) {
 			framebufferResized = false;
-			mImagePresenter->recreate_swapchain();
 			recreateSwapChain();
 			mImagePresenter->reset_swap_chain_recreated();
 		}
@@ -384,57 +382,105 @@ public:
 		}
 
 		// EVALUATION
-		static int shadingRateStrategyIndex = 0;
+		static int shadingRateStrategyIndex = -2;
+		static int resolutionStrategyIndex = 0;
 		static bool evalStarted = false;
-		static std::string namePostfix = "default";
-		if (cgb::input().key_pressed(cgb::key_code::f9)) {
-			evalStarted = true;
+		static std::string title = "NONE";
+		static int msaaSamples = 2;
+
+		if (evalStarted && !cgb::vulkan_context::instance().shadingRateImageSupported && shadingRateStrategyIndex == -2) {
 			mCameraPath.resetAnimation();
 			start_capture_frame_data();
-			mCurrentVrsImageComputeDrawer = mVrsImageComputeDrawer;					
-			namePostfix = "VRS_EYE";
+			shadingRateStrategyIndex += 1;
 		}
 
 		if (evalStarted && mCameraPath.animationFinished()) {
+			if (!cgb::vulkan_context::instance().shadingRateImageSupported) {
+				cgb::vulkan_context::instance().shadingRateImageSupported = true;
+				recreateSwapChain();
+				return;
+			}
+
+			end_capture_frame_data("msaa" + std::to_string((int)cgb::vulkan_context::instance().msaaSamples) + "_res" + std::to_string(renderWidth) + "_" + std::to_string(renderHeight), title + "\n");
 			mCameraPath.resetAnimation();
-			end_capture_frame_data(namePostfix);
-			shadingRateStrategyIndex = (shadingRateStrategyIndex + 1);
+			shadingRateStrategyIndex += 1;
 
 			if (shadingRateStrategyIndex < 6) {
 				start_capture_frame_data();
 
 				if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+					// VRS_EYE
+					if (shadingRateStrategyIndex == 0) {
+						mCurrentVrsImageComputeDrawer = mVrsImageComputeDrawer;
+						title = "VRS_EYE";
+					}
 					// VRS_EYE_BLIT
 					if (shadingRateStrategyIndex == 1) {
 						mCurrentVrsImageComputeDrawer = mVrsEyeTrackedBlitDrawer;
-						namePostfix = "VRS_EYE_BLIT";
+						title = "VRS_EYE_BLIT";
 					}
 					// VRS_CAS
 					else if (shadingRateStrategyIndex == 2) {
 						mCurrentVrsImageComputeDrawer = mVrsCasComputeDrawer;
-						namePostfix = "VRS_CAS";
+						title = "VRS_CAS";
 					}
 					// VRS_CAS_EDGE
 					else if (shadingRateStrategyIndex == 3) {
 						mCurrentVrsImageComputeDrawer = mVrsCasEdgeComputeDrawer;
-						namePostfix = "VRS_CAS_EDGE";
+						title = "VRS_CAS_EDGE";
 					}
 					// VRS_MAS
 					else if (shadingRateStrategyIndex == 4) {
 						mCurrentVrsImageComputeDrawer = mVrsMasComputeDrawer;
-						namePostfix = "VRS_MAS";
+						title = "VRS_MAS";
 					}
 					// VRS_TAA
 					else if (shadingRateStrategyIndex == 5) {
 						mCurrentVrsImageComputeDrawer = mVrsTAAClipComputeDrawer;
-						namePostfix = "VRS_TAA";
+						title = "VRS_TAA";
 					}
 				}
 			}
 			else {
-				evalStarted = false;
+				resolutionStrategyIndex += 1;
+				if (resolutionStrategyIndex < 4) {
+					switch (resolutionStrategyIndex) {
+					case 1:
+						renderResMultiplier = 4.0 / 3.0;
+						break;
+					case 2:
+						renderResMultiplier = 2;
+						break;
+					case 3:
+						renderResMultiplier = 4;
+						break;
+					}
+					// reset values for 
+					shadingRateStrategyIndex = -2;
+					title = "NONE";
+
+					cgb::vulkan_context::instance().shadingRateImageSupported = false;
+					recreateSwapChain();
+				}
+				else {
+					evalStarted = false;
+				}
 			}
 		}
+
+		if (cgb::input().key_pressed(cgb::key_code::f9)) {
+			evalStarted = true;
+			shadingRateStrategyIndex = -2;
+			resolutionStrategyIndex = 0;
+			title = "NONE";
+			msaaSamples = 1;
+			renderResMultiplier = 1.0;
+
+			cgb::vulkan_context::instance().shadingRateImageSupported = false;
+			recreateSwapChain();
+		}
+
+		// END EVALUATION
 
 		if (cgb::input().key_pressed(cgb::key_code::tab)) {
 			if (mCamera.is_enabled()) {
@@ -498,8 +544,8 @@ private:
 	{
 
 		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e2;
-		renderWidth = mImagePresenter->get_swap_chain_extent().width * 2;
-		renderHeight = mImagePresenter->get_swap_chain_extent().height * 2;
+		renderWidth = mImagePresenter->get_swap_chain_extent().width * renderResMultiplier;
+		renderHeight = mImagePresenter->get_swap_chain_extent().height * renderResMultiplier;
 
 		cgb::vulkan_context::instance().dynamicRessourceCount = mImagePresenter->get_swap_chain_images_count();
 		drawCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(cgb::vulkan_context::instance().dynamicRessourceCount, commandPool, cgb::vulkan_context::instance().graphicsQueue);
@@ -977,7 +1023,10 @@ private:
 
 		// not part of the swapchain but free anyway
 		mResourceBundleGroup.reset();
-		cgb::vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
+
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			cgb::vulkan_context::instance().device.destroyDescriptorPool(vrsComputeDescriptorPool);
+		}
 
 		mVrsDebugFullscreenQuad.reset();
 		for (auto sponzaRenderObject : mSponzaModel->get_render_objects()) {
@@ -988,42 +1037,28 @@ private:
 		}
 		texture.reset();
 		textureImage.reset();
+		mSponzaModel.reset();
+		mParallelPipesModel.reset();
+
+		mVrsDebugFullscreenQuad.reset();
+		mPostProcFullScreenQuads[0].reset();
+		mPostProcFullScreenQuads[1].reset();
+		mTAAFullScreenQuads[0].reset();
+		mTAAFullScreenQuads[1].reset();
+		mTAAFramebuffers[0].reset();
+		mTAAFramebuffers[1].reset();
+		mTAAMeanVarianceFramebuffer.reset();
+		mVulkanFramebuffer.reset();
+
+		// TODO remove, hack for 8k
+		cgb::vulkan_context::instance().memoryManager->cleanup();
 	}
 
 	void recreateSwapChain()
 	{
-		//int width = 0, height = 0;
-		//while (width == 0 || height == 0) {
-		//	glfwGetFramebufferSize(cgb::current_composition().window_in_focus()->handle()->mHandle, &width, &height);
-		//	glfwWaitEvents();
-		//}
-
-		//cgb::vulkan_context::instance().device.waitIdle();
-
+		mImagePresenter->recreate_swapchain();
 		cleanupSwapChain();
-
 		init_swapchain_objects();
-
-		//imagePresenter = std::make_shared<vkImagePresenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
-		//mRenderer = std::make_unique<cgb::vulkan_renderer>(imagePresenter, mVulkanRenderQueue, drawCommandBufferManager);
-		//createColorResources();
-		//createDepthResources();
-		//mVulkanFramebuffer = std::make_shared<cgb::vulkan_framebuffer>(cgb::vulkan_context::instance().msaaSamples, colorImage, depthImage, imagePresenter);
-
-		//vk::Viewport viewport = {};
-		//viewport.x = 0.0f;
-		//viewport.y = 0.0f;
-		//viewport.width = (float)imagePresenter->get_swap_chain_extent().width;
-		//viewport.height = (float)imagePresenter->get_swap_chain_extent().height;
-		//viewport.minDepth = 0.0f;
-		//viewport.maxDepth = 1.0f;
-
-		//vk::Rect2D scissor = {};
-		//scissor.offset = { 0, 0 };
-		//scissor.extent = imagePresenter->get_swap_chain_extent();
-
-		//mRenderVulkanPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, descriptorSetLayout);
-		//drawer = std::make_unique<vkDrawer>(drawCommandBufferManager, mRenderVulkanPipeline);
 	}
 
 	void createCommandPools()
@@ -1830,11 +1865,12 @@ private:
 		frameTimeDataVector.clear();
 	}
 
-	void end_capture_frame_data(std::string filePostifx = "") {
+	void end_capture_frame_data(std::string filePostifx = "default", std::string title = "title") {
 		captureFrameTime = false;
 
 		std::ofstream outFile;
-		outFile.open("frame_times_" + filePostifx);
+		outFile.open("frame_times_" + filePostifx, std::ios_base::app | std::ios_base::out);
+		outFile << title;
 		for (frame_time_data ftd : frameTimeDataVector) {
 			outFile << ftd.sum_t / ftd.frame_count << "\t" << ftd.sum_t << "\t" << ftd.frame_count << "\n";
 		}
@@ -1858,9 +1894,10 @@ int main()
 
 		// Create a window which we're going to use to render to
 		auto mainWnd = cgb::context().create_window("Hello VRS!");
-		mainWnd->set_resolution({ 1600, 900 });
+		mainWnd->set_resolution({ 1920, 1080 });
 		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
 		mainWnd->open();
+		//mainWnd->switch_to_fullscreen_mode();
 
 		// Create a "behavior" which contains functionality of our program
 		auto vrsBehavior = vrs_behavior();

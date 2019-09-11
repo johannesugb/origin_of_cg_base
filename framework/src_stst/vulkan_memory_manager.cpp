@@ -6,6 +6,8 @@ namespace cgb {
 
 	vulkan_memory_manager::vulkan_memory_manager()
 	{
+		allocatedMemory = std::unordered_map<vk::DeviceMemory*, vulkan_memory>();
+		allocatedMemory.clear();
 	}
 
 
@@ -19,11 +21,13 @@ namespace cgb {
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = find_memory_type(memRequirements.memoryTypeBits, properties);
 
-		if (vulkan_context::instance().device.allocateMemory(&allocInfo, nullptr, &cgbMemory.memory) != vk::Result::eSuccess) {
+		auto result = vulkan_context::instance().device.allocateMemory(&allocInfo, nullptr, &cgbMemory.memory);
+		if (result != vk::Result::eSuccess) {
 			throw std::runtime_error("failed to allocate buffer memory!");
 		}
 
 		cgbMemory.offset = 0;
+		allocatedMemory.emplace(&cgbMemory.memory, cgbMemory);
 	}
 
 	uint32_t vulkan_memory_manager::find_memory_type(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
@@ -41,6 +45,17 @@ namespace cgb {
 
 	void vulkan_memory_manager::free_memory(vulkan_memory &cgbMemory)
 	{
-		vkFreeMemory(vulkan_context::instance().device, cgbMemory.memory, nullptr);
+		auto elem = allocatedMemory.find(&cgbMemory.memory);
+		if (elem != allocatedMemory.end()) {
+			vkFreeMemory(vulkan_context::instance().device, cgbMemory.memory, nullptr);
+			allocatedMemory.erase(elem);
+		}
+	}
+
+	void vulkan_memory_manager::cleanup() {
+		for (auto& it : allocatedMemory) {
+			vkFreeMemory(vulkan_context::instance().device, it.second.memory, nullptr);
+		}
+		allocatedMemory.clear();
 	}
 }
