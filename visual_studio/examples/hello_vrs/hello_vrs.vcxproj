@@ -63,6 +63,7 @@
     <ClCompile Include="..\..\..\examples\hello_vrs\source\deferred_renderer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\hello_vrs.cpp" />
+    <ClCompile Include="..\..\..\examples\hello_vrs\source\save_image.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_cas_edge_compute_drawer.cpp" />
     <ClCompile Include="..\..\..\examples\hello_vrs\source\vrs_eye_tracked_blit.cpp" />
@@ -74,6 +75,7 @@
     <ClInclude Include="..\..\..\examples\hello_vrs\source\common_structs.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\deferred_renderer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\eyetracking_interface.h" />
+    <ClInclude Include="..\..\..\examples\hello_vrs\source\save_image.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_cas_compute_drawer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_cas_edge_compute_drawer.h" />
     <ClInclude Include="..\..\..\examples\hello_vrs\source\vrs_eye_tracked_blit.h" />

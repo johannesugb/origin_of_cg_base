@@ -39,6 +39,8 @@ namespace cgb {
 
 		uint32_t get_width() { return mTexWidth; }
 		uint32_t get_height() { return mTexHeight; }
+		uint32_t get_tex_channels() { return mTtexChannels; }
+		vulkan_memory get_image_memory() { return mImageMemory; }
 
 		void generate_mipmaps(vk::CommandBuffer& commandBuffer);
 

@@ -42,6 +42,7 @@
 #include "common_structs.h"
 
 #include "deferred_renderer.h"
+#include "save_image.h"
 
 #include "cp_interpolation.h"
 #include "bezier_curve.h"
@@ -127,16 +128,16 @@ public:
 		return (t >= 1.0);
 	}
 
+	float computeT() {
+		return (cgb::time().time_since_start() - mStartTime) * mSpeed;
+	}
+
 private:
 	cgb::quake_camera* mCam;
 	float mStartTime;
 	float mSpeed;
 	bool mAutoPathActive;
 	std::unique_ptr<cgb::cp_interpolation> mPath;
-
-	float computeT() {
-		return (cgb::time().time_since_start() - mStartTime) * mSpeed;
-	}
 };
 
 class vrs_behavior : public cgb::cg_element
@@ -320,6 +321,8 @@ private:
 	std::vector<frame_time_data> frameTimeDataVector;
 
 	std::shared_ptr<vrs_image_compute_drawer_base> mCurrentVrsImageComputeDrawer;
+
+	save_image sv_img;
 
 
 public:
@@ -537,6 +540,9 @@ public:
 			cgb::context().main_window()->set_title(std::to_string(1.0f / cgb::time().delta_time()).c_str());
 			if (captureFrameTime) {
 				frameTimeDataVector.push_back({frame_count, sum_t, cgb::time().delta_time() });
+
+				int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
+				sv_img.save_image_to_file(mTAAImages[tAAIndex][0], vk::ImageLayout::eShaderReadOnlyOptimal, std::to_string((int)(mCameraPath.computeT() * 10.0)));
 			}
 			sum_t = 0.0f;
 			frame_count = 0;
@@ -1071,6 +1077,7 @@ private:
 		mVulkanFramebuffer.reset();
 
 		// TODO remove, hack for 8k
+		sv_img = save_image();
 		cgb::vulkan_context::instance().memoryManager->cleanup();
 	}
 
