@@ -86,7 +86,12 @@ void deferred_renderer::init_vulkan(std::vector<std::shared_ptr<cgb::vulkan_rend
 	mLightingPassPipeline = std::make_shared<cgb::vulkan_pipeline>(mLightingPassFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { lightsResourceBundle->get_resource_bundle_layout(), geoBufferResourceBundleLayout }, sizeof(taa_prev_frame_data), cgb::ShaderStageFlagBits::eVertex | cgb::ShaderStageFlagBits::eFragment);
 	mLightingPassPipeline->add_attr_desc_binding(posAndUv);
 	mLightingPassPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/deferred/lighting_pass.vert.spv");
-	mLightingPassPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/deferred/lighting_pass.frag.spv");
+	if (cgb::vulkan_context::instance().msaaSamples == vk::SampleCountFlagBits::e1) {
+		mLightingPassPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/deferred/lighting_pass.frag.spv");
+	}
+	else {
+		mLightingPassPipeline->add_shader(cgb::ShaderStageFlagBits::eFragment, "shaders/deferred/lighting_pass_msaa.frag.spv");
+	}
 	mLightingPassPipeline->bake();
 	mLightingPassDrawer = std::make_unique<cgb::vulkan_drawer>(drawCommandBufferManager, mLightingPassPipeline, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle>> { lightsResourceBundle, mGeoBufferResourceBundle });
 	if (cgb::vulkan_context::instance().shadingRateImageSupported) {

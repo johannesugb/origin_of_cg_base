@@ -21,8 +21,8 @@ layout(set = 1, binding = 2) uniform sampler2D uDiffSampler;
 layout(set = 1, binding = 3) uniform sampler2D uSpecSampler;
 
 // MSAA difference
-//layout(set = 1, binding = 4) uniform sampler2DMS uDepthSampler;
-layout(set = 1, binding = 4) uniform sampler2D uDepthSampler;
+layout(set = 1, binding = 4) uniform sampler2DMS uDepthSampler;
+//layout(set = 1, binding = 4) uniform sampler2D uDepthSampler;
 
 // ################ output-color of fragment ################
 layout(location = 0) out vec4 oFragColor;
@@ -184,10 +184,10 @@ void main()
 	vec2 uv = gl_FragCoord.xy;
 
 	oFragColor = vec4(0);
-	//for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) {
 		// MSAA difference
-		float depth = FetchFromSampler(uDepthSampler, uv).r; 
-		//float depth = FetchFromSampler(uDepthSampler, uv, i).r; //texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; 
+		//float depth = FetchFromSampler(uDepthSampler, uv).r; 
+		float depth = FetchFromSampler(uDepthSampler, uv, i).r; //texelFetch(uDepthSampler, ivec2(gl_FragCoord.xy), 0).r; 
 	
 		vec3 position_vs = vec3(0);
 		// Optimization: Positions from depth
@@ -212,9 +212,9 @@ void main()
 		//oFragColor = texCol;
 		//oFragColor = vec4(normal_vs, 1);
 		gl_FragDepth = depth;
-	//}
+	}
 
-	//oFragColor = oFragColor/2;
+	oFragColor = oFragColor/2;
 
 
 	//if (gl_FragCoord.x < 1600) {

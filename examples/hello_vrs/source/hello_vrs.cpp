@@ -316,18 +316,29 @@ private:
 		float current_delta;
 	};
 
-	bool captureFrameTime = false;
-	bool captureFrameTimeReset = false;
-	std::vector<frame_time_data> frameTimeDataVector;
+	bool mCaptureFrameTime = false;
+	bool mCaptureFrameTimeReset = false;
+	std::vector<frame_time_data> mFrameTimeDataVector;
 
 	std::shared_ptr<vrs_image_compute_drawer_base> mCurrentVrsImageComputeDrawer;
 
-	save_image sv_img;
+	save_image mSaveImg;
+	std::string mEvalTitle;
+
+	bool mDeferredShadingEnabled;
+	bool mSponzaTrueIslandFalse;
 
 
 public:
 	void initialize() override
 	{
+#if DEFERRED_SHADING
+		mDeferredShadingEnabled = true;
+#else
+		mDeferredShadingEnabled = false;
+#endif
+		mSponzaTrueIslandFalse = true;
+
 		eyeInf = std::make_shared<eyetracking_interface>();
 		//initWindow();
 
@@ -354,7 +365,6 @@ public:
 		if (mImagePresenter->is_swap_chain_recreated() || cgb::input().key_pressed(cgb::key_code::f4) || framebufferResized) {
 			framebufferResized = false;
 			recreateSwapChain();
-			mImagePresenter->reset_swap_chain_recreated();
 		}
 		if (cgb::input().key_pressed(cgb::key_code::f5)) {
 			cgb::vulkan_context::instance().device.waitIdle();
@@ -374,9 +384,9 @@ public:
 			mTAAMeanVariancePipeline->bake();
 			mTAAPipeline->bake();
 
-#if DEFERRED_SHADING
-			mDefRend->reload_shaders();
-#endif
+			if (mDefRend) {
+				mDefRend->reload_shaders();
+			}
 		}
 		if (cgb::input().key_pressed(cgb::key_code::f7)) {
 			start_capture_frame_data();
@@ -389,8 +399,6 @@ public:
 		static int shadingRateStrategyIndex = -2;
 		static int resolutionStrategyIndex = 0;
 		static bool evalStarted = false;
-		static std::string title = "NONE";
-		static int msaaSamples = 2;
 
 		if (evalStarted && !cgb::vulkan_context::instance().shadingRateImageSupported && shadingRateStrategyIndex == -2) {
 			mCameraPath.resetAnimation();
@@ -405,7 +413,7 @@ public:
 				return;
 			}
 
-			end_capture_frame_data("msaa" + std::to_string((int)cgb::vulkan_context::instance().msaaSamples) + "_res" + std::to_string(renderWidth) + "_" + std::to_string(renderHeight), title + "\n");
+			end_capture_frame_data(compute_eval_filename(), mEvalTitle + "\n");
 			mCameraPath.resetAnimation();
 			shadingRateStrategyIndex += 1;
 
@@ -416,32 +424,32 @@ public:
 					// VRS_EYE
 					if (shadingRateStrategyIndex == 0) {
 						mCurrentVrsImageComputeDrawer = mVrsImageComputeDrawer;
-						title = "VRS_EYE";
+						mEvalTitle = "VRS_EYE";
 					}
 					// VRS_EYE_BLIT
 					if (shadingRateStrategyIndex == 1) {
 						mCurrentVrsImageComputeDrawer = mVrsEyeTrackedBlitDrawer;
-						title = "VRS_EYE_BLIT";
+						mEvalTitle = "VRS_EYE_BLIT";
 					}
 					// VRS_CAS
 					else if (shadingRateStrategyIndex == 2) {
 						mCurrentVrsImageComputeDrawer = mVrsCasComputeDrawer;
-						title = "VRS_CAS";
+						mEvalTitle = "VRS_CAS";
 					}
 					// VRS_CAS_EDGE
 					else if (shadingRateStrategyIndex == 3) {
 						mCurrentVrsImageComputeDrawer = mVrsCasEdgeComputeDrawer;
-						title = "VRS_CAS_EDGE";
+						mEvalTitle = "VRS_CAS_EDGE";
 					}
 					// VRS_MAS
 					else if (shadingRateStrategyIndex == 4) {
 						mCurrentVrsImageComputeDrawer = mVrsMasComputeDrawer;
-						title = "VRS_MAS";
+						mEvalTitle = "VRS_MAS";
 					}
 					// VRS_TAA
 					else if (shadingRateStrategyIndex == 5) {
 						mCurrentVrsImageComputeDrawer = mVrsTAAClipComputeDrawer;
-						title = "VRS_TAA";
+						mEvalTitle = "VRS_TAA";
 					}
 				}
 			}
@@ -461,7 +469,7 @@ public:
 					}
 					// reset values for 
 					shadingRateStrategyIndex = -2;
-					title = "NONE";
+					mEvalTitle = "NONE";
 
 					cgb::vulkan_context::instance().shadingRateImageSupported = false;
 					recreateSwapChain();
@@ -471,15 +479,48 @@ public:
 					if ((int)cgb::vulkan_context::instance().msaaSamples <= 8) {
 						cgb::vulkan_context::instance().msaaSamples = (vk::SampleCountFlagBits)((int)cgb::vulkan_context::instance().msaaSamples * 2);
 						// reset values for 
-						resolutionStrategyIndex = 0;
-						shadingRateStrategyIndex = -2;
-						title = "NONE";
-
+						mEvalTitle = "NONE";
 						cgb::vulkan_context::instance().shadingRateImageSupported = false;
+						shadingRateStrategyIndex = -2;
+						resolutionStrategyIndex = 0;
+						renderResMultiplier = 1.0;
+
 						recreateSwapChain();
 					}
 					else {
-						evalStarted = false;
+
+						if (!mDeferredShadingEnabled) {
+							mDeferredShadingEnabled = true;
+
+							// reset values for 
+							mEvalTitle = "NONE";
+							cgb::vulkan_context::instance().shadingRateImageSupported = false;
+							shadingRateStrategyIndex = -2;
+							resolutionStrategyIndex = 0;
+							renderResMultiplier = 1.0;
+							cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
+
+							recreateSwapChain();
+						}
+						else {
+							if (mSponzaTrueIslandFalse) {
+								mSponzaTrueIslandFalse = false;
+
+								// reset values for 
+								mEvalTitle = "NONE";
+								cgb::vulkan_context::instance().shadingRateImageSupported = false;
+								shadingRateStrategyIndex = -2;
+								resolutionStrategyIndex = 0;
+								renderResMultiplier = 1.0;
+								cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
+								mDeferredShadingEnabled = false;
+
+								recreateSwapChain();
+							}
+							else {
+								evalStarted = false;
+							}
+						}
 					}
 				}
 			}
@@ -487,13 +528,15 @@ public:
 
 		if (cgb::input().key_pressed(cgb::key_code::f9)) {
 			evalStarted = true;
+			mEvalTitle = "NONE";
+			cgb::vulkan_context::instance().shadingRateImageSupported = false;
 			shadingRateStrategyIndex = -2;
 			resolutionStrategyIndex = 0;
-			title = "NONE";
 			renderResMultiplier = 1.0;
-			cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
+			cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1; 
+			mDeferredShadingEnabled = false;
+			mSponzaTrueIslandFalse = true;
 
-			cgb::vulkan_context::instance().shadingRateImageSupported = false;
 			recreateSwapChain();
 		}
 
@@ -531,18 +574,18 @@ public:
 
 		sum_t += cgb::time().delta_time();
 
-		if (captureFrameTimeReset) {
-			captureFrameTimeReset = false;
+		if (mCaptureFrameTimeReset) {
+			mCaptureFrameTimeReset = false;
 			sum_t = 0;
 			frame_count = 0;
 		}
 		if (sum_t >= 1.0f) {
 			cgb::context().main_window()->set_title(std::to_string(1.0f / cgb::time().delta_time()).c_str());
-			if (captureFrameTime) {
-				frameTimeDataVector.push_back({frame_count, sum_t, cgb::time().delta_time() });
+			if (mCaptureFrameTime) {
+				mFrameTimeDataVector.push_back({frame_count, sum_t, cgb::time().delta_time() });
 
 				int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
-				sv_img.save_image_to_file(mTAAImages[tAAIndex][0], vk::ImageLayout::eShaderReadOnlyOptimal, std::to_string((int)(mCameraPath.computeT() * 10.0)));
+				mSaveImg.save_image_to_file(mTAAImages[tAAIndex][0], vk::ImageLayout::eShaderReadOnlyOptimal, compute_eval_filename() + "_" + mEvalTitle + "_" + std::to_string((int)(mCameraPath.computeT() * 10.0)));
 			}
 			sum_t = 0.0f;
 			frame_count = 0;
@@ -563,9 +606,10 @@ private:
 		transferCommandBufferManager = std::make_shared<cgb::vulkan_command_buffer_manager>(transferCommandPool, cgb::vulkan_context::instance().graphicsQueue);
 		cgb::vulkan_context::instance().transferCommandBufferManager = transferCommandBufferManager;
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
-		init_swapchain_objects();
 
 		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
+
+		init_swapchain_objects();
 	}
 
 	void init_swapchain_objects()
@@ -855,18 +899,18 @@ private:
 
 		auto sponzaBinding = std::shared_ptr<cgb::vulkan_attribute_description_binding>(new cgb::vulkan_attribute_description_binding(mesh.GetOrCreateForVertexAttribConfig(attrib_config)));
 
-#if DEFERRED_SHADING
+		if (mDeferredShadingEnabled) {
+			// TODO move this huge constructor into struct for deferred shading
+			mDefRend = std::make_shared<deferred_renderer>(dependentRenderers, mVulkanRenderQueue, drawCommandBufferManager, dynamic_image_resource{ colorImage, mPostProcImages },
+				std::vector<dynamic_image_resource> { dynamic_image_resource{ mVrsPrevRenderMsaaImage, mVrsPrevRenderImages }, dynamic_image_resource{ mMotionVectorMsaaImage, mMotionVectorImages } },
+				viewport, scissor, mMaterialObjectResourceBundleLayout, mGlobalResourceBundle, sponzaBinding, mResourceBundleGroup, vrsImages, mCamera);
 
-		// TODO move this huge constructor into struct for deferred shading
-		mDefRend = std::make_shared<deferred_renderer>(dependentRenderers, mVulkanRenderQueue, drawCommandBufferManager, dynamic_image_resource{ colorImage, mPostProcImages },
-			std::vector<dynamic_image_resource> { dynamic_image_resource{ mVrsPrevRenderMsaaImage, mVrsPrevRenderImages }, dynamic_image_resource{ mMotionVectorMsaaImage, mMotionVectorImages } },
-			viewport, scissor, mMaterialObjectResourceBundleLayout, mGlobalResourceBundle, sponzaBinding, mResourceBundleGroup, vrsImages, mCamera);
-
-		mTAAMeanVarianceRenderer->add_predecessors({ mDefRend->get_final_renderer() });
-		mDefRend->allocate_resources();
-#else
-		mTAAMeanVarianceRenderer->add_predecessors({ mRenderer });
-#endif // DEFERRED_SHADING
+			mTAAMeanVarianceRenderer->add_predecessors({ mDefRend->get_final_renderer() });
+			mDefRend->allocate_resources();
+		} 
+		else {
+			mTAAMeanVarianceRenderer->add_predecessors({ mRenderer });
+		}
 
 		mSponzaModel->allocate_render_object_data();
 		mParallelPipesModel->allocate_render_object_data();
@@ -1043,9 +1087,9 @@ private:
 		mTAARenderer.reset();
 		mTAAMeanVarianceRenderer.reset();
 		mPostProcRenderer.reset();
-#if DEFERRED_SHADING
-		mDefRend.reset();
-#endif // DEFERRED_SHADING
+		if (mDefRend) {
+			mDefRend.reset();
+		}
 
 		// not part of the swapchain but free anyway
 		mResourceBundleGroup.reset();
@@ -1077,7 +1121,7 @@ private:
 		mVulkanFramebuffer.reset();
 
 		// TODO remove, hack for 8k
-		sv_img = save_image();
+		mSaveImg = save_image();
 		cgb::vulkan_context::instance().memoryManager->cleanup();
 	}
 
@@ -1086,6 +1130,7 @@ private:
 		mImagePresenter->recreate_swapchain();
 		cleanupSwapChain();
 		init_swapchain_objects();
+		mImagePresenter->reset_swap_chain_recreated();
 	}
 
 	void createCommandPools()
@@ -1230,11 +1275,12 @@ private:
 		}
 		//cgb::vulkan_context::instance().currentFrame = oldFrameIdx;
 
-#if DEFERRED_SHADING
-		mDefRend->draw(renderObjects);
-#else
-		mRenderer->render({ renderObjects }, mMaterialDrawer.get());		
-#endif // DEFERRED_SHADING
+		if (mDeferredShadingEnabled) {
+			mDefRend->draw(renderObjects);
+		} 
+		else {
+			mRenderer->render({ renderObjects }, mMaterialDrawer.get());
+		}
 
 		// TAA pass
 		int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
@@ -1759,8 +1805,11 @@ private:
 	void load_models()
 	{
 		auto path = "assets/models/sponza/sponza_structure.obj";
-		//auto path = "assets/models/island/island_final.dae";
 		auto transform = glm::scale(glm::vec3(0.01f));
+		if (!mSponzaTrueIslandFalse) {
+			path = "assets/models/island/island_final.dae";
+			transform = glm::scale(glm::vec3(1.01f));
+		}
 		auto  model_loader_flags = cgb::MOLF_triangulate | cgb::MOLF_smoothNormals | cgb::MOLF_calcTangentSpace;
 		mSponzaModel = cgb::Model::LoadFromFile(path, transform, mResourceBundleGroup, model_loader_flags);
 		mSponzaModel->create_render_objects(mMaterialObjectResourceBundleLayout);
@@ -1888,23 +1937,30 @@ private:
 	}
 
 	void start_capture_frame_data() {
-		captureFrameTime = true;
-		captureFrameTimeReset = true;
-		frameTimeDataVector.clear();
+		mCaptureFrameTime = true;
+		mCaptureFrameTimeReset = true;
+		mFrameTimeDataVector.clear();
 	}
 
 	void end_capture_frame_data(std::string filePostifx = "default", std::string title = "title") {
-		captureFrameTime = false;
+		mCaptureFrameTime = false;
 
 		std::ofstream outFile;
 		outFile.open("frame_times_" + filePostifx, std::ios_base::app | std::ios_base::out);
 		outFile << title;
-		for (frame_time_data ftd : frameTimeDataVector) {
+		for (frame_time_data ftd : mFrameTimeDataVector) {
 			outFile << ftd.sum_t / ftd.frame_count << "\t" << ftd.sum_t << "\t" << ftd.frame_count << "\n";
 		}
 		outFile.close();
 
-		frameTimeDataVector.clear();
+		mFrameTimeDataVector.clear();
+	}
+
+	std::string compute_eval_filename() {
+		std::string model = (mSponzaTrueIslandFalse) ? "sponza_" : "island_";
+		std::string shading = mDeferredShadingEnabled ? "deferred_" : "forward_";
+
+		return model + shading + "msaa" + std::to_string((int)cgb::vulkan_context::instance().msaaSamples) + "_res" + std::to_string(renderWidth) + "_" + std::to_string(renderHeight);
 	}
 };
 
@@ -1925,7 +1981,7 @@ int main()
 		mainWnd->set_resolution({ 1920, 1080 });
 		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
 		mainWnd->open();
-		//mainWnd->switch_to_fullscreen_mode();
+		mainWnd->switch_to_fullscreen_mode();
 
 		// Create a "behavior" which contains functionality of our program
 		auto vrsBehavior = vrs_behavior();

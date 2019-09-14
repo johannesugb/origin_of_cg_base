@@ -39,6 +39,7 @@
     <None Include="..\..\..\examples\hello_vrs\shaders\deferred\blinnphong_nm_geo.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\deferred\lighting_pass.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\deferred\lighting_pass.vert" />
+    <None Include="..\..\..\examples\hello_vrs\shaders\deferred\lighting_pass_msaa.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\passthrough.frag" />
     <None Include="..\..\..\examples\hello_vrs\shaders\passthrough.vert" />
     <None Include="..\..\..\examples\hello_vrs\shaders\taa.frag" />

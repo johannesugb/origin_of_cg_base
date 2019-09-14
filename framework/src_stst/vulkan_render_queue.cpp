@@ -33,6 +33,7 @@ namespace cgb {
 
 		auto result = mGraphicsQueue.submit(1, &submitInfo, inFlightFence);
 		if (result != vk::Result::eSuccess) {
+			LOG_ERROR("failed to submit draw command buffer! Result was [%s]", result);
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 	}

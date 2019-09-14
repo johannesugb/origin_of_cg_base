@@ -216,14 +216,11 @@ void save_image::save_image_to_file(std::shared_ptr<cgb::vulkan_image> image, vk
 
 
 
-			//stbi_write_png(filename.c_str(), image->get_width(), image->get_height(), image->get_tex_channels(), data, 0);
+			//stbi_write_png((filename + ".png").c_str(), image->get_width(), image->get_height(), image->get_tex_channels(), data, image->get_width() * image->get_tex_channels());
 			std::cout << "Screenshot saved to disk" << std::endl;
 
 			// Clean up resources
 			vkUnmapMemory(cgb::vulkan_context::instance().device, dstImage.get_image_memory().memory);
-			//vkFreeMemory(cgb::vulkan_context::instance().device, dstImage.get_image_memory().memory, nullptr);
-			//vkDestroyImage(cgb::vulkan_context::instance().device, dstImage, nullptr);
-
 		});
 		threadList.push_back(thread);
 }
