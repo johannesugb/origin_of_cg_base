@@ -49,11 +49,11 @@ void main() {
 
 	float prevShadingRate = imageLoad(targetImage, uv).x;
 
-	float shadingRate = clampDist.x; // clip dist
+	float shadingRate = clampDist.x * 2.0; // clip dist
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	prevShadingRate = clamp(prevShadingRate, shadingRate - 1, shadingRate + 2);
-	//shadingRate =  mix(prevShadingRate, shadingRate, 0.6);
-	//shadingRate =  max(prevShadingRate, shadingRate);
+	shadingRate =  mix(prevShadingRate, shadingRate, 0.1);
+	shadingRate =  max(prevShadingRate, shadingRate);
 	
 	//shadingRate = 11;
 

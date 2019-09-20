@@ -20,8 +20,20 @@ void main() {
 	vec2 distVec = (clamp(pushConst.eyePoint, 0, 1) - uv * 1.0 / pushConst.imgSize) * 2.0 / sqrt(2) * 1.08; // * 1.16 * 2 // comment for blit figure
 	vec2 distVecInv =  (vec2(1.0) - clamp(pushConst.eyePoint, 0, 1) - uv * 1.0 / pushConst.imgSize) * 2.0 / sqrt(2) * 1.08; // vec2(2.0/sqrt(2)) -  distVec;
 
+	// for thesis figures
+	if (uv.x > 600/16.0) {
+		//distVec = (clamp(vec2(0.3,0.5), 0, 1) - uv * vec2(0.8,0.5) / pushConst.imgSize) * 2.0 ;
+	} 
+	else {
+		//distVec = (clamp(vec2(0.3,0.5), 0, 1) - vec2(600/16.0, uv.y) * vec2(0.8,0.5) / pushConst.imgSize) * 2.0 ;
+	}
 
-	uint shadingRate = int((1.0 - clamp(dot(distVec,distVec),0,1))*(1.0 - clamp(dot(distVec,distVec),0,1)) * 11.0);
+	uint shadingRate = int((1.0 - clamp(dot(distVec,distVec),0,1))*(1.0 - clamp(dot(distVec,distVec),0,1)) * 10.0) + 1;
+	//uint shadingRate = int((1.0 - clamp(dot(distVec,distVec),0,1)) * 11.0) + 1;
+	
+	if (uv.x <= 600/16.0) {
+		//shadingRate = int(uv.y/(900.0/16.0) * 20.0) + 1;
+	}
 
 	// comment for blit figure
 	//if (uv.x == 1600/16 || uv.y == 900/16 ||
@@ -32,8 +44,15 @@ void main() {
 
 	imageStore(targetImage, uv, uvec4(shadingRate,0,0,0));
 	
-	float shadingRateF = shadingRate / 12.0;
-	imageStore(debugImage, uv, vec4(shadingRateF));
+	float shadingRateF = (shadingRate - 1) / 10.0;
+	//shadingRateF = 1.0/10.0;
+	vec4 outColor = vec4(mix(vec3(0,0,1), vec3(0,1,0), shadingRateF), 1.0);
+	//if (uv.x < 100/16) {
+	//	shadingRateF = 1.0/10.0;
+	//	outColor = vec4(mix(vec3(0,0,1), vec3(0,1,0), shadingRateF), 1.0);
+	//}
+
+	imageStore(debugImage, uv, vec4(outColor));
 	//imageStore(debugImage, uv, vec4( int((sqrt(2) - distance(pushConst.eyePoint,distVec))/sqrt(2)*12)/12.0 ));
 	//imageStore(debugImage, uv, vec4( int((1.0 - clamp(dot(distVec,distVec),0,1))*(1.0 - clamp(dot(distVec,distVec),0,1)) * 12.0)/12.0 ));
 	//imageStore(debugImage, uv, vec4( int((1.0 - clamp(dot(distVecInv,distVecInv),0,1))*(1.0 - clamp(dot(distVecInv,distVecInv),0,1)) * 11.0) / 11.0 ));

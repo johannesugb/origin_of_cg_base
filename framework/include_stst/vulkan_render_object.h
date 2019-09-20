@@ -49,6 +49,13 @@ const std::vector<Vertex> verticesScreenQuad = {
 { { -1.0f, 1.0f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f } }
 };
 
+const std::vector<Vertex> verticesHalfScreenQuad = {
+	{ { 0.0f, -1.0f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
+{ { 1.0f, -1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
+{ { 1.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f } },
+{ { 0.0f, 1.0f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f } }
+};
+
 const std::vector<uint32_t> indicesScreenQuad = {
 	0, 2, 1, 2, 0, 3
 };

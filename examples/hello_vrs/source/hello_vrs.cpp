@@ -50,14 +50,14 @@
 #include "quadratic_uniform_b_spline.h"
 #include "cubic_uniform_b_spline.h"
 
-#define VRS_EYE 0
+#define VRS_EYE 1
 #define VRS_EYE_BLIT 0
 #define VRS_CAS 0
-#define VRS_CAS_EDGE 1
+#define VRS_CAS_EDGE 0
 #define VRS_MAS 0
 #define VRS_TAA 0
 
-#define DEFERRED_SHADING 1
+#define DEFERRED_SHADING 0
 
 #define BLIT_FINAL_IMAGE 0
 #define TAA_ENABLED 0
@@ -306,7 +306,7 @@ private:
 	// super sampling
 	uint32_t renderWidth;
 	uint32_t renderHeight;
-	double renderResMultiplier = 1;
+	double renderResMultiplier = 1.0;
 
 
 	// capture frame times
@@ -364,6 +364,7 @@ public:
 
 		if (mImagePresenter->is_swap_chain_recreated() || cgb::input().key_pressed(cgb::key_code::f4) || framebufferResized) {
 			framebufferResized = false;
+			//mSponzaTrueIslandFalse = !mSponzaTrueIslandFalse;
 			recreateSwapChain();
 		}
 		if (cgb::input().key_pressed(cgb::key_code::f5)) {
@@ -532,7 +533,7 @@ public:
 			cgb::vulkan_context::instance().shadingRateImageSupported = false;
 			shadingRateStrategyIndex = -2;
 			resolutionStrategyIndex = 0;
-			renderResMultiplier = 1.0;
+			renderResMultiplier = 1.0; 
 			cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1; 
 			mDeferredShadingEnabled = false;
 			mSponzaTrueIslandFalse = true;
@@ -804,6 +805,7 @@ private:
 			mVrsTAAClipComputeDrawer->set_vrs_images(vrsImages);
 			mVrsTAAClipComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 		}
+		//verticesHalfScreenQuad - verticesScreenQuad
 		mVrsDebugFullscreenQuad = std::make_shared<cgb::vulkan_render_object>(verticesScreenQuad, indicesScreenQuad, mResourceBundleLayout, mResourceBundleGroup, texture, vrsDebugTextureImages);
 
 		// post process objects
@@ -969,7 +971,7 @@ private:
 		}
 
 		// VRS Debug render, used with e.g. fullscreen quad
-		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mTAAFramebuffers[0]->get_render_pass(), viewport, scissor, vk::SampleCountFlagBits::e1, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
+		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
 		mVrsDebugPipeline->add_attr_desc_binding(bind1);
 		mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
@@ -978,6 +980,7 @@ private:
 
 		auto& colorBlend = mVrsDebugPipeline->get_color_blend_attachment_state(0);
 		colorBlend.blendEnable = VK_TRUE;
+		colorBlend.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
 		colorBlend.dstColorBlendFactor = vk::BlendFactor::eOne;
 		mVrsDebugPipeline->add_color_blend_attachment_state(colorBlend);
 		//mVrsDebugPipeline->disable_shading_rate_image();
@@ -1271,7 +1274,7 @@ private:
 			renderObjects.push_back(sponzaRenderObject.get());
 		}
 		for (auto parallelPipesRenderObject : mParallelPipesModel->get_render_objects()) {
-			renderObjects.push_back(parallelPipesRenderObject.get());
+			//renderObjects.push_back(parallelPipesRenderObject.get());
 		}
 		//cgb::vulkan_context::instance().currentFrame = oldFrameIdx;
 
@@ -1280,6 +1283,12 @@ private:
 		} 
 		else {
 			mRenderer->render({ renderObjects }, mMaterialDrawer.get());
+		}
+
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			renderObjects.clear();
+			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
+			mRenderer->render(renderObjects, mVrsDebugDrawer.get());
 		}
 
 		// TAA pass
@@ -1316,12 +1325,6 @@ private:
 		mTAAMeanVarianceRenderer->add_recorded_secondary_command_buffers();
 
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
-
-		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-			renderObjects.clear();
-			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
-			mTAARenderer->render(renderObjects, mVrsDebugDrawer.get());
-		}
 
 #if !BLIT_FINAL_IMAGE
 		// post processing pass
@@ -1978,10 +1981,11 @@ int main()
 
 		// Create a window which we're going to use to render to
 		auto mainWnd = cgb::context().create_window("Hello VRS!");
-		mainWnd->set_resolution({ 1920, 1080 });
+		//mainWnd->set_resolution({ 1920, 1080 });
+		mainWnd->set_resolution({ 1600, 900 });
 		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
 		mainWnd->open();
-		mainWnd->switch_to_fullscreen_mode();
+		//mainWnd->switch_to_fullscreen_mode();
 
 		// Create a "behavior" which contains functionality of our program
 		auto vrsBehavior = vrs_behavior();
