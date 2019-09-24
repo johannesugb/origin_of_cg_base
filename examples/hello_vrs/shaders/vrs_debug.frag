@@ -15,7 +15,7 @@ void main() {
 	outColor = 0.1 *  vec4(0,0,0,0);
 
 	if (gl_FragCoord.x < 800) {
-		//return;
+		return;
 	}
 
 	
@@ -49,7 +49,16 @@ void main() {
 	redToGreen = smoothstep(0, 0.5, shadingRate);
 	greenToBlue = smoothstep(0.5, 1, shadingRate);
 	//outColor = vec4(mix(mix(vec3(0,0,1), vec3(0,1,0), redToGreen), mix(vec3(0,1,0), vec3(1,0,0), greenToBlue), greenOrBlue), 0.5f);
-	outColor = 0.1 * vec4(mix(vec3(0,0,1), vec3(0,1,0), shadingRate), 1.0);
+	//outColor = 0.1 * vec4(mix(vec3(0,0,1), vec3(0,1,0), shadingRate), 1.0);
+
+	int[] colorPalette = {0x0000ff, 0xC4E538, 0x12CBC4, 0xffff00, 0xFDA7DF, 0xF79F1F, 0xFF0000, 0x0652DD, 0xD980FA, 0x833471};
+	int idx = int(shadingRate * 10);
+	int u_color = colorPalette[idx];
+	int rIntValue = (u_color / 256 / 256) % 256;
+	int gIntValue = (u_color / 256      ) % 256;
+	int bIntValue = (u_color            ) % 256;
+	outColor =vec4( 0.9 * vec3(rIntValue / 255.0f, gIntValue / 255.0f, bIntValue / 255.0f), 1.0);
+
 	// *****************************
 	// experiments
 	// *****************************

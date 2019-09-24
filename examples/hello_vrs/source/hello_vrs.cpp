@@ -675,8 +675,8 @@ private:
 
 		vk::Rect2D scissor = {};
 		scissor.offset = { 0, 0 };
-		scissor.extent = vk::Extent2D{renderWidth, renderHeight};
-		
+		scissor.extent = vk::Extent2D{ renderWidth, renderHeight };
+
 		vk::Rect2D postProcScissor = {};
 		postProcScissor.offset = { 0, 0 };
 		postProcScissor.extent = vk::Extent2D{ mImagePresenter->get_swap_chain_extent().width, mImagePresenter->get_swap_chain_extent().height };
@@ -746,7 +746,7 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			createVrsComputeDescriptorPool();
 			createVrsDescriptorSets();
-			
+
 			drawer->set_vrs_images(vrsImages);
 
 			// Compute Drawer and Pipeline
@@ -759,7 +759,7 @@ private:
 			mVrsImageComputeDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
 			mVrsImageComputeDrawer->set_width_height(vrsImages[0]->get_width(), vrsImages[0]->get_height());
 			mVrsImageComputeDrawer->set_eye_inf(eyeInf);
-			
+
 			mVrsEyeTrackedBlitDrawer = std::make_shared<vrs_eye_tracked_blit>(drawCommandBufferManager, mComputeVulkanPipeline, vrsDebugImages);
 			mVrsEyeTrackedBlitDrawer->set_vrs_images(vrsImages);
 			mVrsEyeTrackedBlitDrawer->set_descriptor_sets(mVrsComputeDescriptorSets);
@@ -909,7 +909,7 @@ private:
 
 			mTAAMeanVarianceRenderer->add_predecessors({ mDefRend->get_final_renderer() });
 			mDefRend->allocate_resources();
-		} 
+		}
 		else {
 			mTAAMeanVarianceRenderer->add_predecessors({ mRenderer });
 		}
@@ -971,7 +971,8 @@ private:
 		}
 
 		// VRS Debug render, used with e.g. fullscreen quad
-		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
+		//mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mVulkanFramebuffer->get_render_pass(), viewport, scissor, cgb::vulkan_context::instance().msaaSamples, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
+		mVrsDebugPipeline = std::make_shared<cgb::vulkan_pipeline>(mTAAFramebuffers[0]->get_render_pass(), viewport, scissor, vk::SampleCountFlagBits::e1, std::vector<std::shared_ptr<cgb::vulkan_resource_bundle_layout>> { mResourceBundleLayout }, sizeof(PushUniforms));
 		mVrsDebugPipeline->add_attr_desc_binding(bind1);
 		mVrsDebugPipeline->add_attr_desc_binding(bind2);
 		mVrsDebugPipeline->add_shader(cgb::ShaderStageFlagBits::eVertex, "shaders/vrs_debug.vert.spv");
@@ -1285,11 +1286,11 @@ private:
 			mRenderer->render({ renderObjects }, mMaterialDrawer.get());
 		}
 
-		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
-			renderObjects.clear();
-			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
-			mRenderer->render(renderObjects, mVrsDebugDrawer.get());
-		}
+		//if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+		//	renderObjects.clear();
+		//	renderObjects.push_back(mVrsDebugFullscreenQuad.get());
+		//	mRenderer->render(renderObjects, mVrsDebugDrawer.get());
+		//}
 
 		// TAA pass
 		int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
@@ -1325,6 +1326,12 @@ private:
 		mTAAMeanVarianceRenderer->add_recorded_secondary_command_buffers();
 
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
+
+		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+			renderObjects.clear();
+			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
+			mTAARenderer->render(renderObjects, mVrsDebugDrawer.get());
+		}
 
 #if !BLIT_FINAL_IMAGE
 		// post processing pass

@@ -226,8 +226,8 @@ namespace cgb {
 
 
 		vk::ShadingRatePaletteNV shadingRatePalette = {};
-		shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntriesAll.size();
-		shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntriesAll.data();
+		shadingRatePalette.shadingRatePaletteEntryCount = shadingRatePaletteEntries.size();
+		shadingRatePalette.pShadingRatePaletteEntries = shadingRatePaletteEntries.data();
 
 		shadingRateImage.pShadingRatePalettes = &shadingRatePalette;
 
