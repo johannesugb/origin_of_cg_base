@@ -13,7 +13,7 @@ namespace cgb
 		std::vector<const char*> gRequiredInstanceExtensions;
 
 		std::vector<const char*> gValidationLayersToBeActivated = {
-			"VK_LAYER_LUNARG_standard_validation"
+			//"VK_LAYER_LUNARG_standard_validation"
 		};
 
 		std::vector<const char*> gRequiredDeviceExtensions;

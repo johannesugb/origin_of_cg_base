@@ -50,12 +50,12 @@
 #include "quadratic_uniform_b_spline.h"
 #include "cubic_uniform_b_spline.h"
 
-#define VRS_EYE 1
+#define VRS_EYE 0
 #define VRS_EYE_BLIT 0
 #define VRS_CAS 0
 #define VRS_CAS_EDGE 0
 #define VRS_MAS 0
-#define VRS_TAA 0
+#define VRS_TAA 1
 
 #define DEFERRED_SHADING 0
 
@@ -306,7 +306,7 @@ private:
 	// super sampling
 	uint32_t renderWidth;
 	uint32_t renderHeight;
-	double renderResMultiplier = 1.0;
+	double renderResMultiplier = 2.0;
 
 
 	// capture frame times
@@ -608,7 +608,8 @@ private:
 		cgb::vulkan_context::instance().transferCommandBufferManager = transferCommandBufferManager;
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
 
-		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e1;
+		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e2;
+		cgb::vulkan_context::instance().shadingRateImageSupported = false;
 
 		init_swapchain_objects();
 	}
@@ -1330,7 +1331,7 @@ private:
 		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
 			renderObjects.clear();
 			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
-			mTAARenderer->render(renderObjects, mVrsDebugDrawer.get());
+			//mTAARenderer->render(renderObjects, mVrsDebugDrawer.get());
 		}
 
 #if !BLIT_FINAL_IMAGE
@@ -1988,8 +1989,8 @@ int main()
 
 		// Create a window which we're going to use to render to
 		auto mainWnd = cgb::context().create_window("Hello VRS!");
-		//mainWnd->set_resolution({ 1920, 1080 });
-		mainWnd->set_resolution({ 1600, 900 });
+		mainWnd->set_resolution({ 1920, 1080 });
+		//mainWnd->set_resolution({ 1600, 900 });
 		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);
 		mainWnd->open();
 		//mainWnd->switch_to_fullscreen_mode();
