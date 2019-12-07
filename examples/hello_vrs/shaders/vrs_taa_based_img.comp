@@ -49,7 +49,7 @@ void main() {
 
 	float prevShadingRate = imageLoad(targetImage, uv).x;
 
-	float shadingRate = clampDist.x * 0.9; // clip dist
+	float shadingRate = clampDist.x * 1; // clip dist
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	prevShadingRate = clamp(prevShadingRate, shadingRate - 1, shadingRate + 2);
 	shadingRate =  mix(prevShadingRate, shadingRate, 0.1);
@@ -64,6 +64,7 @@ void main() {
 
 	//uv = newUV;
 	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
+	imageStore(targetImage, newUV, uvec4(clamp(shadingRate, 0, 11),0,0,0));
 
 	// debug image
 	imageStore(debugImage, uv, vec4(vec3(shadingRate / 12.0), 0.9));

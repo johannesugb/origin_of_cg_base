@@ -74,7 +74,7 @@ class camera_path : public cgb::cg_element
 public:
 	camera_path(cgb::quake_camera& cam)
 		: mCam{ &cam } // Target camera
-		, mSpeed{ 0.1f } // How fast does it move
+		, mSpeed{ 0.04f } // How fast does it move
 		, mAutoPathActive{ true }
 	{
 		// The path to follow
@@ -84,6 +84,20 @@ public:
 				glm::vec3(0.0f, 0.0f, 0.0f),
 				glm::vec3(10.0f, 15.0f, 10.0f),
 				glm::vec3(10.0f, 10.0f, 0.0f)
+		});
+
+		mPath = std::make_unique<cgb::quadratic_uniform_b_spline>(std::vector<glm::vec3>{
+			glm::vec3(5.0f, 0.5f, 0.0f),
+				glm::vec3(1.2f, .60f, 4.7f),
+				glm::vec3(-8.0f, 0.84f, 3.2f),
+				glm::vec3(-7.23f, 6.2f, -0.7f),
+				glm::vec3(-7.23f, 5.9f, -4.6f),
+				glm::vec3(4.9f, 5.9f, -4.0f),
+				glm::vec3(7.6f, 6.2f, -3.2f),
+				glm::vec3(7.67f, 5.4f, -0.6f),
+				glm::vec3(6.0f, 1.5f, 0.0f),
+				glm::vec3(5.5f, 0.5f, 0.0f),
+				glm::vec3(5.0f, 0.5f, 0.0f)
 		});
 	}
 
@@ -95,6 +109,7 @@ public:
 	void initialize() override
 	{
 		mStartTime = cgb::time().time_since_start();
+		tI = 0;
 	}
 
 	void update() override
@@ -111,7 +126,9 @@ public:
 		// Animate along the curve:
 		if (mAutoPathActive) {
 			auto t = computeT();
-			if (t >= 0.00001 && t <= 1) {
+			//t = (int(t * 10)) / 10.0;
+			//t = tI/10.0f;
+			if (t >= 0.00001 && t < 1) {
 				mCam->set_translation(mPath->value_at(t));
 				mCam->look_along(mPath->slope_at(t));
 			}
@@ -121,6 +138,7 @@ public:
 	void resetAnimation() {
 		mAutoPathActive = true;
 		mStartTime = cgb::time().time_since_start();
+		tI = 0;
 	}
 
 	bool animationFinished() {
@@ -129,7 +147,12 @@ public:
 	}
 
 	float computeT() {
+		//return (tI + 0.5f) / 10.0f;
 		return (cgb::time().time_since_start() - mStartTime) * mSpeed;
+	}
+
+	void next() {
+		tI++;
 	}
 
 private:
@@ -138,6 +161,8 @@ private:
 	float mSpeed;
 	bool mAutoPathActive;
 	std::unique_ptr<cgb::cp_interpolation> mPath;
+
+	int tI;
 };
 
 class vrs_behavior : public cgb::cg_element
@@ -303,10 +328,10 @@ private:
 	std::vector<std::shared_ptr<cgb::vulkan_image>> mVrsTAAClipBlitImages;
 	std::vector<std::shared_ptr<cgb::vulkan_texture>> mVrsTAAClipBlitTextures;
 
-	// super sampling
+	// super sampling6
 	uint32_t renderWidth;
 	uint32_t renderHeight;
-	double renderResMultiplier = 2.0;
+	double renderResMultiplier =  4.0 / 3.0;
 
 
 	// capture frame times
@@ -327,6 +352,7 @@ private:
 
 	bool mDeferredShadingEnabled;
 	bool mSponzaTrueIslandFalse;
+	bool mRenderDebugOverlay;
 
 
 public:
@@ -341,6 +367,8 @@ public:
 
 		eyeInf = std::make_shared<eyetracking_interface>();
 		//initWindow();
+
+		mRenderDebugOverlay = true;
 
 		auto window = cgb::context().main_window()->handle()->mHandle;
 		glfwSetWindowUserPointer(window, this);
@@ -397,7 +425,7 @@ public:
 		}
 
 		// EVALUATION
-		static int shadingRateStrategyIndex = -2;
+		static int shadingRateStrategyIndex = 0;
 		static int resolutionStrategyIndex = 0;
 		static bool evalStarted = false;
 
@@ -477,7 +505,7 @@ public:
 				}
 				else {
 
-					if ((int)cgb::vulkan_context::instance().msaaSamples <= 8) {
+					if ((int)cgb::vulkan_context::instance().msaaSamples < 8) {
 						cgb::vulkan_context::instance().msaaSamples = (vk::SampleCountFlagBits)((int)cgb::vulkan_context::instance().msaaSamples * 2);
 						// reset values for 
 						mEvalTitle = "NONE";
@@ -543,6 +571,53 @@ public:
 
 		// END EVALUATION
 
+		
+
+		if (cgb::input().key_pressed(cgb::key_code::f6)) {
+			shadingRateStrategyIndex = (shadingRateStrategyIndex + 1) % 6;
+			
+			if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+				// VRS_EYE
+				if (shadingRateStrategyIndex == 0) {
+					mCurrentVrsImageComputeDrawer = mVrsImageComputeDrawer;
+					mEvalTitle = "VRS_EYE";
+				}
+				// VRS_EYE_BLIT
+				if (shadingRateStrategyIndex == 1) {
+					mCurrentVrsImageComputeDrawer = mVrsEyeTrackedBlitDrawer;
+					mEvalTitle = "VRS_EYE_BLIT";
+				}
+				// VRS_CAS
+				else if (shadingRateStrategyIndex == 2) {
+					mCurrentVrsImageComputeDrawer = mVrsCasComputeDrawer;
+					mEvalTitle = "VRS_CAS";
+				}
+				// VRS_CAS_EDGE
+				else if (shadingRateStrategyIndex == 3) {
+					mCurrentVrsImageComputeDrawer = mVrsCasEdgeComputeDrawer;
+					mEvalTitle = "VRS_CAS_EDGE";
+				}
+				// VRS_MAS
+				else if (shadingRateStrategyIndex == 4) {
+					mCurrentVrsImageComputeDrawer = mVrsMasComputeDrawer;
+					mEvalTitle = "VRS_MAS";
+				}
+				// VRS_TAA
+				else if (shadingRateStrategyIndex == 5) {
+					mCurrentVrsImageComputeDrawer = mVrsTAAClipComputeDrawer;
+					mEvalTitle = "VRS_TAA";
+				}
+			}
+		}
+
+		if (cgb::input().key_pressed(cgb::key_code::f10)) {
+			mRenderDebugOverlay = !mRenderDebugOverlay;
+			printf("Cam Pos: %f, %f, %f\n",
+				mCamera.translation().x,
+				mCamera.translation().y,
+				mCamera.translation().z);
+		}
+
 		if (cgb::input().key_pressed(cgb::key_code::tab)) {
 			if (mCamera.is_enabled()) {
 				mCamera.disable();
@@ -561,12 +636,24 @@ public:
 			kDistanceX * glm::sin(kSpeed * time),
 			kDistanceY * glm::sin(kSpeed * time),
 			0.0f));
+
+		auto t = mCameraPath.computeT();
+		if (t >= 0 && !mCameraPath.animationFinished()) {
+			mRenderDebugOverlay = false;
+		}
+		if (t >= 0.15 && !mCameraPath.animationFinished()) {
+			mRenderDebugOverlay = true;
+		}
+		if (t >= 0.58 && !mCameraPath.animationFinished()) {
+			mRenderDebugOverlay = false;
+		}
 	}
 
 	void render() override
 	{
 		static float sum_t = 0.0f;
 		static unsigned int frame_count = 0;
+		static float sum_t_capture_frame = 0.0f;
 
 		auto eyeData = eyeInf->get_eyetracking_data();
 
@@ -574,11 +661,13 @@ public:
 		frame_count++;
 
 		sum_t += cgb::time().delta_time();
+		sum_t_capture_frame += cgb::time().delta_time();
 
 		if (mCaptureFrameTimeReset) {
 			mCaptureFrameTimeReset = false;
 			sum_t = 0;
 			frame_count = 0;
+			sum_t_capture_frame = 0.0f;
 		}
 		if (sum_t >= 1.0f) {
 			cgb::context().main_window()->set_title(std::to_string(1.0f / cgb::time().delta_time()).c_str());
@@ -586,7 +675,7 @@ public:
 				mFrameTimeDataVector.push_back({frame_count, sum_t, cgb::time().delta_time() });
 
 				int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
-				mSaveImg.save_image_to_file(mTAAImages[tAAIndex][0], vk::ImageLayout::eShaderReadOnlyOptimal, compute_eval_filename() + "_" + mEvalTitle + "_" + std::to_string((int)(mCameraPath.computeT() * 10.0)));
+				//mSaveImg.save_image_to_file(mTAAImages[tAAIndex][0], vk::ImageLayout::eShaderReadOnlyOptimal, compute_eval_filename() + "_" + mEvalTitle + "_" + std::to_string((int)(mCameraPath.computeT() * 10.0)));
 			}
 			sum_t = 0.0f;
 			frame_count = 0;
@@ -595,6 +684,19 @@ public:
 				eyeData.positionX,
 				eyeData.positionY);
 		}
+		//if (sum_t_capture_frame > 0.1f) {
+		//	if (mCaptureFrameTime) {
+		//		if ((int)(mCameraPath.computeT() * 10) % 1 == 0) {
+		//			mSaveImg = save_image();
+		//		}
+		//		int tAAIndex = mTAAIndices[cgb::vulkan_context::instance().currentFrame];
+		//		auto image = mTAAImages[tAAIndex][cgb::vulkan_context::instance().currentFrame];
+		//		image = mImagePresenter->get_swap_chain_images()[cgb::vulkan_context::instance().currentFrame];
+		//		mSaveImg.save_image_to_file(image, vk::ImageLayout::eShaderReadOnlyOptimal, compute_eval_filename() + "_" + mEvalTitle + "_" + std::to_string((int)(mCameraPath.computeT() * 10.0 + 1)));
+		//		mCameraPath.next();
+		//	}
+		//	sum_t_capture_frame = 0.0f;
+		//}
 	}
 
 private:
@@ -609,7 +711,6 @@ private:
 		mImagePresenter = std::make_shared<cgb::vulkan_image_presenter>(cgb::vulkan_context::instance().presentQueue, cgb::vulkan_context::instance().surface, cgb::vulkan_context::instance().findQueueFamilies());
 
 		cgb::vulkan_context::instance().msaaSamples = vk::SampleCountFlagBits::e2;
-		cgb::vulkan_context::instance().shadingRateImageSupported = false;
 
 		init_swapchain_objects();
 	}
@@ -1328,10 +1429,10 @@ private:
 
 		mTAARenderer->render(renderObjects, mTAADrawer.get());
 
-		if (cgb::vulkan_context::instance().shadingRateImageSupported) {
+		if (cgb::vulkan_context::instance().shadingRateImageSupported && mRenderDebugOverlay) {
 			renderObjects.clear();
 			renderObjects.push_back(mVrsDebugFullscreenQuad.get());
-			//mTAARenderer->render(renderObjects, mVrsDebugDrawer.get());
+			mTAARenderer->render(renderObjects, mVrsDebugDrawer.get());
 		}
 
 #if !BLIT_FINAL_IMAGE
@@ -1989,6 +2090,7 @@ int main()
 
 		// Create a window which we're going to use to render to
 		auto mainWnd = cgb::context().create_window("Hello VRS!");
+		//mainWnd->set_resolution({ 2560, 1440 });
 		mainWnd->set_resolution({ 1920, 1080 });
 		//mainWnd->set_resolution({ 1600, 900 });
 		mainWnd->set_presentaton_mode(cgb::presentation_mode::vsync);

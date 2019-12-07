@@ -24,8 +24,8 @@ save_image & save_image::operator=(const save_image& s)
 
 void save_image::save_image_to_file(std::shared_ptr<cgb::vulkan_image> image, vk::ImageLayout imageLayout, std::string filename)
 {
-	auto thread = std::make_shared<std::thread>(
-		[this, image, imageLayout, filename]()
+	//auto thread = std::make_shared<std::thread>(
+	//	[this, image, imageLayout, filename]()
 		{
 			// code based on https://github.com/SaschaWillems/Vulkan/blob/master/examples/screenshot/screenshot.cpp
 
@@ -221,6 +221,8 @@ void save_image::save_image_to_file(std::shared_ptr<cgb::vulkan_image> image, vk
 
 			// Clean up resources
 			vkUnmapMemory(cgb::vulkan_context::instance().device, dstImage.get_image_memory().memory);
-		});
-		threadList.push_back(thread);
+		}
+		//);
+		//thread->join();
+		//threadList.push_back(thread);
 }

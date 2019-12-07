@@ -182,8 +182,8 @@ vec3 CalculateDiffuseAndSpecularIlluminationInTS(vec3 diff_tex_color)
 	
 	// directional light
 	vec3 to_dir_light_ts = -normalize(fs_in.directionalLightDirTS);
-	vec3 dl_intensity = uDirectionalLight.color.rgb;
-	diffuse_and_specular += dl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_dir_light_ts, to_eye_nrm_ts, normal_ts, diff_tex_color);
+	vec3 dl_intensity = uDirectionalLight.color.rgb ;
+	diffuse_and_specular += dl_intensity * CalcBlinnPhongDiffAndSpecContribution(to_dir_light_ts, to_eye_nrm_ts, normal_ts, diff_tex_color) * 5.0;
 
 	
 	// calculate for a single point light
@@ -250,7 +250,7 @@ void main()
 	// Sample the diffuse color 
 	vec3 diff_tex_color = texture(uDiffuseTexSampler, fs_in.texCoords).rgb;
 	// initialize all the colors
-	vec3 ambient = uAmbientLight.color.rgb * matData.uAmbientReflectivity3ShininessStrength1.xyz * diff_tex_color;
+	vec3 ambient = diff_tex_color * 0.05;
 	vec3 emissive = matData.uEmissiveLight3RefractionIndex1.xyz;
 	vec3 diffuse_and_specular = CalculateDiffuseAndSpecularIlluminationInTS(diff_tex_color);
 
@@ -268,7 +268,12 @@ void main()
 
 	//oFragColor = vec4(vec3(fwidth(fs_in.texCoords.y/gl_FragmentSizeNV.y) + fwidth(fs_in.texCoords.x/gl_FragmentSizeNV.x)), 1.0); 
 	oTexelDifferentials = vec4((fwidth(fs_in.texCoords.y) + fwidth(fs_in.texCoords.x)) * 8, gl_FragmentSizeNV.x/4.0, gl_FragmentSizeNV.y/4.0, gl_FragCoord.z);
-	oTexelDifferentials = vec4((fwidth(fs_in.texCoords.y/gl_FragmentSizeNV.y) + fwidth(fs_in.texCoords.x/gl_FragmentSizeNV.x)) * 8, gl_FragmentSizeNV.x/4.0, gl_FragmentSizeNV.y/4.0, gl_FragCoord.z);
+	
+	vec2 texSize = textureSize(uDiffuseTexSampler, 0);
+	oTexelDifferentials = vec4((fwidth(fs_in.texCoords.y/gl_FragmentSizeNV.y/texSize.y)*texSize.y + fwidth(fs_in.texCoords.x/gl_FragmentSizeNV.x/texSize.x)*texSize.x) * length(8), 
+	//texSize.x, texSize.y,
+	gl_FragmentSizeNV.x/4.0, gl_FragmentSizeNV.y/4.0, 
+	gl_FragCoord.z);
 
 	//oTexelDifferentials = vec4(abs(fs_in.positionVS.xyz), gl_FragCoord.z);
 	float greyValue = dot(oFragColor.rgb, vec3(0.299, 0.587, 0.114));

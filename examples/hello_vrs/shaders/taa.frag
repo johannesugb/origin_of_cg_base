@@ -121,7 +121,7 @@ void main() {
 	
 	vec2 shadingRate = texelFetch(shadingRateTex, ipos, 0).yz;
 	ivec2 shadingRateSize = ivec2(shadingRate * 4.0); //ivec2(1,1);  
-	int mipLevel = int((shadingRateSize.x + shadingRateSize.y)/ 2) - 1;
+	int mipLevel = int((shadingRateSize.x + shadingRateSize.y)/ 4) + 1;
 	//motion *= shadingRate * 4;
 
 	//ipos -= ivec2(motion *  + 0.5);
@@ -139,7 +139,7 @@ void main() {
 	vec4 meanVar = texelFetch(meanVarTex, ivec2(ipos / pow(2, mipLevel)), mipLevel);
 	vec2 var2 = texelFetch(var2Tex, ivec2(ipos / pow(2, mipLevel)), mipLevel).rg;
 	vec3 colorAvg = meanVar.rgb;
-    vec3 colorVar = vec3(meanVar.a, var2.xy);
+    vec3 colorVar = vec3(meanVar.a, var2.xy) / 10.0;
 
 	
 
@@ -182,14 +182,19 @@ void main() {
 	//outColor = vec4(meanVar.xyz, 0);
 	//outColor = vec4(mipLevel / 4.0, 0, 0, 0);
 	//outColor = vec4(alpha, 0, 0, 0);
+	//outColor = vec4(YCgCoToRGB(colorVar),0);
 	
 	// taa based vrs
 	vec3 clampDist = clamp(abs(colorAvg-history), 0, 1);// - colorBoxSigma * sigma, 0, 1);
-	outClipDist = vec4(vec3(length(clampDist * 100)), 0);
+	outClipDist = vec4(vec3(length(clampDist  / (colorBoxSigma * sigma) / 2)), 0);
 	
 	//if (gl_FragCoord.x < 1600) {
 	//	outColor = vec4(vec3(length(clampDist) * 100), 0);
 	//}
+
+	if (all(lessThan(outColor,vec4(0.0000001)))) {
+		outColor = vec4(135.0/255,206.0/255,235.0/255,0);
+	}
 }
 
 

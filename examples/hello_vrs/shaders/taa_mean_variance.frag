@@ -86,7 +86,7 @@ void main() {
 
     float oneOverNine = 1.0 / 9.0;
     colorAvg *= oneOverNine;
-    colorVar *= oneOverNine;
+    colorVar *= oneOverNine * 10.0;
 
 	outMeanVar = vec4(colorAvg, colorVar.x);
 	outVar2 = vec2(colorVar.yz);

@@ -80,7 +80,10 @@ void main() {
 
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
 
-	float scaledVal = 1 - dot(-prevFrameMotion.xy,-prevFrameMotion.xy) * 1000;
+	vec2 newMotionVec = (newUV-uv);
+	//
+	float scaledVal = 1 - (length(prevFrameMotion.xy * pushConst.imgSize)/16 + length(newMotionVec)/16);
+	//scaledVal = 1 - (length(newMotionVec)/4);
 	float shadingRate = scaledVal; // current texel diff
 	shadingRate =  clamp(shadingRate, 0, 1) * 12.0;
 	//shadingRate = 4;

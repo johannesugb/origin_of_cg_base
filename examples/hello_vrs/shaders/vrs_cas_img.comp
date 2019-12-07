@@ -70,15 +70,15 @@ void main() {
 
 	uvec4 prevShadingRate = imageLoad(targetImage, uv);
 
-	float scaledVal = abs(clamp(frameVal.x * 4 * 2 - 1,-1,1));
-	float shadingRate = (scaledVal * scaledVal); // current texel diff
+	float scaledVal = abs(clamp(frameVal.x * 2 * 8- 1,-1,1));
+	float shadingRate = 1 - (scaledVal * scaledVal); // current texel diff
 	shadingRate =  (clamp(shadingRate, 0, 1)) * 12.0;
 	//shadingRate = (shadingRate * 2/4 + prevShadingRate.x * 2/4);
 	//shadingRate = 0;
 	//shadingRate = shadingRate / (frameVal.y * frameVal.z * 16.0);
 	//shadingRate = (frameVal.y * frameVal.z) * 1000;
 	imageStore(targetImage, uv, uvec4(clamp(shadingRate, 0, 11),0,0,0));
-	imageStore(targetImage, uv, uvec4(8 - clamp(shadingRate, 0, 11),0,0,0));
+	//imageStore(targetImage, uv, uvec4(8 - clamp(shadingRate, 0, 11),0,0,0));
 
 	imageStore(debugImage, uv, vec4(vec3(scaledVal * scaledVal + 0.5), 1.0));
 }

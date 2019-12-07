@@ -15,7 +15,7 @@ void main() {
 	outColor = 0.1 *  vec4(0,0,0,0);
 
 	if (gl_FragCoord.x < 800) {
-		return;
+		//return;
 	}
 
 	
@@ -57,7 +57,7 @@ void main() {
 	int rIntValue = (u_color / 256 / 256) % 256;
 	int gIntValue = (u_color / 256      ) % 256;
 	int bIntValue = (u_color            ) % 256;
-	outColor =vec4( 0.9 * vec3(rIntValue / 255.0f, gIntValue / 255.0f, bIntValue / 255.0f), 1.0);
+	outColor =vec4( 0.2 * vec3(rIntValue / 255.0f, gIntValue / 255.0f, bIntValue / 255.0f), 1.0);
 
 	// *****************************
 	// experiments
